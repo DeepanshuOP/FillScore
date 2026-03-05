@@ -9,6 +9,7 @@ const app = express();
 app.use(express.json());
 
 import { connectRouter } from './routes/connect';
+import { auditRouter } from './routes/audit';
 
 // Health check endpoint
 app.get('/health', (req: Request, res: Response) => {
@@ -19,6 +20,7 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 app.use('/api/connect', connectRouter);
+app.use('/api/audit', auditRouter);
 
 const startServer = async () => {
     try {
