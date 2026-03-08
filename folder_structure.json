@@ -1,0 +1,342 @@
+{
+  "name": "FillScore",
+  "type": "directory",
+  "children": [
+    {
+      "name": ".gitignore",
+      "type": "file"
+    },
+    {
+      "name": "backend",
+      "type": "directory",
+      "children": [
+        {
+          "name": ".env",
+          "type": "file"
+        },
+        {
+          "name": ".env.example",
+          "type": "file"
+        },
+        {
+          "name": "FillScore_Build_Plan.pdf",
+          "type": "file"
+        },
+        {
+          "name": "package-lock.json",
+          "type": "file"
+        },
+        {
+          "name": "package.json",
+          "type": "file"
+        },
+        {
+          "name": "src",
+          "type": "directory",
+          "children": [
+            {
+              "name": "config",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "database.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "env.ts",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "data",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "synthetic",
+                  "type": "directory",
+                  "children": [
+                    {
+                      "name": "aggressive-trades.json",
+                      "type": "file"
+                    },
+                    {
+                      "name": "disciplined-trades.json",
+                      "type": "file"
+                    },
+                    {
+                      "name": "moderate-trades.json",
+                      "type": "file"
+                    }
+                  ]
+                },
+                {
+                  "name": "traderProfiles.ts",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "index.ts",
+              "type": "file"
+            },
+            {
+              "name": "models",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "Audit.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "MarketCache.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "Trade.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "User.ts",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "routes",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "audit.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "connect.ts",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "scoring",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "audit.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "engine.ts",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "scripts",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "generateSyntheticTrades.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "seedDatabase.ts",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "services",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "BinanceClient.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "MarketDataService.ts",
+                  "type": "file"
+                },
+                {
+                  "name": "TradeIngestionService.ts",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "test-ingestion.ts",
+              "type": "file"
+            },
+            {
+              "name": "types",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "index.ts",
+                  "type": "file"
+                }
+              ]
+            },
+            {
+              "name": "utils",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "encryption.ts",
+                  "type": "file"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "test-audit.ts",
+          "type": "file"
+        },
+        {
+          "name": "test-scoring.ts",
+          "type": "file"
+        },
+        {
+          "name": "tsconfig.json",
+          "type": "file"
+        }
+      ]
+    },
+    {
+      "name": "folder_structure.json",
+      "type": "file"
+    },
+    {
+      "name": "frontend",
+      "type": "directory",
+      "children": [
+        {
+          "name": ".env.local",
+          "type": "file"
+        },
+        {
+          "name": ".gitignore",
+          "type": "file"
+        },
+        {
+          "name": "app",
+          "type": "directory",
+          "children": [
+            {
+              "name": "favicon.ico",
+              "type": "file"
+            },
+            {
+              "name": "globals.css",
+              "type": "file"
+            },
+            {
+              "name": "layout.tsx",
+              "type": "file"
+            },
+            {
+              "name": "page.tsx",
+              "type": "file"
+            }
+          ]
+        },
+        {
+          "name": "components",
+          "type": "directory",
+          "children": [
+            {
+              "name": "ui",
+              "type": "directory",
+              "children": [
+                {
+                  "name": "button.tsx",
+                  "type": "file"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "components.json",
+          "type": "file"
+        },
+        {
+          "name": "eslint.config.mjs",
+          "type": "file"
+        },
+        {
+          "name": "lib",
+          "type": "directory",
+          "children": [
+            {
+              "name": "constants.ts",
+              "type": "file"
+            },
+            {
+              "name": "utils.ts",
+              "type": "file"
+            }
+          ]
+        },
+        {
+          "name": "next-env.d.ts",
+          "type": "file"
+        },
+        {
+          "name": "next.config.mjs",
+          "type": "file"
+        },
+        {
+          "name": "package-lock.json",
+          "type": "file"
+        },
+        {
+          "name": "package.json",
+          "type": "file"
+        },
+        {
+          "name": "postcss.config.mjs",
+          "type": "file"
+        },
+        {
+          "name": "public",
+          "type": "directory",
+          "children": [
+            {
+              "name": "file.svg",
+              "type": "file"
+            },
+            {
+              "name": "globe.svg",
+              "type": "file"
+            },
+            {
+              "name": "next.svg",
+              "type": "file"
+            },
+            {
+              "name": "vercel.svg",
+              "type": "file"
+            },
+            {
+              "name": "window.svg",
+              "type": "file"
+            }
+          ]
+        },
+        {
+          "name": "README.md",
+          "type": "file"
+        },
+        {
+          "name": "tsconfig.json",
+          "type": "file"
+        }
+      ]
+    },
+    {
+      "name": "README.md",
+      "type": "file"
+    }
+  ]
+}
