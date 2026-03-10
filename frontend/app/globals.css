@@ -1,18 +1,79 @@
 @import "tailwindcss";
 
+/* Fonts applied to html in layout.tsx */
 body {
-  background: #0a0a0a;
-  color: #f5f5f0;
+  background: var(--bg-base);
+  color: var(--text-primary);
   font-family: var(--font-inter);
 }
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
-::selection { background: rgba(167,139,113,0.3); }
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: #0a0a0a; }
-::-webkit-scrollbar-thumb { 
-  background: #2a2a2a; border-radius: 2px; 
+
+::selection {
+  background: rgba(167,139,113,0.25);
+  color: var(--text-primary);
 }
-::-webkit-scrollbar-thumb:hover { background: #a78b71; }
+
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: var(--bg-base); }
+::-webkit-scrollbar-thumb {
+  background: var(--bg-subtle);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+/* Theme tokens */
+[data-theme="dark"], :root {
+  --bg-base:        #0f0f0f;
+  --bg-raised:      #141412;
+  --bg-overlay:     #1a1917;
+  --bg-subtle:      #201f1d;
+  --bg-muted:       #2a2926;
+  --text-primary:   #ede8e0;
+  --text-secondary: #a09890;
+  --text-tertiary:  #6a6560;
+  --text-ghost:     #3d3b38;
+  --gold:           #a78b71;
+  --gold-light:     #c4a882;
+  --gold-bright:    #e8d5b7;
+  --gold-dim:       #6b5a47;
+  --green:          #4db87a;
+  --red:            #c0392b;
+}
+
+[data-theme="light"] {
+  --bg-base:        #f5f2ee;
+  --bg-raised:      #ffffff;
+  --bg-overlay:     #ede9e3;
+  --bg-subtle:      #e4e0da;
+  --bg-muted:       #d4cfc8;
+  --text-primary:   #1a1814;
+  --text-secondary: #4a4640;
+  --text-tertiary:  #7a7570;
+  --text-ghost:     #c4bfb8;
+  --gold:           #8a6e50;
+  --gold-light:     #a07850;
+  --gold-bright:    #6a5038;
+  --gold-dim:       #c4a882;
+}
+
+input::placeholder { color: var(--text-ghost); }
+
+.form-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.form-visible {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+ol li::marker { color: var(--gold); }
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(18px); }
@@ -24,7 +85,37 @@ body {
   animation: fadeUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 10px rgba(167,139,113,0.8),
+                0 0 20px rgba(167,139,113,0.3);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 4px rgba(167,139,113,0.3);
+  }
+}
+
 @keyframes pulse-status {
-  0%, 100% { opacity: 1; box-shadow: 0 0 6px rgba(61,158,107,0.8); }
-  50% { opacity: 0.5; box-shadow: 0 0 3px rgba(61,158,107,0.3); }
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 6px rgba(77,184,122,0.9);
+  }
+  50% {
+    opacity: 0.5;
+    box-shadow: 0 0 3px rgba(77,184,122,0.3);
+  }
+}
+
+/* Demo button hover */
+.demo-btn:hover {
+  border-color: rgba(167,139,113,0.28);
+  color: #c4a882;
+  background: rgba(167,139,113,0.04);
+}
+
+/* Bottom strip badge hover */
+.trust-badge:hover {
+  color: #6a6560;
 }

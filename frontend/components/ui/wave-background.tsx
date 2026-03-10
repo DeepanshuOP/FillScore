@@ -61,7 +61,7 @@ export default function WaveBackground({
     let bounding: DOMRect;
 
     const xGap = 14;
-    const yGap = 14;
+    const yGap = 12;
 
     const setSize = () => {
       bounding = container.getBoundingClientRect();
@@ -100,7 +100,7 @@ export default function WaveBackground({
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('fill', 'none');
         path.setAttribute('stroke', strokeColor);
-        path.setAttribute('stroke-width', '1');
+        path.setAttribute('stroke-width', '0.75');
         svg.appendChild(path);
         pathsRef.current.push(path);
       }
@@ -253,7 +253,7 @@ export default function WaveBackground({
     >
       <svg
         ref={svgRef}
-        style={{ display: 'block', opacity: 0.4, willChange: 'transform' }}
+        style={{ display: 'block', opacity: 0.55, willChange: 'transform' }}
       />
       <div
         className="pointer-events-none absolute left-0 top-0 rounded-full"
