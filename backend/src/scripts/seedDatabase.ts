@@ -1,52 +1,46 @@
-import * as fs from 'fs';
-import * as path from 'path';
 import mongoose from 'mongoose';
 import { env, validateEnv } from '../config/env';
 import { Trade } from '../models/Trade';
-import { NormalisedTrade } from '../types';
+import { generateSyntheticTradesForAll } from './generateSyntheticTrades';
 
 validateEnv();
 
-const profiles = ['aggressive', 'moderate', 'disciplined'];
+const DEMO_USERS = ['demo-aggressive', 'demo-moderate', 'demo-disciplined'];
 
 async function run() {
     await mongoose.connect(env.mongoDbUri);
     console.log('MongoDB connected');
 
-    const syntheticDir = path.join(__dirname, '../../src/data/synthetic');
+    console.log('Generating synthetic trades directly from real market data...');
+    const tradesByProfile = await generateSyntheticTradesForAll();
+
+    console.log('Dropping existing demo trades...');
+    await Trade.deleteMany({ userId: { $in: DEMO_USERS } });
+
     let totalInserted = 0;
 
-    for (const profile of profiles) {
-        const filePath = path.join(syntheticDir, `${profile}-trades.json`);
-
-        if (!fs.existsSync(filePath)) {
-            console.warn(`File not found: ${filePath} — Skipping...`);
-            continue;
-        }
-
-        const rawData = fs.readFileSync(filePath, 'utf-8');
-        const trades: NormalisedTrade[] = JSON.parse(rawData);
+    for (const [profileId, trades] of Object.entries(tradesByProfile)) {
+        if (!trades || trades.length === 0) continue;
 
         let inserted = 0;
+        const docs = trades.map(t => ({
+            ...t,
+            executedAt: new Date(t.executedAt)
+        }));
+
+        await Trade.insertMany(docs);
+        inserted = docs.length;
+
+        const symbolCounts: Record<string, number> = {};
         for (const t of trades) {
-            const filter = {
-                userId: t.userId,
-                exchange: t.exchange,
-                tradeId: t.tradeId
-            };
-
-            const doc = {
-                ...t,
-                executedAt: new Date(t.executedAt) // convert parsed ISOString back to real Date
-            };
-
-            const result = await Trade.updateOne(filter, { $setOnInsert: doc }, { upsert: true });
-            if (result.upsertedCount > 0) {
-                inserted++;
-            }
+            symbolCounts[t.symbol] = (symbolCounts[t.symbol] || 0) + 1;
         }
 
-        console.log(`Seeded ${inserted} synthetic trades for user: demo-${profile}`);
+        const breakdown = Object.entries(symbolCounts)
+            .map(([sym, count]) => `${count} ${sym}`)
+            .join(', ');
+
+        console.log(`demo-${profileId}: ${breakdown} = ${inserted} total`);
         totalInserted += inserted;
     }
 

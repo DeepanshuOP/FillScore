@@ -1,38 +1,91 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
-import { profiles, TraderProfile } from '../data/traderProfiles';
 
-// We implement a standalone representation to allow JSON saving
-interface SyntheticTrade {
+export interface TraderProfile {
+    id: string;
+    name: string;
+    marketOrderRatio: number;
+    preferredHours: number[];
+    avgTradeUSD: number;
+    tradesPerDay: number;
+    slippageMult: number;
+    symbolWeights: Record<string, number>;
+}
+
+export const profiles: TraderProfile[] = [
+    {
+        id: 'aggressive',
+        name: 'Aggressive Portfolio Manager',
+        symbolWeights: {
+            BTCUSDT: 0.30,
+            ETHUSDT: 0.25,
+            BNBUSDT: 0.20,
+            SOLUSDT: 0.25
+        },
+        marketOrderRatio: 0.75,
+        preferredHours: [21, 22, 23, 0, 1, 2, 3],
+        avgTradeUSD: 800,
+        tradesPerDay: 6,
+        slippageMult: 2.2
+    },
+    {
+        id: 'moderate',
+        name: 'Moderate Portfolio Manager',
+        symbolWeights: {
+            BTCUSDT: 0.45,
+            ETHUSDT: 0.35,
+            BNBUSDT: 0.10,
+            SOLUSDT: 0.10
+        },
+        marketOrderRatio: 0.50,
+        preferredHours: [8, 9, 10, 11, 14, 15, 16, 17, 19, 20],
+        avgTradeUSD: 500,
+        tradesPerDay: 4,
+        slippageMult: 1.0
+    },
+    {
+        id: 'disciplined',
+        name: 'Disciplined Portfolio Manager',
+        symbolWeights: {
+            BTCUSDT: 0.55,
+            ETHUSDT: 0.30,
+            BNBUSDT: 0.10,
+            SOLUSDT: 0.05
+        },
+        marketOrderRatio: 0.18,
+        preferredHours: [8, 9, 10, 11, 12, 13, 14, 15],
+        avgTradeUSD: 600,
+        tradesPerDay: 3,
+        slippageMult: 0.35
+    }
+];
+
+export interface SyntheticTrade {
     userId: string;
-    exchange: "binance" | "bybit";
+    exchange: "binance";
     symbol: string;
     tradeId: string;
     orderId: string;
     side: "BUY" | "SELL";
-    orderType: "MARKET" | "LIMIT" | "UNKNOWN";
+    orderType: "MARKET" | "LIMIT";
     isMaker: boolean;
     executionPrice: number;
     quantity: number;
     notional: number;
     fee: number;
     feeAsset: string;
-    executedAt: string; // Will be parsed back to Date on seed
+    executedAt: string;
 }
 
-async function run() {
-    const csvFile = process.argv[2];
-    if (!csvFile) {
-        console.error("Please provide a CSV file path as an argument. e.g., npx ts-node src/scripts/generateSyntheticTrades.ts path/to/BTCUSDT-1m.csv");
-        process.exit(1);
+export async function generateSyntheticTradesForAll() {
+    const marketDir = path.join(__dirname, '../../src/data/market');
+    const outDir = path.join(__dirname, '../../src/data/synthetic');
+    if (!fs.existsSync(outDir)) {
+        fs.mkdirSync(outDir, { recursive: true });
     }
 
-    const absPath = path.resolve(csvFile);
-    if (!fs.existsSync(absPath)) {
-        console.error(`File not found: ${absPath}`);
-        process.exit(1);
-    }
+    const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'];
 
     const tradesByProfile: Record<string, SyntheticTrade[]> = {
         'aggressive': [],
@@ -40,120 +93,140 @@ async function run() {
         'disciplined': []
     };
 
-    const fileStream = fs.createReadStream(absPath);
-    const rl = readline.createInterface({
-        input: fileStream,
-        crlfDelay: Infinity
-    });
-
-    let prevCloses: number[] = [];
-
-    // Parse Binance 1M Klines CSV
-    // Format: openTime, open, high, low, close, volume, closeTime, quoteAssetVolume, numberOfTrades, takerBuyBaseAssetVolume, takerBuyQuoteAssetVolume, ignore
-    for await (const line of rl) {
-        if (!line.trim()) continue;
-        const parts = line.split(',');
-        if (parts.length < 6) continue;
-
-        const openTime = parseInt(parts[0], 10);
-        const open = parseFloat(parts[1]);
-        const high = parseFloat(parts[2]);
-        const low = parseFloat(parts[3]);
-        const close = parseFloat(parts[4]);
-
-        if (isNaN(openTime) || isNaN(open)) continue;
-
-        const date = new Date(openTime);
-        const hour = date.getUTCHours();
-
-        // Measure short term volatility spread 
-        const volatility = (high - low) / open;
-
-        // Scale probability of trading slightly if there's aggressive volatility
-        const volMultiplier = 1 + (volatility * 10);
-
-        prevCloses.push(close);
-        if (prevCloses.length > 4) {
-            prevCloses.shift();
+    for (const symbol of symbols) {
+        const csvPath = path.join(marketDir, `${symbol}-1m-2024-01.csv`);
+        if (!fs.existsSync(csvPath)) {
+            console.error(`Missing market data for ${symbol}. Please run download:data first.`);
+            continue;
         }
 
-        for (const profile of profiles) {
-            let hourFactor = profile.preferredHours.includes(hour) ? 1.0 : 0.05; // 95% penalty if trading outside preferred hours
+        const fileStream = fs.createReadStream(csvPath);
+        const rl = readline.createInterface({
+            input: fileStream,
+            crlfDelay: Infinity
+        });
 
-            const baseProb = profile.tradesPerDay / 1440; // 1440 minutes in a day
-            const prob = baseProb * volMultiplier * hourFactor;
+        const prevCloses: number[] = [];
 
-            if (Math.random() < prob) {
-                // Determine side based on 3-candle trend
-                let side: 'BUY' | 'SELL' = 'BUY';
-                if (prevCloses.length >= 3) {
-                    const trendingUp = prevCloses[prevCloses.length - 1] > prevCloses[prevCloses.length - 3];
-                    if (trendingUp) {
+        for await (const line of rl) {
+            if (!line.trim()) continue;
+            const parts = line.split(',');
+            if (parts.length < 6) continue;
+
+            const openTime = parseInt(parts[0], 10);
+            const open = parseFloat(parts[1]);
+            const high = parseFloat(parts[2]);
+            const low = parseFloat(parts[3]);
+            const close = parseFloat(parts[4]);
+
+            if (isNaN(openTime) || isNaN(open)) continue;
+
+            const date = new Date(openTime);
+            const hour = date.getUTCHours();
+            const volatility = (high - low) / open;
+
+            prevCloses.push(close);
+            if (prevCloses.length > 4) {
+                prevCloses.shift();
+            }
+
+            for (const profile of profiles) {
+                if (!profile.preferredHours.includes(hour)) continue;
+
+                let probability = (profile.tradesPerDay / 1440) * profile.symbolWeights[symbol] * 4;
+                if (volatility > 0.002) probability *= 1.5;
+
+                if (Math.random() < probability) {
+                    let side: 'BUY' | 'SELL' = 'BUY';
+                    if (profile.id === 'aggressive') {
                         side = Math.random() < 0.70 ? 'BUY' : 'SELL';
+                    } else if (profile.id === 'disciplined') {
+                        if (prevCloses.length >= 3) {
+                            const trendingUp = prevCloses[prevCloses.length - 1] > prevCloses[prevCloses.length - 3];
+                            side = trendingUp ? 'BUY' : 'SELL';
+                        } else {
+                            side = Math.random() < 0.5 ? 'BUY' : 'SELL';
+                        }
                     } else {
-                        side = Math.random() < 0.70 ? 'SELL' : 'BUY';
+                        // moderate
+                        if (prevCloses.length >= 3) {
+                            const trendingUp = prevCloses[prevCloses.length - 1] > prevCloses[prevCloses.length - 3];
+                            if (trendingUp) {
+                                side = Math.random() < 0.65 ? 'BUY' : 'SELL';
+                            } else {
+                                side = Math.random() < 0.65 ? 'SELL' : 'BUY';
+                            }
+                        } else {
+                            side = Math.random() < 0.5 ? 'BUY' : 'SELL';
+                        }
                     }
-                } else {
-                    side = Math.random() < 0.50 ? 'BUY' : 'SELL';
+
+                    const baseUSD = profile.avgTradeUSD * profile.symbolWeights[symbol] * (0.6 + Math.random() * 0.8);
+                    const quantity = baseUSD / open;
+
+                    const isMarket = Math.random() < profile.marketOrderRatio;
+                    const isMaker = !isMarket;
+                    const direction = side === 'BUY' ? 1 : -1;
+                    
+                    let execPrice = 0;
+                    if (isMarket) {
+                        const slippage = (0.0002 + Math.random() * 0.0018) * profile.slippageMult;
+                        let spreadMult = 1.0;
+                        if (symbol === 'ETHUSDT') spreadMult = 1.2;
+                        if (symbol === 'BNBUSDT') spreadMult = 1.5;
+                        if (symbol === 'SOLUSDT') spreadMult = 2.0;
+                        
+                        execPrice = open * (1 + direction * (slippage * spreadMult));
+                    } else {
+                        const slippage = (0.00005 + Math.random() * 0.0001);
+                        execPrice = open * (1 + direction * slippage);
+                    }
+
+                    const notional = quantity * execPrice;
+                    const fee = notional * (isMaker ? 0.0002 : 0.001);
+                    const executedAtMs = openTime + Math.floor(Math.random() * 59000);
+
+                    const trade: SyntheticTrade = {
+                        userId: `demo-${profile.id}`,
+                        exchange: 'binance',
+                        symbol,
+                        tradeId: `syn-${profile.id}-${symbol}-${Math.floor(Math.random() * 1000000)}`,
+                        orderId: `ord-${profile.id}-${symbol}-${Math.floor(Math.random() * 1000000)}`,
+                        side,
+                        orderType: isMarket ? 'MARKET' : 'LIMIT',
+                        isMaker,
+                        executionPrice: execPrice,
+                        quantity,
+                        notional,
+                        fee,
+                        feeAsset: 'USDT',
+                        executedAt: new Date(executedAtMs).toISOString()
+                    };
+
+                    tradesByProfile[profile.id].push(trade);
                 }
-
-                // Determine quantity with variance
-                const quantity = (profile.avgTradeUSD / open) * (0.5 + Math.random());
-
-                // Determine execution parameters
-                const isMarket = Math.random() < profile.marketOrderRatio;
-                const isMaker = !isMarket; // Only Limits are makers
-                let execPrice = 0;
-
-                if (isMarket) {
-                    // market order → candle_open × (1 ± 0.0003 to 0.002 adjusted by slippage mult) 
-                    const slip = (0.0003 + Math.random() * 0.0017) * profile.slippageMult;
-                    execPrice = open * (1 + (side === 'BUY' ? 1 : -1) * slip);
-                } else {
-                    // limit order → candle_open × (1 ± 0.00005 to 0.00015)
-                    const slip = 0.00005 + Math.random() * 0.0001;
-                    execPrice = open * (1 + (side === 'BUY' ? 1 : -1) * slip);
-                }
-
-                // Compute fees
-                const notional = quantity * execPrice;
-                const fee = notional * (isMaker ? 0.0002 : 0.001);
-
-                // Add random seconds to execution time so they aren't all exactly 00s
-                const executedAtMs = openTime + Math.floor(Math.random() * 59000);
-
-                const trade: SyntheticTrade = {
-                    userId: `demo-${profile.id}`,
-                    exchange: 'binance',
-                    symbol: 'BTCUSDT',
-                    tradeId: `syn-${profile.id}-${Math.floor(Math.random() * 1000000)}`,
-                    orderId: `ord-${profile.id}-${Math.floor(Math.random() * 1000000)}`,
-                    side,
-                    orderType: isMarket ? 'MARKET' : 'LIMIT',
-                    isMaker,
-                    executionPrice: execPrice,
-                    quantity: quantity,
-                    notional: notional,
-                    fee: fee,
-                    feeAsset: 'USDT',
-                    executedAt: new Date(executedAtMs).toISOString()
-                };
-
-                tradesByProfile[profile.id].push(trade);
             }
         }
     }
 
-    const outDir = path.join(__dirname, '../../src/data/synthetic');
-    if (!fs.existsSync(outDir)) {
-        fs.mkdirSync(outDir, { recursive: true });
-    }
-
-    for (const profile of profiles) {
-        const outPath = path.join(outDir, `${profile.id}-trades.json`);
-        fs.writeFileSync(outPath, JSON.stringify(tradesByProfile[profile.id], null, 2));
-        console.log(`Generated ${tradesByProfile[profile.id].length} trades for ${profile.name}`);
-    }
+    return tradesByProfile;
 }
 
-run().catch(console.error);
+if (require.main === module) {
+    generateSyntheticTradesForAll().then(tradesByProfile => {
+        const outDir = path.join(__dirname, '../../src/data/synthetic');
+        if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+        
+        for (const [profileId, trades] of Object.entries(tradesByProfile)) {
+            const outPath = path.join(outDir, `${profileId}-trades.json`);
+            fs.writeFileSync(outPath, JSON.stringify(trades, null, 2));
+            
+            const symbolCounts: Record<string, number> = {};
+            for (const t of trades) {
+                symbolCounts[t.symbol] = (symbolCounts[t.symbol] || 0) + 1;
+            }
+            const breakdown = Object.entries(symbolCounts).map(([sym, count]) => `${count} ${sym}`).join(', ');
+            console.log(`demo-${profileId}: ${breakdown} = ${trades.length} total`);
+        }
+    }).catch(console.error);
+}

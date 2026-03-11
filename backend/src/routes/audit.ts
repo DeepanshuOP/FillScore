@@ -21,26 +21,34 @@ auditRouter.get('/', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Missing userId parameter' });
         }
 
-        const user = await User.findOne({ userId });
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        const apiKey = decryptApiKey(user.encryptedApiKey);
-        const apiSecret = decryptApiKey(user.encryptedApiSecret);
-
+        const isDemoUser = userId.startsWith('demo-');
         const ingestionService = new TradeIngestionService();
         const marketDataService = new MarketDataService();
 
-        const majorSymbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'];
+        if (isDemoUser) {
+            // DEMO USER FLOW: Skip user lookup, API key decryption and raw trade ingestion completely.
+            // Move right to data enrichment formatting of seeded local trade docs.
+            await marketDataService.enrichAllPendingTrades(userId);
+        } else {
+            // STANDARD USER FLOW
+            const user = await User.findOne({ userId });
+            if (!user) {
+                return res.status(404).json({ error: 'User not found' });
+            }
 
-        // 1. Ingest trades for all major symbols
-        for (const symbol of majorSymbols) {
-            await ingestionService.ingestForUser(userId, apiKey, apiSecret, symbol, daysBack);
+            const apiKey = decryptApiKey(user.encryptedApiKey);
+            const apiSecret = decryptApiKey(user.encryptedApiSecret);
+
+            const majorSymbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'];
+
+            // 1. Ingest trades for all major symbols
+            for (const symbol of majorSymbols) {
+                await ingestionService.ingestForUser(userId, apiKey, apiSecret, symbol, daysBack);
+            }
+
+            // 2. Enrich pending trades
+            await marketDataService.enrichAllPendingTrades(userId);
         }
-
-        // 2. Enrich pending trades
-        await marketDataService.enrichAllPendingTrades(userId);
 
         // 3. Fetch all enriched trades from DB, map to EnrichedTrade object
         const tradeDocs = await Trade.find({ userId }).lean();

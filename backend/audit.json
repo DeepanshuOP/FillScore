@@ -1,0 +1,91 @@
+{
+  "demo-aggressive": {
+    "period": {
+      "start": "2024-01-01T00:15:43.357Z",
+      "end": "2024-01-31T22:36:02.390Z"
+    },
+    "breakdown": {
+      "avgSlippageBps": 5.002114072038055,
+      "avgFeeDragBps": 7.98294375153164,
+      "makerRatio": 0.24696356275303644,
+      "bestHour": 21,
+      "worstHour": 23,
+      "bestSymbol": "BTCUSDT",
+      "worstSymbol": "SOLUSDT"
+    },
+    "_id": "69b13e052c9e2a9285af25d9",
+    "userId": "demo-aggressive",
+    "__v": 0,
+    "avgFillScore": 57.8768355593477,
+    "createdAt": "2026-03-11T10:03:49.243Z",
+    "estimatedLossUSD": 30.29906335336084,
+    "exchange": "binance",
+    "fillGrade": "D",
+    "recommendations": [
+      "You used market orders for 75% of trades, paying taker fees every time. Switching to limit orders could save ~$29.39/month based on your trading volume.",
+      "Your worst-performing trades (avg score: 52.8) happen between 22:00–07:00 UTC when crypto spreads are 2–4× wider. Shifting these to 08:00–16:00 UTC could improve your score by ~15.4 points.",
+      "Your best-performing symbol is BTCUSDT (avg score: 62.8). Your execution quality is most consistent there."
+    ],
+    "totalNotional": 50642.40048321404,
+    "totalTrades": 247,
+    "updatedAt": "2026-03-11T15:25:05.438Z"
+  },
+  "demo-moderate": {
+    "period": {
+      "start": "2024-01-01T08:59:35.376Z",
+      "end": "2024-01-31T16:58:56.350Z"
+    },
+    "breakdown": {
+      "avgSlippageBps": 5.071847662447458,
+      "avgFeeDragBps": 6.211977310931965,
+      "makerRatio": 0.4976303317535545,
+      "bestHour": 9,
+      "worstHour": 19,
+      "bestSymbol": "ETHUSDT",
+      "worstSymbol": "BNBUSDT"
+    },
+    "_id": "69b13e052c9e2a9285af25da",
+    "userId": "demo-moderate",
+    "__v": 0,
+    "avgFillScore": 81.39459923084702,
+    "createdAt": "2026-03-11T10:03:49.885Z",
+    "estimatedLossUSD": 15.423011844966448,
+    "exchange": "binance",
+    "fillGrade": "B",
+    "recommendations": [
+      "Your best-performing symbol is ETHUSDT (avg score: 82.5). Your execution quality is most consistent there."
+    ],
+    "totalNotional": 36617.03448624199,
+    "totalTrades": 211,
+    "updatedAt": "2026-03-11T15:25:05.611Z"
+  },
+  "demo-disciplined": {
+    "period": {
+      "start": "2024-01-01T08:12:40.753Z",
+      "end": "2024-01-31T14:22:16.208Z"
+    },
+    "breakdown": {
+      "avgSlippageBps": 4.937815456979225,
+      "avgFeeDragBps": 3.150773604825099,
+      "makerRatio": 0.8478260869565217,
+      "bestHour": 15,
+      "worstHour": 14,
+      "bestSymbol": "BTCUSDT",
+      "worstSymbol": "SOLUSDT"
+    },
+    "_id": "69b13e052c9e2a9285af25db",
+    "userId": "demo-disciplined",
+    "__v": 0,
+    "avgFillScore": 93.3590651003554,
+    "createdAt": "2026-03-11T10:03:50.147Z",
+    "estimatedLossUSD": 3.7924386402683816,
+    "exchange": "binance",
+    "fillGrade": "A",
+    "recommendations": [
+      "Your best-performing symbol is BTCUSDT (avg score: 93.7). Your execution quality is most consistent there."
+    ],
+    "totalNotional": 32955.55810775467,
+    "totalTrades": 138,
+    "updatedAt": "2026-03-11T15:25:05.754Z"
+  }
+}
