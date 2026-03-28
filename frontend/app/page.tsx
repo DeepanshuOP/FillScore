@@ -201,7 +201,7 @@ export default function Home() {
               fontFamily: 'var(--font-playfair)', 
               fontStyle: 'italic', 
               fontSize: '0.82rem',
-              color: '#6a6560'
+              color: '#888078'
             }}>
               Execution Intelligence
             </span>
@@ -282,8 +282,8 @@ export default function Home() {
                   <div className="flex items-center gap-[8px] py-[0.6rem] px-[1.25rem] w-full sm:w-auto" style={{
                     fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.05em'
                   }}>
-                    <span style={{ color: '#6a6560' }}>{stat.label}</span>
-                    <span style={{ color: '#6a6560', margin: '0 4px' }}>·</span>
+                    <span style={{ color: '#888078' }}>{stat.label}</span>
+                    <span style={{ color: '#888078', margin: '0 4px' }}>·</span>
                     <span style={{ color: '#b8a488', fontWeight: 600 }}>{stat.value}</span>
                   </div>
                   {i < arr.length - 1 && (

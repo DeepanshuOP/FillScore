@@ -74,6 +74,29 @@ async function seedAudit() {
               tData.fillScore = scores.fillScore;
               tData.fillGrade = scores.fillGrade;
               validTrades.push(tData);
+              
+              await Trade.findByIdAndUpdate((tData as any)._id, {
+                $set: {
+                  fillScore: tData.fillScore,
+                  fillGrade: tData.fillGrade,
+                  slippageScore: (tData as any).slippageScore,
+                  feeScore: (tData as any).feeScore,
+                  timingScore: (tData as any).timingScore,
+                  exchangeScore: (tData as any).exchangeScore,
+                  slippageBps: (tData as any).slippageBps,
+                  arrivalPriceProxy: tData.arrivalPriceProxy,
+                  spreadBps: (tData as any).spreadBps,
+                  vwap5min: (tData as any).vwap5min,
+                  notionalValue: (tData as any).notionalValue,
+                  feePaid: (tData as any).feePaid,
+                  quantity: tData.quantity,
+                  isMaker: tData.isMaker,
+                  side: tData.side,
+                  symbol: tData.symbol,
+                  executionPrice: tData.executionPrice,
+                  executedAt: tData.executedAt,
+                }
+              })
           } catch (e) {
               // Skipping invalid or 0 qty trades silently
           }

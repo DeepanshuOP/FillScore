@@ -258,7 +258,7 @@ export default function Dashboard() {
             fontFamily: 'var(--font-mono)',
             fontSize: '0.6rem',
             letterSpacing: '0.15em',
-            color: '#585852'
+            color: '#888078'
           }}>
             LAST ANALYSED  ·  {loading ? '—' : formatDate(audit?.createdAt)}
           </span>
@@ -298,7 +298,7 @@ export default function Dashboard() {
             fontFamily: 'var(--font-mono)',
             fontSize: '0.58rem',
             letterSpacing: '0.12em',
-            color: '#7a7870',
+            color: '#888078',
             background: 'rgba(255,255,255,0.02)',
             textTransform: 'uppercase'
           }}>
@@ -457,7 +457,7 @@ export default function Dashboard() {
                     fontFamily: 'var(--font-mono)',
                     fontSize: '0.72rem',
                     letterSpacing: '0.22em',
-                    color: '#585852',
+                    color: '#888078',
                     marginTop: '0.5rem'
                   }}>
                     {Math.round(audit.avgFillScore)}  /  100
@@ -492,7 +492,7 @@ export default function Dashboard() {
                     width: '100%'
                   }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent)' }} />
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#585852', textTransform: 'uppercase' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' }}>
                       EST. EXECUTION LOSS
                     </div>
                     <div style={{
@@ -518,7 +518,7 @@ export default function Dashboard() {
                     width: '100%'
                   }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent)' }} />
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#585852', textTransform: 'uppercase' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' }}>
                       TRADES ANALYSED
                     </div>
                     <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-primary, #ede8e0)' }}>
@@ -541,7 +541,7 @@ export default function Dashboard() {
                     width: '100%'
                   }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent)' }} />
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#585852', textTransform: 'uppercase' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' }}>
                       TOTAL VOLUME
                     </div>
                     <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-primary, #ede8e0)' }}>
@@ -564,7 +564,7 @@ export default function Dashboard() {
                   marginTop: '-1rem'
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.12em', color: '#585852' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.12em', color: '#888078' }}>
                   <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
                     <rect x="1" y="2" width="10" height="9" rx="1" stroke="currentColor" strokeWidth="1"/>
                     <line x1="1" y1="5" x2="11" y2="5" stroke="currentColor" strokeWidth="1"/>
@@ -573,7 +573,7 @@ export default function Dashboard() {
                   </svg>
                   PERIOD  ·  {formatPeriod(audit.period.start, audit.period.end)}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#585852' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#888078' }}>
                   <span>EXCHANGE  ·  {audit.exchange.toUpperCase()}</span>
                   <span>MAKER RATIO  ·  {Math.round(audit.breakdown.makerRatio * 100)}%</span>
                 </div>
@@ -582,10 +582,10 @@ export default function Dashboard() {
               {/* SCORE BARS — Part 3 */}
               <div style={{ marginBottom: '2.5rem', marginTop: '2.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#8a8880' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
                     COMPONENT SCORES
                   </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.18em', color: '#8a8880' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.18em', color: '#a09890' }}>
                     Weighted Composite
                   </div>
                 </div>
@@ -641,10 +641,10 @@ export default function Dashboard() {
                       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(to right, transparent, ${getScoreColor(component.score)}30, transparent)` }} />
                       
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.18em', color: '#7a7870' }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.18em', color: '#888078' }}>
                           {component.label}
                         </div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.1em', color: '#585852', padding: '2px 6px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '2px' }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.1em', color: '#888078', padding: '2px 6px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '2px' }}>
                           {component.weight}
                         </div>
                       </div>
@@ -669,10 +669,10 @@ export default function Dashboard() {
                       </div>
 
                       <div style={{ marginTop: 'auto' }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.08em', color: '#9a9490' }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.08em', color: '#b8b0a6' }}>
                           {component.value}
                         </div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.72rem', color: '#7a7870', lineHeight: 1.4, marginTop: '0.2rem' }}>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.72rem', color: '#888078', lineHeight: 1.4, marginTop: '0.2rem' }}>
                           {component.description}
                         </div>
                       </div>
@@ -683,7 +683,7 @@ export default function Dashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-[1rem]" style={{ marginTop: '1rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem', background: '#161614', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '3px' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#585852' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#888078' }}>
                       BEST SYMBOL
                     </div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', letterSpacing: '0.1em', fontWeight: 600, color: '#4ade80' }}>
@@ -691,7 +691,7 @@ export default function Dashboard() {
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem', background: '#161614', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '3px' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#585852' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#888078' }}>
                       WORST SYMBOL
                     </div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', letterSpacing: '0.1em', fontWeight: 600, color: '#f97316' }}>
@@ -704,17 +704,17 @@ export default function Dashboard() {
               {/* TREND CHART — Part 4 */}
               <div style={{ marginBottom: '2.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#8a8880' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
                     SCORE TREND
                   </div>
                   <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#a78b71' }} />
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#4a4a48' }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#585450' }}>
                         FillScore over time
                       </div>
                     </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#4a4a48', padding: '2px 8px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#585450', padding: '2px 8px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '2px' }}>
                       6 MONTHS
                     </div>
                   </div>
@@ -734,8 +734,8 @@ export default function Dashboard() {
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                              <XAxis dataKey="month" tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#585852', letterSpacing: '0.1em' }} axisLine={false} tickLine={false} dy={8} />
-                              <YAxis domain={[0, 100]} tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#585852' }} axisLine={false} tickLine={false} tickCount={5} dx={-4} />
+                              <XAxis dataKey="month" tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#888078', letterSpacing: '0.1em' }} axisLine={false} tickLine={false} dy={8} />
+                              <YAxis domain={[0, 100]} tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#888078' }} axisLine={false} tickLine={false} tickCount={5} dx={-4} />
                               <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(167,139,113,0.15)', strokeWidth: 1, strokeDasharray: '4 4' }} />
                               <ReferenceLine y={75} stroke="rgba(167,139,113,0.12)" strokeDasharray="4 4" label={{ value: 'GOOD', position: 'right', fontFamily: 'var(--font-mono)', fontSize: 9, fill: 'rgba(167,139,113,0.4)', letterSpacing: '0.1em' }} />
                               <Line type="monotone" dataKey="score" stroke="#a78b71" strokeWidth={1.5} dot={(props) => {
@@ -757,14 +757,14 @@ export default function Dashboard() {
                             {Math.abs(scoreDiff)} pts over 6 months
                           </span>
                         </div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.08em', color: '#3d3b38' }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.08em', color: '#888078' }}>
                           simulated trend  ·  real data after 2nd audit
                         </div>
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-[1rem]" style={{ marginTop: '1rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem', background: '#161614', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '3px' }}>
-                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#585852' }}>
+                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#888078' }}>
                             BEST HOUR
                           </div>
                           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.08em', color: '#4ade80' }}>
@@ -772,7 +772,7 @@ export default function Dashboard() {
                           </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem', background: '#161614', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '3px' }}>
-                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#585852' }}>
+                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#888078' }}>
                             WORST HOUR
                           </div>
                           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.08em', color: '#f97316' }}>
@@ -788,10 +788,10 @@ export default function Dashboard() {
               {/* RECOMMENDATIONS — Part 5 */}
               <div style={{ marginBottom: '3rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#8a8880' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
                     RECOMMENDATIONS
                   </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#4a4a48', padding: '2px 8px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '2px' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#585450', padding: '2px 8px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '2px' }}>
                     {audit.recommendations.length} INSIGHTS
                   </div>
                 </div>
@@ -843,7 +843,7 @@ export default function Dashboard() {
                             fontFamily: 'var(--font-mono)',
                             fontSize: '0.55rem',
                             letterSpacing: '0.1em',
-                            color: '#3d3b38'
+                            color: '#888078'
                           }}>{clampedIndex}</div>
                           <div style={{
                             fontSize: '1rem',
@@ -863,7 +863,7 @@ export default function Dashboard() {
                             fontFamily: 'var(--font-inter)',
                             fontSize: '0.88rem',
                             fontWeight: 500,
-                            color: '#c8c4bc',
+                            color: '#e8e4dc',
                             lineHeight: 1.4
                           }}>
                             {highlightDollars(headline)}
@@ -873,7 +873,7 @@ export default function Dashboard() {
                             <div style={{
                               fontFamily: 'var(--font-inter)',
                               fontSize: '0.78rem',
-                              color: '#585852',
+                              color: '#888078',
                               lineHeight: 1.6,
                               marginTop: '0.1rem'
                             }}>
@@ -931,7 +931,7 @@ export default function Dashboard() {
                       fontFamily: 'var(--font-mono)',
                       fontSize: '0.6rem',
                       letterSpacing: '0.1em',
-                      color: '#585852'
+                      color: '#888078'
                     }}>
                       Sortable table · Per-trade scores · Full breakdown
                     </div>
@@ -985,7 +985,7 @@ export default function Dashboard() {
                   fontFamily: 'var(--font-mono)',
                   fontSize: '0.58rem',
                   letterSpacing: '0.12em',
-                  color: '#3d3b38',
+                  color: '#888078',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '1.5rem'

@@ -25,14 +25,14 @@ body {
 /* Theme tokens */
 [data-theme="dark"], :root {
   --bg-base:        #0f0f0f;
-  --bg-raised:      #141412;
-  --bg-overlay:     #1a1917;
-  --bg-subtle:      #201f1d;
-  --bg-muted:       #2a2926;
-  --text-primary:   #ede8e0;
-  --text-secondary: #a09890;
-  --text-tertiary:  #6a6560;
-  --text-ghost:     #3d3b38;
+  --bg-raised:      #1a1917;
+  --bg-overlay:     #201f1d;
+  --bg-subtle:      #272523;
+  --bg-muted:       #302e2b;
+  --text-primary:   #f0ece4;
+  --text-secondary: #b8b0a6;
+  --text-tertiary:  #888078;
+  --text-ghost:     #585450;
   --gold:           #a78b71;
   --gold-light:     #c4a882;
   --gold-bright:    #e8d5b7;

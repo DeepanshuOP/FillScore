@@ -116,3 +116,207 @@ auditRouter.get('/score', async (req: Request, res: Response) => {
         return res.status(500).json({ error: error.message || 'Internal Server Error' });
     }
 });
+
+auditRouter.get('/trades', async (req, res) => {
+  try {
+    const { 
+      userId, symbol, side, grade,
+      page = '1', limit = '50' 
+    } = req.query as Record<string, string>;
+
+    if (!userId) {
+      return res.status(400).json({ 
+        error: 'userId required' 
+      });
+    }
+
+    const query: Record<string, unknown> = { 
+      userId,
+      executionPrice: { $exists: true, $ne: null },
+      fillScore: { $exists: true, $ne: null }
+    };
+
+    if (symbol && symbol !== 'ALL') 
+      query.symbol = symbol;
+    if (side && side !== 'ALL') 
+      query.side = side;
+    if (grade && grade !== 'ALL') 
+      query.fillGrade = grade;
+
+    const pageNum = parseInt(page);
+    const limitNum = parseInt(limit);
+
+    const total = await Trade.countDocuments(query);
+    const trades = await Trade.find(query)
+      .sort({ executedAt: -1 })
+      .skip((pageNum - 1) * limitNum)
+      .limit(limitNum)
+      .lean();
+
+    const formattedTrades = trades.map((t: any) => ({
+      ...t,
+      notionalValue: t.notionalValue ?? t.notional,
+      feePaid: t.feePaid ?? t.fee,
+      slippageBps: t.slippageBps ?? t.arrivalSlippageBps ?? t.vwapSlippageBps ?? 0
+    }));
+
+    return res.json({
+      trades: formattedTrades,
+      total,
+      page: pageNum,
+      pages: Math.ceil(total / limitNum)
+    });
+  } catch (err) {
+    console.error('GET /trades error:', err);
+    return res.status(500).json({ 
+      error: 'Failed to fetch trades' 
+    });
+  }
+});
+
+auditRouter.get('/analytics', async (req, res) => {
+  try {
+    const { userId } = req.query as { userId: string }
+    if (!userId) return res.status(400).json({ 
+      error: 'userId required' 
+    })
+
+    const trades = await Trade.find({ 
+      userId,
+      fillScore: { $exists: true, $ne: null }
+    }).lean()
+
+    if (!trades.length) return res.status(404).json({ 
+      error: 'No trades found' 
+    })
+
+    // 1. Heatmap: 24 hours × 7 days grid
+    // dayOfWeek: 0=Sun, 1=Mon ... 6=Sat
+    const heatmap: Record<string, {
+      count: number, totalScore: number
+    }> = {}
+    
+    for (let d = 0; d < 7; d++) {
+      for (let h = 0; h < 24; h++) {
+        heatmap[`${d}-${h}`] = { 
+          count: 0, totalScore: 0 
+        }
+      }
+    }
+    
+    trades.forEach(t => {
+      const dt = new Date(t.executedAt)
+      let day = dt.getUTCDay()
+      // Adjust if we want monday=0 but getUTCDay: sun=0
+      const key = `${day}-${dt.getUTCHours()}`
+      if (heatmap[key]) {
+        heatmap[key].count++
+        heatmap[key].totalScore += t.fillScore || 0
+      }
+    })
+
+    const heatmapData = Object.entries(heatmap).map(
+      ([key, val]) => {
+        const [day, hour] = key.split('-').map(Number)
+        return {
+          day, hour,
+          count: val.count,
+          avgScore: val.count > 0
+            ? Math.round(val.totalScore / val.count)
+            : 0
+        }
+      }
+    )
+
+    // 2. Symbol breakdown
+    const symbolMap: Record<string, {
+      count: number
+      totalScore: number
+      totalNotional: number
+      totalFees: number
+      makerCount: number
+    }> = {}
+
+    trades.forEach(t => {
+      if (!symbolMap[t.symbol]) {
+        symbolMap[t.symbol] = {
+          count: 0, totalScore: 0,
+          totalNotional: 0, totalFees: 0,
+          makerCount: 0
+        }
+      }
+      symbolMap[t.symbol].count++
+      symbolMap[t.symbol].totalScore += t.fillScore || 0
+      symbolMap[t.symbol].totalNotional += 
+        (t as any).notionalValue || t.notional || 0
+      symbolMap[t.symbol].totalFees += 
+        (t as any).feePaid || t.fee || 0
+      if (t.isMaker) symbolMap[t.symbol].makerCount++
+    })
+
+    const symbolBreakdown = Object.entries(symbolMap)
+      .map(([symbol, data]) => ({
+        symbol,
+        count: data.count,
+        avgScore: Math.round(
+          data.totalScore / data.count),
+        totalNotional: data.totalNotional,
+        totalFees: data.totalFees,
+        makerRatio: Math.round(
+          (data.makerCount / data.count) * 100)
+      }))
+      .sort((a, b) => b.avgScore - a.avgScore)
+
+    // 3. Score distribution buckets
+    const buckets: Record<string, number> = {
+      'A (90-100)': 0,
+      'B (75-89)': 0,
+      'C (60-74)': 0,
+      'D (40-59)': 0,
+      'F (0-39)': 0
+    }
+    trades.forEach(t => {
+      const s = t.fillScore || 0
+      if (s >= 90) buckets['A (90-100)']++
+      else if (s >= 75) buckets['B (75-89)']++
+      else if (s >= 60) buckets['C (60-74)']++
+      else if (s >= 40) buckets['D (40-59)']++
+      else buckets['F (0-39)']++
+    })
+
+    // 4. Hourly avg score (for bar chart)
+    const hourlyMap: Record<number, {
+      total: number, count: number
+    }> = {}
+    for (let h = 0; h < 24; h++) {
+      hourlyMap[h] = { total: 0, count: 0 }
+    }
+    trades.forEach(t => {
+      const h = new Date(t.executedAt).getUTCHours()
+      hourlyMap[h].total += t.fillScore || 0
+      hourlyMap[h].count++
+    })
+    const hourlyScores = Object.entries(hourlyMap)
+      .map(([hour, data]) => ({
+        hour: parseInt(hour),
+        avgScore: data.count > 0
+          ? Math.round(data.total / data.count) : 0,
+        count: data.count
+      }))
+
+    return res.json({
+      heatmapData,
+      symbolBreakdown,
+      scoreDistribution: Object.entries(buckets)
+        .map(([grade, count]) => ({ grade, count })),
+      hourlyScores,
+      totalTrades: trades.length
+    })
+
+  } catch (err) {
+    console.error('GET /analytics error:', err)
+    return res.status(500).json({ 
+      error: 'Failed to fetch analytics' 
+    })
+  }
+});
