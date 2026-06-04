@@ -41,6 +41,7 @@ export default function Trades() {
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [userId, setUserId] = useState<string>('')
+  const [exporting, setExporting] = useState(false)
   // Human-readable exchange label derived from trades[0].exchange.
   // 'binance' → 'Binance Spot' | 'bybit' → 'Bybit Derivatives' | multiple → 'All Exchanges'
   const [displayExchange, setDisplayExchange] = useState<string>('All Exchanges')
@@ -243,6 +244,22 @@ export default function Trades() {
   const goToPrev = () => { if (currentIndex > 0) setSelectedTrade(sortedTrades[currentIndex - 1]) }
   const goToNext = () => { if (currentIndex < sortedTrades.length - 1) setSelectedTrade(sortedTrades[currentIndex + 1]) }
 
+  const handleExport = () => {
+    if (exporting || !userId) return;
+    setExporting(true);
+    
+    let url = `${process.env.NEXT_PUBLIC_API_URL}/trades/export?userId=${userId}`;
+    if (exchangeRaw && exchangeRaw !== 'multi') {
+      url += `&exchange=${exchangeRaw}`;
+    }
+    
+    window.open(url, '_blank');
+    
+    setTimeout(() => {
+      setExporting(false);
+    }, 300);
+  };
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-base, #0f0f0f)', color: 'var(--text-primary, #ede8e0)', fontFamily: 'var(--font-inter)' }}>
       {/* HEADER */}
@@ -274,6 +291,23 @@ export default function Trades() {
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.88rem', fontWeight: 600, color: '#c4a882' }}>{totalMakers}</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.12em', color: '#888078' }}>MAKER FILLS</span>
             </div>
+            
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '6px',
+                background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
+                padding: '6px 12px', color: '#c4a882',
+                fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
+                cursor: exporting ? 'wait' : 'pointer', transition: 'all 0.2s ease',
+                opacity: exporting ? 0.6 : 1, marginLeft: '1rem', height: 'fit-content', marginBottom: '2px'
+              }}
+              onMouseOver={e => { if (!exporting) e.currentTarget.style.background = 'rgba(167,139,113,0.1)' }}
+              onMouseOut={e => { if (!exporting) e.currentTarget.style.background = 'transparent' }}
+            >
+              {exporting ? 'EXPORTING...' : '↓ EXPORT CSV'}
+            </button>
           </div>
         </div>
 

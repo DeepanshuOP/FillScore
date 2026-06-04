@@ -117,6 +117,59 @@ auditRouter.get('/score', async (req: Request, res: Response) => {
     }
 });
 
+auditRouter.get('/trades/export', async (req, res) => {
+  try {
+    const { userId, exchange, symbol } = req.query as Record<string, string>;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId required' });
+    }
+
+    const query: Record<string, unknown> = { userId };
+    if (exchange && exchange !== 'multi' && exchange !== 'ALL') {
+      query.exchange = new RegExp(`^${exchange}$`, 'i');
+    }
+    if (symbol && symbol !== 'ALL') {
+      query.symbol = symbol;
+    }
+
+    const trades = await Trade.find(query).sort({ executedAt: -1 }).lean();
+    
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="fillscore-trades-${userId}-${new Date().toISOString().split('T')[0]}.csv"`);
+
+    if (trades.length === 0) {
+      return res.send('Trade ID,Date,Time (UTC),Symbol,Exchange,Side,Order Type,Notional (USD),Price,Fee (USD),Slippage (bps),Fill Score,Grade,Arrival Price,VWAP 5min,Spread (bps)\n# No trades found for this user\n');
+    }
+
+    const header = 'Trade ID,Date,Time (UTC),Symbol,Exchange,Side,Order Type,Notional (USD),Price,Fee (USD),Slippage (bps),Fill Score,Grade,Arrival Price,VWAP 5min,Spread (bps)\n';
+    const rows = trades.map((t: any) => {
+      const dt = new Date(t.executedAt);
+      const dateStr = dt.toISOString().split('T')[0];
+      const timeStr = dt.toISOString().split('T')[1].substring(0, 8);
+      const ex = (t.exchange || '').toUpperCase();
+      const side = (t.side || '').toUpperCase();
+      const orderType = t.isMaker ? 'MAKER' : 'TAKER';
+      const notional = t.notionalValue ?? t.notional ?? 0;
+      const price = t.executionPrice ?? t.price ?? 0;
+      const fee = t.feePaid ?? t.fee ?? 0;
+      const slippage = t.arrivalSlippageBps ?? 0;
+      const fillScore = t.fillScore ?? '';
+      const grade = t.fillGrade ?? '';
+      const arrival = t.arrivalPriceProxy ?? '';
+      const vwap = t.vwap5min ?? '';
+      const spread = t.spreadBps ?? '';
+      
+      return `${t.tradeId || t._id},${dateStr},${timeStr},${t.symbol},${ex},${side},${orderType},${notional},${price},${fee},${slippage},${fillScore},${grade},${arrival},${vwap},${spread}`;
+    });
+
+    return res.send(header + rows.join('\n'));
+  } catch (err) {
+    console.error('GET /trades/export error:', err);
+    return res.status(500).json({ error: 'Failed to export trades' });
+  }
+});
+
 auditRouter.get('/trades', async (req, res) => {
   try {
     const { 
