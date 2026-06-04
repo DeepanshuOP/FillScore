@@ -467,13 +467,13 @@ export default function Dashboard() {
                   }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent)' }} />
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' }}>
-                      EST. EXECUTION LOSS
+                      EST. EXECUTION COST
                     </div>
                     <div style={{
                       fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em',
-                      color: audit.estimatedLossUSD > 100 ? '#f97316' : audit.estimatedLossUSD > 50 ? '#fcd34d' : '#4ade80'
+                      color: (attribution?.totalCost || 0) > 100 ? '#f97316' : (attribution?.totalCost || 0) > 50 ? '#fcd34d' : '#4ade80'
                     }}>
-                      {formatCurrency(audit.estimatedLossUSD)}
+                      {formatCurrency(attribution?.totalCost || 0)}
                     </div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#484844' }}>
                       this period
