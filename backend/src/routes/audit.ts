@@ -103,7 +103,7 @@ auditRouter.get('/score', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'Missing userId parameter' });
         }
 
-        const latestAudit = await Audit.findOne({ userId }).sort({ 'period.start': -1 });
+        const latestAudit = await Audit.findOne({ userId }).sort({ createdAt: -1 });
 
         if (!latestAudit) {
             return res.status(404).json({ error: 'No audit found for this user.' });
