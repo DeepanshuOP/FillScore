@@ -178,6 +178,16 @@ export default function Dashboard() {
   const [userId, setUserId] = useState<string | null>(null);
   const [barsVisible, setBarsVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+
+  const handleDownloadReport = () => {
+    if (downloading || !userId) return;
+    setDownloading(true);
+    window.open(`${process.env.NEXT_PUBLIC_API_URL}/report?userId=${userId}`, '_blank');
+    setTimeout(() => {
+      setDownloading(false);
+    }, 500);
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -385,6 +395,24 @@ export default function Dashboard() {
           const cfg = gradeConfig[audit.fillGrade];
           return (
             <div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+                <button
+                  onClick={handleDownloadReport}
+                  disabled={downloading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
+                    padding: '6px 12px', color: '#c4a882',
+                    fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
+                    cursor: downloading ? 'wait' : 'pointer', transition: 'all 0.2s ease',
+                    opacity: downloading ? 0.6 : 1, height: 'fit-content'
+                  }}
+                  onMouseOver={e => { if (!downloading) e.currentTarget.style.background = 'rgba(167,139,113,0.1)' }}
+                  onMouseOut={e => { if (!downloading) e.currentTarget.style.background = 'transparent' }}
+                >
+                  {downloading ? 'GENERATING...' : '↓ DOWNLOAD REPORT'}
+                </button>
+              </div>
               {/* HERO SECTION — Part 2 */}
               <div 
                 className="grid grid-cols-1 md:grid-cols-[auto_1fr] items-center gap-[3rem] mb-[3rem] p-[2rem_2.5rem] relative overflow-hidden w-full"

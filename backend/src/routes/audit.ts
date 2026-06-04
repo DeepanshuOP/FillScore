@@ -7,6 +7,8 @@ import { Trade } from '../models/Trade';
 import { Audit } from '../models/Audit';
 import { computeAuditSummary } from '../scoring/audit';
 import { scoreTrade } from '../scoring/engine';
+import { aggregateCostAttribution } from '../scoring/attribution';
+import { ReportService } from '../services/ReportService';
 import { EnrichedTrade } from '../types';
 
 export const auditRouter = Router();
@@ -114,6 +116,91 @@ auditRouter.get('/score', async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Error fetching score:', error);
         return res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+});
+
+auditRouter.get('/report', async (req: Request, res: Response) => {
+    try {
+        const userId = req.query.userId as string;
+        if (!userId) {
+            return res.status(400).json({ error: 'Missing userId parameter' });
+        }
+
+        const latestAudit = await Audit.findOne({ userId }).sort({ createdAt: -1 });
+        if (!latestAudit) {
+            return res.status(404).json({ error: 'No audit found for this user.' });
+        }
+
+        const tradeDocs = await Trade.find({ userId, fillScore: { $exists: true, $ne: null } }).lean();
+        const trades = tradeDocs.map(doc => ({ ...doc, executedAt: new Date(doc.executedAt) } as unknown as EnrichedTrade));
+        
+        const attribution = trades.length > 0 ? aggregateCostAttribution(trades) : null;
+        
+        const worstTrades = await Trade.find({ userId, fillScore: { $exists: true, $ne: null } })
+            .sort({ fillScore: 1 })
+            .limit(10)
+            .lean();
+
+        // Fetch exchange comparison data (same pipeline as /analytics/exchange-comparison)
+        const exchPipeline: any[] = [
+            { $match: { userId } },
+            {
+                $group: {
+                    _id: '$exchange',
+                    avgFillScore: { $avg: '$fillScore' },
+                    totalNotional: { $sum: '$notional' },
+                    tradeCount: { $sum: 1 },
+                    makerCount: { $sum: { $cond: [{ $eq: ['$isMaker', true] }, 1, 0] } },
+                    avgSlippageBps: { $avg: '$arrivalSlippageBps' },
+                    avgFeeDragBps: { $avg: { $multiply: [{ $divide: ['$fee', '$notional'] }, 10000] } }
+                }
+            },
+            {
+                $project: {
+                    exchange: '$_id', _id: 0,
+                    avgFillScore: 1, totalNotional: 1, tradeCount: 1,
+                    makerRatio: { $divide: ['$makerCount', '$tradeCount'] },
+                    avgSlippageBps: 1, avgFeeDragBps: 1
+                }
+            },
+            { $sort: { avgFillScore: -1 } }
+        ];
+        const exchanges = await Trade.aggregate(exchPipeline);
+
+        let comparisonData = null;
+        if (exchanges.length > 1) {
+            const bestExchange = exchanges[0].exchange;
+            const worstExchange = exchanges[exchanges.length - 1].exchange;
+            const venueAlphaBps = Math.abs(exchanges[0].avgSlippageBps - exchanges[exchanges.length - 1].avgSlippageBps);
+
+            const symPipeline: any[] = [
+                { $match: { userId } },
+                { $group: { _id: { symbol: '$symbol', exchange: '$exchange' }, avgScore: { $avg: '$fillScore' } } },
+                { $group: { _id: '$_id.symbol', scores: { $push: { exchange: '$_id.exchange', score: '$avgScore' } } } }
+            ];
+            const symbolData = await Trade.aggregate(symPipeline);
+            const perSymbolRanking = symbolData.map((s: any) => {
+                const scoresByExchange: Record<string, number> = {};
+                let bestEx = ''; let highestScore = -Infinity;
+                s.scores.forEach((item: any) => {
+                    scoresByExchange[item.exchange] = Math.round(item.score);
+                    if (item.score > highestScore) { highestScore = item.score; bestEx = item.exchange; }
+                });
+                return { symbol: s._id, bestExchange: bestEx, scoresByExchange };
+            });
+
+            comparisonData = { exchanges, bestExchange, worstExchange, venueAlphaBps, perSymbolRanking };
+        }
+
+        const doc = ReportService.generateReport(latestAudit, attribution, worstTrades, comparisonData);
+        
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="fillscore-audit-${userId}-${new Date().toISOString().split('T')[0]}.pdf"`);
+        
+        doc.pipe(res);
+    } catch (error: any) {
+        console.error('Error generating report:', error);
+        return res.status(500).json({ error: 'Failed to generate report' });
     }
 });
 
