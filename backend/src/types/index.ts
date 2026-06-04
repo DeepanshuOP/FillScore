@@ -13,6 +13,21 @@ export interface BinanceRawTrade {
     isBestMatch: boolean;
 }
 
+export interface BybitRawTrade {
+    execId: string;
+    orderId: string;
+    symbol: string;
+    execPrice: string;
+    execQty: string;
+    execValue: string;
+    execFee: string;
+    feeCurrency: string;
+    execTime: string;
+    side: 'Buy' | 'Sell';
+    orderType: string;
+    isMaker: boolean;
+}
+
 export type BinanceKline = [
     number, // Open time
     string, // Open
@@ -30,7 +45,7 @@ export type BinanceKline = [
 
 export interface NormalisedTrade {
     userId: string;
-    exchange: "binance" | "bybit";
+    exchange: "binance" | "bybit" | "okx";
     symbol: string;
     tradeId: string;
     orderId: string;
@@ -100,3 +115,17 @@ export interface FetchTradesOptions {
     endTime: number;
     userId: string;
 }
+
+export interface OKXRawTrade {
+    billId: string;
+    ordId: string;
+    instId: string;        // e.g. "BTC-USDT"
+    side: 'buy' | 'sell';
+    fillPx: string;        // execution price
+    fillSz: string;        // quantity
+    fee: string;           // negative = fee paid
+    feeCcy: string;
+    ts: string;            // Unix ms timestamp string
+    execType: 'M' | 'T';  // M=maker, T=taker
+}
+

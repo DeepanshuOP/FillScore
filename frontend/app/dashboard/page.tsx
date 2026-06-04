@@ -1,10 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Navbar from '../components/Navbar';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
+
+interface CostAttribution {
+  slippageCost: number;
+  feeCost: number;
+  timingCost: number;
+  spreadCost: number;
+  totalCost: number;
+}
 
 interface AuditBreakdown {
   avgSlippageBps: number;
@@ -121,7 +130,7 @@ const SkeletonBlock = ({ width = '100%', height = '1rem', borderRadius = '2px' }
   height?: string;
   borderRadius?: string;
 }) => (
-  <div style={{
+  <div suppressHydrationWarning style={{
     width, height, borderRadius,
     background: 'linear-gradient(90deg, #1a1917 25%, #201f1d 50%, #1a1917 75%)',
     backgroundSize: '200% 100%',
@@ -151,12 +160,28 @@ const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?:
   );
 };
 
+const getExchangeColor = (exchange: string) => {
+  const ex = exchange?.toLowerCase() || '';
+  if (ex === 'binance') return '#F0B90B';
+  if (ex === 'bybit') return '#F7A600';
+  if (ex === 'okx') return '#1E8FFF';
+  return '#ede8e0';
+};
+
 export default function Dashboard() {
   const [audit, setAudit] = useState<AuditSummary | null>(null);
+  const [attribution, setAttribution] = useState<CostAttribution | null>(null);
+  const [analytics, setAnalytics] = useState<any>(null);
+  const [exchangeComparison, setExchangeComparison] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [barsVisible, setBarsVisible] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (audit) {
@@ -179,12 +204,27 @@ export default function Dashboard() {
     
     const fetchAudit = async () => {
       try {
-        const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/score?userId=${id}`
-        );
+        const [res, attrRes, analyticsRes, comparisonRes] = await Promise.all([
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/score?userId=${id}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/attribution?userId=${id}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics?userId=${id}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics/exchange-comparison?userId=${id}`)
+        ]);
         if (!res.ok) throw new Error('Failed to fetch audit data');
         const data = await res.json();
         setAudit(data);
+        if (attrRes.ok) {
+          const attrData = await attrRes.json();
+          setAttribution(attrData);
+        }
+        if (analyticsRes.ok) {
+          const analyticsData = await analyticsRes.json();
+          setAnalytics(analyticsData);
+        }
+        if (comparisonRes.ok) {
+          const compData = await comparisonRes.json();
+          setExchangeComparison(compData);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Something went wrong');
       } finally {
@@ -194,6 +234,41 @@ export default function Dashboard() {
     
     fetchAudit();
   }, []);
+
+  if (!mounted) {
+    return (
+      <div suppressHydrationWarning style={{
+        minHeight: '100vh',
+        background: 'var(--bg-base, #0f0f0f)',
+        color: 'var(--text-primary, #ede8e0)',
+        fontFamily: 'var(--font-inter)',
+        paddingBottom: '4rem'
+      }}>
+        {/* HEADER SKELETON */}
+        <Navbar userId={userId || undefined} currentPage="dashboard" />
+
+        {/* MAIN CONTENT AREA SKELETON */}
+        <main suppressHydrationWarning style={{ maxWidth: '1100px', margin: '0 auto', padding: '48px 2rem 2rem' }}>
+          <div suppressHydrationWarning>
+            <div suppressHydrationWarning style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
+              <SkeletonBlock width="200px" height="200px" borderRadius="4px"/>
+              <div suppressHydrationWarning style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <SkeletonBlock width="60%" height="2.5rem"/>
+                <SkeletonBlock width="40%" height="1.25rem"/>
+                <SkeletonBlock width="80%" height="1.25rem"/>
+              </div>
+            </div>
+            <div suppressHydrationWarning style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+              {[1,2,3,4].map(i => <SkeletonBlock key={i} height="100px" borderRadius="3px"/>)}
+            </div>
+            <div suppressHydrationWarning style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+              {[1,2,3].map(i => <SkeletonBlock key={i} height="72px" borderRadius="3px"/>)}
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -205,114 +280,13 @@ export default function Dashboard() {
     }}>
       
       {/* FIXED HEADER */}
-      <header style={{
-        position: 'fixed',
-        top: 0, left: 0, right: 0,
-        zIndex: 100,
-        padding: '1.25rem 2.5rem',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        background: 'rgba(10,10,10,0.85)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.04)'
-      }}>
-        {/* Left side — Logo lockup */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.9rem',
-            letterSpacing: '0.38em',
-            background: 'linear-gradient(135deg, #a78b71 0%, #e8d5b7 45%, #c4a882 70%, #a78b71 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>
-            FILLSCORE
-          </span>
-          <div className="hidden sm:block" style={{
-            width: '1px',
-            height: '14px',
-            background: 'rgba(167,139,113,0.25)',
-            margin: '0 4px'
-          }} />
-          <span className="hidden sm:inline-block" style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.55rem',
-            letterSpacing: '0.15em',
-            color: '#8a7060',
-            padding: '2px 6px',
-            border: '1px solid rgba(167,139,113,0.15)',
-            borderRadius: '2px'
-          }}>
-            v0.9 beta
-          </span>
-        </div>
-
-        {/* Right side */}
-        <div style={{ display: 'flex', gap: '1.75rem', alignItems: 'center' }}>
-          
-          {/* Item 1 — Last analysed date */}
-          <span className="hidden sm:inline-block" style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.6rem',
-            letterSpacing: '0.15em',
-            color: '#888078'
-          }}>
-            LAST ANALYSED  ·  {loading ? '—' : formatDate(audit?.createdAt)}
-          </span>
-
-          {/* Item 2 — Re-analyse button */}
-          <button 
-            onClick={() => window.location.href = '/'}
-            style={{
-              padding: '0.4rem 0.875rem',
-              border: '1px solid rgba(167,139,113,0.2)',
-              borderRadius: '2px',
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.6rem',
-              letterSpacing: '0.12em',
-              color: 'var(--gold, #a78b71)',
-              background: 'transparent',
-              cursor: 'pointer',
-              transition: 'all 0.18s ease'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.background = 'rgba(167,139,113,0.06)';
-              e.currentTarget.style.borderColor = 'rgba(167,139,113,0.4)';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.borderColor = 'rgba(167,139,113,0.2)';
-            }}
-          >
-            RE-ANALYSE
-          </button>
-
-          {/* Item 3 — Exchange badge */}
-          <span style={{
-            padding: '0.3rem 0.7rem',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '2px',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.58rem',
-            letterSpacing: '0.12em',
-            color: '#888078',
-            background: 'rgba(255,255,255,0.02)',
-            textTransform: 'uppercase'
-          }}>
-            {loading ? '—' : (audit?.exchange ?? '—')}
-          </span>
-
-        </div>
-      </header>
+      <Navbar userId={userId || undefined} exchange={audit?.exchange} currentPage="dashboard" />
 
       {/* MAIN CONTENT AREA */}
       <main style={{
         maxWidth: '1100px',
         margin: '0 auto',
-        padding: '7rem 2rem 2rem'
+        padding: '48px 2rem 2rem'
       }}>
 
         {/* SKELETON LOADER */}
@@ -700,6 +674,58 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* EXECUTION COST BREAKDOWN */}
+              {attribution && (
+                <div style={{ marginBottom: '2.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890', textTransform: 'uppercase' }}>
+                      Execution Cost Breakdown
+                    </div>
+                  </div>
+
+                  <div style={{
+                    padding: '1.75rem 2rem',
+                    background: '#161614',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '3px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(167,139,113,0.3), transparent)' }} />
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-[1.5rem] mb-[1.5rem]">
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', marginBottom: '0.5rem' }}>SLIPPAGE</div>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.4rem', color: '#ede8e0', letterSpacing: '-0.02em' }}>{formatCurrency(attribution.slippageCost)}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', marginBottom: '0.5rem' }}>FEES</div>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.4rem', color: '#ede8e0', letterSpacing: '-0.02em' }}>{formatCurrency(attribution.feeCost)}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', marginBottom: '0.5rem' }}>TIMING</div>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.4rem', color: '#ede8e0', letterSpacing: '-0.02em' }}>{formatCurrency(attribution.timingCost)}</div>
+                      </div>
+                      <div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', marginBottom: '0.5rem' }}>SPREAD</div>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.4rem', color: '#ede8e0', letterSpacing: '-0.02em' }}>{formatCurrency(attribution.spreadCost)}</div>
+                      </div>
+                    </div>
+                    
+                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', marginBottom: '1.5rem' }} />
+                    
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', marginBottom: '0.5rem' }}>TOTAL COST</div>
+                      <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '2rem', color: '#f97316', lineHeight: 1, letterSpacing: '-0.03em' }}>{formatCurrency(attribution.totalCost)}</div>
+                      <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.82rem', color: '#4ade80', marginTop: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <span style={{ fontSize: '0.8rem' }}>◈</span>
+                        Improving timing could save ~{formatCurrency(attribution.timingCost)}/month
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
               
               {/* TREND CHART — Part 4 */}
               <div style={{ marginBottom: '2.5rem' }}>
@@ -784,6 +810,195 @@ export default function Dashboard() {
                   );
                 })()}
               </div>
+
+              {/* EXCHANGE COMPARISON */}
+              {exchangeComparison && (
+                <div style={{ marginBottom: '2.5rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
+                      EXCHANGE COMPARISON
+                    </div>
+                  </div>
+
+                  {exchangeComparison.exchanges && exchangeComparison.exchanges.length > 1 ? (
+                    <>
+                      <div style={{
+                        padding: '16px 20px',
+                        background: 'rgba(212,175,55,0.05)',
+                        border: '1px solid rgba(212,175,55,0.3)',
+                        borderRadius: '4px',
+                        marginBottom: '20px',
+                        fontFamily: 'var(--font-inter)',
+                        fontSize: '0.85rem',
+                        color: '#ede8e0'
+                      }}>
+                        Routing to <span style={{ color: getExchangeColor(exchangeComparison.bestExchange), fontWeight: 600, textTransform: 'uppercase' }}>{exchangeComparison.bestExchange}</span> instead of <span style={{ color: getExchangeColor(exchangeComparison.worstExchange), fontWeight: 600, textTransform: 'uppercase' }}>{exchangeComparison.worstExchange}</span> saves you <span style={{ color: '#d4af37', fontWeight: 600 }}>~{exchangeComparison.venueAlphaBps.toFixed(1)} bps</span> on slippage.
+                      </div>
+
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${exchangeComparison.exchanges.length}, 1fr)`,
+                        gap: '16px',
+                        marginBottom: '24px'
+                      }}>
+                        {exchangeComparison.exchanges.map((ex: any, idx: number) => {
+                          const isBest = idx === 0;
+                          const exColor = getExchangeColor(ex.exchange);
+                          return (
+                            <div key={ex.exchange} style={{
+                              padding: '20px',
+                              background: 'rgba(26, 25, 23, 0.8)',
+                              border: `1px solid ${isBest ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.06)'}`,
+                              borderRadius: '4px',
+                              position: 'relative'
+                            }}>
+                              {isBest && (
+                                <div style={{
+                                  position: 'absolute',
+                                  top: '-10px',
+                                  right: '16px',
+                                  background: 'rgba(212,175,55,0.15)',
+                                  border: '1px solid rgba(212,175,55,0.5)',
+                                  color: '#d4af37',
+                                  padding: '2px 8px',
+                                  borderRadius: '3px',
+                                  fontFamily: 'var(--font-mono)',
+                                  fontSize: '0.55rem',
+                                  letterSpacing: '0.1em',
+                                  fontWeight: 700
+                                }}>
+                                  BEST VENUE
+                                </div>
+                              )}
+                              <div style={{ marginBottom: '12px' }}>
+                                <span style={{ 
+                                  color: exColor, 
+                                  fontFamily: 'var(--font-mono)', fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', 
+                                  border: `1px solid ${exColor}50`, 
+                                  borderRadius: '4px', textTransform: 'uppercase' 
+                                }}>
+                                  {ex.exchange}
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#ede8e0', marginBottom: '16px', fontFamily: 'var(--font-inter)' }}>
+                                {Math.round(ex.avgFillScore)} <span style={{ fontSize: '0.8rem', color: '#888078', fontWeight: 400 }}>score</span>
+                              </div>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#888078' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>MAKER RATIO</span>
+                                  <span style={{ color: '#ede8e0' }}>{Math.round(ex.makerRatio * 100)}%</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>AVG SLIPPAGE</span>
+                                  <span style={{ color: '#ede8e0' }}>{ex.avgSlippageBps.toFixed(1)} bps</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>NOTIONAL</span>
+                                  <span style={{ color: '#ede8e0' }}>{formatCurrency(ex.totalNotional)}</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                                  <span>TRADES</span>
+                                  <span style={{ color: '#ede8e0' }}>{ex.tradeCount}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      <div style={{
+                        background: 'rgba(26, 25, 23, 0.8)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        borderRadius: '4px',
+                        padding: '20px',
+                        marginBottom: '24px'
+                      }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.15em', color: '#888078', marginBottom: '16px' }}>
+                          PER-SYMBOL RANKING
+                        </div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
+                          <thead>
+                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#a09890', textAlign: 'left' }}>
+                              <th style={{ padding: '8px 0', fontWeight: 500 }}>SYMBOL</th>
+                              <th style={{ padding: '8px 0', fontWeight: 500 }}>BEST VENUE</th>
+                              <th style={{ padding: '8px 0', fontWeight: 500, textAlign: 'right' }}>BINANCE</th>
+                              <th style={{ padding: '8px 0', fontWeight: 500, textAlign: 'right' }}>BYBIT</th>
+                              <th style={{ padding: '8px 0', fontWeight: 500, textAlign: 'right' }}>OKX</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {exchangeComparison.perSymbolRanking.map((row: any, idx: number) => (
+                              <tr key={row.symbol} style={{ borderBottom: idx !== exchangeComparison.perSymbolRanking.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none' }}>
+                                <td style={{ padding: '12px 0', color: '#ede8e0' }}>{row.symbol}</td>
+                                <td style={{ padding: '12px 0' }}>
+                                  <span style={{ color: getExchangeColor(row.bestExchange), textTransform: 'uppercase' }}>
+                                    {row.bestExchange}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '12px 0', textAlign: 'right', color: row.bestExchange === 'binance' ? '#4ade80' : '#888078' }}>
+                                  {row.scoresByExchange.binance || '-'}
+                                </td>
+                                <td style={{ padding: '12px 0', textAlign: 'right', color: row.bestExchange === 'bybit' ? '#4ade80' : '#888078' }}>
+                                  {row.scoresByExchange.bybit || '-'}
+                                </td>
+                                <td style={{ padding: '12px 0', textAlign: 'right', color: row.bestExchange === 'okx' ? '#4ade80' : '#888078' }}>
+                                  {row.scoresByExchange.okx || '-'}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{
+                        padding: '20px',
+                        background: 'rgba(26, 25, 23, 0.8)',
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        borderRadius: '4px',
+                        marginBottom: '12px'
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ 
+                            color: getExchangeColor(audit.exchange), 
+                            fontFamily: 'var(--font-mono)', fontSize: '0.8rem', fontWeight: 600, padding: '2px 8px', 
+                            border: `1px solid ${getExchangeColor(audit.exchange)}50`, 
+                            borderRadius: '4px', textTransform: 'uppercase' 
+                          }}>
+                            {audit.exchange}
+                          </span>
+                          <span style={{ color: '#ede8e0', fontSize: '1.1rem', fontWeight: 600 }}>{Math.round(audit.avgFillScore)} avg score</span>
+                        </div>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginTop: '16px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#888078' }}>
+                          <div>TOTAL NOTIONAL: <span style={{ color: '#ede8e0' }}>{formatCurrency(audit.totalNotional)}</span></div>
+                          <div>MAKER RATIO: <span style={{ color: '#ede8e0' }}>{Math.round(audit.breakdown.makerRatio * 100)}%</span></div>
+                          <div>AVG SLIPPAGE: <span style={{ color: '#ede8e0' }}>{audit.breakdown.avgSlippageBps.toFixed(1)} bps</span></div>
+                        </div>
+                      </div>
+                      <div style={{
+                        fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#686460', marginBottom: '24px', fontStyle: 'italic'
+                      }}>
+                        Connect multiple exchanges to unlock venue comparison — available in the authenticated version.
+                      </div>
+                    </>
+                  )}
+
+                  {/* Benchmark Row */}
+                  <div style={{
+                    padding: '20px',
+                    background: 'rgba(26, 25, 23, 0.8)',
+                    border: '1px solid rgba(212,175,55,0.3)',
+                    borderRadius: '4px',
+                    marginBottom: '24px'
+                  }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ede8e0' }}>
+                      <span style={{ color: 'rgba(212,175,55,0.8)', fontWeight: 600, marginRight: '8px' }}>Synthetic Ideal Trader</span>
+                      Ideal Execution: 80% maker · 8-16 UTC · BTC/ETH only · est. score: 91
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* RECOMMENDATIONS — Part 5 */}
               <div style={{ marginBottom: '3rem' }}>

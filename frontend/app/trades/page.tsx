@@ -1,9 +1,11 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import Navbar from '../components/Navbar'
 
 interface Trade {
   _id: string
+  exchange: string          // 'binance' | 'bybit' — used for dynamic badge/subtitle
   symbol: string
   side: 'BUY' | 'SELL'
   quantity: number
@@ -39,6 +41,11 @@ export default function Trades() {
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [userId, setUserId] = useState<string>('')
+  // Human-readable exchange label derived from trades[0].exchange.
+  // 'binance' → 'Binance Spot' | 'bybit' → 'Bybit Derivatives' | multiple → 'All Exchanges'
+  const [displayExchange, setDisplayExchange] = useState<string>('All Exchanges')
+  // Raw exchange value used for accent colouring (binance/#F0B90B, bybit/#F7A600)
+  const [exchangeRaw, setExchangeRaw] = useState<string>('')
 
   const [totalBuys, setTotalBuys] = useState(0)
   const [totalSells, setTotalSells] = useState(0)
@@ -54,7 +61,7 @@ export default function Trades() {
   const fetchStats = async (uid: string) => {
     try {
       const res = await fetch(
-        `http://localhost:3001/api/trades?userId=${uid}&limit=1000`
+        `${process.env.NEXT_PUBLIC_API_URL}/trades?userId=${uid}&limit=1000`
       )
       const data = await res.json()
       const all = data.trades as Trade[]
@@ -88,11 +95,27 @@ export default function Trades() {
         page: String(page),
         limit: '50'
       })
-      const res = await fetch(`http://localhost:3001/api/trades?${params}`)
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trades?${params}`)
       const data: TradesResponse = await res.json()
       setTrades(data.trades)
       setTotal(data.total)
       setPages(data.pages)
+      // Derive exchange label; map raw value to human-readable form.
+      if (data.trades.length > 0) {
+        const exchangeSet = new Set<string>(data.trades.map((t: Trade) => t.exchange))
+        if (exchangeSet.size === 1) {
+          const raw = data.trades[0].exchange
+          setExchangeRaw(raw)
+          setDisplayExchange(
+            raw === 'binance' ? 'Binance Spot' :
+            raw === 'bybit'   ? 'Bybit Derivatives' :
+            raw.charAt(0).toUpperCase() + raw.slice(1)
+          )
+        } else {
+          setExchangeRaw('')
+          setDisplayExchange('All Exchanges')
+        }
+      }
     } catch {
       setTrades([])
     } finally {
@@ -167,8 +190,9 @@ export default function Trades() {
   }
 
 
-  const avgScore = trades.length
-    ? Math.round(trades.reduce((s,t) => s + t.fillScore, 0) / trades.length)
+  const scoredTrades = trades.filter(t => t.fillScore != null)
+  const avgScore = scoredTrades.length
+    ? Math.round(scoredTrades.reduce((s, t) => s + (t.fillScore ?? 0), 0) / scoredTrades.length)
     : 0
 
   const FilterPill = ({ label, value, options, onChange }: { label: string, value: string, options: string[], onChange: (v: string) => void }) => (
@@ -222,43 +246,10 @@ export default function Trades() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-base, #0f0f0f)', color: 'var(--text-primary, #ede8e0)', fontFamily: 'var(--font-inter)' }}>
       {/* HEADER */}
-      <header style={{
-        position: 'fixed', top: 0, left: 0, right: 0, height: '64px',
-        background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)', zIndex: 100,
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 2rem'
-      }}>
-        <div style={{display:'flex', alignItems:'center', gap:'1.5rem'}}>
-          <button onClick={() => window.location.href=`/dashboard?userId=${userId}`}
-            style={{
-              display: 'flex', alignItems: 'center', gap: '6px', background: 'transparent', border: 'none',
-              fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.12em', color: '#888078',
-              cursor: 'pointer', padding: '4px 0'
-            }}
-            onMouseOver={e => e.currentTarget.style.color = '#c4a882'}
-            onMouseOut={e => e.currentTarget.style.color = '#888078'}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M10 6H2M6 2L2 6l4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/></svg>
-            DASHBOARD
-          </button>
-          <div style={{width:'1px', height:'20px', background:'rgba(255,255,255,0.1)'}}/>
-          <div style={{
-            fontFamily: 'var(--font-mono)', fontSize: '0.78rem', letterSpacing: '0.3em',
-            background: 'linear-gradient(135deg, #a78b71, #c4a882)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
-          }}>FILLSCORE</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.12em', color: '#888078' }}>{total} TRADES</span>
-          <span style={{
-            padding: '0.3rem 0.7rem', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '2px',
-            fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.12em', color: '#7a7870',
-            background: 'rgba(255,255,255,0.07)', textTransform: 'uppercase'
-          }}>BINANCE</span>
-        </div>
-      </header>
+      <Navbar userId={userId} exchange={exchangeRaw || undefined} currentPage="trades" showLive={true} />
 
       {/* MAIN CONTENT */}
-      <main style={{ padding: '6rem 2rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+      <main style={{ padding: '48px 2rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
         
         {/* SECTION A — Title + Stats */}
         <div style={{ marginBottom: '1.75rem', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
@@ -267,7 +258,7 @@ export default function Trades() {
               Trade History
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#888078', marginTop: '4px' }}>
-              January 2024  ·  {total} executions  ·  Binance Spot
+              {total} executions  ·  {displayExchange}
             </div>
           </div>
           <div className="hidden md:flex" style={{ gap: '2rem', alignItems: 'flex-end' }}>
@@ -384,11 +375,11 @@ export default function Trades() {
                     className="grid grid-cols-[2rem_7rem_3.5rem_3.5rem_5rem_4.5rem_5rem] md:grid-cols-[2rem_7rem_4.5rem_3.5rem_7.5rem_7rem_6rem_5rem_4.5rem_4.5rem_5rem]"
                     style={{
                       alignItems: 'center', padding: '0 1.25rem', height: '52px', borderBottom: '1px solid rgba(255,255,255,0.1)',
-                      cursor: 'pointer', transition: 'background 0.12s ease',
+                      cursor: 'pointer', transition: 'background 0.15s ease',
                       background: selectedTrade?._id === trade._id ? 'rgba(167,139,113,0.05)' : 'transparent',
                       borderLeft: selectedTrade?._id === trade._id ? '2px solid rgba(167,139,113,0.4)' : '2px solid transparent'
                     }}
-                    onMouseOver={e => { if (selectedTrade?._id !== trade._id) e.currentTarget.style.background = 'rgba(255,255,255,0.07)' }}
+                    onMouseOver={e => { if (selectedTrade?._id !== trade._id) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
                     onMouseOut={e => { if (selectedTrade?._id !== trade._id) e.currentTarget.style.background = 'transparent' }}
                   >
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.52rem', color: '#585450' }}>
@@ -433,17 +424,31 @@ export default function Trades() {
                       {trade.isMaker ? 'MAKER' : 'TAKER'}
                     </div>
 
-                    <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 600, color: scoreColor(trade.fillScore) }}>
-                      {trade.fillScore != null ? Math.round(trade.fillScore) : '—'}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      <div style={{
-                        width: '28px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        borderRadius: '2px', border: `1px solid ${gradeColor(trade.fillGrade)}25`, background: `${gradeColor(trade.fillGrade)}0d`,
-                        fontFamily: 'var(--font-mono)', fontSize: '0.65rem', fontWeight: 700, color: gradeColor(trade.fillGrade)
-                      }}>
-                        {trade.fillGrade}
+                    {/* SCORE — coloured value or dim dash with tooltip */}
+                    {trade.fillScore != null && trade.fillScore > 0 ? (
+                      <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 600,
+                        color: trade.fillScore >= 80 ? '#4ade80' : trade.fillScore >= 60 ? '#facc15' : trade.fillScore >= 40 ? '#fb923c' : '#f87171' }}>
+                        {Math.round(trade.fillScore)}
                       </div>
+                    ) : (
+                      <div title="Score pending enrichment"
+                        style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#3a3835', cursor: 'help' }}>
+                        —
+                      </div>
+                    )}
+                    {/* GRADE — coloured pill or dim dash */}
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      {trade.fillGrade ? (
+                        <div style={{
+                          width: '28px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          borderRadius: '2px', border: `1px solid ${gradeColor(trade.fillGrade)}35`, background: `${gradeColor(trade.fillGrade)}0f`,
+                          fontFamily: 'var(--font-mono)', fontSize: '0.65rem', fontWeight: 700, color: gradeColor(trade.fillGrade)
+                        }}>
+                          {trade.fillGrade}
+                        </div>
+                      ) : (
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#3a3835' }}>–</div>
+                      )}
                     </div>
                   </div>
                 )

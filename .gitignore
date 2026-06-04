@@ -13,3 +13,16 @@ frontend/.next
 *.log
 .DS_Store
 Thumbs.db
+
+# Graphify Knowledge Graph
+graphify-out/
+
+# General Temporary/Scratch Files
+*.tsbuildinfo
+coverage/
+.vercel/
+
+# Root Environment files
+.env
+.env.*
+!.env.example

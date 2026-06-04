@@ -1,27 +1,33 @@
 import express, { Request, Response } from 'express';
 import { validateEnv, env } from './config/env';
 import { connectDatabase } from './config/database';
+import mongoose from 'mongoose';
+import * as fs from 'fs';
+import * as path from 'path';
+import { performance } from 'perf_hooks';
 
-import cors from 'cors';
+import { setupSecurity, auditLimiter } from './middleware/security';
+import { errorHandler } from './middleware/errorHandler';
 
 // Validate environment variables early
 validateEnv();
 
 const app = express();
-app.use(express.json());
 
-app.use(cors({
-    origin: [
-        'http://localhost:3000',
-        process.env.FRONTEND_URL ?? 'http://localhost:3000'
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+setupSecurity(app);
+
+app.use((req, res, next) => {
+    const start = performance.now()
+    res.on('finish', () => {
+        const ms = (performance.now() - start).toFixed(2)
+        console.log(`[${req.method}] ${req.path} → ${res.statusCode} (${ms}ms)`)
+    })
+    next()
+});
 
 import { connectRouter } from './routes/connect';
 import { auditRouter } from './routes/audit';
+import { attributionRouter } from './routes/attribution';
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
@@ -31,9 +37,31 @@ app.get('/api/health', (req: Request, res: Response) => {
     });
 });
 
+app.get('/api/ready', (req: Request, res: Response) => {
+    const isReady = mongoose.connection.readyState === 1;
+    if (isReady) {
+        res.json({ status: 'ready' });
+    } else {
+        res.status(503).json({ status: 'not ready' });
+    }
+});
+
+app.get('/api/version', (req: Request, res: Response) => {
+    try {
+        const pkgPath = path.resolve(__dirname, '../package.json');
+        const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+        res.json({ version: pkg.version });
+    } catch (e) {
+        res.status(500).json({ error: 'Could not read version' });
+    }
+});
+
 app.use('/api/connect', connectRouter);
-app.use('/api/audit', auditRouter);
+app.use('/api/audit', auditLimiter, auditRouter);
 app.use('/api', auditRouter); // exposes /api/score
+app.use('/api/attribution', attributionRouter);
+
+app.use(errorHandler);
 
 const startServer = async () => {
     try {

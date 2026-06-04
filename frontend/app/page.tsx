@@ -2,11 +2,14 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import WaveBackground from '../components/ui/wave-background';
+import Navbar from './components/Navbar';
 
 export default function Home() {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [selectedExchange, setSelectedExchange] = useState<'binance' | 'bybit' | null>(null);
+  const [selectedExchange, setSelectedExchange] = useState<'binance' | 'bybit' | 'okx' | null>(null);
+  const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
   const [cardVisible, setCardVisible] = useState(false);
+  const [userId, setUserId] = useState<string>('');
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
@@ -46,31 +49,80 @@ export default function Home() {
     }
   }
 
-  const handleDemoMode = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/connect`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            apiKey: 'demo',
-            apiSecret: 'demo',
-            exchange: 'binance'
-          })
-        }
-      )
-      const data = await res.json()
-      localStorage.setItem('userId', data.userId ?? 'demo-disciplined')
-    } catch {
-      // silence — still redirect
-    } finally {
-      setLoading(false)
-      window.location.href = '/dashboard?userId=demo-disciplined'
-    }
+  const handleDemoSelect = (profileId: string, exchange: string) => {
+    setSelectedDemo(profileId)
+    localStorage.setItem('userId', profileId)
+    window.location.href = `/dashboard?userId=${profileId}&exchange=${exchange}`
   }
+
+  const demoProfiles = [
+    {
+      id: 'demo-disciplined',
+      exchange: 'binance',
+      exchangeLabel: 'BINANCE',
+      exchangeColor: '#F0B90B',
+      archetype: 'The Disciplined Trader',
+      grade: 'A',
+      avgScore: 84,
+      makerRatio: '82%',
+      tagline: 'Limit orders. Trades 8–16 UTC. Minimal slippage.'
+    },
+    {
+      id: 'demo-moderate',
+      exchange: 'binance',
+      exchangeLabel: 'BINANCE',
+      exchangeColor: '#F0B90B',
+      archetype: 'The Moderate Trader',
+      grade: 'B',
+      avgScore: 67,
+      makerRatio: '50%',
+      tagline: 'Mixed strategy. Average execution quality.'
+    },
+    {
+      id: 'demo-aggressive',
+      exchange: 'binance',
+      exchangeLabel: 'BINANCE',
+      exchangeColor: '#F0B90B',
+      archetype: 'The Aggressive Trader',
+      grade: 'D',
+      avgScore: 41,
+      makerRatio: '25%',
+      tagline: 'Market orders. Night trading. High fee drag.'
+    },
+    {
+      id: 'demo-bybit',
+      exchange: 'bybit',
+      exchangeLabel: 'BYBIT',
+      exchangeColor: '#F7A600',
+      archetype: 'The Bybit Trader',
+      grade: 'B',
+      avgScore: 72,
+      makerRatio: '50%',
+      tagline: 'Derivatives platform. Institutional-grade fills.'
+    },
+    {
+      id: 'demo-okx',
+      exchange: 'okx',
+      exchangeLabel: 'OKX',
+      exchangeColor: '#1E8FFF',
+      archetype: 'The OKX Trader',
+      grade: 'B',
+      avgScore: 72,
+      makerRatio: '50%',
+      tagline: 'Unified account. Spot + derivatives. Low fees.'
+    },
+    {
+      id: 'demo-multi',
+      exchange: 'multi',
+      exchangeLabel: 'MULTI',
+      exchangeColor: '#2dd4bf',
+      archetype: 'The Multi-Exchange Trader',
+      grade: '3 EXCHANGES',
+      avgScore: 68,
+      makerRatio: '50%',
+      tagline: 'Trades across Binance, Bybit, and OKX. Compare venue alpha and execution quality.'
+    }
+  ]
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -78,6 +130,9 @@ export default function Home() {
       { threshold: 0.15 }
     );
     if (cardRef.current) observer.observe(cardRef.current);
+    
+    setUserId(localStorage.getItem('userId') || '');
+    
     return () => observer.disconnect();
   }, []);
 
@@ -97,12 +152,18 @@ export default function Home() {
       name: 'Bybit',
       desc: "Institutional-grade derivatives platform",
       tags: ['Derivatives', 'Perpetuals', 'Institutional']
+    },
+    {
+      id: 'okx' as const,
+      name: 'OKX',
+      desc: 'Unified account. Spot + derivatives. Low fees.',
+      tags: ['Spot', 'Derivatives', 'Low Fees']
     }
   ];
 
   return (
     <>
-      <div style={{ position: 'relative', minHeight: '100vh', background: '#0f0f0f', overflow: 'hidden', paddingBottom: '5rem' }}>
+      <div style={{ position: 'relative', minHeight: '100vh', background: '#0f0f0f', overflow: 'hidden', paddingBottom: '5rem', paddingTop: '48px' }}>
       
       {/* Layer 1 — Wave canvas */}
       <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
@@ -127,87 +188,7 @@ export default function Home() {
       <div style={{ position: 'relative', zIndex: 20 }}>
         
         {/* HEADER */}
-        <header style={{
-          position: 'fixed',
-          top: 0, left: 0, right: 0,
-          zIndex: 100,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          background: 'rgba(10,10,10,0.7)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(255,255,255,0.04)'
-        }} className="px-[1.25rem] py-[1rem] sm:px-[2.5rem] sm:py-[1.25rem]">
-          
-          {/* Left side — Logo lockup */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <span style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.9rem',
-              letterSpacing: '0.38em',
-              background: 'linear-gradient(135deg, #a78b71 0%, #e8d5b7 45%, #c4a882 70%, #a78b71 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}>
-              FILLSCORE
-            </span>
-            <div className="hidden sm:block" style={{
-              width: '1px',
-              height: '14px',
-              background: 'rgba(167,139,113,0.25)',
-              margin: '0 4px'
-            }} />
-            <span className="hidden sm:inline-block" style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.55rem',
-              letterSpacing: '0.15em',
-              color: '#8a7060',
-              padding: '2px 6px',
-              border: '1px solid rgba(167,139,113,0.15)',
-              borderRadius: '2px'
-            }}>
-              v0.9 beta
-            </span>
-          </div>
-
-          {/* Right side */}
-          <div style={{ display: 'flex', gap: '1.75rem', alignItems: 'center' }}>
-            
-            {/* Item 1 — Live status indicator */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-              <div style={{
-                width: '5px', 
-                height: '5px', 
-                borderRadius: '50%', 
-                background: '#4db87a',
-                animation: 'pulse-status 2.5s ease-in-out infinite'
-              }} />
-              <span style={{
-                fontFamily: 'var(--font-mono)', 
-                fontSize: '0.58rem', 
-                letterSpacing: '0.2em',
-                color: '#4db87a'
-              }}>
-                LIVE
-              </span>
-            </div>
-
-            <div className="hidden sm:block" style={{ width: '1px', height: '12px', background: 'rgba(255,255,255,0.07)' }} />
-
-            {/* Item 2 — Tagline */}
-            <span className="hidden sm:inline-block" style={{
-              fontFamily: 'var(--font-playfair)', 
-              fontStyle: 'italic', 
-              fontSize: '0.82rem',
-              color: '#888078'
-            }}>
-              Execution Intelligence
-            </span>
-
-          </div>
-        </header>
+        <Navbar userId={userId} currentPage="home" showLive={true} />
 
         {/* HERO */}
         <main className="px-5 pb-[5vh] sm:px-[2rem] text-left sm:text-center flex flex-col items-start sm:items-center justify-center relative pt-[8rem] sm:pt-[10vh]" 
@@ -385,7 +366,7 @@ export default function Home() {
                 </h2>
 
                 {/* EXCHANGE GRID */}
-                <div className="grid grid-cols-1 sm:grid-cols-2" style={{ gap: '0.75rem', alignItems: 'stretch' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: '0.75rem', alignItems: 'stretch' }}>
                   {exchanges.map((ex) => {
                     const isSelected = selectedExchange === ex.id;
                     return (
@@ -420,7 +401,7 @@ export default function Home() {
                             <path d="M16 18L19.5 21.5L16 25L12.5 21.5L16 18Z" fill="#F3BA2F"/>
                             <path d="M13 14L16 11L19 14L16 17L13 14Z" fill="#F3BA2F"/>
                           </svg>
-                        ) : (
+                        ) : ex.id === 'bybit' ? (
                           <svg width="22" height="22" viewBox="0 0 32 32" fill="none"
                             style={{ marginBottom: '0.75rem', opacity: isSelected ? 1 : 0.3, transition: 'opacity 0.2s ease' }}>
                             <rect x="4" y="10" width="10" height="3" rx="1.5" fill="#F7A600"/>
@@ -428,6 +409,10 @@ export default function Home() {
                             <rect x="4" y="20" width="10" height="3" rx="1.5" fill="#F7A600"/>
                             <rect x="18" y="10" width="10" height="6" rx="2" fill="#F7A600"/>
                           </svg>
+                        ) : (
+                          <div style={{ marginBottom: '0.75rem', opacity: isSelected ? 1 : 0.3, transition: 'opacity 0.2s ease', fontFamily: 'var(--font-inter)', fontSize: '18px', fontWeight: 700, color: '#1E8FFF', height: '22px', display: 'flex', alignItems: 'center' }}>
+                            OKX
+                          </div>
                         )}
                         
                         {/* Name Line */}
@@ -681,40 +666,149 @@ export default function Home() {
                   {/* CARD FOOTER SECTION */}
                   <div className="my-[1.25rem] sm:mt-[1.75rem] sm:mb-[1.5rem]" style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(167,139,113,0.12), transparent)' }} />
 
+                  {/* OR DIVIDER */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '1.25rem' }}>
                     <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.2em', color: 'var(--text-ghost, #3d3b38)', whiteSpace: 'nowrap' }}>OR</span>
                     <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
                   </div>
 
-                  <button type="button" onClick={handleDemoMode} disabled={loading} className="demo-btn text-[0.72rem] p-[0.8rem] sm:text-[0.75rem] sm:p-[0.875rem]"
-                          style={{
-                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-                            background: 'transparent', border: '1px solid var(--bg-subtle, #201f1d)', borderRadius: '2px',
-                            fontFamily: 'var(--font-mono)', letterSpacing: '0.08em', color: 'var(--text-tertiary, #6a6560)',
-                            cursor: 'pointer', transition: 'all 0.22s ease', position: 'relative', overflow: 'hidden'
-                          }}>
-                    {loading ? (
-                      <>
-                        <div style={{
-                          width: 14, height: 14, border: '1.5px solid rgba(167,139,113,0.15)', borderTopColor: 'var(--gold, #a78b71)',
-                          borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0
-                        }}/>
-                        Loading demo...
-                      </>
-                    ) : (
-                      <>
-                        <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                          <path d="M3 2L10 6L3 10V2Z" fill="currentColor" opacity="0.7"/>
-                        </svg>
-                        Try with Demo Data
-                        <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--gold-dim, #6b5a47)', opacity: 0.7, marginLeft: '2px' }}>→</span>
-                      </>
-                    )}
-                  </button>
+                  {/* DEMO PROFILE SELECTOR */}
+                  <div style={{ marginBottom: '0.5rem' }}>
+                    <div style={{
+                      fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em',
+                      color: '#4a4844', textAlign: 'center', marginBottom: '0.875rem'
+                    }}>
+                      Or explore with synthetic demo data
+                    </div>
 
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: 'var(--text-ghost, #3d3b38)', letterSpacing: '0.08em', marginTop: '0.625rem', textAlign: 'center' }}>
-                    No API key required  ·  Synthetic trade data
+                    <div style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(3, 1fr)',
+                      gap: '12px',
+                      marginTop: '16px'
+                    }}>
+                      {demoProfiles.map((profile) => {
+                        const isSelected = selectedDemo === profile.id
+                        const gradeClr = (
+                          profile.grade === '3 EXCHANGES' ? '#2dd4bf' :
+                          profile.grade === 'A' ? '#4ade80' :
+                          profile.grade === 'B' ? '#86efac' :
+                          profile.grade === 'C' ? '#fcd34d' :
+                          profile.grade === 'D' ? '#f97316' : '#ef4444'
+                        )
+                        return (
+                          <button
+                            key={profile.id}
+                            type="button"
+                            onClick={() => handleDemoSelect(profile.id, profile.exchange)}
+                            style={{
+                              position: 'relative',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '8px',
+                              padding: '14px',
+                              background: isSelected ? `${profile.exchangeColor}10` : 'rgba(20,19,18,0.8)',
+                              border: `1px solid ${isSelected ? profile.exchangeColor : 'rgba(255,255,255,0.06)'}`,
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              outline: 'none',
+                              transition: 'all 0.15s ease',
+                              minHeight: '140px',
+                              boxShadow: isSelected
+                                ? `0 0 18px ${profile.exchangeColor}18, inset 0 1px 0 ${profile.exchangeColor}20`
+                                : 'none',
+                              transform: isSelected ? 'translateY(-2px)' : 'translateY(0)'
+                            }}
+                            onMouseEnter={e => {
+                              if (!isSelected) {
+                                e.currentTarget.style.borderColor = `${profile.exchangeColor}40`
+                                e.currentTarget.style.transform = 'translateY(-4px)'
+                                e.currentTarget.style.boxShadow = `0 8px 24px ${profile.exchangeColor}12`
+                                e.currentTarget.style.background = `${profile.exchangeColor}05`
+                              }
+                            }}
+                            onMouseLeave={e => {
+                              if (!isSelected) {
+                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'
+                                e.currentTarget.style.transform = 'translateY(0)'
+                                e.currentTarget.style.boxShadow = 'none'
+                                e.currentTarget.style.background = 'rgba(20,19,18,0.8)'
+                              }
+                            }}
+                          >
+                            {/* Top inset accent line on selected */}
+                            <div style={{
+                              position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
+                              background: `linear-gradient(to right, transparent, ${profile.exchangeColor}90, transparent)`,
+                              borderRadius: '4px 4px 0 0',
+                              opacity: isSelected ? 1 : 0,
+                              transition: 'opacity 0.15s ease'
+                            }} />
+
+                            {/* Row 1: Exchange badge + Grade badge */}
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                              <div style={{
+                                fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.1em',
+                                color: profile.exchangeColor, padding: '2px 6px',
+                                border: `1px solid ${profile.exchangeColor}60`,
+                                borderRadius: '3px'
+                              }}>
+                                {profile.exchangeLabel}
+                              </div>
+                              <div style={{
+                                fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700,
+                                color: gradeClr, padding: '2px 8px',
+                                border: `1px solid ${gradeClr}40`,
+                                borderRadius: '3px'
+                              }}>
+                                {profile.grade}
+                              </div>
+                            </div>
+
+                            {/* Row 2: Archetype name */}
+                            <div style={{
+                              fontFamily: 'var(--font-inter)', fontSize: '13px', fontWeight: 600,
+                              color: isSelected ? '#ede8e0' : '#c8c0b8',
+                              transition: 'color 0.15s ease'
+                            }}>
+                              {profile.archetype}
+                            </div>
+
+                            {/* Row 3: Tagline */}
+                            <div style={{
+                              fontFamily: 'var(--font-inter)', fontSize: '11px',
+                              color: '#585450', whiteSpace: 'normal'
+                            }}>
+                              {profile.tagline}
+                            </div>
+
+                            {/* Row 4: Stats row */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 'auto' }}>
+                              <div style={{
+                                fontFamily: 'var(--font-mono)', fontSize: '10px',
+                                color: 'rgba(255,255,255,0.6)', padding: '3px 8px',
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                borderRadius: '3px'
+                              }}>
+                                {profile.avgScore} avg
+                              </div>
+                              <div style={{
+                                fontFamily: 'var(--font-mono)', fontSize: '10px',
+                                color: 'rgba(255,255,255,0.6)', padding: '3px 8px',
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(255,255,255,0.08)',
+                                borderRadius: '3px'
+                              }}>
+                                {profile.makerRatio} maker
+                              </div>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
                   
                   {/* CARD BOTTOM ACCENT */}

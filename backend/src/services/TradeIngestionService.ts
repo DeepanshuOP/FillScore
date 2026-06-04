@@ -1,4 +1,6 @@
 import { BinanceClient } from './BinanceClient';
+import { BybitClient } from './BybitClient';
+import { OKXClient } from './OKXClient';
 import { BinanceRawTrade, NormalisedTrade, FetchTradesOptions } from '../types';
 import { Trade } from '../models/Trade';
 
@@ -88,11 +90,23 @@ export class TradeIngestionService {
 
         const endTime = Date.now();
         const startTime = endTime - (daysBack * MS_PER_DAY);
+        let windowStart = startTime;
+
+        const latest = await Trade.findOne(
+            { userId, exchange: 'binance', symbol },
+            { executedAt: 1 },
+            { sort: { executedAt: -1 } }
+        );
+
+        if (latest && latest.executedAt.getTime() >= startTime && latest.executedAt.getTime() <= endTime) {
+            windowStart = latest.executedAt.getTime();
+            console.log(`[Ingest] Resuming from last known trade: ${latest.executedAt.toISOString()}`);
+        }
 
         // Orchestration step 1: Fetch
         const rawTrades = await this.fetchAllTrades({
             symbol,
-            startTime,
+            startTime: windowStart,
             endTime,
             userId
         }, client);
@@ -122,6 +136,150 @@ export class TradeIngestionService {
                 inserted++;
             } else {
                 skipped++;
+            }
+        }
+
+        return { inserted, skipped };
+    }
+
+    public async ingestBybitForUser(
+        userId: string,
+        apiKey: string,
+        apiSecret: string,
+        symbol: string,
+        daysBack: number
+    ): Promise<{ inserted: number; skipped: number }> {
+        // Instantiate a dedicated Bybit client — avoids singleton/concurrency side-effects
+        const bybitClient = new BybitClient(apiKey, apiSecret);
+
+        const endTime = Date.now();
+        const startTime = endTime - (daysBack * MS_PER_DAY);
+
+        let windowStart = startTime;
+        const latest = await Trade.findOne(
+            { userId, exchange: 'bybit', symbol },
+            { executedAt: 1 },
+            { sort: { executedAt: -1 } }
+        );
+
+        if (latest && latest.executedAt.getTime() >= startTime && latest.executedAt.getTime() <= endTime) {
+            windowStart = latest.executedAt.getTime();
+            console.log(`[Ingest] Resuming from last known trade: ${latest.executedAt.toISOString()}`);
+        }
+
+        const totalDays = Math.ceil((endTime - windowStart) / MS_PER_DAY);
+
+        let inserted = 0;
+        let skipped = 0;
+
+        let dayIndex = 1;
+
+        // Chunk the full date range into 24-hour windows to stay inside Bybit's
+        // per-request time range limits and to keep memory usage bounded.
+        while (windowStart < endTime) {
+            let windowEnd = windowStart + MS_PER_DAY;
+            if (windowEnd > endTime) {
+                windowEnd = endTime;
+            }
+
+            const rawTrades = await bybitClient.fetchTradesForWindow(symbol, windowStart, windowEnd);
+
+            console.log(`[Bybit Ingest] Day ${dayIndex}/${totalDays}: fetched ${rawTrades.length} trades for ${symbol}`);
+
+            // Normalise and upsert each trade; $setOnInsert prevents re-ingestion
+            // from overwriting downstream enrichments (scores, metrics).
+            for (const raw of rawTrades) {
+                const normalised = bybitClient.normaliseBybitTrade(raw, userId);
+
+                const updateResult = await Trade.updateOne(
+                    { userId, exchange: 'bybit', tradeId: raw.execId },
+                    { $setOnInsert: normalised },
+                    { upsert: true }
+                );
+
+                if (updateResult.upsertedCount > 0) {
+                    inserted++;
+                } else {
+                    // matchedCount > 0 means the document already existed — skip it
+                    skipped++;
+                }
+            }
+
+            windowStart = windowEnd;
+            dayIndex++;
+
+            // 200 ms breathing room between chunks to respect Bybit rate limits
+            if (windowStart < endTime) {
+                await new Promise(r => setTimeout(r, 200));
+            }
+        }
+
+        return { inserted, skipped };
+    }
+
+    public async ingestOKXForUser(
+        userId: string,
+        apiKey: string,
+        apiSecret: string,
+        passphrase: string,
+        instId: string,
+        daysBack: number
+    ): Promise<{ inserted: number; skipped: number }> {
+        const okxClient = new OKXClient(apiKey, apiSecret, passphrase);
+
+        const endTime = Date.now();
+        const startTime = endTime - (daysBack * MS_PER_DAY);
+
+        const symbol = instId.replace('-', '');
+        let windowStart = startTime;
+        const latest = await Trade.findOne(
+            { userId, exchange: 'okx', symbol },
+            { executedAt: 1 },
+            { sort: { executedAt: -1 } }
+        );
+
+        if (latest && latest.executedAt.getTime() >= startTime && latest.executedAt.getTime() <= endTime) {
+            windowStart = latest.executedAt.getTime();
+            console.log(`[OKX Ingest] Resuming from last known trade: ${latest.executedAt.toISOString()}`);
+        }
+
+        const totalDays = Math.ceil((endTime - windowStart) / MS_PER_DAY);
+
+        let inserted = 0;
+        let skipped = 0;
+        let dayIndex = 1;
+
+        while (windowStart < endTime) {
+            let windowEnd = windowStart + MS_PER_DAY;
+            if (windowEnd > endTime) {
+                windowEnd = endTime;
+            }
+
+            const rawTrades = await okxClient.fetchTradesForWindow(instId, windowStart, windowEnd);
+
+            console.log(`[OKX Ingest] Day ${dayIndex}/${totalDays}: fetched ${rawTrades.length} trades for ${instId}`);
+
+            for (const raw of rawTrades) {
+                const normalised = okxClient.normaliseOKXTrade(raw, userId);
+
+                const updateResult = await Trade.updateOne(
+                    { userId, exchange: 'okx', tradeId: raw.billId },
+                    { $setOnInsert: normalised },
+                    { upsert: true }
+                );
+
+                if (updateResult.upsertedCount > 0) {
+                    inserted++;
+                } else {
+                    skipped++;
+                }
+            }
+
+            windowStart = windowEnd;
+            dayIndex++;
+
+            if (windowStart < endTime) {
+                await new Promise(r => setTimeout(r, 200));
             }
         }
 

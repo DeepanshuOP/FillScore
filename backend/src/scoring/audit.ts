@@ -8,7 +8,27 @@ import {
 
 export async function computeAuditSummary(userId: string, trades: EnrichedTrade[]): Promise<AuditSummary> {
     if (trades.length === 0) {
-        throw new Error("Cannot compute audit summary for 0 trades.");
+        return {
+            userId,
+            period: { start: new Date(), end: new Date() },
+            exchange: '',
+            totalTrades: 0,
+            totalNotional: 0,
+            avgFillScore: 0,
+            fillGrade: 'F',
+            estimatedLossUSD: 0,
+            breakdown: {
+                avgSlippageBps: 0,
+                avgFeeDragBps: 0,
+                makerRatio: 0,
+                bestHour: 0,
+                worstHour: 0,
+                bestSymbol: '',
+                worstSymbol: ''
+            },
+            recommendations: [],
+            createdAt: new Date()
+        };
     }
 
     let totalNotional = 0;

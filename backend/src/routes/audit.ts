@@ -131,9 +131,7 @@ auditRouter.get('/trades', async (req, res) => {
     }
 
     const query: Record<string, unknown> = { 
-      userId,
-      executionPrice: { $exists: true, $ne: null },
-      fillScore: { $exists: true, $ne: null }
+      userId
     };
 
     if (symbol && symbol !== 'ALL') 
@@ -211,7 +209,7 @@ auditRouter.get('/analytics', async (req, res) => {
       const key = `${day}-${dt.getUTCHours()}`
       if (heatmap[key]) {
         heatmap[key].count++
-        heatmap[key].totalScore += t.fillScore || 0
+        heatmap[key].totalScore += t.fillScore ?? 0
       }
     })
 
@@ -246,11 +244,11 @@ auditRouter.get('/analytics', async (req, res) => {
         }
       }
       symbolMap[t.symbol].count++
-      symbolMap[t.symbol].totalScore += t.fillScore || 0
+      symbolMap[t.symbol].totalScore += t.fillScore ?? 0
       symbolMap[t.symbol].totalNotional += 
-        (t as any).notionalValue || t.notional || 0
+        (t as any).notionalValue ?? t.notional ?? 0
       symbolMap[t.symbol].totalFees += 
-        (t as any).feePaid || t.fee || 0
+        (t as any).feePaid ?? t.fee ?? 0
       if (t.isMaker) symbolMap[t.symbol].makerCount++
     })
 
@@ -276,7 +274,7 @@ auditRouter.get('/analytics', async (req, res) => {
       'F (0-39)': 0
     }
     trades.forEach(t => {
-      const s = t.fillScore || 0
+      const s = t.fillScore ?? 0
       if (s >= 90) buckets['A (90-100)']++
       else if (s >= 75) buckets['B (75-89)']++
       else if (s >= 60) buckets['C (60-74)']++
@@ -293,7 +291,7 @@ auditRouter.get('/analytics', async (req, res) => {
     }
     trades.forEach(t => {
       const h = new Date(t.executedAt).getUTCHours()
-      hourlyMap[h].total += t.fillScore || 0
+      hourlyMap[h].total += t.fillScore ?? 0
       hourlyMap[h].count++
     })
     const hourlyScores = Object.entries(hourlyMap)
@@ -318,5 +316,118 @@ auditRouter.get('/analytics', async (req, res) => {
     return res.status(500).json({ 
       error: 'Failed to fetch analytics' 
     })
+  }
+});
+
+auditRouter.get('/analytics/exchange-comparison', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    if (!userId || typeof userId !== 'string') {
+      return res.status(400).json({ error: 'userId required' });
+    }
+
+    const pipeline: any[] = [
+      { $match: { userId } },
+      {
+        $group: {
+          _id: '$exchange',
+          avgFillScore: { $avg: '$fillScore' },
+          totalNotional: { $sum: '$notional' },
+          tradeCount: { $sum: 1 },
+          makerCount: {
+            $sum: { $cond: [{ $eq: ['$isMaker', true] }, 1, 0] }
+          },
+          avgSlippageBps: { $avg: '$arrivalSlippageBps' },
+          avgFeeDragBps: {
+            $avg: {
+              $multiply: [{ $divide: ['$fee', '$notional'] }, 10000]
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          exchange: '$_id',
+          _id: 0,
+          avgFillScore: 1,
+          totalNotional: 1,
+          tradeCount: 1,
+          makerRatio: { $divide: ['$makerCount', '$tradeCount'] },
+          avgSlippageBps: 1,
+          avgFeeDragBps: 1
+        }
+      },
+      { $sort: { avgFillScore: -1 } }
+    ];
+
+    const exchanges = await Trade.aggregate(pipeline);
+
+    if (exchanges.length === 0) {
+      return res.json({ 
+        exchanges: [], 
+        bestExchange: null, 
+        worstExchange: null, 
+        venueAlphaBps: 0, 
+        perSymbolRanking: [] 
+      });
+    }
+
+    const bestExchange = exchanges[0].exchange;
+    const worstExchange = exchanges[exchanges.length - 1].exchange;
+    const venueAlphaBps = Math.abs(
+      exchanges[0].avgSlippageBps - exchanges[exchanges.length - 1].avgSlippageBps
+    );
+
+    const symbolPipeline: any[] = [
+      { $match: { userId } },
+      {
+        $group: {
+          _id: { symbol: '$symbol', exchange: '$exchange' },
+          avgScore: { $avg: '$fillScore' }
+        }
+      },
+      {
+        $group: {
+          _id: '$_id.symbol',
+          scores: {
+            $push: { exchange: '$_id.exchange', score: '$avgScore' }
+          }
+        }
+      }
+    ];
+
+    const symbolData = await Trade.aggregate(symbolPipeline);
+
+    const perSymbolRanking = symbolData.map(s => {
+      const symbol = s._id;
+      const scoresByExchange: Record<string, number> = {};
+      let bestEx = '';
+      let highestScore = -Infinity;
+
+      s.scores.forEach((item: any) => {
+        scoresByExchange[item.exchange] = Math.round(item.score);
+        if (item.score > highestScore) {
+          highestScore = item.score;
+          bestEx = item.exchange;
+        }
+      });
+
+      return {
+        symbol,
+        bestExchange: bestEx,
+        scoresByExchange
+      };
+    });
+
+    return res.json({
+      exchanges,
+      bestExchange,
+      worstExchange,
+      venueAlphaBps,
+      perSymbolRanking
+    });
+  } catch (err) {
+    console.error('GET /analytics/exchange-comparison error:', err);
+    return res.status(500).json({ error: 'Failed to fetch exchange comparison' });
   }
 });
