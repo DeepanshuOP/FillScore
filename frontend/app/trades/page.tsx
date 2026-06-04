@@ -303,13 +303,14 @@ export default function Trades() {
         <div style={{ background: '#1a1917', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', marginTop: 0 }}>
           
           <div className="hidden md:grid" style={{
-            gridTemplateColumns: '2rem 7rem 4.5rem 3.5rem 7.5rem 7rem 6rem 5rem 4.5rem 4.5rem 5rem',
+            gridTemplateColumns: '2rem 7rem 4.5rem 3.5rem 3.5rem 7.5rem 7rem 6rem 5rem 4.5rem 4.5rem 5rem',
             alignItems: 'center', padding: '0 1.25rem', height: '40px', background: '#121210',
             borderBottom: '1px solid rgba(255,255,255,0.1)', position: 'sticky', top: '64px', zIndex: 10
           }}>
             <div></div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>TIME</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SYMBOL</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>EXCH</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SIDE</div>
             <SortableHeader col="notionalValue" label="NOTIONAL" />
             <SortableHeader col="executionPrice" label="PRICE" />
@@ -321,13 +322,14 @@ export default function Trades() {
           </div>
 
           <div className="grid md:hidden" style={{
-            gridTemplateColumns: '2rem 7rem 3.5rem 3.5rem 5rem 4.5rem 5rem',
+            gridTemplateColumns: '2rem 7rem 3.5rem 3.5rem 3.5rem 5rem 4.5rem 5rem',
             alignItems: 'center', padding: '0 1.25rem', height: '40px', background: '#121210',
             borderBottom: '1px solid rgba(255,255,255,0.1)'
           }}>
              <div></div>
              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>TIME</div>
              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SYM</div>
+             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>EXCH</div>
              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SIDE</div>
              <SortableHeader col="executionPrice" label="PRICE" />
              <SortableHeader col="fillScore" label="SCORE" align="right" />
@@ -337,11 +339,12 @@ export default function Trades() {
           {loading ? (
             <div>
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="grid grid-cols-[2rem_7rem_3.5rem_3.5rem_5rem_4.5rem_5rem] md:grid-cols-[2rem_7rem_4.5rem_3.5rem_7.5rem_7rem_6rem_5rem_4.5rem_4.5rem_5rem]"
+                <div key={i} className="grid grid-cols-[2rem_7rem_3.5rem_3.5rem_3.5rem_5rem_4.5rem_5rem] md:grid-cols-[2rem_7rem_4.5rem_3.5rem_3.5rem_7.5rem_7rem_6rem_5rem_4.5rem_4.5rem_5rem]"
                   style={{ alignItems:'center', padding:'0 1.25rem', height:'52px', borderBottom:'1px solid rgba(255,255,255,0.1)' }}>
                   <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                  <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div className="hidden md:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div className="hidden md:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
@@ -372,7 +375,7 @@ export default function Trades() {
                 return (
                   <div key={trade._id}
                     onClick={() => { setSelectedTrade(trade); setDrawerOpen(true); }}
-                    className="grid grid-cols-[2rem_7rem_3.5rem_3.5rem_5rem_4.5rem_5rem] md:grid-cols-[2rem_7rem_4.5rem_3.5rem_7.5rem_7rem_6rem_5rem_4.5rem_4.5rem_5rem]"
+                    className="grid grid-cols-[2rem_7rem_3.5rem_3.5rem_3.5rem_5rem_4.5rem_5rem] md:grid-cols-[2rem_7rem_4.5rem_3.5rem_3.5rem_7.5rem_7rem_6rem_5rem_4.5rem_4.5rem_5rem]"
                     style={{
                       alignItems: 'center', padding: '0 1.25rem', height: '52px', borderBottom: '1px solid rgba(255,255,255,0.1)',
                       cursor: 'pointer', transition: 'background 0.15s ease',
@@ -392,6 +395,23 @@ export default function Trades() {
                     <div title={trade.symbol} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', letterSpacing: '0.06em', fontWeight: 600, color: symbolColor(trade.symbol) }}>
                       {trade.symbol.replace('USDT', '')}
                     </div>
+                    
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      {(() => {
+                        const ex = trade.exchange?.toLowerCase() || '';
+                        let text = 'UNK';
+                        let color = '#a09890';
+                        if (ex === 'binance') { text = 'BNC'; color = '#F0B90B'; }
+                        else if (ex === 'bybit') { text = 'BYB'; color = '#F7A600'; }
+                        else if (ex === 'okx') { text = 'OKX'; color = '#38bdf8'; }
+                        return (
+                          <span style={{ fontSize: '10px', letterSpacing: '0.1em', fontWeight: 600, textTransform: 'uppercase', color }}>
+                            {text}
+                          </span>
+                        );
+                      })()}
+                    </div>
+
                     <div style={{
                       display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '2px', width: 'fit-content',
                       fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.08em', fontWeight: 600,

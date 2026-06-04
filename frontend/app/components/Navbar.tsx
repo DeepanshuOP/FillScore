@@ -27,6 +27,7 @@ export default function Navbar({ userId, exchange, currentPage, showLive }: Navb
 
   const getExchangeColor = (ex?: string | null) => {
     const raw = ex?.toLowerCase();
+    if (raw === 'multi') return '#2dd4bf';
     if (raw === 'binance') return '#F0B90B';
     if (raw === 'bybit') return '#F7A600';
     if (raw === 'okx') return '#1E8FFF';

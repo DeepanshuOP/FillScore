@@ -113,7 +113,7 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
     const summary: AuditSummary = {
         userId,
         period: { start: minDate, end: maxDate },
-        exchange: trades[0].exchange,
+        exchange: new Set(trades.map(t => t.exchange)).size > 1 ? 'multi' : trades[0].exchange,
         totalTrades: trades.length,
         totalNotional,
         avgFillScore,
@@ -174,8 +174,9 @@ export function generateRecommendations(summary: AuditSummary, trades: EnrichedT
         }
 
         const xStr = worstScore.toFixed(1);
-        const zStr = (bestScore - worstScore).toFixed(1);
-        recs.push(`Your worst-performing trades (avg score: ${xStr}) happen between 22:00–07:00 UTC when crypto spreads are 2–4× wider. Shifting these to 08:00–16:00 UTC could improve your score by ~${zStr} points.`);
+        const improvement = Math.min(30, bestScore - worstScore);
+        const zStr = improvement.toFixed(1);
+        recs.push(`Your worst-performing trades (avg score: ${xStr}) happen between 22:00–07:00 UTC when crypto spreads are 2–4× wider. Shifting these to 08:00–16:00 UTC could improve your worst-hour avg score by ~${zStr} points.`);
     }
 
     if (b.avgSlippageBps > 20) {
