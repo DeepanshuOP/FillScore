@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
+import ShareButtons from './ShareButtons';
 
 type Props = {
   params: Promise<{ userId: string }>;
@@ -20,9 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title,
       description,
-      type: 'website',
-      // TODO: Dynamic per-user OG image generation is a future enhancement (Next.js ImageResponse / @vercel/og)
-      images: ['/og-default.png']
+      type: 'website'
     },
     twitter: {
       card: 'summary_large_image',
@@ -164,6 +163,7 @@ export default async function SharePage({ params }: Props) {
         }}>
           GET YOUR FILLSCORE →
         </Link>
+        <ShareButtons shareUrl={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://fillscore.io'}/share/${userId}`} grade={data.grade} score={data.score} />
       </div>
     </div>
   );
