@@ -4,6 +4,7 @@ import { EnrichedTrade } from '../types';
 export interface EnrichedTradeDocument extends Omit<EnrichedTrade, 'tradeId' | 'orderId'>, Document {
     tradeId: string;
     orderId: string;
+    note?: string;
 }
 
 const TradeSchema = new Schema<EnrichedTradeDocument>(
@@ -44,6 +45,9 @@ const TradeSchema = new Schema<EnrichedTradeDocument>(
         exchangeScore: { type: Number },
         fillScore: { type: Number },
         fillGrade: { type: String, enum: ['A', 'B', 'C', 'D', 'F'] },
+        
+        // User Annotations
+        note: { type: String, default: '', maxlength: 500 },
     },
     {
         timestamps: true,

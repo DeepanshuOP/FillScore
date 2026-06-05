@@ -361,6 +361,38 @@ auditRouter.get('/trades', async (req, res) => {
   }
 });
 
+auditRouter.patch('/trades/:tradeId/note', shareLimiter, async (req, res) => {
+  try {
+    const { tradeId } = req.params;
+    const { userId, note } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ error: 'userId is required' });
+    }
+
+    if (typeof note !== 'string') {
+      return res.status(400).json({ error: 'note must be a string' });
+    }
+
+    const trimmedNote = note.trim().substring(0, 500);
+
+    const trade = await Trade.findOneAndUpdate(
+      { tradeId, userId },
+      { $set: { note: trimmedNote } },
+      { new: true }
+    );
+
+    if (!trade) {
+      return res.status(403).json({ error: 'Forbidden or trade not found' });
+    }
+
+    return res.json({ tradeId: trade.tradeId, note: trade.note });
+  } catch (err) {
+    console.error('PATCH /trades/:tradeId/note error:', err);
+    return res.status(500).json({ error: 'Failed to update note' });
+  }
+});
+
 auditRouter.get('/analytics', async (req, res) => {
   try {
     const { userId } = req.query as { userId: string }

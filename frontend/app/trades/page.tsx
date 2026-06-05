@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar'
 
 interface Trade {
   _id: string
+  tradeId: string
+  note?: string
   exchange: string          // 'binance' | 'bybit' — used for dynamic badge/subtitle
   symbol: string
   side: 'BUY' | 'SELL'
@@ -51,6 +53,45 @@ export default function Trades() {
   const [totalBuys, setTotalBuys] = useState(0)
   const [totalSells, setTotalSells] = useState(0)
   const [totalMakers, setTotalMakers] = useState(0)
+
+  // Notes
+  const [noteText, setNoteText] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
+  const [noteStatus, setNoteStatus] = useState<''|'saved'|'error'>('')
+
+  useEffect(() => {
+    if (selectedTrade) {
+      setNoteText(selectedTrade.note || '')
+      setNoteStatus('')
+    }
+  }, [selectedTrade])
+
+  const saveNote = async () => {
+    if (!selectedTrade) return
+    setSavingNote(true)
+    setNoteStatus('')
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trades/${selectedTrade.tradeId}/note`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, note: noteText })
+      })
+      if (!res.ok) throw new Error('Failed to save note')
+      const data = await res.json()
+      
+      const updatedTrades = trades.map(t => t.tradeId === selectedTrade.tradeId ? { ...t, note: data.note } : t)
+      setTrades(updatedTrades)
+      setSelectedTrade({ ...selectedTrade, note: data.note })
+      
+      setNoteStatus('saved')
+      setTimeout(() => setNoteStatus(''), 2000)
+    } catch (e) {
+      setNoteStatus('error')
+      setTimeout(() => setNoteStatus(''), 2000)
+    } finally {
+      setSavingNote(false)
+    }
+  }
 
   // Filters
   const [symbolFilter, setSymbolFilter] = useState('ALL')
@@ -426,8 +467,9 @@ export default function Trades() {
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#b8b0a6', letterSpacing: '0.04em' }}>{date}</div>
                       <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', color: '#888078', letterSpacing: '0.04em' }}>{time}</div>
                     </div>
-                    <div title={trade.symbol} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', letterSpacing: '0.06em', fontWeight: 600, color: symbolColor(trade.symbol) }}>
+                    <div title={trade.symbol} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', letterSpacing: '0.06em', fontWeight: 600, color: symbolColor(trade.symbol), display: 'flex', alignItems: 'center', gap: '4px' }}>
                       {trade.symbol.replace('USDT', '')}
+                      {trade.note && <span title="Has note" style={{ fontSize: '0.6rem', opacity: 0.6 }}>📝</span>}
                     </div>
                     
                     <div style={{ display: 'flex', alignItems: 'center' }}>
@@ -611,6 +653,48 @@ export default function Trades() {
               </div>
 
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.2em', color: '#585450', margin: '1.25rem 0 0.875rem 2px' }}>
+                JOURNAL NOTE
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <textarea
+                  value={noteText}
+                  onChange={e => setNoteText(e.target.value)}
+                  placeholder="Add a note... e.g. 'panic sell', 'breakout entry', 'FOMO'"
+                  maxLength={500}
+                  style={{
+                    width: '100%', height: '80px', background: '#121210', border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: '3px', padding: '10px 12px', fontFamily: 'var(--font-inter)', fontSize: '0.75rem',
+                    color: '#ede8e0', resize: 'none', outline: 'none', transition: 'border 0.2s'
+                  }}
+                  onFocus={e => e.currentTarget.style.border = '1px solid rgba(167,139,113,0.4)'}
+                  onBlur={e => e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)'}
+                />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', color: '#585450' }}>
+                    {noteText.length} / 500
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    {noteStatus === 'saved' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#4ade80' }}>✓ Saved</span>}
+                    {noteStatus === 'error' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#ef4444' }}>Failed to save</span>}
+                    <button
+                      onClick={saveNote}
+                      disabled={savingNote}
+                      style={{
+                        background: 'rgba(167,139,113,0.15)', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
+                        padding: '4px 12px', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em',
+                        color: '#c4a882', cursor: savingNote ? 'wait' : 'pointer', transition: 'all 0.2s',
+                        opacity: savingNote ? 0.7 : 1
+                      }}
+                      onMouseOver={e => { if (!savingNote) e.currentTarget.style.background = 'rgba(167,139,113,0.25)' }}
+                      onMouseOut={e => { if (!savingNote) e.currentTarget.style.background = 'rgba(167,139,113,0.15)' }}
+                    >
+                      {savingNote ? 'SAVING...' : 'SAVE NOTE'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.2em', color: '#585450', margin: '1.25rem 0 0.875rem 2px' }}>
                 SCORE BREAKDOWN
               </div>
                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
@@ -633,7 +717,7 @@ export default function Trades() {
 
             <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.1em', color: '#585450' }}>
-                TRADE ID  ·  {selectedTrade._id.slice(-8).toUpperCase()}
+                TRADE ID  ·  {selectedTrade.tradeId.split('-').pop()?.toUpperCase() || selectedTrade.tradeId.slice(-8).toUpperCase()}
               </div>
               <div style={{ display: 'flex', gap: '4px' }}>
                 <button onClick={goToPrev} disabled={currentIndex <= 0} style={{
