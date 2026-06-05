@@ -179,6 +179,15 @@ export default function Dashboard() {
   const [barsVisible, setBarsVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  const handleShare = () => {
+    if (!userId) return;
+    const url = `${window.location.origin}/share/${userId}`;
+    navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  };
 
   const handleDownloadReport = () => {
     if (downloading || !userId) return;
@@ -395,7 +404,22 @@ export default function Dashboard() {
           const cfg = gradeConfig[audit.fillGrade];
           return (
             <div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginBottom: '1rem' }}>
+                <button
+                  onClick={handleShare}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
+                    padding: '6px 12px', color: '#c4a882',
+                    fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
+                    cursor: 'pointer', transition: 'all 0.2s ease',
+                    height: 'fit-content'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.background = 'rgba(167,139,113,0.1)'}
+                  onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  {linkCopied ? '✓ LINK COPIED!' : '↗ SHARE MY SCORE'}
+                </button>
                 <button
                   onClick={handleDownloadReport}
                   disabled={downloading}

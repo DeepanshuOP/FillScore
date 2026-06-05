@@ -10,8 +10,15 @@ import { scoreTrade } from '../scoring/engine';
 import { aggregateCostAttribution } from '../scoring/attribution';
 import { ReportService } from '../services/ReportService';
 import { EnrichedTrade } from '../types';
+import rateLimit from 'express-rate-limit';
 
 export const auditRouter = Router();
+
+const shareLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 100,
+    message: { error: 'Too many requests for share cards. Try again later.' }
+});
 
 auditRouter.get('/', async (req: Request, res: Response) => {
     try {
@@ -201,6 +208,48 @@ auditRouter.get('/report', async (req: Request, res: Response) => {
     } catch (error: any) {
         console.error('Error generating report:', error);
         return res.status(500).json({ error: 'Failed to generate report' });
+    }
+});
+
+auditRouter.get('/share/:userId', shareLimiter, async (req: Request, res: Response) => {
+    try {
+        const userId = req.params.userId;
+        if (!userId) {
+            return res.status(400).json({ error: 'Missing userId parameter' });
+        }
+
+        const latestAudit = await Audit.findOne({ userId }).sort({ createdAt: -1 });
+        if (!latestAudit) {
+            return res.status(404).json({ error: 'This score card is no longer available.' });
+        }
+
+        const startStr = latestAudit.period?.start ? new Date(latestAudit.period.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
+        const endStr = latestAudit.period?.end ? new Date(latestAudit.period.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+        const periodStr = startStr && endStr ? `${startStr} - ${endStr}` : 'All Time';
+
+        let exStr = (latestAudit.exchange || 'ALL').toUpperCase();
+        if (exStr === 'MULTI') exStr = 'MULTI';
+
+        // Extract safe, non-sensitive summary data only
+        const shareData = {
+            grade: latestAudit.fillGrade || 'N/A',
+            score: latestAudit.avgFillScore != null ? Math.round(latestAudit.avgFillScore) : 0,
+            period: periodStr,
+            exchange: exStr,
+            topStats: {
+                tradesAnalysed: latestAudit.totalTrades || 0,
+                makerRatio: latestAudit.breakdown?.makerRatio != null ? `${Math.round(latestAudit.breakdown.makerRatio * 100)}%` : '0%',
+                avgSlippageBps: latestAudit.breakdown?.avgSlippageBps ? Number(latestAudit.breakdown.avgSlippageBps.toFixed(1)) : 0,
+                bestSymbol: latestAudit.breakdown?.bestSymbol || 'N/A'
+            },
+            archetype: null
+        };
+
+        return res.status(200).json(shareData);
+
+    } catch (error: any) {
+        console.error('Error fetching share card:', error);
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
