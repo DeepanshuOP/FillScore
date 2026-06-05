@@ -114,7 +114,7 @@ export default async function SharePage({ params }: Props) {
           {getScoreLabel(data.score)}
         </div>
 
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', marginBottom: '3rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', marginBottom: '1rem' }}>
           <div style={{
             padding: '4px 10px', border: `1px solid ${getExchangeColor(data.exchange)}40`,
             borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.65rem',
@@ -124,7 +124,7 @@ export default async function SharePage({ params }: Props) {
           </div>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', width: '100%', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '2rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', width: '100%', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.25rem' }}>
           <div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#888078', letterSpacing: '0.1em' }}>TRADES</div>
             <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1.25rem', fontWeight: 600, color: '#ede8e0', marginTop: '0.25rem' }}>{data.topStats.tradesAnalysed}</div>

@@ -6,6 +6,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
+import { Clock, ArrowLeftRight, Tag, Activity } from 'lucide-react';
 
 interface CostAttribution {
   slippageCost: number;
@@ -173,6 +174,7 @@ export default function Dashboard() {
   const [attribution, setAttribution] = useState<CostAttribution | null>(null);
   const [analytics, setAnalytics] = useState<any>(null);
   const [exchangeComparison, setExchangeComparison] = useState<any>(null);
+  const [coach, setCoach] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
@@ -223,11 +225,12 @@ export default function Dashboard() {
     
     const fetchAudit = async () => {
       try {
-        const [res, attrRes, analyticsRes, comparisonRes] = await Promise.all([
+        const [res, attrRes, analyticsRes, comparisonRes, coachRes] = await Promise.all([
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/score?userId=${id}`),
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/attribution?userId=${id}`),
           fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics?userId=${id}`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics/exchange-comparison?userId=${id}`)
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics/exchange-comparison?userId=${id}`),
+          fetch(`${process.env.NEXT_PUBLIC_API_URL}/coach?userId=${id}`)
         ]);
         if (!res.ok) throw new Error('Failed to fetch audit data');
         const data = await res.json();
@@ -243,6 +246,10 @@ export default function Dashboard() {
         if (comparisonRes.ok) {
           const compData = await comparisonRes.json();
           setExchangeComparison(compData);
+        }
+        if (coachRes.ok) {
+          const coachData = await coachRes.json();
+          setCoach(coachData);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -639,7 +646,7 @@ export default function Dashboard() {
                       key: 'timing',
                       score: Math.min(100, Math.max(0, audit.breakdown.worstHour >= 22 || audit.breakdown.worstHour <= 7 ? 65 : 85)),
                       weight: '25%',
-                      value: `Peak: ${audit.breakdown.bestHour}:00 UTC`,
+                      value: `Best hour: ${audit.breakdown.bestHour}:00 UTC`,
                       description: 'Liquidity window quality'
                     },
                     {
@@ -1049,6 +1056,89 @@ export default function Dashboard() {
                       Ideal Execution: 80% maker · 8-16 UTC · BTC/ETH only · est. score: 91
                     </div>
                   </div>
+                </div>
+              )}
+
+              {/* EXECUTION COACH */}
+              {coach && (
+                <div style={{ marginBottom: '3rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#c9b99a' }}>
+                      EXECUTION COACH
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#c9b99a', padding: '2px 8px', border: '1px solid rgba(201,185,154,0.3)', borderRadius: '2px', background: 'rgba(201,185,154,0.1)' }}>
+                      ACTION PLAN
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '1.5rem', background: '#1a1917', border: '1px solid rgba(201,185,154,0.3)', borderRadius: '4px', marginBottom: '1.5rem' }}>
+                    <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1.1rem', fontWeight: 600, color: '#c9b99a' }}>
+                      {coach.headline}
+                    </div>
+                  </div>
+
+                  {coach.actions.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', marginBottom: '1.5rem' }}>
+                      {coach.actions.map((action: any) => (
+                        <div key={action.priority} style={{
+                          display: 'flex', gap: '1.25rem', alignItems: 'center', padding: '1.25rem 1.5rem',
+                          background: '#161614', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '3px', position: 'relative', overflow: 'hidden'
+                        }}>
+                          <div style={{
+                            position: 'absolute', left: 0, top: 0, bottom: 0, width: '2px',
+                            background: 'linear-gradient(to bottom, transparent, rgba(201,185,154,0.5), transparent)'
+                          }} />
+                          
+                          <div style={{ width: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', color: '#c9b99a', opacity: 0.5 }}>
+                              0{action.priority}
+                            </div>
+                            {action.icon === 'clock' && <Clock size={18} color="#888078" />}
+                            {action.icon === 'exchange' && <ArrowLeftRight size={18} color="#888078" />}
+                            {action.icon === 'tag' && <Tag size={18} color="#888078" />}
+                          </div>
+
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', padding: '2px 6px', background: 'rgba(255,255,255,0.05)', color: '#a09890', borderRadius: '2px' }}>
+                                {action.category}
+                              </span>
+                              <span style={{ fontFamily: 'var(--font-inter)', fontSize: '1rem', fontWeight: 600, color: '#ede8e0' }}>
+                                {action.title}
+                              </span>
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#888078', lineHeight: 1.5 }}>
+                              {action.detail}
+                            </div>
+                          </div>
+
+                          {action.estimatedImpact && (
+                            <div style={{ 
+                              padding: '6px 12px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)', 
+                              borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#4ade80', whiteSpace: 'nowrap'
+                            }}>
+                              {action.estimatedImpact}
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {coach.actions.some((a: any) => a.category === 'TIMING') && coach.bestWindow && coach.worstWindow && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
+                      <div style={{ padding: '1rem', background: '#161614', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '3px' }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#4ade80', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>BEST WINDOW</div>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1rem', color: '#ede8e0', marginBottom: '0.25rem' }}>{coach.bestWindow.hour}</div>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#888078' }}>{coach.bestWindow.reason}</div>
+                      </div>
+                      <div style={{ padding: '1rem', background: '#161614', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '3px' }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#ef4444', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>WORST WINDOW</div>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1rem', color: '#ede8e0', marginBottom: '0.25rem' }}>{coach.worstWindow.hour}</div>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#888078' }}>{coach.worstWindow.reason}</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -620,3 +620,106 @@ auditRouter.get('/analytics/exchange-comparison', async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch exchange comparison' });
   }
 });
+
+auditRouter.get('/coach', async (req: Request, res: Response) => {
+    try {
+        const userId = req.query.userId as string;
+        if (!userId) return res.status(400).json({ error: 'Missing userId' });
+
+        const latestAudit = await Audit.findOne({ userId }).sort({ createdAt: -1 }).lean();
+        if (!latestAudit) return res.status(404).json({ error: 'No audit found' });
+
+        const tradeDocs = await Trade.find({ userId, fillScore: { $exists: true, $ne: null } }).lean();
+        if (tradeDocs.length === 0) return res.status(200).json({ headline: '', actions: [] });
+        
+        const trades = tradeDocs.map(doc => ({ ...doc, executedAt: new Date(doc.executedAt) } as unknown as EnrichedTrade));
+        const attribution = aggregateCostAttribution(trades);
+
+        const exchPipeline: any[] = [
+            { $match: { userId } },
+            { $group: { _id: '$exchange', avgSlippageBps: { $avg: '$arrivalSlippageBps' }, tradeCount: { $sum: 1 } } },
+            { $project: { exchange: '$_id', _id: 0, avgSlippageBps: 1, tradeCount: 1 } },
+            { $sort: { avgSlippageBps: 1 } } // Lowest slippage first
+        ];
+        const exchanges = await Trade.aggregate(exchPipeline);
+        let comparisonData = null;
+        if (exchanges.length > 1) {
+            comparisonData = {
+                bestExchange: exchanges[0].exchange,
+                worstExchange: exchanges[exchanges.length - 1].exchange,
+                venueAlphaBps: Math.abs(exchanges[exchanges.length - 1].avgSlippageBps - exchanges[0].avgSlippageBps)
+            };
+        }
+
+        const actions: any[] = [];
+
+        // TIMING action
+        const b = latestAudit.breakdown || {};
+        if (b.bestHour != null && b.worstHour != null && attribution && attribution.timingCost > 0) {
+            const worstH = String(b.worstHour).padStart(2, '0') + ':00';
+            const bestH = String(b.bestHour).padStart(2, '0') + ':00';
+            actions.push({
+                category: "TIMING",
+                title: `Trade around ${bestH} UTC`,
+                detail: `Your worst-scoring trades cluster around ${worstH} UTC. Trading closer to your best window (${bestH} UTC) historically scores higher.`,
+                estimatedImpact: `~$${Math.round(attribution.timingCost)}/month`,
+                impactValue: attribution.timingCost,
+                icon: "clock"
+            });
+        }
+
+        // VENUE action
+        if (comparisonData && comparisonData.venueAlphaBps > 0) {
+            const val = comparisonData.venueAlphaBps * (attribution?.totalNotional || 0) / 10000;
+            actions.push({
+                category: "VENUE",
+                title: `Route flow to ${(comparisonData.bestExchange || '').toUpperCase()}`,
+                detail: `Your fills have less slippage on ${(comparisonData.bestExchange || '').toUpperCase()} vs ${(comparisonData.worstExchange || '').toUpperCase()}.`,
+                estimatedImpact: `~${comparisonData.venueAlphaBps.toFixed(1)} bps saved`,
+                impactValue: val,
+                icon: "exchange"
+            });
+        }
+
+        // ORDER_TYPE action
+        if (b.makerRatio != null && b.makerRatio < 0.7 && attribution && attribution.feeCost > 0) {
+            const potentialSavings = attribution.feeCost * (0.7 - b.makerRatio);
+            actions.push({
+                category: "ORDER_TYPE",
+                title: "Increase maker ratio to 70%+",
+                detail: `You're at ${Math.round(b.makerRatio * 100)}% maker. Using more limit orders reduces fee drag.`,
+                estimatedImpact: `~$${Math.round(potentialSavings)}/month in fees`,
+                impactValue: potentialSavings,
+                icon: "tag"
+            });
+        }
+
+        // Sort actions by impactValue desc
+        actions.sort((a, b) => b.impactValue - a.impactValue);
+        
+        // Add priority 1, 2, 3
+        actions.forEach((a, i) => { a.priority = i + 1; delete a.impactValue; });
+
+        let headline = "Your execution is dialed in. No major improvements found.";
+        if (actions.length > 0) {
+            const top = actions[0];
+            const impact = top.estimatedImpact;
+            if (top.category === 'TIMING') headline = `Your biggest opportunity: shift trades closer to your best window (${impact})`;
+            else if (top.category === 'VENUE') headline = `Your biggest opportunity: route more flow to ${comparisonData?.bestExchange?.toUpperCase()} (${impact})`;
+            else if (top.category === 'ORDER_TYPE') headline = `Your biggest opportunity: use more limit orders to reduce fees (${impact})`;
+        }
+
+        const bestH = b.bestHour != null ? String(b.bestHour).padStart(2, '0') + ':00 UTC' : 'N/A';
+        const worstH = b.worstHour != null ? String(b.worstHour).padStart(2, '0') + ':00 UTC' : 'N/A';
+
+        return res.status(200).json({
+            headline,
+            actions,
+            bestWindow: { hour: bestH, reason: "tightest spreads, deepest liquidity" },
+            worstWindow: { hour: worstH, reason: "spreads 2-4x wider" }
+        });
+    } catch (err: any) {
+        console.error('Error in Coach endpoint:', err);
+        return res.status(500).json({ error: err.message });
+    }
+});

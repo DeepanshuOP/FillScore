@@ -71,14 +71,16 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
         if (loss > 0) estimatedLossUSD += loss;
 
         const hour = trade.executedAt.getUTCHours();
-        if (!hourStats[hour]) hourStats[hour] = { sum: 0, notional: 0 };
+        if (!hourStats[hour]) hourStats[hour] = { sum: 0, notional: 0, count: 0 };
         hourStats[hour].sum += scores.fillScore * notional;
         hourStats[hour].notional += notional;
+        hourStats[hour].count += 1;
 
         const sym = trade.symbol;
-        if (!symbolStats[sym]) symbolStats[sym] = { sum: 0, notional: 0 };
+        if (!symbolStats[sym]) symbolStats[sym] = { sum: 0, notional: 0, count: 0 };
         symbolStats[sym].sum += scores.fillScore * notional;
         symbolStats[sym].notional += notional;
+        symbolStats[sym].count += 1;
     }
 
     if (totalNotional === 0) {
@@ -91,10 +93,21 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
     let minHourScore = 101;
 
     for (const [hourStr, stat] of Object.entries(hourStats)) {
+        if (stat.count < 3) continue;
         const h = parseInt(hourStr, 10);
         const avgScore = stat.notional > 0 ? stat.sum / stat.notional : 0;
         if (avgScore > maxHourScore) { maxHourScore = avgScore; bestHour = h; }
         if (avgScore < minHourScore) { minHourScore = avgScore; worstHour = h; }
+    }
+
+    // fallback if no hour has >= 3 trades
+    if (maxHourScore === -1) {
+        for (const [hourStr, stat] of Object.entries(hourStats)) {
+            const h = parseInt(hourStr, 10);
+            const avgScore = stat.notional > 0 ? stat.sum / stat.notional : 0;
+            if (avgScore > maxHourScore) { maxHourScore = avgScore; bestHour = h; }
+            if (avgScore < minHourScore) { minHourScore = avgScore; worstHour = h; }
+        }
     }
 
     let bestSymbol = trades[0].symbol;
@@ -103,9 +116,18 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
     let minSymScore = 101;
 
     for (const [sym, stat] of Object.entries(symbolStats)) {
+        if (stat.count < 3) continue;
         const avgScore = stat.notional > 0 ? stat.sum / stat.notional : 0;
         if (avgScore > maxSymScore) { maxSymScore = avgScore; bestSymbol = sym; }
         if (avgScore < minSymScore) { minSymScore = avgScore; worstSymbol = sym; }
+    }
+    
+    if (maxSymScore === -1) {
+        for (const [sym, stat] of Object.entries(symbolStats)) {
+            const avgScore = stat.notional > 0 ? stat.sum / stat.notional : 0;
+            if (avgScore > maxSymScore) { maxSymScore = avgScore; bestSymbol = sym; }
+            if (avgScore < minSymScore) { minSymScore = avgScore; worstSymbol = sym; }
+        }
     }
 
     const avgFillScore = weightedFillScoreSum / totalNotional;

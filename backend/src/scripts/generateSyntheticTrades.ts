@@ -131,9 +131,14 @@ export async function generateSyntheticTradesForAll() {
             }
 
             for (const profile of profiles) {
-                if (!profile.preferredHours.includes(hour)) continue;
-
+                const isPreferred = profile.preferredHours.includes(hour);
+                
+                // Allow occasional trades outside preferred hours (10% probability)
                 let probability = (profile.tradesPerDay / 1440) * profile.symbolWeights[symbol] * 4;
+                if (!isPreferred) {
+                    probability *= 0.1;
+                }
+
                 if (volatility > 0.002) probability *= 1.5;
 
                 if (Math.random() < probability) {
