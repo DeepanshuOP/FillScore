@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from whale.realistic_fill import compute_realistic_fill
+from whale.realistic_fill import compute_realistic_fill, derive_arrival_price
 
 @pytest.fixture
 def empty_df():
@@ -66,3 +66,20 @@ def test_market_window_filter(rising_df):
     assert res['real_fill_used'] is True
     assert pytest.approx(res['exec_price'], 0.0001) == 101.25
     assert pytest.approx(res['arrival_slippage_bps'], 0.01) == 125.0
+
+def test_derive_arrival_exact(rising_df):
+    price = derive_arrival_price(rising_df, arrival_ts_ms=1200)
+    assert price == 101.0
+
+def test_derive_arrival_before(rising_df):
+    price = derive_arrival_price(rising_df, arrival_ts_ms=1300)
+    assert price == 101.0
+
+def test_derive_arrival_first(rising_df):
+    price = derive_arrival_price(rising_df, arrival_ts_ms=500)
+    assert price == 100.0
+
+def test_derive_arrival_empty(empty_df):
+    price = derive_arrival_price(empty_df, arrival_ts_ms=1000)
+    assert price is None
+

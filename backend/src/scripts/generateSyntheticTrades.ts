@@ -13,6 +13,7 @@ export interface TraderProfile {
     symbolWeights: Record<string, number>;
 }
 
+// Note: Profiles are calibrated to a fixed PRNG seed (42) and produce deterministic A/B/C grades on the corrected scoring pipeline.
 export const profiles: TraderProfile[] = [
     {
         id: 'aggressive',
@@ -27,7 +28,7 @@ export const profiles: TraderProfile[] = [
         preferredHours: [21, 22, 23, 0, 1, 2, 3],
         avgTradeUSD: 800,
         tradesPerDay: 6,
-        slippageMult: 2.86
+        slippageMult: 5.5
     },
     {
         id: 'moderate',
@@ -79,6 +80,16 @@ export interface SyntheticTrade {
 }
 
 export async function generateSyntheticTradesForAll() {
+    function mulberry32(a: number) {
+        return function() {
+            var t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        }
+    }
+    const prng = mulberry32(42);
+
     const marketDir = path.join(__dirname, '../../src/data/market');
     const outDir = path.join(__dirname, '../../src/data/synthetic');
     if (!fs.existsSync(outDir)) {
@@ -141,41 +152,41 @@ export async function generateSyntheticTradesForAll() {
 
                 if (volatility > 0.002) probability *= 1.5;
 
-                if (Math.random() < probability) {
+                if (prng() < probability) {
                     let side: 'BUY' | 'SELL' = 'BUY';
                     if (profile.id === 'aggressive') {
-                        side = Math.random() < 0.70 ? 'BUY' : 'SELL';
+                        side = prng() < 0.70 ? 'BUY' : 'SELL';
                     } else if (profile.id === 'disciplined') {
                         if (prevCloses.length >= 3) {
                             const trendingUp = prevCloses[prevCloses.length - 1] > prevCloses[prevCloses.length - 3];
                             side = trendingUp ? 'BUY' : 'SELL';
                         } else {
-                            side = Math.random() < 0.5 ? 'BUY' : 'SELL';
+                            side = prng() < 0.5 ? 'BUY' : 'SELL';
                         }
                     } else {
                         // moderate
                         if (prevCloses.length >= 3) {
                             const trendingUp = prevCloses[prevCloses.length - 1] > prevCloses[prevCloses.length - 3];
                             if (trendingUp) {
-                                side = Math.random() < 0.65 ? 'BUY' : 'SELL';
+                                side = prng() < 0.65 ? 'BUY' : 'SELL';
                             } else {
-                                side = Math.random() < 0.65 ? 'SELL' : 'BUY';
+                                side = prng() < 0.65 ? 'SELL' : 'BUY';
                             }
                         } else {
-                            side = Math.random() < 0.5 ? 'BUY' : 'SELL';
+                            side = prng() < 0.5 ? 'BUY' : 'SELL';
                         }
                     }
 
-                    const baseUSD = profile.avgTradeUSD * profile.symbolWeights[symbol] * (0.6 + Math.random() * 0.8);
+                    const baseUSD = profile.avgTradeUSD * profile.symbolWeights[symbol] * (0.6 + prng() * 0.8);
                     const quantity = baseUSD / open;
 
-                    const isMarket = Math.random() < profile.marketOrderRatio;
+                    const isMarket = prng() < profile.marketOrderRatio;
                     const isMaker = !isMarket;
                     const direction = side === 'BUY' ? 1 : -1;
                     
                     let execPrice = 0;
                     if (isMarket) {
-                        const slippage = (0.0002 + Math.random() * 0.0018) * profile.slippageMult;
+                        const slippage = (0.0002 + prng() * 0.0018) * profile.slippageMult;
                         let spreadMult = 1.0;
                         if (symbol === 'ETHUSDT') spreadMult = 1.2;
                         if (symbol === 'BNBUSDT') spreadMult = 1.5;
@@ -183,20 +194,20 @@ export async function generateSyntheticTradesForAll() {
                         
                         execPrice = open * (1 + direction * (slippage * spreadMult));
                     } else {
-                        const slippage = (0.00005 + Math.random() * 0.0001);
+                        const slippage = (0.00005 + prng() * 0.0001);
                         execPrice = open * (1 + direction * slippage);
                     }
 
                     const notional = quantity * execPrice;
-                    const fee = notional * (isMaker ? 0.0002 : 0.001);
-                    const executedAtMs = openTime + Math.floor(Math.random() * 59000);
+                    const fee = notional * 0.001;
+                    const executedAtMs = openTime + Math.floor(prng() * 59000);
 
                     const trade: SyntheticTrade = {
                         userId: `demo-${profile.id}`,
                         exchange: 'binance',
                         symbol,
-                        tradeId: `syn-${profile.id}-${symbol}-${Math.floor(Math.random() * 1000000)}`,
-                        orderId: `ord-${profile.id}-${symbol}-${Math.floor(Math.random() * 1000000)}`,
+                        tradeId: `syn-${profile.id}-${symbol}-${Math.floor(prng() * 1000000)}`,
+                        orderId: `ord-${profile.id}-${symbol}-${Math.floor(prng() * 1000000)}`,
                         side,
                         orderType: isMarket ? 'MARKET' : 'LIMIT',
                         isMaker,

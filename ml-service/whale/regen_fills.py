@@ -4,7 +4,7 @@ import pandas as pd
 from pymongo import MongoClient
 
 from whale.aggtrades_window import fetch_aggtrades_window
-from whale.realistic_fill import compute_realistic_fill
+from whale.realistic_fill import compute_realistic_fill, derive_arrival_price
 
 MONGO_URI = "mongodb+srv://deepanshuop_db_user:Fillscore2026@cluster0.ujqvavh.mongodb.net/fillscore?retryWrites=true&w=majority&appName=Cluster0"
 
@@ -58,13 +58,11 @@ def regen_fills(symbol: str, user_ids: list[str]) -> dict:
         # MARKET order
         df = fetch_aggtrades_window(symbol, trade_ts_ms, half_window_s=30)
         
-        arrival_price = trade.get('arrivalPriceProxy')
-        if arrival_price is None and not df.empty:
-            prior_trades = df[df['transact_time_ms'] <= trade_ts_ms]
-            if not prior_trades.empty:
-                arrival_price = prior_trades.iloc[-1]['price']
-            else:
-                arrival_price = df.iloc[0]['price']
+        derived_arrival = derive_arrival_price(df, trade_ts_ms)
+        if derived_arrival is not None:
+            arrival_price = derived_arrival
+        else:
+            arrival_price = trade.get('arrivalPriceProxy')
                 
         if arrival_price is None:
             db.trades.update_one(

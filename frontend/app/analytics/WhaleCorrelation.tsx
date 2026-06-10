@@ -220,7 +220,12 @@ export default function WhaleCorrelation({ userId }: { userId: string }) {
                 <tr className="border-b border-[rgba(255,255,255,0.06)] text-[9px] uppercase tracking-widest text-[#888078]">
                   <th className="pb-2 font-medium">Time (UTC)</th>
                   <th className="pb-2 font-medium">Side</th>
-                  <th className="pb-2 font-medium text-right">Slippage</th>
+                  <th className="pb-2 font-medium text-right">
+                    <div>Slippage</div>
+                    <div className="text-[8px] tracking-normal normal-case text-[#888078] opacity-80 mt-1 font-normal">
+                      arrival slippage &middot; negative = filled better than arrival
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody className="text-xs font-mono text-[#f0ece4]">

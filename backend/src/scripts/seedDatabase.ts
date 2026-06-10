@@ -165,8 +165,8 @@ async function run() {
         const quantity  = 0.01 + Math.random() * 0.09;          // 0.01 – 0.10
         const notional  = executionPrice * quantity;
 
-        // Bybit fee schedule: 0.02 % maker / 0.055 % taker
-        const fee       = notional * (isMaker ? 0.0002 : 0.00055);
+        // Bybit fee schedule: 0.10 % maker / 0.10 % taker
+        const fee       = notional * 0.001;
 
         // Random timestamp within the last 30 days
         const executedAt = new Date(NOW_MS - Math.random() * THIRTY_DAYS_MS);
@@ -222,7 +222,7 @@ async function run() {
 
         const quantity  = 0.01 + Math.random() * 0.09;
         const notional  = executionPrice * quantity;
-        const fee       = notional * (isMaker ? 0.0002 : 0.0005);
+        const fee       = notional * (isMaker ? 0.0008 : 0.001);
         const executedAt = new Date(NOW_MS - Math.random() * THIRTY_DAYS_MS);
 
         const raw = {
@@ -283,7 +283,8 @@ async function run() {
             
             const quantity = 0.01 + Math.random() * 0.09;
             const notional = executionPrice * quantity;
-            const fee = notional * (isMaker ? 0.0002 : 0.0005);
+            const feeRate = (ex.name === 'okx' && isMaker) ? 0.0008 : 0.001;
+            const fee = notional * feeRate;
             const executedAt = new Date(Date.now() - Math.random() * (30 * 24 * 60 * 60 * 1000));
             
             const raw = {

@@ -71,10 +71,17 @@ def fetch_aggtrades_window(
     start_ms = center_ts_ms - half_window_s * 1000
     end_ms = center_ts_ms + half_window_s * 1000
 
+    cache_dir = _CACHE_DIR / "windows"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    cache_path = cache_dir / f"{symbol}_{center_ts_ms}_{half_window_s}.parquet"
+    if cache_path.exists():
+        return pd.read_parquet(cache_path)
+
     # ── Primary: REST ───────────────────────────────────────────────────────
     df = _try_rest(symbol, start_ms, end_ms)
     if not df.empty:
         print(f"[aggtrades_window] DATA PATH: REST  center={center_ts_ms}")
+        df.to_parquet(cache_path, index=False)
         return df
 
     # ── Fallback: daily archive ──────────────────────────────────────────────
@@ -92,6 +99,7 @@ def fetch_aggtrades_window(
         f"[aggtrades_window] DATA PATH: ARCHIVE  center={center_ts_ms}  "
         f"rows_in_window={len(result)}"
     )
+    result.to_parquet(cache_path, index=False)
     return result
 
 

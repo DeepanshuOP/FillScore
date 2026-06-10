@@ -1,4 +1,13 @@
 import pandas as pd
+from typing import Optional
+
+def derive_arrival_price(aggtrades_df: pd.DataFrame, arrival_ts_ms: int) -> Optional[float]:
+    if aggtrades_df.empty:
+        return None
+    before_df = aggtrades_df[aggtrades_df['transact_time_ms'] <= arrival_ts_ms]
+    if not before_df.empty:
+        return float(before_df.iloc[-1]['price'])
+    return float(aggtrades_df.iloc[0]['price'])
 
 def compute_realistic_fill(aggtrades_df: pd.DataFrame, arrival_price: float, arrival_ts_ms: int, side: str, quantity: float, order_type: str, exec_window_ms: int = 2000) -> dict:
     if order_type.upper() == 'LIMIT':
