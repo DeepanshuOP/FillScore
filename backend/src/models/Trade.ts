@@ -46,6 +46,20 @@ const TradeSchema = new Schema<EnrichedTradeDocument>(
         fillScore: { type: Number },
         fillGrade: { type: String, enum: ['A', 'B', 'C', 'D', 'F'] },
         
+        // Whale Correlation (optional)
+        whaleNetPressure: { type: Number },
+        whalePressure: { type: Number },
+        whaleAdverseScore: { type: Number },
+        whaleAdverse: { type: Boolean },
+        whaleEventCount: { type: Number },
+        whaleNearestS: { type: Number },
+        whaleLargestNotional: { type: Number },
+        whaleTopEvent: {
+            side: { type: String, enum: ['BUY', 'SELL'] },
+            notional: { type: Number },
+            secondsFromTrade: { type: Number }
+        },
+        whaleEnrichedAt: { type: Date },
         // User Annotations
         note: { type: String, default: '', maxlength: 500 },
     },

@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "../components/Navbar";
+import WhaleCorrelation from "./WhaleCorrelation";
 import {
   BarChart,
   Bar,
@@ -620,6 +621,8 @@ function AnalyticsContent() {
 
         </div>
 
+        {/* SECTION 5 — WHALE CORRELATION */}
+        <WhaleCorrelation userId={userId} />
 
       </div>
     </div>

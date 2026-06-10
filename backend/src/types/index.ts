@@ -85,7 +85,23 @@ export interface TradeScores {
     fillGrade: "A" | "B" | "C" | "D" | "F";
 }
 
-export interface EnrichedTrade extends NormalisedTrade, Partial<MarketSnapshot>, Partial<TradeMetrics>, Partial<TradeScores> { }
+export interface WhaleCorrelation {
+    whaleNetPressure: number;
+    whalePressure: number;
+    whaleAdverseScore: number;
+    whaleAdverse: boolean;
+    whaleEventCount: number;
+    whaleNearestS: number | null;
+    whaleLargestNotional: number;
+    whaleTopEvent?: {
+        side: "BUY" | "SELL";
+        notional: number;
+        secondsFromTrade: number;
+    } | null;
+    whaleEnrichedAt: Date;
+}
+
+export interface EnrichedTrade extends NormalisedTrade, Partial<MarketSnapshot>, Partial<TradeMetrics>, Partial<TradeScores>, Partial<WhaleCorrelation> { }
 
 export interface AuditSummary {
     userId: string;

@@ -26,3 +26,9 @@ coverage/
 .env
 .env.*
 !.env.example
+
+# Python / ML-Service
+__pycache__/
+.pytest_cache/
+.cache/
+*.pyc

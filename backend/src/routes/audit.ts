@@ -686,7 +686,7 @@ auditRouter.get('/coach', async (req: Request, res: Response) => {
         const actions: any[] = [];
 
         // TIMING action
-        const b = latestAudit.breakdown || {};
+        const b: any = latestAudit.breakdown || {};
         if (b.bestHour != null && b.worstHour != null && attribution && attribution.timingCost > 0) {
             const worstH = String(b.worstHour).padStart(2, '0') + ':00';
             const bestH = String(b.bestHour).padStart(2, '0') + ':00';
@@ -752,6 +752,68 @@ auditRouter.get('/coach', async (req: Request, res: Response) => {
         });
     } catch (err: any) {
         console.error('Error in Coach endpoint:', err);
+        return res.status(500).json({ error: err.message });
+    }
+});
+
+auditRouter.get('/analytics/whale-correlation', async (req: Request, res: Response) => {
+    try {
+        const userId = req.query.userId as string;
+        if (!userId) {
+            return res.status(400).json({ error: 'Missing userId parameter' });
+        }
+
+        const trades = await Trade.find({
+            userId,
+            whaleEnrichedAt: { $exists: true }
+        }).sort({ executedAt: 1 }).lean();
+
+        const summaryBySymbol: Record<string, { totalEnriched: number, withWhaleEvent: number, adverseCount: number, detectionRate: number, adverseRate: number }> = {};
+        const symbolsSet = new Set<string>();
+
+        const formattedTrades = trades.map(t => {
+            const sym = t.symbol;
+            symbolsSet.add(sym);
+            if (!summaryBySymbol[sym]) {
+                summaryBySymbol[sym] = { totalEnriched: 0, withWhaleEvent: 0, adverseCount: 0, detectionRate: 0, adverseRate: 0 };
+            }
+            summaryBySymbol[sym].totalEnriched++;
+
+            if (t.whaleEventCount && t.whaleEventCount > 0) summaryBySymbol[sym].withWhaleEvent++;
+            if (t.whaleAdverse) summaryBySymbol[sym].adverseCount++;
+
+            return {
+                tradeId: t.tradeId,
+                executedAt: t.executedAt,
+                symbol: t.symbol,
+                side: t.side,
+                fillScore: t.fillScore,
+                arrivalSlippageBps: t.arrivalSlippageBps,
+                whaleAdverse: t.whaleAdverse,
+                whaleEventCount: t.whaleEventCount,
+                whaleTopEvent: t.whaleTopEvent
+            };
+        });
+
+        const symbols = Array.from(symbolsSet).sort((a, b) => {
+            if (a === 'BTCUSDT') return -1;
+            if (b === 'BTCUSDT') return 1;
+            return a.localeCompare(b);
+        });
+
+        for (const sym of symbols) {
+            const s = summaryBySymbol[sym];
+            s.detectionRate = s.totalEnriched > 0 ? s.withWhaleEvent / s.totalEnriched : 0;
+            s.adverseRate = s.totalEnriched > 0 ? s.adverseCount / s.totalEnriched : 0;
+        }
+
+        return res.status(200).json({
+            symbols,
+            summaryBySymbol,
+            trades: formattedTrades
+        });
+    } catch (err: any) {
+        console.error('Error in /analytics/whale-correlation endpoint:', err);
         return res.status(500).json({ error: err.message });
     }
 });

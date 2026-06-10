@@ -23,11 +23,11 @@ export const profiles: TraderProfile[] = [
             BNBUSDT: 0.20,
             SOLUSDT: 0.25
         },
-        marketOrderRatio: 0.75,
+        marketOrderRatio: 0.80,
         preferredHours: [21, 22, 23, 0, 1, 2, 3],
         avgTradeUSD: 800,
         tradesPerDay: 6,
-        slippageMult: 2.2
+        slippageMult: 2.86
     },
     {
         id: 'moderate',
@@ -38,7 +38,7 @@ export const profiles: TraderProfile[] = [
             BNBUSDT: 0.10,
             SOLUSDT: 0.10
         },
-        marketOrderRatio: 0.50,
+        marketOrderRatio: 0.35,
         preferredHours: [8, 9, 10, 11, 14, 15, 16, 17, 19, 20],
         avgTradeUSD: 500,
         tradesPerDay: 4,
@@ -53,9 +53,9 @@ export const profiles: TraderProfile[] = [
             BNBUSDT: 0.10,
             SOLUSDT: 0.05
         },
-        marketOrderRatio: 0.18,
+        marketOrderRatio: 0.0,
         preferredHours: [8, 9, 10, 11, 12, 13, 14, 15],
-        avgTradeUSD: 600,
+        avgTradeUSD: 300,
         tradesPerDay: 3,
         slippageMult: 0.35
     }
