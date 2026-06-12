@@ -1,0 +1,290 @@
+"""Agent Council — LangGraph StateGraph wiring for parallel specialist execution.
+
+Topology:
+  START → parallel fanout [liquidity, alpha, risk, fee] → synthesis → END
+
+Each specialist uses claude-haiku-4-5 (fast extraction).
+Synthesis uses claude-sonnet-4-6 (nuanced reasoning).
+"""
+
+from __future__ import annotations
+
+import asyncio
+import logging
+import time
+from typing import Any, TypedDict
+
+from langgraph.graph import END, START, StateGraph
+
+from agents import alpha_architect, fee_optimizer, liquidity_scout, risk_auditor, synthesis
+from agents.schemas import (
+    AlphaVerdict,
+    CouncilResult,
+    FeeVerdict,
+    LiquidityVerdict,
+    RiskVerdict,
+    SynthesisOutput,
+    TradeContext,
+)
+from agents.metrics.fee_packet import FeeMetricsPacket
+from agents.metrics.risk_packet import RiskMetricsPacket
+from agents.metrics.liquidity_packet import LiquidityMetricsPacket
+from agents.metrics.alpha_packet import AlphaMetricsPacket
+from agents.metrics.loader import load_all_packets, load_all_packets_for_user
+
+logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Default verdicts for graceful failure handling
+# ---------------------------------------------------------------------------
+
+def _default_liquidity() -> LiquidityVerdict:
+    return LiquidityVerdict(
+        agent="liquidity_scout",
+        liquidityRating="MODERATE",
+        slippageRoot="Agent unavailable",
+        cited_evidence=[],
+        severity="MEDIUM",
+        confidence=0.0,
+        flags=["agent_failed"],
+    )
+
+
+def _default_alpha() -> AlphaVerdict:
+    return AlphaVerdict(
+        agent="alpha_architect",
+        alphaRating="NEUTRAL",
+        bestAlternative="Agent unavailable",
+        cited_evidence=[],
+        severity="MEDIUM",
+        confidence=0.0,
+        flags=["agent_failed"],
+    )
+
+
+def _default_risk() -> RiskVerdict:
+    return RiskVerdict(
+        agent="risk_auditor",
+        riskLevel="MEDIUM",
+        cited_evidence=[],
+        severity="MEDIUM",
+        confidence=0.0,
+        flags=["agent_failed"],
+    )
+
+
+def _default_fee() -> FeeVerdict:
+    return FeeVerdict(
+        agent="fee_optimizer",
+        feeRating="MODERATE",
+        recommendedAction="Agent unavailable",
+        cited_evidence=[],
+        severity="MEDIUM",
+        confidence=0.0,
+        flags=["agent_failed"],
+    )
+
+
+def _default_synthesis(context: TradeContext) -> SynthesisOutput:
+    return SynthesisOutput(
+        headline="Synthesis unavailable — using fallback assessment",
+        narrative="One or more agents failed. This is a conservative fallback.",
+        topRecommendations=[
+            "Review execution data manually",
+            "Retry analysis when agents are available",
+            "Check API key and network connectivity",
+        ],
+        conflictLedger=[],
+        overallRating="FAIR",
+        estimatedMonthlyCostUSD=0.0,
+    )
+
+
+# ---------------------------------------------------------------------------
+# LangGraph state
+# ---------------------------------------------------------------------------
+
+class CouncilState(TypedDict, total=False):
+    context: TradeContext
+    specialist_client: Any
+    synthesis_client: Any
+    fee_packet: FeeMetricsPacket
+    risk_packet: RiskMetricsPacket
+    liquidity_packet: LiquidityMetricsPacket
+    alpha_packet: AlphaMetricsPacket
+    liquidity: LiquidityVerdict
+    alpha: AlphaVerdict
+    risk: RiskVerdict
+    fee: FeeVerdict
+    synthesis: SynthesisOutput
+    model_usage: dict
+
+
+# ---------------------------------------------------------------------------
+# Node functions
+# ---------------------------------------------------------------------------
+
+async def liquidity_scout_node(state: CouncilState) -> dict:
+    """Run the Liquidity Scout specialist."""
+    try:
+        verdict = await liquidity_scout.run(state["context"], state["liquidity_packet"], state["specialist_client"])
+    except Exception as exc:
+        import traceback
+        print(f"[Liquidity Scout] failed: {type(exc).__name__}: {exc}")
+        traceback.print_exc()
+        verdict = _default_liquidity()
+    return {"liquidity": verdict}
+
+
+async def alpha_architect_node(state: CouncilState) -> dict:
+    """Run the Alpha Architect specialist."""
+    try:
+        verdict = await alpha_architect.run(state["context"], state["alpha_packet"], state["specialist_client"])
+    except Exception as exc:
+        import traceback
+        print(f"[Alpha Architect] failed: {type(exc).__name__}: {exc}")
+        traceback.print_exc()
+        verdict = _default_alpha()
+    return {"alpha": verdict}
+
+
+async def risk_auditor_node(state: CouncilState) -> dict:
+    """Run the Risk Auditor specialist."""
+    try:
+        verdict = await risk_auditor.run(state["context"], state["risk_packet"], state["specialist_client"])
+    except Exception as exc:
+        import traceback
+        print(f"[Risk Auditor] failed: {type(exc).__name__}: {exc}")
+        traceback.print_exc()
+        verdict = _default_risk()
+    return {"risk": verdict}
+
+
+async def fee_optimizer_node(state: CouncilState) -> dict:
+    """Run the Fee Optimizer specialist."""
+    try:
+        verdict = await fee_optimizer.run(state["context"], state["fee_packet"], state["specialist_client"])
+    except Exception as exc:
+        import traceback
+        print(f"[Fee Optimizer] failed: {type(exc).__name__}: {exc}")
+        traceback.print_exc()
+        verdict = _default_fee()
+    return {"fee": verdict}
+
+
+async def synthesis_node(state: CouncilState) -> dict:
+    """Run the Synthesis agent with all four verdicts."""
+    verdicts = {
+        "liquidity_scout": state["liquidity"].model_dump(),
+        "alpha_architect": state["alpha"].model_dump(),
+        "risk_auditor": state["risk"].model_dump(),
+        "fee_optimizer": state["fee"].model_dump(),
+    }
+    try:
+        result = await synthesis.run(
+            state["context"],
+            verdicts,
+            state["fee_packet"],
+            state["risk_packet"],
+            state["liquidity_packet"],
+            state["alpha_packet"],
+            state["synthesis_client"],
+        )
+    except Exception as exc:
+        import traceback
+        print(f"[Synthesis] failed: {type(exc).__name__}: {exc}")
+        traceback.print_exc()
+        result = _default_synthesis(state["context"])
+    return {"synthesis": result}
+
+
+# ---------------------------------------------------------------------------
+# Build the StateGraph
+# ---------------------------------------------------------------------------
+
+def _build_graph() -> StateGraph:
+    """Construct the Agent Council LangGraph with parallel fanout."""
+    graph = StateGraph(CouncilState)
+
+    graph.add_node("liquidity_scout_node", liquidity_scout_node)
+    graph.add_node("alpha_architect_node", alpha_architect_node)
+    graph.add_node("risk_auditor_node", risk_auditor_node)
+    graph.add_node("fee_optimizer_node", fee_optimizer_node)
+    graph.add_node("synthesis_node", synthesis_node)
+
+    # Parallel execution
+    graph.add_edge(START, "liquidity_scout_node")
+    graph.add_edge(START, "alpha_architect_node")
+    graph.add_edge(START, "risk_auditor_node")
+    graph.add_edge(START, "fee_optimizer_node")
+
+    graph.add_edge("liquidity_scout_node", "synthesis_node")
+    graph.add_edge("alpha_architect_node", "synthesis_node")
+    graph.add_edge("risk_auditor_node", "synthesis_node")
+    graph.add_edge("fee_optimizer_node", "synthesis_node")
+
+    # Synthesis → END
+    graph.add_edge("synthesis_node", END)
+
+    return graph
+
+
+_compiled_graph = _build_graph().compile()
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+async def run_council(user_id: str, symbol: str) -> CouncilResult:
+    """Execute the full Agent Council pipeline and return a CouncilResult."""
+    from agents.llm_client import get_groq_client, get_openrouter_client, SYNTHESIS_PROVIDER, SPECIALIST_MODEL, SYNTHESIS_MODEL
+    
+    # Load packets first — this is the ground truth for all agent verdicts
+    if symbol == "ALL":
+        fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_all_packets_for_user(user_id)
+    else:
+        fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_all_packets(user_id, symbol)
+
+    context = TradeContext(
+        userId=user_id,
+        symbol=symbol,
+        regime="STABLE",  # placeholder until HMM; disclose in paper
+        fee_packet_hash=fee_pkt.content_hash,
+        risk_packet_hash=risk_pkt.content_hash,
+        liquidity_packet_hash=liquidity_pkt.content_hash,
+        alpha_packet_hash=alpha_pkt.content_hash,
+    )
+
+    specialist_client = get_groq_client()
+    synthesis_client = get_groq_client() if SYNTHESIS_PROVIDER == "groq" else get_openrouter_client()
+    start = time.time()
+
+    initial_state: CouncilState = {
+        "context": context,
+        "specialist_client": specialist_client,
+        "synthesis_client": synthesis_client,
+        "fee_packet": fee_pkt,
+        "risk_packet": risk_pkt,
+        "liquidity_packet": liquidity_pkt,
+        "alpha_packet": alpha_pkt,
+    }
+
+    final_state = await _compiled_graph.ainvoke(initial_state)
+
+    elapsed_ms = (time.time() - start) * 1000
+
+    return CouncilResult(
+        tradeContext=context,
+        liquidity=final_state["liquidity"],
+        alpha=final_state["alpha"],
+        risk=final_state["risk"],
+        fee=final_state["fee"],
+        synthesis=final_state["synthesis"],
+        totalLatencyMs=round(elapsed_ms, 2),
+        modelUsage={
+            "specialists_model": f"{SPECIALIST_MODEL} (Groq)",
+            "synthesis_model": f"{SYNTHESIS_MODEL} ({SYNTHESIS_PROVIDER})",
+        },
+    )
