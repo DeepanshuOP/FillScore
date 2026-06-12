@@ -616,7 +616,7 @@ export default function Dashboard() {
               <div style={{ marginBottom: '2.5rem' }}>
                 <AgentCouncil
                   userId={audit.userId}
-                  symbol={audit.breakdown.worstSymbol || "BTCUSDT"}
+                  symbol="BTCUSDT"
                   mlBaseUrl={process.env.NEXT_PUBLIC_ML_URL ?? "http://localhost:8000"}
                 />
               </div>

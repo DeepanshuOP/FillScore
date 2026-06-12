@@ -114,4 +114,8 @@ class CouncilResult(BaseModel):
         default_factory=dict,
         description="E1 faithfulness scores per agent — paper metric"
     )
+    gate_report: dict = Field(
+        default_factory=dict,
+        description="AC-5 verification gate — counterfactual verdicts per recommendation"
+    )
     run_id: Optional[str] = None

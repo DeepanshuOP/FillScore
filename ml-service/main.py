@@ -77,7 +77,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -239,6 +239,18 @@ async def council_stream(request: dict):
                 "topRecommendations": synth_verdict.topRecommendations,
                 "estimatedMonthlyCostUSD": synth_verdict.estimatedMonthlyCostUSD,
             })
+
+            # Verification gate
+            from agents.verification import verify_recommendations, gate_report_to_dict
+            gate_report = verify_recommendations(
+                recommendations=synth_verdict.topRecommendations,
+                fee_packet=fee_pkt.to_prompt_dict(),
+                risk_packet=risk_pkt.to_prompt_dict(),
+                liquidity_packet=liquidity_pkt.to_prompt_dict(),
+                alpha_packet=alpha_pkt.to_prompt_dict(),
+            )
+            gate_dict = gate_report_to_dict(gate_report)
+            yield sse("gate_done", {"gate_report": gate_dict})
 
             # Grounding check
             from agents.grounding import check_all_verdicts, summarise_grounding

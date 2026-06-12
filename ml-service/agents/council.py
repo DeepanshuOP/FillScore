@@ -302,6 +302,16 @@ async def run_council(user_id: str, symbol: str) -> CouncilResult:
     )
     grounding_summary = summarise_grounding(grounding_reports)
 
+    from agents.verification import verify_recommendations, gate_report_to_dict
+    gate_report = verify_recommendations(
+        recommendations=final_state["synthesis"].topRecommendations,
+        fee_packet=fee_pkt.to_prompt_dict(),
+        risk_packet=risk_pkt.to_prompt_dict(),
+        liquidity_packet=liquidity_pkt.to_prompt_dict(),
+        alpha_packet=alpha_pkt.to_prompt_dict(),
+    )
+    gate_dict = gate_report_to_dict(gate_report)
+
     from agents.persistence import save_council_run
 
     result = CouncilResult(
@@ -312,6 +322,7 @@ async def run_council(user_id: str, symbol: str) -> CouncilResult:
         fee=fee_verdict,
         synthesis=final_state["synthesis"],
         grounding_report=grounding_summary,
+        gate_report=gate_dict,
         totalLatencyMs=round(elapsed_ms, 2),
         modelUsage={
             "specialists_model": f"{SPECIALIST_MODEL} (Groq)",

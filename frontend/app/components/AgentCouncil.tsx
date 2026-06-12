@@ -75,6 +75,7 @@ export default function AgentCouncil({
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
   const [grounding, setGrounding] = useState<GroundingReport | null>(null);
+  const [gateReport, setGateReport] = useState<any>(null);
   const [totalLatencyMs, setTotalLatencyMs] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +86,7 @@ export default function AgentCouncil({
     setActiveAgent(null);
     setSynthesis(null);
     setGrounding(null);
+    setGateReport(null);
     setTotalLatencyMs(null);
     setError(null);
   };
@@ -179,6 +181,8 @@ export default function AgentCouncil({
       }));
     } else if (eventType === "synthesis_done") {
       setSynthesis(payload);
+    } else if (eventType === "gate_done") {
+      setGateReport(payload.gate_report);
     } else if (eventType === "complete") {
       setTotalLatencyMs(payload.totalLatencyMs);
       setGrounding(payload.grounding_report);
@@ -391,6 +395,21 @@ export default function AgentCouncil({
               {grounding.any_violations ? "⚠ review citations" : "✓ all grounded"}
             </span>
           </div>
+        </div>
+      )}
+
+      {/* Verification Gate */}
+      {gateReport && (
+        <div className="border border-slate-800 bg-slate-900/20 rounded-xl p-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-400 text-sm">Verification Gate</span>
+            <span className={`text-sm font-semibold ${gateReport.gate_passed ? "text-emerald-400" : "text-red-400"}`}>
+              {gateReport.passed_count}/{gateReport.total_recommendations} passed
+            </span>
+          </div>
+          {gateReport.contradiction_flags.length > 0 && (
+            <p className="text-amber-400 text-xs mt-1">⚠ {gateReport.contradiction_flags[0]}</p>
+          )}
         </div>
       )}
 
