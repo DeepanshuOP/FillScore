@@ -139,7 +139,7 @@ async def test_council_returns_valid_result() -> None:
             # Determine which agent by inspecting the system prompt
             messages = kwargs.get("messages", [])
             system = str(messages[0].get("content", "")) if messages else ""
-            if "synthesis agent" in system.lower():
+            if "judge" in system.lower() or "synthesis" in system.lower():
                 return _make_mock_response(MOCK_SYNTHESIS_JSON)
             elif "liquidity" in system.lower():
                 return _make_mock_response(MOCK_LIQUIDITY_JSON)
@@ -246,7 +246,7 @@ async def test_synthesis_receives_all_verdicts() -> None:
         messages = kwargs.get("messages", [])
         system = str(messages[0].get("content", "")) if messages else ""
         if "llama" in model or "deepseek" in model or "gpt-oss-120b" in model:
-            if "synthesis agent" in system.lower():
+            if "judge" in system.lower() or "synthesis" in system.lower():
                 # Synthesis call  capture the user message
                 if len(messages) > 1:
                     captured_synthesis_input = str(messages[1].get("content", ""))

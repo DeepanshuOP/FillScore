@@ -64,9 +64,9 @@ class FeeVerdict(BaseModel):
 # ── Synthesis output ──────────────────────────────────────────────────────────
 
 class ConflictEntry(BaseModel):
-    between: str
-    rule_applied: str
-    winner: str
+    between: str = Field(description="Two agents that disagreed, e.g. 'fee_optimizer vs risk_auditor'")
+    rule_applied: str = Field(description="The regime rule used to resolve, e.g. 'STABLE: Fee > Risk'")
+    winner: str = Field(description="Which agent's recommendation was prioritised")
 
 
 class SynthesisOutput(BaseModel):
@@ -79,9 +79,11 @@ class SynthesisOutput(BaseModel):
     )
     conflictLedger: list[ConflictEntry] = Field(
         default_factory=list,
-        description="Structured record of any agent conflicts resolved"
+        description="Structured conflict resolution log — each entry names the conflict, rule applied, and winner"
     )
-    overallRating: Literal["EXCELLENT", "GOOD", "FAIR", "POOR", "CRITICAL"]
+    overallRating: Literal["EXCELLENT", "GOOD", "FAIR", "POOR", "CRITICAL"] = Field(
+        description="Forced verdict — commit to EXCELLENT/GOOD/POOR/CRITICAL when evidence warrants; reserve FAIR only when evidence is genuinely balanced"
+    )
     estimatedMonthlyCostUSD: float = Field(
         description="Read directly from fee_packet.total_fee_paid_usd scaled to monthly — do not estimate"
     )
