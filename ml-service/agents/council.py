@@ -129,7 +129,7 @@ class CouncilState(TypedDict, total=False):
 async def liquidity_scout_node(state: CouncilState) -> dict:
     """Run the Liquidity Scout specialist."""
     try:
-        verdict = await liquidity_scout.run(state["context"], state["liquidity_packet"], state["specialist_client"])
+        verdict = await liquidity_scout.run(state["context"], state["specialist_client"], state["liquidity_packet"])
     except Exception as exc:
         import traceback
         print(f"[Liquidity Scout] failed: {type(exc).__name__}: {exc}")
@@ -141,7 +141,7 @@ async def liquidity_scout_node(state: CouncilState) -> dict:
 async def alpha_architect_node(state: CouncilState) -> dict:
     """Run the Alpha Architect specialist."""
     try:
-        verdict = await alpha_architect.run(state["context"], state["alpha_packet"], state["specialist_client"])
+        verdict = await alpha_architect.run(state["context"], state["specialist_client"], state["alpha_packet"])
     except Exception as exc:
         import traceback
         print(f"[Alpha Architect] failed: {type(exc).__name__}: {exc}")
@@ -153,7 +153,7 @@ async def alpha_architect_node(state: CouncilState) -> dict:
 async def risk_auditor_node(state: CouncilState) -> dict:
     """Run the Risk Auditor specialist."""
     try:
-        verdict = await risk_auditor.run(state["context"], state["risk_packet"], state["specialist_client"])
+        verdict = await risk_auditor.run(state["context"], state["specialist_client"], state["risk_packet"])
     except Exception as exc:
         import traceback
         print(f"[Risk Auditor] failed: {type(exc).__name__}: {exc}")
@@ -165,7 +165,7 @@ async def risk_auditor_node(state: CouncilState) -> dict:
 async def fee_optimizer_node(state: CouncilState) -> dict:
     """Run the Fee Optimizer specialist."""
     try:
-        verdict = await fee_optimizer.run(state["context"], state["fee_packet"], state["specialist_client"])
+        verdict = await fee_optimizer.run(state["context"], state["specialist_client"], state["fee_packet"])
     except Exception as exc:
         import traceback
         print(f"[Fee Optimizer] failed: {type(exc).__name__}: {exc}")
@@ -186,11 +186,11 @@ async def synthesis_node(state: CouncilState) -> dict:
         result = await synthesis.run(
             state["context"],
             verdicts,
+            state["synthesis_client"],
             state["fee_packet"],
             state["risk_packet"],
             state["liquidity_packet"],
             state["alpha_packet"],
-            state["synthesis_client"],
         )
     except Exception as exc:
         import traceback

@@ -44,11 +44,11 @@ SYSTEM_PROMPT = (
 async def run(
     context: TradeContext,
     verdicts: dict[str, Any],
-    fee_packet: FeeMetricsPacket,
-    risk_packet: RiskMetricsPacket,
-    liquidity_packet: LiquidityMetricsPacket,
-    alpha_packet: AlphaMetricsPacket,
     client: AsyncOpenAI,
+    fee_packet: FeeMetricsPacket = None,
+    risk_packet: RiskMetricsPacket = None,
+    liquidity_packet: LiquidityMetricsPacket = None,
+    alpha_packet: AlphaMetricsPacket = None,
 ) -> SynthesisOutput:
     """Execute the Synthesis agent, merging all specialist verdicts."""
     user_content = f"""FeeMetricsPacket:

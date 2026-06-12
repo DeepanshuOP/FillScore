@@ -11,6 +11,8 @@ from typing import AsyncGenerator
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import StreamingResponse
+import asyncio, json
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pymongo import MongoClient
@@ -149,3 +151,127 @@ async def get_run(run_id: str):
 async def get_telemetry(userId: str = None):
     from agents.persistence import get_telemetry_summary
     return await get_telemetry_summary(userId)
+
+@app.post("/ml/agents/council/stream")
+async def council_stream(request: dict):
+    """
+    SSE endpoint for streaming council results.
+    Fires events as each agent completes:
+      - agent_start: {agent, timestamp}
+      - agent_done: {agent, verdict_summary, grounding_score}
+      - synthesis_done: {headline, overallRating, topRecommendations}
+      - complete: {run_id, totalLatencyMs, grounding_report}
+    """
+    user_id = request.get("userId", "")
+    symbol = request.get("symbol", "BTCUSDT")
+
+    async def event_generator():
+        import time
+        start = time.time()
+
+        def sse(event: str, data: dict) -> str:
+            return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+        try:
+            # Load packets first
+            from agents.metrics.loader import load_all_packets
+            fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_all_packets(user_id, symbol)
+
+            from agents.schemas import TradeContext
+            context = TradeContext(
+                userId=user_id, symbol=symbol, regime="STABLE",
+                fee_packet_hash=fee_pkt.content_hash,
+                risk_packet_hash=risk_pkt.content_hash,
+                liquidity_packet_hash=liquidity_pkt.content_hash,
+                alpha_packet_hash=alpha_pkt.content_hash,
+            )
+
+            # Import agents
+            from agents import liquidity_scout, alpha_architect, risk_auditor, fee_optimizer, synthesis
+            from agents.llm_client import get_groq_client, get_openrouter_client, SYNTHESIS_MODEL, SYNTHESIS_PROVIDER
+            groq_client = get_groq_client()
+
+            # Run specialists sequentially for SSE (so we can fire events as each completes)
+            # This is streaming mode — parallel mode is for the non-streaming endpoint
+            agents_config = [
+                ("liquidity_scout", liquidity_scout.run, liquidity_pkt),
+                ("alpha_architect", alpha_architect.run, alpha_pkt),
+                ("risk_auditor",    risk_auditor.run,    risk_pkt),
+                ("fee_optimizer",   fee_optimizer.run,   fee_pkt),
+            ]
+
+            verdicts = {}
+            for agent_name, agent_fn, packet in agents_config:
+                yield sse("agent_start", {"agent": agent_name, "timestamp": time.time()})
+                verdict = await agent_fn(context, groq_client, packet)
+                verdicts[agent_name] = verdict
+
+                # Summarise verdict for the event (no raw packet data)
+                verdict_dict = verdict.model_dump()
+                yield sse("agent_done", {
+                    "agent": agent_name,
+                    "rating": verdict_dict.get(
+                        next((k for k in ["liquidityRating","alphaRating","riskLevel","feeRating"] if k in verdict_dict), ""),
+                        "UNKNOWN"
+                    ),
+                    "confidence": verdict_dict.get("confidence", 0),
+                    "severity": verdict_dict.get("severity", "MEDIUM"),
+                    "cited_evidence_count": len(verdict_dict.get("cited_evidence", [])),
+                    "flags": verdict_dict.get("flags", []),
+                })
+
+            # Synthesis
+            yield sse("agent_start", {"agent": "synthesis", "timestamp": time.time()})
+            if SYNTHESIS_PROVIDER == "openrouter":
+                synth_client = get_openrouter_client()
+            else:
+                synth_client = get_groq_client()
+
+            synth_verdict = await synthesis.run(
+                context,
+                {k: v.model_dump() for k, v in verdicts.items()},
+                synth_client,
+                fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt,
+            )
+            yield sse("synthesis_done", {
+                "headline": synth_verdict.headline,
+                "overallRating": synth_verdict.overallRating,
+                "topRecommendations": synth_verdict.topRecommendations,
+                "estimatedMonthlyCostUSD": synth_verdict.estimatedMonthlyCostUSD,
+            })
+
+            # Grounding check
+            from agents.grounding import check_all_verdicts, summarise_grounding
+            grounding_reports = check_all_verdicts(
+                liquidity_cited=verdicts["liquidity_scout"].cited_evidence,
+                liquidity_reasoning=verdicts["liquidity_scout"].slippageRoot,
+                liquidity_packet=liquidity_pkt.to_prompt_dict(),
+                alpha_cited=verdicts["alpha_architect"].cited_evidence,
+                alpha_reasoning=verdicts["alpha_architect"].bestAlternative,
+                alpha_packet=alpha_pkt.to_prompt_dict(),
+                risk_cited=verdicts["risk_auditor"].cited_evidence,
+                risk_reasoning=" ".join(verdicts["risk_auditor"].flags),
+                risk_packet=risk_pkt.to_prompt_dict(),
+                fee_cited=verdicts["fee_optimizer"].cited_evidence,
+                fee_reasoning=verdicts["fee_optimizer"].recommendedAction,
+                fee_packet=fee_pkt.to_prompt_dict(),
+            )
+            grounding_summary = summarise_grounding(grounding_reports)
+
+            elapsed = (time.time() - start) * 1000
+            yield sse("complete", {
+                "totalLatencyMs": round(elapsed, 2),
+                "grounding_report": grounding_summary,
+            })
+
+        except Exception as e:
+            yield sse("error", {"message": str(e)})
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )

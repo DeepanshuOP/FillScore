@@ -32,7 +32,7 @@ SYSTEM_PROMPT = (
 )
 
 
-async def run(context: TradeContext, packet: RiskMetricsPacket, client: AsyncGroq) -> RiskVerdict:
+async def run(context: TradeContext, client: AsyncGroq, packet: RiskMetricsPacket = None) -> RiskVerdict:
     """Execute the Risk Auditor agent against the given trade context."""
     user_content = f"""RiskMetricsPacket:
 {json.dumps(packet.to_prompt_dict(), indent=2)}

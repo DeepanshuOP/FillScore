@@ -33,7 +33,7 @@ SYSTEM_PROMPT = (
 )
 
 
-async def run(context: TradeContext, packet: FeeMetricsPacket, client: AsyncGroq) -> FeeVerdict:
+async def run(context: TradeContext, client: AsyncGroq, packet: FeeMetricsPacket = None) -> FeeVerdict:
     """Execute the Fee Optimizer agent against the given trade context."""
     user_content = f"""FeeMetricsPacket:
 {json.dumps(packet.to_prompt_dict(), indent=2)}

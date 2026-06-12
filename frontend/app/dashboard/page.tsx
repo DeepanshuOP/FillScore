@@ -7,6 +7,7 @@ import {
   Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
 import { Clock, ArrowLeftRight, Tag, Activity } from 'lucide-react';
+import AgentCouncil from '../components/AgentCouncil';
 
 interface CostAttribution {
   slippageCost: number;
@@ -610,6 +611,14 @@ export default function Dashboard() {
                   <span>EXCHANGE  ·  {audit.exchange.toUpperCase()}</span>
                   <span>MAKER RATIO  ·  {Math.round(audit.breakdown.makerRatio * 100)}%</span>
                 </div>
+              </div>
+
+              <div style={{ marginBottom: '2.5rem' }}>
+                <AgentCouncil
+                  userId={audit.userId}
+                  symbol={audit.breakdown.worstSymbol || "BTCUSDT"}
+                  mlBaseUrl={process.env.NEXT_PUBLIC_ML_URL ?? "http://localhost:8000"}
+                />
               </div>
 
               {/* SCORE BARS — Part 3 */}

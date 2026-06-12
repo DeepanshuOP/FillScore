@@ -38,7 +38,7 @@ SYSTEM_PROMPT = (
 )
 
 
-async def run(context: TradeContext, packet: LiquidityMetricsPacket, client: AsyncGroq) -> LiquidityVerdict:
+async def run(context: TradeContext, client: AsyncGroq, packet: LiquidityMetricsPacket = None) -> LiquidityVerdict:
     """Execute the Liquidity Scout agent against the given trade context."""
     user_content = f"""LiquidityMetricsPacket:
 {json.dumps(packet.to_prompt_dict(), indent=2)}

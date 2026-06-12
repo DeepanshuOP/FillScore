@@ -33,7 +33,7 @@ SYSTEM_PROMPT = (
 )
 
 
-async def run(context: TradeContext, packet: AlphaMetricsPacket, client: AsyncGroq) -> AlphaVerdict:
+async def run(context: TradeContext, client: AsyncGroq, packet: AlphaMetricsPacket = None) -> AlphaVerdict:
     """Execute the Alpha Architect agent against the given trade context."""
     user_content = f"""AlphaMetricsPacket:
 {json.dumps(packet.to_prompt_dict(), indent=2)}
