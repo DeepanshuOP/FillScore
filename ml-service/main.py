@@ -128,3 +128,24 @@ async def council_endpoint(req: CouncilRequest) -> CouncilResult:
 
     result = await run_council(req.userId, req.symbol)
     return result
+
+
+@app.get("/ml/agents/council/runs")
+async def list_runs(userId: str, symbol: str = None, limit: int = 20):
+    from agents.persistence import list_council_runs
+    runs = await list_council_runs(userId, symbol, limit)
+    return {"runs": runs, "count": len(runs)}
+
+@app.get("/ml/agents/council/runs/{run_id}")
+async def get_run(run_id: str):
+    from agents.persistence import load_council_run
+    run = await load_council_run(run_id)
+    if not run:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
+    return run
+
+@app.get("/ml/agents/council/telemetry")
+async def get_telemetry(userId: str = None):
+    from agents.persistence import get_telemetry_summary
+    return await get_telemetry_summary(userId)

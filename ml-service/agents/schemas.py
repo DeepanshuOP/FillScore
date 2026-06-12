@@ -110,3 +110,8 @@ class CouncilResult(BaseModel):
     synthesis: SynthesisOutput
     totalLatencyMs: float
     modelUsage: dict
+    grounding_report: dict = Field(
+        default_factory=dict,
+        description="E1 faithfulness scores per agent — paper metric"
+    )
+    run_id: Optional[str] = None

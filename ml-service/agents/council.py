@@ -17,6 +17,7 @@ from typing import Any, TypedDict
 from langgraph.graph import END, START, StateGraph
 
 from agents import alpha_architect, fee_optimizer, liquidity_scout, risk_auditor, synthesis
+from agents.grounding import check_all_verdicts, summarise_grounding
 from agents.schemas import (
     AlphaVerdict,
     CouncilResult,
@@ -275,16 +276,67 @@ async def run_council(user_id: str, symbol: str) -> CouncilResult:
 
     elapsed_ms = (time.time() - start) * 1000
 
-    return CouncilResult(
+    liquidity_verdict = final_state["liquidity"]
+    alpha_verdict = final_state["alpha"]
+    risk_verdict = final_state["risk"]
+    fee_verdict = final_state["fee"]
+
+    liquidity_pkt = final_state["liquidity_packet"]
+    alpha_pkt = final_state["alpha_packet"]
+    risk_pkt = final_state["risk_packet"]
+    fee_pkt = final_state["fee_packet"]
+
+    grounding_reports = check_all_verdicts(
+        liquidity_cited=liquidity_verdict.cited_evidence,
+        liquidity_reasoning=liquidity_verdict.slippageRoot,
+        liquidity_packet=liquidity_pkt.to_prompt_dict(),
+        alpha_cited=alpha_verdict.cited_evidence,
+        alpha_reasoning=alpha_verdict.bestAlternative,
+        alpha_packet=alpha_pkt.to_prompt_dict(),
+        risk_cited=risk_verdict.cited_evidence,
+        risk_reasoning=" ".join(risk_verdict.flags),
+        risk_packet=risk_pkt.to_prompt_dict(),
+        fee_cited=fee_verdict.cited_evidence,
+        fee_reasoning=fee_verdict.recommendedAction,
+        fee_packet=fee_pkt.to_prompt_dict(),
+    )
+    grounding_summary = summarise_grounding(grounding_reports)
+
+    from agents.persistence import save_council_run
+
+    result = CouncilResult(
         tradeContext=context,
-        liquidity=final_state["liquidity"],
-        alpha=final_state["alpha"],
-        risk=final_state["risk"],
-        fee=final_state["fee"],
+        liquidity=liquidity_verdict,
+        alpha=alpha_verdict,
+        risk=risk_verdict,
+        fee=fee_verdict,
         synthesis=final_state["synthesis"],
+        grounding_report=grounding_summary,
         totalLatencyMs=round(elapsed_ms, 2),
         modelUsage={
             "specialists_model": f"{SPECIALIST_MODEL} (Groq)",
             "synthesis_model": f"{SYNTHESIS_MODEL} ({SYNTHESIS_PROVIDER})",
         },
     )
+
+    try:
+        run_id = await save_council_run(
+            user_id=user_id,
+            symbol=symbol,
+            council_result_dict=result.model_dump(),
+            grounding_summary=grounding_summary,
+            packet_hashes={
+                "fee": fee_pkt.content_hash,
+                "risk": risk_pkt.content_hash,
+                "liquidity": liquidity_pkt.content_hash,
+                "alpha": alpha_pkt.content_hash,
+            },
+            model_usage=result.modelUsage,
+            total_latency_ms=result.totalLatencyMs,
+        )
+        result.run_id = run_id
+    except Exception as e:
+        print(f"[persistence] Failed to save run: {e}")
+        result.run_id = None
+
+    return result
