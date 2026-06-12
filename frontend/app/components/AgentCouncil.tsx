@@ -25,6 +25,14 @@ interface GroundingReport {
   any_violations: boolean;
 }
 
+interface DebateResult {
+  prosecution_summary: string;
+  defense_summary: string;
+  key_dispute: string;
+  round_count: number;
+  claim_count: number;
+}
+
 const AGENT_LABELS: Record<string, string> = {
   liquidity_scout: "Liquidity Scout",
   alpha_architect: "Alpha Architect",
@@ -76,6 +84,8 @@ export default function AgentCouncil({
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
   const [grounding, setGrounding] = useState<GroundingReport | null>(null);
   const [gateReport, setGateReport] = useState<any>(null);
+  const [debate, setDebate] = useState<DebateResult | null>(null);
+  const [debateRunning, setDebateRunning] = useState(false);
   const [totalLatencyMs, setTotalLatencyMs] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -87,6 +97,8 @@ export default function AgentCouncil({
     setSynthesis(null);
     setGrounding(null);
     setGateReport(null);
+    setDebate(null);
+    setDebateRunning(false);
     setTotalLatencyMs(null);
     setError(null);
   };
@@ -179,6 +191,11 @@ export default function AgentCouncil({
           status: "done",
         },
       }));
+    } else if (eventType === "debate_started") {
+      setDebateRunning(true);
+    } else if (eventType === "debate_done") {
+      setDebateRunning(false);
+      setDebate(payload);
     } else if (eventType === "synthesis_done") {
       setSynthesis(payload);
     } else if (eventType === "gate_done") {
@@ -309,6 +326,44 @@ export default function AgentCouncil({
           );
         })}
       </div>
+
+      {/* Debate panel */}
+      {(debate || debateRunning) && (
+        <div className="border border-violet-800/40 bg-violet-950/20 rounded-xl p-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-violet-300 text-sm font-semibold uppercase tracking-wider">
+              ⚖ Execution Trial
+            </h3>
+            {debateRunning && (
+              <span className="text-xs text-violet-400 animate-pulse">debating…</span>
+            )}
+            {debate && (
+              <span className="text-xs text-slate-500">
+                {debate.round_count} round{debate.round_count !== 1 ? "s" : ""} · {debate.claim_count} claims
+              </span>
+            )}
+          </div>
+
+          {debate && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-red-950/20 border border-red-800/30 rounded-lg p-3">
+                  <p className="text-red-400 text-xs font-semibold mb-1 uppercase">Prosecution</p>
+                  <p className="text-slate-300 text-xs leading-relaxed">{debate.prosecution_summary}</p>
+                </div>
+                <div className="bg-emerald-950/20 border border-emerald-800/30 rounded-lg p-3">
+                  <p className="text-emerald-400 text-xs font-semibold mb-1 uppercase">Defense</p>
+                  <p className="text-slate-300 text-xs leading-relaxed">{debate.defense_summary}</p>
+                </div>
+              </div>
+              <div className="bg-slate-900/40 rounded-lg p-3">
+                <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Key Dispute</p>
+                <p className="text-slate-300 text-xs leading-relaxed">{debate.key_dispute}</p>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Synthesis panel */}
       {synthesis && (

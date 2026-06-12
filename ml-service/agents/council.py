@@ -119,6 +119,7 @@ class CouncilState(TypedDict, total=False):
     risk: RiskVerdict
     fee: FeeVerdict
     synthesis: SynthesisOutput
+    debate_dict: dict
     model_usage: dict
 
 
@@ -173,15 +174,31 @@ async def fee_optimizer_node(state: CouncilState) -> dict:
         verdict = _default_fee()
     return {"fee": verdict}
 
-
 async def synthesis_node(state: CouncilState) -> dict:
-    """Run the Synthesis agent with all four verdicts."""
+    """Run the Execution Trial debate, then the Synthesis agent (judge)."""
     verdicts = {
         "liquidity_scout": state["liquidity"].model_dump(),
         "alpha_architect": state["alpha"].model_dump(),
         "risk_auditor": state["risk"].model_dump(),
         "fee_optimizer": state["fee"].model_dump(),
     }
+
+    # ── Execution Trial debate (before synthesis) ──────────────────────
+    from agents.debate import run_debate, transcript_to_dict
+    debate_dict = {}
+    try:
+        debate_transcript = await run_debate(
+            liquidity_packet=state["liquidity_packet"].to_prompt_dict(),
+            risk_packet=state["risk_packet"].to_prompt_dict(),
+            fee_packet=state["fee_packet"].to_prompt_dict(),
+            alpha_packet=state["alpha_packet"].to_prompt_dict(),
+            groq_client=state["specialist_client"],
+        )
+        debate_dict = transcript_to_dict(debate_transcript)
+    except Exception as exc:
+        print(f"[Debate] failed: {type(exc).__name__}: {exc}")
+
+    # ── Synthesis (judge reads debate transcript) ──────────────────────
     try:
         result = await synthesis.run(
             state["context"],
@@ -191,13 +208,14 @@ async def synthesis_node(state: CouncilState) -> dict:
             state["risk_packet"],
             state["liquidity_packet"],
             state["alpha_packet"],
+            debate_dict=debate_dict,
         )
     except Exception as exc:
         import traceback
         print(f"[Synthesis] failed: {type(exc).__name__}: {exc}")
         traceback.print_exc()
         result = _default_synthesis(state["context"])
-    return {"synthesis": result}
+    return {"synthesis": result, "debate_dict": debate_dict}
 
 
 # ---------------------------------------------------------------------------
@@ -323,6 +341,7 @@ async def run_council(user_id: str, symbol: str) -> CouncilResult:
         synthesis=final_state["synthesis"],
         grounding_report=grounding_summary,
         gate_report=gate_dict,
+        debate_transcript=final_state.get("debate_dict", {}),
         totalLatencyMs=round(elapsed_ms, 2),
         modelUsage={
             "specialists_model": f"{SPECIALIST_MODEL} (Groq)",

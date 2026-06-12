@@ -118,4 +118,8 @@ class CouncilResult(BaseModel):
         default_factory=dict,
         description="AC-5 verification gate — counterfactual verdicts per recommendation"
     )
+    debate_transcript: dict = Field(
+        default_factory=dict,
+        description="AC-6 execution trial debate — prosecution/defense claims"
+    )
     run_id: Optional[str] = None

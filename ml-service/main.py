@@ -220,7 +220,26 @@ async def council_stream(request: dict):
                     "flags": verdict_dict.get("flags", []),
                 })
 
-            # Synthesis
+            # Execution Trial debate (before synthesis)
+            yield sse("debate_started", {"message": "Execution Trial in progress", "max_rounds": 2})
+            from agents.debate import run_debate, transcript_to_dict as debate_transcript_to_dict
+            debate_transcript = await run_debate(
+                liquidity_packet=liquidity_pkt.to_prompt_dict(),
+                risk_packet=risk_pkt.to_prompt_dict(),
+                fee_packet=fee_pkt.to_prompt_dict(),
+                alpha_packet=alpha_pkt.to_prompt_dict(),
+                groq_client=groq_client,
+            )
+            debate_dict = debate_transcript_to_dict(debate_transcript)
+            yield sse("debate_done", {
+                "round_count": debate_dict["round_count"],
+                "prosecution_summary": debate_dict["prosecution_summary"],
+                "defense_summary": debate_dict["defense_summary"],
+                "key_dispute": debate_dict["key_dispute"],
+                "claim_count": len(debate_dict["claims"]),
+            })
+
+            # Synthesis (judge reads debate transcript)
             yield sse("agent_start", {"agent": "synthesis", "timestamp": time.time()})
             if SYNTHESIS_PROVIDER == "openrouter":
                 synth_client = get_openrouter_client()
@@ -232,6 +251,7 @@ async def council_stream(request: dict):
                 {k: v.model_dump() for k, v in verdicts.items()},
                 synth_client,
                 fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt,
+                debate_dict=debate_dict,
             )
             yield sse("synthesis_done", {
                 "headline": synth_verdict.headline,

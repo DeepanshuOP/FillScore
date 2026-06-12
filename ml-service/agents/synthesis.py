@@ -49,8 +49,22 @@ async def run(
     risk_packet: RiskMetricsPacket = None,
     liquidity_packet: LiquidityMetricsPacket = None,
     alpha_packet: AlphaMetricsPacket = None,
+    debate_dict: dict | None = None,
 ) -> SynthesisOutput:
     """Execute the Synthesis agent, merging all specialist verdicts."""
+    debate_section = ""
+    if debate_dict and debate_dict.get("claims"):
+        debate_section = f"""
+
+EXECUTION TRIAL TRANSCRIPT:
+Prosecution: {debate_dict.get('prosecution_summary', 'N/A')}
+Defense: {debate_dict.get('defense_summary', 'N/A')}
+Key Dispute: {debate_dict.get('key_dispute', 'N/A')}
+Full claims:
+{json.dumps(debate_dict.get('claims', []), indent=2)}
+
+As the judge, weigh both sides. Your verdict must address the key dispute."""
+
     user_content = f"""FeeMetricsPacket:
 {json.dumps(fee_packet.to_prompt_dict(), indent=2)}
 
@@ -67,7 +81,7 @@ Specialist Verdicts:
 {json.dumps(verdicts, indent=2)}
 
 Regime: {context.regime}
-
+{debate_section}
 Generate synthesis. Read estimatedMonthlyCostUSD directly from fee_packet.total_fee_paid_usd scaled to monthly."""
 
     async def _call():
