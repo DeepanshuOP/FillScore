@@ -223,9 +223,9 @@ async def test_specialist_failure_produces_default_verdict() -> None:
     assert result.liquidity.confidence == 0.0
     assert "agent_failed" in result.liquidity.flags
     # Other agents should be fine
-    assert result.alpha.confidence > 0
-    assert result.risk.confidence > 0
-    assert result.fee.confidence > 0
+    assert result.alpha.llm_self_confidence > 0
+    assert result.risk.llm_self_confidence > 0
+    assert result.fee.llm_self_confidence > 0
 
 
 # ---------------------------------------------------------------------------

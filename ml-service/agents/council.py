@@ -176,6 +176,32 @@ async def fee_optimizer_node(state: CouncilState) -> dict:
 
 async def synthesis_node(state: CouncilState) -> dict:
     """Run the Execution Trial debate, then the Synthesis agent (judge)."""
+    from agents.confidence import inject_coverage_confidence
+
+    packets_by_agent = {
+        "liquidity_scout": state["liquidity_packet"].to_prompt_dict(),
+        "alpha_architect": state["alpha_packet"].to_prompt_dict(),
+        "risk_auditor": state["risk_packet"].to_prompt_dict(),
+        "fee_optimizer": state["fee_packet"].to_prompt_dict(),
+    }
+
+    for agent_name, verdict in [
+        ("liquidity_scout", state["liquidity"]),
+        ("alpha_architect", state["alpha"]),
+        ("risk_auditor", state["risk"]),
+        ("fee_optimizer", state["fee"]),
+    ]:
+        llm_conf = verdict.confidence
+        updated = inject_coverage_confidence(
+            verdict.model_dump(),
+            verdict.cited_evidence,
+            packets_by_agent[agent_name],
+            llm_self_confidence=llm_conf,
+        )
+        verdict.confidence = updated["confidence"]
+        verdict.llm_self_confidence = updated["llm_self_confidence"]
+        verdict.evidence_coverage_detail = updated["evidence_coverage_detail"]
+
     verdicts = {
         "liquidity_scout": state["liquidity"].model_dump(),
         "alpha_architect": state["alpha"].model_dump(),

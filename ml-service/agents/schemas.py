@@ -21,6 +21,8 @@ class LiquidityVerdict(BaseModel):
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = "MEDIUM"
     confidence: float = Field(ge=0.0, le=1.0)
     flags: list[str] = Field(default_factory=list)
+    llm_self_confidence: float | None = Field(default=None, description="LLM-reported confidence, stored for calibration analysis")
+    evidence_coverage_detail: dict = Field(default_factory=dict)
 
 
 class AlphaVerdict(BaseModel):
@@ -34,6 +36,8 @@ class AlphaVerdict(BaseModel):
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = "MEDIUM"
     confidence: float = Field(ge=0.0, le=1.0)
     flags: list[str] = Field(default_factory=list)
+    llm_self_confidence: float | None = Field(default=None, description="LLM-reported confidence, stored for calibration analysis")
+    evidence_coverage_detail: dict = Field(default_factory=dict)
 
 
 class RiskVerdict(BaseModel):
@@ -46,6 +50,8 @@ class RiskVerdict(BaseModel):
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = "MEDIUM"
     confidence: float = Field(ge=0.0, le=1.0)
     flags: list[str] = Field(default_factory=list)
+    llm_self_confidence: float | None = Field(default=None, description="LLM-reported confidence, stored for calibration analysis")
+    evidence_coverage_detail: dict = Field(default_factory=dict)
 
 
 class FeeVerdict(BaseModel):
@@ -59,6 +65,8 @@ class FeeVerdict(BaseModel):
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = "MEDIUM"
     confidence: float = Field(ge=0.0, le=1.0)
     flags: list[str] = Field(default_factory=list)
+    llm_self_confidence: float | None = Field(default=None, description="LLM-reported confidence, stored for calibration analysis")
+    evidence_coverage_detail: dict = Field(default_factory=dict)
 
 
 # ── Synthesis output ──────────────────────────────────────────────────────────
