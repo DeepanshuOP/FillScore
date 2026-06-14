@@ -396,3 +396,124 @@ async def run_council(user_id: str, symbol: str) -> CouncilResult:
         result.run_id = None
 
     return result
+
+
+
+async def run_council_with_packets(
+    user_id: str,
+    symbol: str,
+    fee_pkt,
+    risk_pkt,
+    liquidity_pkt,
+    alpha_pkt,
+) -> CouncilResult:
+    """
+    Run council with pre-built packets (used by eval harness to bypass MongoDB).
+    Identical to run_council() but skips load_all_packets().
+    """
+    from agents.llm_client import get_groq_client, get_openrouter_client, SYNTHESIS_PROVIDER, SPECIALIST_MODEL, SYNTHESIS_MODEL
+    
+    context = TradeContext(
+        userId=user_id,
+        symbol=symbol,
+        regime="STABLE",  # placeholder until HMM; disclose in paper
+        fee_packet_hash=fee_pkt.content_hash,
+        risk_packet_hash=risk_pkt.content_hash,
+        liquidity_packet_hash=liquidity_pkt.content_hash,
+        alpha_packet_hash=alpha_pkt.content_hash,
+    )
+
+    specialist_client = get_groq_client()
+    synthesis_client = get_groq_client() if SYNTHESIS_PROVIDER == "groq" else get_openrouter_client()
+    start = time.time()
+
+    initial_state: CouncilState = {
+        "context": context,
+        "specialist_client": specialist_client,
+        "synthesis_client": synthesis_client,
+        "fee_packet": fee_pkt,
+        "risk_packet": risk_pkt,
+        "liquidity_packet": liquidity_pkt,
+        "alpha_packet": alpha_pkt,
+    }
+
+    final_state = await _compiled_graph.ainvoke(initial_state)
+
+    elapsed_ms = (time.time() - start) * 1000
+
+    liquidity_verdict = final_state["liquidity"]
+    alpha_verdict = final_state["alpha"]
+    risk_verdict = final_state["risk"]
+    fee_verdict = final_state["fee"]
+
+    liquidity_pkt = final_state["liquidity_packet"]
+    alpha_pkt = final_state["alpha_packet"]
+    risk_pkt = final_state["risk_packet"]
+    fee_pkt = final_state["fee_packet"]
+
+    grounding_reports = check_all_verdicts(
+        liquidity_cited=liquidity_verdict.cited_evidence,
+        liquidity_reasoning=liquidity_verdict.slippageRoot,
+        liquidity_packet=liquidity_pkt.to_prompt_dict(),
+        alpha_cited=alpha_verdict.cited_evidence,
+        alpha_reasoning=alpha_verdict.bestAlternative,
+        alpha_packet=alpha_pkt.to_prompt_dict(),
+        risk_cited=risk_verdict.cited_evidence,
+        risk_reasoning=" ".join(risk_verdict.flags),
+        risk_packet=risk_pkt.to_prompt_dict(),
+        fee_cited=fee_verdict.cited_evidence,
+        fee_reasoning=fee_verdict.recommendedAction,
+        fee_packet=fee_pkt.to_prompt_dict(),
+    )
+    grounding_summary = summarise_grounding(grounding_reports)
+
+    from agents.verification import verify_recommendations, gate_report_to_dict
+    gate_report = verify_recommendations(
+        recommendations=final_state["synthesis"].topRecommendations,
+        fee_packet=fee_pkt.to_prompt_dict(),
+        risk_packet=risk_pkt.to_prompt_dict(),
+        liquidity_packet=liquidity_pkt.to_prompt_dict(),
+        alpha_packet=alpha_pkt.to_prompt_dict(),
+    )
+    gate_dict = gate_report_to_dict(gate_report)
+
+    from agents.persistence import save_council_run
+
+    result = CouncilResult(
+        tradeContext=context,
+        liquidity=liquidity_verdict,
+        alpha=alpha_verdict,
+        risk=risk_verdict,
+        fee=fee_verdict,
+        synthesis=final_state["synthesis"],
+        grounding_report=grounding_summary,
+        gate_report=gate_dict,
+        debate_transcript=final_state.get("debate_dict", {}),
+        totalLatencyMs=round(elapsed_ms, 2),
+        modelUsage={
+            "specialists_model": f"{SPECIALIST_MODEL} (Groq)",
+            "synthesis_model": f"{SYNTHESIS_MODEL} ({SYNTHESIS_PROVIDER})",
+        },
+    )
+
+    try:
+        run_id = await save_council_run(
+            user_id=user_id,
+            symbol=symbol,
+            council_result_dict=result.model_dump(),
+            grounding_summary=grounding_summary,
+            packet_hashes={
+                "fee": fee_pkt.content_hash,
+                "risk": risk_pkt.content_hash,
+                "liquidity": liquidity_pkt.content_hash,
+                "alpha": alpha_pkt.content_hash,
+            },
+            model_usage=result.modelUsage,
+            total_latency_ms=result.totalLatencyMs,
+        )
+        result.run_id = run_id
+    except Exception as e:
+        print(f"[persistence] Failed to save run: {e}")
+        result.run_id = None
+
+    return result
