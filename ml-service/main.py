@@ -153,7 +153,7 @@ async def get_telemetry(userId: str = None):
     return await get_telemetry_summary(userId)
 
 @app.post("/ml/agents/council/stream")
-async def council_stream(request: dict):
+async def council_stream(request: CouncilRequest):
     """
     SSE endpoint for streaming council results.
     Fires events as each agent completes:
@@ -162,8 +162,8 @@ async def council_stream(request: dict):
       - synthesis_done: {headline, overallRating, topRecommendations}
       - complete: {run_id, totalLatencyMs, grounding_report}
     """
-    user_id = request.get("userId", "")
-    symbol = request.get("symbol", "BTCUSDT")
+    user_id = request.userId
+    symbol = request.symbol
 
     async def event_generator():
         import time

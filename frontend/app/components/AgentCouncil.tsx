@@ -108,6 +108,16 @@ export default function AgentCouncil({
     reset();
     setRunning(true);
 
+    // Verify ml-service is reachable before attempting stream
+    try {
+      const health = await fetch(`${mlBaseUrl}/health`, { method: "GET" });
+      if (!health.ok) throw new Error("unhealthy");
+    } catch {
+      setError("Agent Council service is offline. Open a terminal, run: cd ml-service && python -m uvicorn main:app --port 8000, then try again.");
+      setRunning(false);
+      return;
+    }
+
     // SSE via fetch+ReadableStream (EventSource doesn't support POST)
     try {
       const res = await fetch(`${mlBaseUrl}/ml/agents/council/stream`, {
@@ -152,7 +162,12 @@ export default function AgentCouncil({
         }
       }
     } catch (e: any) {
-      setError(e.message ?? "Connection failed");
+      const msg = e.message ?? "";
+      if (msg.includes("fetch") || msg.includes("refused") || msg.includes("network")) {
+        setError("Cannot connect to Agent Council (ml-service not running). Start it with: cd ml-service && python -m uvicorn main:app --port 8000");
+      } else {
+        setError(`Analysis failed: ${msg}`);
+      }
     } finally {
       setRunning(false);
     }
