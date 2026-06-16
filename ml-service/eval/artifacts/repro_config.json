@@ -1,0 +1,16 @@
+{
+  "git_commit_hash": "a067d6d16a9b8987a1ac343870ecae0910a3537e",
+  "cutoff_date": "2024-01-15T00:00:00+00:00",
+  "eval_users": [
+    "demo-disciplined",
+    "demo-moderate",
+    "demo-aggressive"
+  ],
+  "eval_symbol": "BTCUSDT",
+  "specialist_model": "llama-3.3-70b-versatile",
+  "synthesis_model": "llama-3.3-70b-versatile",
+  "synthesis_provider": "groq",
+  "metrics_version": "1.0.0",
+  "prompt_version": "1.0.0",
+  "packet_content_hashes": {}
+}
