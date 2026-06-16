@@ -9,6 +9,8 @@ from eval.table_renderers import (
 @pytest.fixture
 def eval_fixture():
     # Shape matches run_full_eval return format
+    # The fixture was updated because the underlying schema changed: Table 3 mislabeled latency as utility.
+    # The real run_full_eval now returns aggregated E3 actionable vs vacuous metrics instead of just latency.
     return {
         "demo-disciplined": {
             "user_id": "demo-disciplined",
@@ -21,7 +23,10 @@ def eval_fixture():
                 "liquidity": {"agreement_rate": 0.95}
             },
             "E2_avg_agreement_rate": 0.875,
-            "avg_latency_ms": 11000.5
+            "avg_latency_ms": 11000.5,
+            "E3_actionable_pass_rate": 0.8,
+            "E3_pct_general_improvement": 0.2,
+            "E3_actionable_total": 5
         },
         "demo-moderate": {
             "user_id": "demo-moderate",
@@ -34,7 +39,10 @@ def eval_fixture():
                 "liquidity": {"agreement_rate": 0.9}
             },
             "E2_avg_agreement_rate": 0.8125,
-            "avg_latency_ms": 12000.0
+            "avg_latency_ms": 12000.0,
+            "E3_actionable_pass_rate": 0.6,
+            "E3_pct_general_improvement": 0.3,
+            "E3_actionable_total": 4
         },
         "demo-aggressive": {
             "user_id": "demo-aggressive",
@@ -47,7 +55,10 @@ def eval_fixture():
                 "liquidity": {"agreement_rate": 0.8}
             },
             "E2_avg_agreement_rate": 0.7,
-            "avg_latency_ms": 13000.0
+            "avg_latency_ms": 13000.0,
+            "E3_actionable_pass_rate": 0.5,
+            "E3_pct_general_improvement": 0.4,
+            "E3_actionable_total": 3
         }
     }
 

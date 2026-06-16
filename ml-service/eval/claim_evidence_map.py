@@ -11,13 +11,13 @@ CLAIM_EVIDENCE_MAP = [
         "contribution": "Adversarial execution-attribution debate (prosecution/defense/judge) — audits skill vs luck vs market.",
         "implementation": "agents/debate.py:run_debate",
         "metric_or_table": "Table 2 (Consistency)",
-        "status": "pending_full_eval"
+        "status": "measured_pilot"
     },
     {
         "contribution": "Deterministic counterfactual verification of LLM recommendations with forced self-correction.",
         "implementation": "agents/verification.py:verify_recommendations",
         "metric_or_table": "Table 3 (Utility)",
-        "status": "pending_full_eval"
+        "status": "measured_pilot"
     },
     {
         "contribution": "Leakage-free walk-forward evaluation of an auditing (not trading) agent system on real microstructure.",
@@ -44,6 +44,10 @@ def render_claim_evidence_map() -> str:
         
         if i == 1:
             md += "- **Evidence Note:** AC-11 validated run numbers: `leakage_free=true`, `pre_cutoff_trade_count=36`, `E1_faithfulness=1.0`. Full statistical tables are pending the eval run.\n\n"
+        elif i == 2:
+            md += "- **Evidence Note:** AC-11 validated run numbers: `debate_rounds=2` observed. Full statistical tables are pending the eval run.\n\n"
+        elif i == 3:
+            md += "- **Evidence Note:** AC-11 validated run numbers: `E3_gate_passed=true`, `E3_passed_count=3`, `E3_total_recs=3` observed. Full statistical tables are pending the eval run.\n\n"
         elif i == 4:
             md += "- **Evidence Note:** AC-11 validated run numbers: `leakage_free=true`, `pre_cutoff_trade_count=36`, `E1_faithfulness=1.0`. Full statistical tables are pending the eval run.\n\n"
         elif i == 5:

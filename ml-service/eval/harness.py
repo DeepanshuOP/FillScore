@@ -178,6 +178,35 @@ async def run_single_eval(
         "estimated_monthly_cost_usd": result.synthesis.estimatedMonthlyCostUSD,
     }
 
+def aggregate_e3(single_eval_results: list[dict]) -> dict:
+    total_recs = 0
+    total_passes = 0
+    actionable_total = 0
+    actionable_passes = 0
+    general_improvement_count = 0
+
+    for r in single_eval_results:
+        total_recs += r.get("E3_total_recs", 0)
+        recs = r.get("E3_recommendations", [])
+        for rec in recs:
+            if rec.get("passed"):
+                total_passes += 1
+                
+            if rec.get("action_type") == "general_improvement":
+                general_improvement_count += 1
+            else:
+                actionable_total += 1
+                if rec.get("passed"):
+                    actionable_passes += 1
+                    
+    return {
+        "E3_total_recs_all_runs": total_recs,
+        "E3_overall_pass_rate": total_passes / total_recs if total_recs > 0 else 0.0,
+        "E3_actionable_total": actionable_total,
+        "E3_actionable_pass_rate": actionable_passes / actionable_total if actionable_total > 0 else 0.0,
+        "E3_pct_general_improvement": general_improvement_count / total_recs if total_recs > 0 else 0.0
+    }
+
 
 async def run_consistency_eval(
     user_id: str,
@@ -217,6 +246,7 @@ async def run_consistency_eval(
 
     avg_faithfulness = sum(r["E1_faithfulness"] for r in results) / len(results)
     avg_latency = sum(r["total_latency_ms"] for r in results) / len(results)
+    e3_agg = aggregate_e3(results)
 
     return {
         "user_id": user_id,
@@ -227,6 +257,7 @@ async def run_consistency_eval(
             sum(v["agreement_rate"] for v in agreement.values()) / len(agreement), 4
         ),
         "avg_latency_ms": round(avg_latency, 2),
+        **e3_agg
     }
 
 
@@ -279,7 +310,18 @@ def print_eval_table(results: dict) -> None:
               f"{ag.get('liquidity', {}).get('agreement_rate', 0):>10.2%}")
 
     print("\n" + "="*60)
-    print("TABLE 3: Latency profile")
+    print("TABLE 3: Utility (E3)")
+    print("="*60)
+    print(f"{'User':<25} {'Act. Pass Rate':>15} {'% Vacuous':>15} {'Act. Total':>15}")
+    print("-"*75)
+    for uid, r in results.items():
+        print(f"{uid:<25} "
+              f"{r.get('E3_actionable_pass_rate', 0):>15.2%} "
+              f"{r.get('E3_pct_general_improvement', 0):>15.2%} "
+              f"{r.get('E3_actionable_total', 0):>15}")
+
+    print("\n" + "="*60)
+    print("LATENCY")
     print("="*60)
     for uid, r in results.items():
         print(f"{uid}: avg {r.get('avg_latency_ms', 0):.0f}ms over {r.get('n_runs', 0)} runs")

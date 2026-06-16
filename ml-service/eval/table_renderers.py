@@ -24,12 +24,15 @@ def render_table2_consistency(eval_results: dict) -> str:
     return md
 
 def render_table3_utility(eval_results: dict) -> str:
-    md = "# TABLE 3: Latency profile\n\n"
-    md += "| User | Avg Latency | N Runs |\n"
-    md += "|---|---|---|\n"
+    md = "# TABLE 3: Utility (E3)\n\n"
+    md += "| User | Act. Pass Rate | % Vacuous | Act. Total |\n"
+    md += "|---|---|---|---|\n"
     
     for uid, r in eval_results.items():
-        md += f"| {uid} | {r.get('avg_latency_ms', 0):.0f}ms | {r.get('n_runs', 0)} |\n"
+        pass_rate = r.get('E3_actionable_pass_rate', 0)
+        vacuous = r.get('E3_pct_general_improvement', 0)
+        total = r.get('E3_actionable_total', 0)
+        md += f"| {uid} | {pass_rate:.2%} | {vacuous:.2%} | {total} |\n"
         
     return md
 
