@@ -1,0 +1,3 @@
+run_id,user_symbol,model,prompt_tokens,completion_tokens,total_tokens,n_calls,latency_ms,cost_usd
+b9ae166a-f13b-461b-a057-df83aa9b43b2,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),10229,1374,11603,9,13165.4,0.00
+TOTAL,n=1,-,10229,1374,11603,-,13165.4,0.00
