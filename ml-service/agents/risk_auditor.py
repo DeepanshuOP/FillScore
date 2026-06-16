@@ -32,7 +32,7 @@ SYSTEM_PROMPT = (
 )
 
 
-async def run(context: TradeContext, client: AsyncGroq, packet: RiskMetricsPacket = None) -> RiskVerdict:
+async def run(context: TradeContext, client: AsyncGroq, packet: RiskMetricsPacket = None, usage_sink: list | None = None) -> RiskVerdict:
     """Execute the Risk Auditor agent against the given trade context."""
     user_content = f"""RiskMetricsPacket:
 {json.dumps(packet.to_prompt_dict(), indent=2)}
@@ -54,7 +54,7 @@ Schema: riskLevel (LOW/MEDIUM/HIGH/CRITICAL), cited_evidence (list[str]), severi
         )
 
     response = await asyncio.wait_for(
-        call_with_retry(_call),
+        call_with_retry(_call, usage_sink=usage_sink),
         timeout=TIMEOUT_S,
     )
 

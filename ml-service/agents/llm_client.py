@@ -30,10 +30,25 @@ def get_openrouter_client() -> AsyncOpenAI:
         }
     )
 
-async def call_with_retry(coro_fn: Callable[[], Coroutine[Any, Any, Any]], max_retries: int = 3) -> Any:
+def rollup_token_usage(usages: list[dict]) -> dict:
+    return {
+        "prompt_tokens": sum(u.get("prompt_tokens", 0) for u in usages),
+        "completion_tokens": sum(u.get("completion_tokens", 0) for u in usages),
+        "total_tokens": sum(u.get("total_tokens", 0) for u in usages),
+        "n_calls": len(usages)
+    }
+
+async def call_with_retry(coro_fn: Callable[[], Coroutine[Any, Any, Any]], max_retries: int = 3, usage_sink: list | None = None) -> Any:
     for attempt in range(max_retries):
         try:
-            return await coro_fn()
+            resp = await coro_fn()
+            if usage_sink is not None and hasattr(resp, "usage") and resp.usage:
+                usage_sink.append({
+                    "prompt_tokens": getattr(resp.usage, "prompt_tokens", 0) or 0,
+                    "completion_tokens": getattr(resp.usage, "completion_tokens", 0) or 0,
+                    "total_tokens": getattr(resp.usage, "total_tokens", 0) or 0,
+                })
+            return resp
         except Exception as e:
             if "429" in str(e) or "Too Many Requests" in str(e):
                 wait = (2 ** attempt) + random.uniform(0, 1)

@@ -38,7 +38,7 @@ SYSTEM_PROMPT = (
 )
 
 
-async def run(context: TradeContext, client: AsyncGroq, packet: LiquidityMetricsPacket = None) -> LiquidityVerdict:
+async def run(context: TradeContext, client: AsyncGroq, packet: LiquidityMetricsPacket = None, usage_sink: list | None = None) -> LiquidityVerdict:
     """Execute the Liquidity Scout agent against the given trade context."""
     user_content = f"""LiquidityMetricsPacket:
 {json.dumps(packet.to_prompt_dict(), indent=2)}
@@ -60,7 +60,7 @@ Schema: liquidityRating (GOOD/MODERATE/POOR/CRITICAL), slippageRoot (str), cited
         )
     
     response = await asyncio.wait_for(
-        call_with_retry(_call),
+        call_with_retry(_call, usage_sink=usage_sink),
         timeout=TIMEOUT_S,
     )
 

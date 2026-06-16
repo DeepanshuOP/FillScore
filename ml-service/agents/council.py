@@ -121,6 +121,7 @@ class CouncilState(TypedDict, total=False):
     synthesis: SynthesisOutput
     debate_dict: dict
     model_usage: dict
+    usages: list
 
 
 # ---------------------------------------------------------------------------
@@ -130,7 +131,7 @@ class CouncilState(TypedDict, total=False):
 async def liquidity_scout_node(state: CouncilState) -> dict:
     """Run the Liquidity Scout specialist."""
     try:
-        verdict = await liquidity_scout.run(state["context"], state["specialist_client"], state["liquidity_packet"])
+        verdict = await liquidity_scout.run(state["context"], state["specialist_client"], state["liquidity_packet"], usage_sink=state.get("usages"))
     except Exception as exc:
         import traceback
         print(f"[Liquidity Scout] failed: {type(exc).__name__}: {exc}")
@@ -142,7 +143,7 @@ async def liquidity_scout_node(state: CouncilState) -> dict:
 async def alpha_architect_node(state: CouncilState) -> dict:
     """Run the Alpha Architect specialist."""
     try:
-        verdict = await alpha_architect.run(state["context"], state["specialist_client"], state["alpha_packet"])
+        verdict = await alpha_architect.run(state["context"], state["specialist_client"], state["alpha_packet"], usage_sink=state.get("usages"))
     except Exception as exc:
         import traceback
         print(f"[Alpha Architect] failed: {type(exc).__name__}: {exc}")
@@ -154,7 +155,7 @@ async def alpha_architect_node(state: CouncilState) -> dict:
 async def risk_auditor_node(state: CouncilState) -> dict:
     """Run the Risk Auditor specialist."""
     try:
-        verdict = await risk_auditor.run(state["context"], state["specialist_client"], state["risk_packet"])
+        verdict = await risk_auditor.run(state["context"], state["specialist_client"], state["risk_packet"], usage_sink=state.get("usages"))
     except Exception as exc:
         import traceback
         print(f"[Risk Auditor] failed: {type(exc).__name__}: {exc}")
@@ -166,7 +167,7 @@ async def risk_auditor_node(state: CouncilState) -> dict:
 async def fee_optimizer_node(state: CouncilState) -> dict:
     """Run the Fee Optimizer specialist."""
     try:
-        verdict = await fee_optimizer.run(state["context"], state["specialist_client"], state["fee_packet"])
+        verdict = await fee_optimizer.run(state["context"], state["specialist_client"], state["fee_packet"], usage_sink=state.get("usages"))
     except Exception as exc:
         import traceback
         print(f"[Fee Optimizer] failed: {type(exc).__name__}: {exc}")
@@ -219,6 +220,7 @@ async def synthesis_node(state: CouncilState) -> dict:
             fee_packet=state["fee_packet"].to_prompt_dict(),
             alpha_packet=state["alpha_packet"].to_prompt_dict(),
             groq_client=state["specialist_client"],
+            usage_sink=state.get("usages"),
         )
         debate_dict = transcript_to_dict(debate_transcript)
     except Exception as exc:
@@ -235,6 +237,7 @@ async def synthesis_node(state: CouncilState) -> dict:
             state["liquidity_packet"],
             state["alpha_packet"],
             debate_dict=debate_dict,
+            usage_sink=state.get("usages"),
         )
     except Exception as exc:
         import traceback
@@ -284,7 +287,7 @@ _compiled_graph = _build_graph().compile()
 
 async def run_council(user_id: str, symbol: str) -> CouncilResult:
     """Execute the full Agent Council pipeline and return a CouncilResult."""
-    from agents.llm_client import get_groq_client, get_openrouter_client, SYNTHESIS_PROVIDER, SPECIALIST_MODEL, SYNTHESIS_MODEL
+    from agents.llm_client import get_groq_client, get_openrouter_client, SYNTHESIS_PROVIDER, SPECIALIST_MODEL, SYNTHESIS_MODEL, rollup_token_usage
     
     # Load packets first — this is the ground truth for all agent verdicts
     if symbol == "ALL":
@@ -306,6 +309,7 @@ async def run_council(user_id: str, symbol: str) -> CouncilResult:
     synthesis_client = get_groq_client() if SYNTHESIS_PROVIDER == "groq" else get_openrouter_client()
     start = time.time()
 
+    usages = []
     initial_state: CouncilState = {
         "context": context,
         "specialist_client": specialist_client,
@@ -314,6 +318,7 @@ async def run_council(user_id: str, symbol: str) -> CouncilResult:
         "risk_packet": risk_pkt,
         "liquidity_packet": liquidity_pkt,
         "alpha_packet": alpha_pkt,
+        "usages": usages,
     }
 
     final_state = await _compiled_graph.ainvoke(initial_state)
@@ -364,7 +369,7 @@ async def run_council(user_id: str, symbol: str) -> CouncilResult:
         alpha=alpha_verdict,
         risk=risk_verdict,
         fee=fee_verdict,
-        synthesis=final_state["synthesis"],
+        synthesis=override_synthesis_cost(final_state["synthesis"], fee_pkt),
         grounding_report=grounding_summary,
         gate_report=gate_dict,
         debate_transcript=final_state.get("debate_dict", {}),
@@ -373,6 +378,7 @@ async def run_council(user_id: str, symbol: str) -> CouncilResult:
             "specialists_model": f"{SPECIALIST_MODEL} (Groq)",
             "synthesis_model": f"{SYNTHESIS_MODEL} ({SYNTHESIS_PROVIDER})",
         },
+        tokenUsage=rollup_token_usage(usages),
     )
 
     try:
@@ -399,6 +405,10 @@ async def run_council(user_id: str, symbol: str) -> CouncilResult:
 
 
 
+def override_synthesis_cost(synthesis, fee_pkt):
+    return synthesis.model_copy(update={"estimatedMonthlyCostUSD": fee_pkt.total_fee_paid_usd})
+
+
 async def run_council_with_packets(
     user_id: str,
     symbol: str,
@@ -411,7 +421,7 @@ async def run_council_with_packets(
     Run council with pre-built packets (used by eval harness to bypass MongoDB).
     Identical to run_council() but skips load_all_packets().
     """
-    from agents.llm_client import get_groq_client, get_openrouter_client, SYNTHESIS_PROVIDER, SPECIALIST_MODEL, SYNTHESIS_MODEL
+    from agents.llm_client import get_groq_client, get_openrouter_client, SYNTHESIS_PROVIDER, SPECIALIST_MODEL, SYNTHESIS_MODEL, rollup_token_usage
     
     context = TradeContext(
         userId=user_id,
@@ -427,6 +437,7 @@ async def run_council_with_packets(
     synthesis_client = get_groq_client() if SYNTHESIS_PROVIDER == "groq" else get_openrouter_client()
     start = time.time()
 
+    usages = []
     initial_state: CouncilState = {
         "context": context,
         "specialist_client": specialist_client,
@@ -435,6 +446,7 @@ async def run_council_with_packets(
         "risk_packet": risk_pkt,
         "liquidity_packet": liquidity_pkt,
         "alpha_packet": alpha_pkt,
+        "usages": usages,
     }
 
     final_state = await _compiled_graph.ainvoke(initial_state)
@@ -485,7 +497,7 @@ async def run_council_with_packets(
         alpha=alpha_verdict,
         risk=risk_verdict,
         fee=fee_verdict,
-        synthesis=final_state["synthesis"],
+        synthesis=override_synthesis_cost(final_state["synthesis"], fee_pkt),
         grounding_report=grounding_summary,
         gate_report=gate_dict,
         debate_transcript=final_state.get("debate_dict", {}),
@@ -494,6 +506,7 @@ async def run_council_with_packets(
             "specialists_model": f"{SPECIALIST_MODEL} (Groq)",
             "synthesis_model": f"{SYNTHESIS_MODEL} ({SYNTHESIS_PROVIDER})",
         },
+        tokenUsage=rollup_token_usage(usages),
     )
 
     try:

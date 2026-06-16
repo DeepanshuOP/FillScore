@@ -74,6 +74,7 @@ async def run(
     liquidity_packet: LiquidityMetricsPacket = None,
     alpha_packet: AlphaMetricsPacket = None,
     debate_dict: dict | None = None,
+    usage_sink: list | None = None
 ) -> SynthesisOutput:
     """Execute the Synthesis agent, merging all specialist verdicts."""
     compressed = [_compress_verdict(v) for v in verdicts.values()]
@@ -112,7 +113,7 @@ Schema fields: headline, narrative, topRecommendations (exactly 3), conflictLedg
         )
 
     response = await asyncio.wait_for(
-        call_with_retry(_call),
+        call_with_retry(_call, usage_sink=usage_sink),
         timeout=TIMEOUT_S,
     )
 

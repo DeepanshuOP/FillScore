@@ -33,7 +33,7 @@ SYSTEM_PROMPT = (
 )
 
 
-async def run(context: TradeContext, client: AsyncGroq, packet: FeeMetricsPacket = None) -> FeeVerdict:
+async def run(context: TradeContext, client: AsyncGroq, packet: FeeMetricsPacket = None, usage_sink: list | None = None) -> FeeVerdict:
     """Execute the Fee Optimizer agent against the given trade context."""
     user_content = f"""FeeMetricsPacket:
 {json.dumps(packet.to_prompt_dict(), indent=2)}
@@ -55,7 +55,7 @@ Schema: feeRating (OPTIMAL/MODERATE/WASTEFUL/SEVERELY_WASTEFUL), recommendedActi
         )
 
     response = await asyncio.wait_for(
-        call_with_retry(_call),
+        call_with_retry(_call, usage_sink=usage_sink),
         timeout=TIMEOUT_S,
     )
 

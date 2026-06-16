@@ -57,6 +57,7 @@ async def save_council_run(
         "overall_rating": council_result_dict.get("synthesis", {}).get("overallRating", "UNKNOWN"),
         "avg_faithfulness_score": grounding_summary.get("avg_faithfulness_score", 0.0),
         "total_violations": grounding_summary.get("total_violations", 0),
+        "token_usage": council_result_dict.get("tokenUsage", {}),
     }
 
     client, db = _get_db()

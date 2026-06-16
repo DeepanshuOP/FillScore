@@ -33,7 +33,7 @@ SYSTEM_PROMPT = (
 )
 
 
-async def run(context: TradeContext, client: AsyncGroq, packet: AlphaMetricsPacket = None) -> AlphaVerdict:
+async def run(context: TradeContext, client: AsyncGroq, packet: AlphaMetricsPacket = None, usage_sink: list | None = None) -> AlphaVerdict:
     """Execute the Alpha Architect agent against the given trade context."""
     user_content = f"""AlphaMetricsPacket:
 {json.dumps(packet.to_prompt_dict(), indent=2)}
@@ -55,7 +55,7 @@ Schema: alphaRating (POSITIVE/NEUTRAL/NEGATIVE/SEVERELY_NEGATIVE), bestAlternati
         )
     
     response = await asyncio.wait_for(
-        call_with_retry(_call),
+        call_with_retry(_call, usage_sink=usage_sink),
         timeout=TIMEOUT_S,
     )
 

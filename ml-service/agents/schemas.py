@@ -120,6 +120,10 @@ class CouncilResult(BaseModel):
     synthesis: SynthesisOutput
     totalLatencyMs: float
     modelUsage: dict
+    tokenUsage: dict = Field(
+        default_factory=dict,
+        description="AC-14b token usage telemetry for Table 4"
+    )
     grounding_report: dict = Field(
         default_factory=dict,
         description="E1 faithfulness scores per agent — paper metric"

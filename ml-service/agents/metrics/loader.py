@@ -41,8 +41,8 @@ async def load_all_packets(
                 "symbol": 1,
                 "exchange": 1,
                 "isMaker": 1,
-                "feePaid": 1,
-                "notionalValue": 1,
+                "fee": 1,
+                "notional": 1,
                 "orderType": 1,
                 "arrivalSlippageBps": 1,
                 "fillScore": 1,
@@ -60,6 +60,8 @@ async def load_all_packets(
         async for doc in cursor:
             # normalise _id to string for evidence indexing
             doc["id"] = str(doc.get("_id", ""))
+            doc["feePaid"] = doc.get("fee", 0.0)
+            doc["notionalValue"] = doc.get("notional", 0.0)
             trades.append(doc)
 
     finally:
@@ -90,7 +92,7 @@ async def load_all_packets_for_user(
             {"userId": user_id},
             {
                 "_id": 1, "symbol": 1, "exchange": 1,
-                "isMaker": 1, "feePaid": 1, "notionalValue": 1,
+                "isMaker": 1, "fee": 1, "notional": 1,
                 "orderType": 1, "arrivalSlippageBps": 1,
                 "fillScore": 1, "executedAt": 1, "side": 1,
                 "executionPrice": 1, "vwap5m": 1,
@@ -101,6 +103,8 @@ async def load_all_packets_for_user(
         trades = []
         async for doc in cursor:
             doc["id"] = str(doc.get("_id", ""))
+            doc["feePaid"] = doc.get("fee", 0.0)
+            doc["notionalValue"] = doc.get("notional", 0.0)
             trades.append(doc)
     finally:
         client.close()

@@ -176,6 +176,7 @@ async def run_debate(
     alpha_packet: dict,
     groq_client,
     model: str = "llama-3.3-70b-versatile",
+    usage_sink: list | None = None,
 ) -> DebateTranscript:
     """
     Run the Execution Trial debate.
@@ -208,7 +209,7 @@ async def run_debate(
                     temperature=0.3,
                 )
 
-            p_response = await call_with_retry(_call_prosecution)
+            p_response = await call_with_retry(_call_prosecution, usage_sink=usage_sink)
             p_raw = extract_json_from_response(p_response.choices[0].message.content)
             if p_raw:
                 new_claims = _parse_claims(p_raw, "prosecution")
@@ -239,7 +240,7 @@ async def run_debate(
                     temperature=0.3,
                 )
 
-            d_response = await call_with_retry(_call_defense)
+            d_response = await call_with_retry(_call_defense, usage_sink=usage_sink)
             d_raw = extract_json_from_response(d_response.choices[0].message.content)
             if d_raw:
                 new_claims = _parse_claims(d_raw, "defense")
