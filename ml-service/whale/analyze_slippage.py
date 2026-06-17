@@ -31,17 +31,17 @@ def analyze_group(adverse_vals, non_adverse_vals, group_name):
     mean_diff = np.mean(adverse_vals) - np.mean(non_adverse_vals)
     print(f"\nDifference in Means (Adverse - Non-Adverse): {mean_diff:.2f} bps")
     
-    # Welch's t-test
-    t_stat, p_val_t = stats.ttest_ind(adverse_vals, non_adverse_vals, equal_var=False)
-    assert 0 <= p_val_t <= 1, "p-value out of bounds"
-    d = cohens_d(adverse_vals, non_adverse_vals)
-    print(f"Welch's t-test:        p-value = {p_val_t:.4f} | Cohen's d = {d:.4f}")
-    
-    # Mann-Whitney U test
+    # Mann-Whitney U test (PRIMARY, robust to skew)
     u_stat, p_val_u = stats.mannwhitneyu(adverse_vals, non_adverse_vals, alternative='two-sided')
     assert 0 <= p_val_u <= 1, "p-value out of bounds"
     rbc = rank_biserial(adverse_vals, non_adverse_vals, u_stat)
-    print(f"Mann-Whitney U test:   p-value = {p_val_u:.4f} | Rank-Biserial r = {rbc:.4f}")
+    print(f"Mann-Whitney U test (PRIMARY, robust to skew): p-value = {p_val_u:.4f} | Rank-Biserial r = {rbc:.4f}")
+
+    # Welch's t-test (secondary, parametric check)
+    t_stat, p_val_t = stats.ttest_ind(adverse_vals, non_adverse_vals, equal_var=False)
+    assert 0 <= p_val_t <= 1, "p-value out of bounds"
+    d = cohens_d(adverse_vals, non_adverse_vals)
+    print(f"Welch's t-test (secondary, parametric check):  p-value = {p_val_t:.4f} | Cohen's d = {d:.4f}")
 
 def main():
     client = MongoClient(MONGO_URI)
