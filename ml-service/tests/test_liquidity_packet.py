@@ -37,23 +37,23 @@ from agents.metrics.liquidity_packet import build_liquidity_packet, _avg, _perce
 
 FIXTURE_TRADES = [
     {"id":"t1","orderType":"MARKET","isMaker":False,"arrivalSlippageBps":5.0,
-     "executedAt":"2024-01-15T08:30:00Z","whale_adverse":False,
+     "executedAt":"2024-01-15T08:30:00Z","whaleAdverse":False,
      "reversion_30s_bps":2.0,"reversion_60s_bps":3.0},
     {"id":"t2","orderType":"MARKET","isMaker":False,"arrivalSlippageBps":12.0,
-     "executedAt":"2024-01-15T14:10:00Z","whale_adverse":True,
+     "executedAt":"2024-01-15T14:10:00Z","whaleAdverse":True,
      "reversion_30s_bps":8.0,"reversion_60s_bps":10.0},
     {"id":"t3","orderType":"MARKET","isMaker":False,"arrivalSlippageBps":-3.0,
-     "executedAt":"2024-01-15T08:45:00Z","whale_adverse":False,
+     "executedAt":"2024-01-15T08:45:00Z","whaleAdverse":False,
      "reversion_30s_bps":-1.0,"reversion_60s_bps":-2.0},
     {"id":"t4","orderType":"MARKET","isMaker":False,"arrivalSlippageBps":20.0,
-     "executedAt":"2024-01-15T14:30:00Z","whale_adverse":True,
+     "executedAt":"2024-01-15T14:30:00Z","whaleAdverse":True,
      "reversion_30s_bps":15.0,"reversion_60s_bps":18.0},
     {"id":"t5","orderType":"MARKET","isMaker":True, "arrivalSlippageBps":1.0,
-     "executedAt":"2024-01-15T10:00:00Z","whale_adverse":False},
+     "executedAt":"2024-01-15T10:00:00Z","whaleAdverse":False},
     {"id":"t6","orderType":"LIMIT", "isMaker":False,"arrivalSlippageBps":0.5,
-     "executedAt":"2024-01-15T11:00:00Z","whale_adverse":False},
+     "executedAt":"2024-01-15T11:00:00Z","whaleAdverse":False},
     {"id":"t7","orderType":"MARKET","isMaker":True, "arrivalSlippageBps":2.0,
-     "executedAt":"2024-01-15T12:00:00Z","whale_adverse":False},
+     "executedAt":"2024-01-15T12:00:00Z","whaleAdverse":False},
 ]
 
 

@@ -25,12 +25,12 @@ from agents.metrics.risk_packet import build_risk_packet, _hhi, _percentile
 # BTC adverse: t3 only → 1/4=0.25; ETH adverse: t6 only → 1/2=0.5
 
 FIXTURE_TRADES = [
-    {"id":"t1","symbol":"BTCUSDT","notionalValue":100.0,"executedAt":"2024-01-15T08:30:00Z","whale_adverse":False},
-    {"id":"t2","symbol":"BTCUSDT","notionalValue":200.0,"executedAt":"2024-01-15T08:45:00Z","whale_adverse":False},
-    {"id":"t3","symbol":"BTCUSDT","notionalValue":150.0,"executedAt":"2024-01-15T14:10:00Z","whale_adverse":True},
-    {"id":"t4","symbol":"BTCUSDT","notionalValue":300.0,"executedAt":"2024-01-15T14:30:00Z","whale_adverse":False},
-    {"id":"t5","symbol":"ETHUSDT","notionalValue":50.0, "executedAt":"2024-01-15T08:55:00Z","whale_adverse":False},
-    {"id":"t6","symbol":"ETHUSDT","notionalValue":200.0,"executedAt":"2024-01-15T14:50:00Z","whale_adverse":True},
+    {"id":"t1","symbol":"BTCUSDT","notionalValue":100.0,"executedAt":"2024-01-15T08:30:00Z","whaleAdverse":False},
+    {"id":"t2","symbol":"BTCUSDT","notionalValue":200.0,"executedAt":"2024-01-15T08:45:00Z","whaleAdverse":False},
+    {"id":"t3","symbol":"BTCUSDT","notionalValue":150.0,"executedAt":"2024-01-15T14:10:00Z","whaleAdverse":True},
+    {"id":"t4","symbol":"BTCUSDT","notionalValue":300.0,"executedAt":"2024-01-15T14:30:00Z","whaleAdverse":False},
+    {"id":"t5","symbol":"ETHUSDT","notionalValue":50.0, "executedAt":"2024-01-15T08:55:00Z","whaleAdverse":False},
+    {"id":"t6","symbol":"ETHUSDT","notionalValue":200.0,"executedAt":"2024-01-15T14:50:00Z","whaleAdverse":True},
 ]
 
 
