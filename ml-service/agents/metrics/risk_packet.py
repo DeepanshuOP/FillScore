@@ -150,7 +150,7 @@ def build_risk_packet(trades: list[dict], user_id: str, symbol: str) -> RiskMetr
         hour_counts[hour] = hour_counts.get(hour, 0) + 1
 
         # whale adverse
-        if t.get("whale_adverse", False):
+        if t.get("whaleAdverse", False):
             adverse_ids.append(tid)
             if sym not in adverse_by_symbol:
                 adverse_by_symbol[sym] = []

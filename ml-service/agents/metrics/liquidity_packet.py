@@ -188,7 +188,7 @@ def build_liquidity_packet(trades: list[dict], user_id: str, symbol: str) -> Liq
     adverse_ids_market, clean_ids_market = [], []
     for t, s in zip(market_trades, slippages):
         tid = str(t.get("_id") or t.get("id", ""))
-        if t.get("whale_adverse", False):
+        if t.get("whaleAdverse", False):
             adverse_slips.append(s)
             adverse_ids_market.append(tid)
         else:

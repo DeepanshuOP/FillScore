@@ -50,9 +50,7 @@ async def load_all_packets(
                 "side": 1,
                 "executionPrice": 1,
                 "vwap5m": 1,
-                "whale_adverse": 1,
-                "reversion_30s_bps": 1,
-                "reversion_60s_bps": 1,
+                "whaleAdverse": 1,
             }
         ).sort("executedAt", 1)
 
@@ -96,8 +94,7 @@ async def load_all_packets_for_user(
                 "orderType": 1, "arrivalSlippageBps": 1,
                 "fillScore": 1, "executedAt": 1, "side": 1,
                 "executionPrice": 1, "vwap5m": 1,
-                "whale_adverse": 1, "reversion_30s_bps": 1,
-                "reversion_60s_bps": 1,
+                "whaleAdverse": 1,
             }
         ).sort("executedAt", 1)
         trades = []
