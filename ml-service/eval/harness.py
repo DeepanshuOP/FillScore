@@ -203,7 +203,7 @@ def aggregate_e3(single_eval_results: list[dict]) -> dict:
         "E3_total_recs_all_runs": total_recs,
         "E3_overall_pass_rate": total_passes / total_recs if total_recs > 0 else 0.0,
         "E3_actionable_total": actionable_total,
-        "E3_actionable_pass_rate": actionable_passes / actionable_total if actionable_total > 0 else 0.0,
+        "E3_actionable_pass_rate": (actionable_passes / actionable_total) if actionable_total > 0 else None,
         "E3_pct_general_improvement": general_improvement_count / total_recs if total_recs > 0 else 0.0
     }
 
@@ -228,7 +228,7 @@ async def run_consistency_eval(
                 results.append(r)
         except Exception as e:
             print(f"  Run {i+1} failed: {e}")
-        await asyncio.sleep(4)  # rate limit pause between runs
+        await asyncio.sleep(65)  # rate limit pause between runs
 
     if not results:
         return {"error": "All consistency runs failed"}

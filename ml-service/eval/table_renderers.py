@@ -32,7 +32,13 @@ def render_table3_utility(eval_results: dict) -> str:
         pass_rate = r.get('E3_actionable_pass_rate', 0)
         vacuous = r.get('E3_pct_general_improvement', 0)
         total = r.get('E3_actionable_total', 0)
-        md += f"| {uid} | {pass_rate:.2%} | {vacuous:.2%} | {total} |\n"
+        
+        if pass_rate is None or total == 0:
+            pass_rate_str = "n/a (0 actionable)"
+        else:
+            pass_rate_str = f"{pass_rate:.2%}"
+            
+        md += f"| {uid} | {pass_rate_str} | {vacuous:.2%} | {total} |\n"
         
     return md
 
