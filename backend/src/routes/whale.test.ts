@@ -16,7 +16,8 @@ app.use('/api', auditRouter); // auditRouter has /analytics routes
 describe('GET /api/analytics/whale-correlation', () => {
     beforeAll(async () => {
         // Connect to real DB to test against seeded data
-        const uri = process.env.MONGODB_URI || 'mongodb+srv://deepanshuop_db_user:Fillscore2026@cluster0.ujqvavh.mongodb.net/fillscore?retryWrites=true&w=majority&appName=Cluster0';
+        const uri = process.env.MONGODB_URI;
+        if (!uri) throw new Error("MONGODB_URI not set");
         await mongoose.connect(uri);
     });
 

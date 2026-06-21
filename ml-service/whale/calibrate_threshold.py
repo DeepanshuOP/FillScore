@@ -20,7 +20,14 @@ except ImportError:
     from whale_score import score_whale_window
 
 # MongoDB connection
-MONGO_URI = "mongodb+srv://deepanshuop_db_user:Fillscore2026@cluster0.ujqvavh.mongodb.net/fillscore?retryWrites=true&w=majority&appName=Cluster0"
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+load_dotenv(Path(__file__).parent.parent / ".env")
+MONGO_URI = os.getenv("MONGODB_URI")
+if not MONGO_URI:
+    raise RuntimeError("MONGODB_URI not set")
 
 def calibrate(symbol: str, user_ids: list[str], sample_size: int = 60) -> dict:
     client = MongoClient(MONGO_URI)

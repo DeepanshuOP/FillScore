@@ -3,7 +3,14 @@ import numpy as np
 import scipy.stats as stats
 from pymongo import MongoClient
 
-MONGO_URI = "mongodb+srv://deepanshuop_db_user:Fillscore2026@cluster0.ujqvavh.mongodb.net/fillscore?retryWrites=true&w=majority&appName=Cluster0"
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+load_dotenv(Path(__file__).parent.parent / ".env")
+MONGO_URI = os.getenv("MONGODB_URI")
+if not MONGO_URI:
+    raise RuntimeError("MONGODB_URI not set")
 
 def cohens_d(x, y):
     n1, n2 = len(x), len(y)

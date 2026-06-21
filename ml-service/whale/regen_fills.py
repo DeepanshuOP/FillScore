@@ -6,7 +6,14 @@ from pymongo import MongoClient
 from whale.aggtrades_window import fetch_aggtrades_window
 from whale.realistic_fill import compute_realistic_fill, derive_arrival_price
 
-MONGO_URI = "mongodb+srv://deepanshuop_db_user:Fillscore2026@cluster0.ujqvavh.mongodb.net/fillscore?retryWrites=true&w=majority&appName=Cluster0"
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+load_dotenv(Path(__file__).parent.parent / ".env")
+MONGO_URI = os.getenv("MONGODB_URI")
+if not MONGO_URI:
+    raise RuntimeError("MONGODB_URI not set")
 
 def regen_fills(symbol: str, user_ids: list[str]) -> dict:
     client = MongoClient(MONGO_URI)
