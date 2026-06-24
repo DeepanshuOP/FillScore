@@ -11,15 +11,15 @@
 
 - **Implementation:** `agents/debate.py:run_debate`
 - **Metric/Table:** Table 2 (Consistency)
-- **Status:** `pending_full_eval`
-- **Evidence Note:** Full statistical tables are pending the eval run.
+- **Status:** `measured_pilot`
+- **Evidence Note:** AC-11 validated run numbers: `debate_rounds=2` observed. Full statistical tables are pending the eval run.
 
 ## 3. Deterministic counterfactual verification of LLM recommendations with forced self-correction.
 
 - **Implementation:** `agents/verification.py:verify_recommendations`
 - **Metric/Table:** Table 3 (Utility)
-- **Status:** `pending_full_eval`
-- **Evidence Note:** Full statistical tables are pending the eval run.
+- **Status:** `measured_pilot`
+- **Evidence Note:** AC-11 validated run numbers: `E3_gate_passed=true`, `E3_passed_count=3`, `E3_total_recs=3` observed. Full statistical tables are pending the eval run.
 
 ## 4. Leakage-free walk-forward evaluation of an auditing (not trading) agent system on real microstructure.
 

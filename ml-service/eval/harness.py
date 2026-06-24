@@ -315,10 +315,18 @@ def print_eval_table(results: dict) -> None:
     print(f"{'User':<25} {'Act. Pass Rate':>15} {'% Vacuous':>15} {'Act. Total':>15}")
     print("-"*75)
     for uid, r in results.items():
+        pass_rate = r.get('E3_actionable_pass_rate', 0)
+        total = r.get('E3_actionable_total', 0)
+        
+        if pass_rate is None or total == 0:
+            pass_rate_str = f"{'n/a':>15}"
+        else:
+            pass_rate_str = f"{pass_rate:>15.2%}"
+            
         print(f"{uid:<25} "
-              f"{r.get('E3_actionable_pass_rate', 0):>15.2%} "
+              f"{pass_rate_str} "
               f"{r.get('E3_pct_general_improvement', 0):>15.2%} "
-              f"{r.get('E3_actionable_total', 0):>15}")
+              f"{total:>15}")
 
     print("\n" + "="*60)
     print("LATENCY")

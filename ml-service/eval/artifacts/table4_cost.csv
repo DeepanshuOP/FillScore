@@ -1,3 +1,14 @@
 run_id,user_symbol,model,prompt_tokens,completion_tokens,total_tokens,n_calls,latency_ms,cost_usd
 b9ae166a-f13b-461b-a057-df83aa9b43b2,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),10229,1374,11603,9,13165.4,0.00
-TOTAL,n=1,-,10229,1374,11603,-,13165.4,0.00
+f83afbc4-8b9d-47f5-86ca-94a5b3788957,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),10027,1319,11346,9,11539.3,0.00
+609ecab7-fcd7-4844-9049-82756b876660,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),10022,1333,11355,9,47701.7,0.00
+8b554a43-95b1-4032-a642-d70835497a46,demo-disciplined/BTCUSDT,llama-3.3-70b-versatile (groq),9493,1283,10776,9,14247.0,0.00
+f12f1477-2ef6-4f9e-b6ad-50a77af5a4dd,demo-disciplined/BTCUSDT,llama-3.3-70b-versatile (groq),9556,1354,10910,9,46534.4,0.00
+3277357a-bd54-43d5-ac46-0a50e506fea0,demo-disciplined/BTCUSDT,llama-3.3-70b-versatile (groq),9401,1292,10693,9,44549.0,0.00
+f46ec408-c8dd-4d7e-9ba8-c89a7c1c70d3,demo-moderate/BTCUSDT,llama-3.3-70b-versatile (groq),9962,1347,11309,9,18280.3,0.00
+9c209b39-ee06-4dc8-aacd-362ab8371b44,demo-moderate/BTCUSDT,llama-3.3-70b-versatile (groq),9917,1351,11268,9,48312.3,0.00
+8009d35a-6aad-4c00-8dad-c014973c35c7,demo-moderate/BTCUSDT,llama-3.3-70b-versatile (groq),10020,1306,11326,9,46999.2,0.00
+75b3b1c1-8501-4cfb-8f84-511688064532,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),9974,1279,11253,9,13973.5,0.00
+74f14f25-5145-4ad9-927e-bf0fd97a814f,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),10014,1319,11333,9,46283.6,0.00
+e251c85c-12e2-4de1-8223-c5c74233571b,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),10007,1297,11304,9,47262.9,0.00
+TOTAL,n=12,-,118622,15854,134476,-,33237.4,0.00
