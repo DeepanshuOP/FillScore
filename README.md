@@ -14,24 +14,25 @@ The flagship feature of FillScore is the Execution Council, a multi-agent system
 ```text
        [ Deterministic Trade Packet ]
                     │
-   ┌────────────────┼────────────────┐
-   ▼                ▼                ▼
-[Liquidity]       [Fee]            [Risk]
-  Scout         Optimizer         Auditor
-   │                │                │
-   └────────┬───────┴───────┬────────┘
-            ▼               ▼
-      [Prosecution]     [Defense]
-      (Argues bad)     (Argues good)
-            │               │
-            └───────┬───────┘
-                    ▼
-           [Verification Gate]
-         (Counterfactual Checks)
-                    │
-                    ▼
-           [Synthesis Agent]
-         (Verdict & Recommendations)
+   ┌────────────────┼──────────────────┐
+   │                │                  │
+   ▼                ▼                  ▼
+[Liquidity]       [Fee]             [Risk]        [Alpha]
+  Scout         Optimizer           Auditor      Architect
+   │                │                  │              │
+   └────────┬───────┴──────────┬───────┴──────────────┘
+            ▼                  ▼
+      [Prosecution]        [Defense]
+      (Argues bad)        (Argues good)
+            │                  │
+            └────────┬──────────┘
+                     ▼
+            [Verification Gate]
+          (Counterfactual Checks)
+                     │
+                     ▼
+            [Synthesis Agent]
+          (Verdict & Recommendations)
 ```
 
 **Key Properties:**
