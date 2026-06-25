@@ -20,6 +20,6 @@
 
 | User | Act. Pass Rate | % Vacuous | Act. Total |
 |---|---|---|---|
-| demo-disciplined | 100.00% | 11.11% | 8 |
-| demo-moderate | 100.00% | 44.44% | 5 |
-| demo-aggressive | 100.00% | 66.67% | 3 |
+| demo-disciplined | 100.00% | 88.89% | 1 |
+| demo-moderate | n/a (0 actionable) | 100.00% | 0 |
+| demo-aggressive | 100.00% | 22.22% | 7 |

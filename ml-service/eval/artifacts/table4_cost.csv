@@ -11,4 +11,19 @@ f46ec408-c8dd-4d7e-9ba8-c89a7c1c70d3,demo-moderate/BTCUSDT,llama-3.3-70b-versati
 75b3b1c1-8501-4cfb-8f84-511688064532,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),9974,1279,11253,9,13973.5,0.00
 74f14f25-5145-4ad9-927e-bf0fd97a814f,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),10014,1319,11333,9,46283.6,0.00
 e251c85c-12e2-4de1-8223-c5c74233571b,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),10007,1297,11304,9,47262.9,0.00
-TOTAL,n=12,-,118622,15854,134476,-,33237.4,0.00
+f4b603b6-f856-4607-9e26-93883c039485,demo-disciplined/BTCUSDT,llama-3.3-70b-versatile (groq),9529,1315,10844,9,20798.2,0.00
+2a5296dc-fc27-414b-8d09-6fbeb9f52a46,demo-disciplined/BTCUSDT,llama-3.3-70b-versatile (groq),9523,1326,10849,9,23773.7,0.00
+c7674855-ac12-48cb-ba5c-ed35e283b263,demo-disciplined/BTCUSDT,llama-3.3-70b-versatile (groq),6298,950,7248,7,35520.8,0.00
+23386173-e21e-4fc4-aa88-1d3673ffc7b0,demo-moderate/BTCUSDT,llama-3.3-70b-versatile (groq),0,0,0,0,61743.4,0.00
+d2e70d49-95e0-4105-acdf-8f3246bffac2,demo-moderate/BTCUSDT,llama-3.3-70b-versatile (groq),0,0,0,0,60987.3,0.00
+b98c5010-a274-4eae-8827-ea34842371d2,demo-moderate/BTCUSDT,llama-3.3-70b-versatile (groq),465,99,564,1,59064.7,0.00
+d09bcdd8-411d-4b4c-8ebf-03ab5604a3ec,demo-disciplined/BTCUSDT,llama-3.3-70b-versatile (groq),9545,1292,10837,9,12278.5,0.00
+966fa3b3-e939-49ba-916e-2587ed31a1a2,demo-disciplined/BTCUSDT,llama-3.3-70b-versatile (groq),9558,1364,10922,9,10281.1,0.00
+dfc4a83e-221f-42d2-83a6-c0cbcbf6b649,demo-disciplined/BTCUSDT,llama-3.3-70b-versatile (groq),9430,1299,10729,9,9737.2,0.00
+3135d29c-bd80-402a-b9fa-b37afabd5dda,demo-moderate/BTCUSDT,llama-3.3-70b-versatile (groq),10042,1339,11381,9,10276.1,0.00
+565d58a9-e9e7-496b-84de-3fe87515e2fc,demo-moderate/BTCUSDT,llama-3.3-70b-versatile (groq),9966,1335,11301,9,9835.0,0.00
+3584193b-d89d-40f3-a923-179718f251fa,demo-moderate/BTCUSDT,llama-3.3-70b-versatile (groq),9909,1287,11196,9,9781.9,0.00
+8ee0a55f-237a-44b8-8af2-9297ca7b4f0d,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),10014,1290,11304,9,12765.3,0.00
+d63ca909-a2f3-4b65-a9e9-850d6663015a,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),9955,1303,11258,9,17040.8,0.00
+5058d55f-22b9-4042-add1-864397c84bbf,demo-aggressive/BTCUSDT,llama-3.3-70b-versatile (groq),10019,1327,11346,9,13746.0,0.00
+TOTAL,n=27,-,232875,31380,264255,-,28388.1,0.00
