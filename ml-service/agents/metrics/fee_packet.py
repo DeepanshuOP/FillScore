@@ -8,6 +8,10 @@ import hashlib, json
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import Any
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from config.versions import METRICS_VERSION
 
 # ── 2026 spot fee constants (verified) ──────────────────────────────────────
 FEE_RATES = {
@@ -26,7 +30,7 @@ class FeeMetricsPacket:
     symbol: str
     exchange: str
     computed_at: str                     # ISO-8601 UTC
-    metrics_version: str = "1.0.0"
+    metrics_version: str = METRICS_VERSION
 
     # ── observed ────────────────────────────────────────────────────────────
     trade_count: int = 0

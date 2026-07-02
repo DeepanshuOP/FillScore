@@ -1,6 +1,6 @@
 import { connectDatabase } from '../config/database';
 import { Trade } from '../models/Trade';
-import { validateEnv } from '../config/env';
+import { loadEnv } from '../config/env';
 import { Audit } from '../models/Audit';
 import { scoreTrade } from '../scoring/engine';
 import { computeAuditSummary } from '../scoring/audit';
@@ -14,7 +14,7 @@ const DEMO_USERS = [
 
 async function seedAudit() {
   console.log('Validating environment parameters...');
-  validateEnv();
+  loadEnv();
   
   console.log('Connecting to database...');
   await connectDatabase();

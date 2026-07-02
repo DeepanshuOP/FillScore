@@ -1,6 +1,9 @@
 import os
 import json
 import subprocess
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config.versions import METRICS_VERSION, PROMPT_VERSION
 
 def build_repro_config(git_commit_hash: str, packet_content_hashes: dict | None = None) -> dict:
     from eval.harness import CUTOFF_DATE, EVAL_USERS, EVAL_SYMBOL
@@ -8,8 +11,8 @@ def build_repro_config(git_commit_hash: str, packet_content_hashes: dict | None 
     
     # We found metrics_version="1.0.0" across packet builders
     # We found prompt_version="1.0.0" in persistence.py
-    metrics_version = "1.0.0"
-    prompt_version = "1.0.0"
+    metrics_version = METRICS_VERSION
+    prompt_version = PROMPT_VERSION
     
     return {
         "git_commit_hash": git_commit_hash,

@@ -8,6 +8,10 @@ import hashlib, json, math
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
 from typing import Any
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+from config.versions import METRICS_VERSION
 
 
 @dataclass
@@ -16,7 +20,7 @@ class RiskMetricsPacket:
     user_id: str
     symbol: str
     computed_at: str
-    metrics_version: str = "1.0.0"
+    metrics_version: str = METRICS_VERSION
 
     # ── concentration (HHI) ──────────────────────────────────────────────────
     # HHI = sum of squared market-share fractions across symbols traded

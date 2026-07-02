@@ -13,6 +13,10 @@ import os, uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 from motor.motor_asyncio import AsyncIOMotorClient
+import sys
+import os
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from config.versions import PROMPT_VERSION
 
 
 def _get_db():
@@ -30,7 +34,7 @@ async def save_council_run(
     packet_hashes: dict[str, str],
     model_usage: dict,
     total_latency_ms: float,
-    prompt_version: str = "1.0.0",
+    prompt_version: str = PROMPT_VERSION,
 ) -> str:
     """
     Persist a completed council run. Returns the run_id.

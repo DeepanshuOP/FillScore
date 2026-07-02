@@ -32,3 +32,5 @@ __pycache__/
 .pytest_cache/
 .cache/
 *.pyc
+PROJECT_TASK_CHECKLIST.md
+PROJECT_STATUS_AUDIT.md

@@ -1,14 +1,14 @@
 import mongoose from 'mongoose';
-import { env, validateEnv } from '../config/env';
+import { env, loadEnv } from '../config/env';
 import { Trade } from '../models/Trade';
 
-validateEnv();
+loadEnv();
 
 const DEMO_USERS = ['demo-aggressive', 'demo-moderate', 'demo-disciplined', 'demo-bybit', 'demo-okx', 'demo-multi'];
 
 async function run() {
     console.log('Connecting to MongoDB...');
-    await mongoose.connect(env.mongoDbUri);
+    await mongoose.connect(env.MONGODB_URI);
     console.log('MongoDB connected. Running seed verification...');
 
     let failed = false;

@@ -1,11 +1,11 @@
 import mongoose from 'mongoose';
-import { env, validateEnv } from '../config/env';
+import { env, loadEnv } from '../config/env';
 import { Trade } from '../models/Trade';
 import { generateSyntheticTradesForAll } from './generateSyntheticTrades';
 import { scoreTrade, computeArrivalSlippageBps } from '../scoring/engine';
 import { EnrichedTrade } from '../types';
 
-validateEnv();
+loadEnv();
 
 const DEMO_USERS = ['demo-aggressive', 'demo-moderate', 'demo-disciplined'];
 
@@ -100,7 +100,7 @@ function enrichAndScore<T extends {
 // ── Main ─────────────────────────────────────────────────────────────────────
 
 async function run() {
-    await mongoose.connect(env.mongoDbUri);
+    await mongoose.connect(env.MONGODB_URI);
     console.log('MongoDB connected');
 
     console.log('Generating synthetic trades directly from real market data...');

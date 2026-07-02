@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import { validateEnv, env } from './config/env';
+import { loadEnv, env } from './config/env';
 import { connectDatabase } from './config/database';
 import mongoose from 'mongoose';
 import * as fs from 'fs';
@@ -10,7 +10,7 @@ import { setupSecurity, auditLimiter } from './middleware/security';
 import { errorHandler } from './middleware/errorHandler';
 
 // Validate environment variables early
-validateEnv();
+loadEnv();
 
 const app = express();
 
@@ -66,8 +66,8 @@ app.use(errorHandler);
 const startServer = async () => {
     try {
         await connectDatabase();
-        app.listen(env.port, () => {
-            console.log(`Listening on port ${env.port}`);
+        app.listen(parseInt(env.PORT, 10), () => {
+            console.log(`Listening on port ${env.PORT}`);
         });
     } catch (error) {
         console.error('Server failed to start', error);

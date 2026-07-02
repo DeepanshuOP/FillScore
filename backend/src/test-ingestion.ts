@@ -1,11 +1,11 @@
 import { connectDatabase } from './config/database';
 import { TradeIngestionService } from './services/TradeIngestionService';
-import { env, validateEnv } from './config/env';
+import { env, loadEnv } from './config/env';
 
 async function runTest() {
     try {
         // Validate environments first
-        validateEnv();
+        loadEnv();
 
         // Connect to database
         await connectDatabase();
@@ -13,8 +13,8 @@ async function runTest() {
         const service = new TradeIngestionService();
 
         // Use the API key & secret from your .env file
-        const apiKey = env.binanceApiKey;
-        const apiSecret = env.binanceApiSecret;
+        const apiKey = env.BINANCE_API_KEY;
+        const apiSecret = env.BINANCE_API_SECRET;
 
         if (apiKey === 'your_binance_api_key_here' || apiSecret === 'your_binance_api_secret_here') {
             console.warn('\n[WARNING] You are using the default placeholder Binance API keys from .env.example.');

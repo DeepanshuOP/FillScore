@@ -4,10 +4,10 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import mongoose from 'mongoose';
 
 import { auditRouter } from './audit';
-import { env, validateEnv } from '../config/env';
+import { env, loadEnv } from '../config/env';
 
 // Make sure env is loaded
-validateEnv();
+loadEnv();
 
 const app = express();
 app.use(express.json());

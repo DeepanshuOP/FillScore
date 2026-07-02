@@ -24,7 +24,7 @@ export const encryptApiKey = (plaintext: string): EncryptedPayload => {
 
     // The ENCRYPTION_KEY must be exactly 32 bytes (256 bits) for AES-256.
     // It is parsed from the environment variable hex string into a Buffer.
-    const keyBuffer = Buffer.from(env.encryptionKey, 'hex');
+    const keyBuffer = Buffer.from(env.ENCRYPTION_KEY, 'hex');
 
     const cipher = crypto.createCipheriv(ALGORITHM, keyBuffer, iv);
 
@@ -50,7 +50,7 @@ export const encryptApiKey = (plaintext: string): EncryptedPayload => {
  */
 export const decryptApiKey = (payload: EncryptedPayload): string => {
     try {
-        const keyBuffer = Buffer.from(env.encryptionKey, 'hex');
+        const keyBuffer = Buffer.from(env.ENCRYPTION_KEY, 'hex');
         const ivBuffer = Buffer.from(payload.iv, 'hex');
         const authTagBuffer = Buffer.from(payload.authTag, 'hex');
 
