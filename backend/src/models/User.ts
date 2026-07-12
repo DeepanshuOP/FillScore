@@ -1,29 +1,25 @@
 import mongoose, { Schema, Document } from 'mongoose';
-import { EncryptedPayload } from '../utils/encryption';
 
 export interface UserDocument extends Document {
-    userId: string;
-    exchange: 'binance' | 'bybit';
-    encryptedApiKey: EncryptedPayload;
-    encryptedApiSecret: EncryptedPayload;
+    email: string;
+    passwordHash: string;
+    plan: 'free' | 'pro' | 'enterprise';
+    emailVerified: boolean;
     createdAt: Date;
 }
 
-const EncryptedFieldSchema = new Schema(
-    {
-        iv: { type: String, required: true },
-        encrypted: { type: String, required: true },
-        authTag: { type: String, required: true },
-    },
-    { _id: false }
-);
-
 const UserSchema = new Schema<UserDocument>(
     {
-        userId: { type: String, required: true, unique: true, index: true },
-        exchange: { type: String, enum: ['binance', 'bybit'], required: true },
-        encryptedApiKey: { type: EncryptedFieldSchema, required: true },
-        encryptedApiSecret: { type: EncryptedFieldSchema, required: true },
+        email: { 
+            type: String, 
+            required: true, 
+            unique: true, 
+            lowercase: true, 
+            match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/ 
+        },
+        passwordHash: { type: String, required: true },
+        plan: { type: String, enum: ['free', 'pro', 'enterprise'], default: 'free' },
+        emailVerified: { type: Boolean, default: false },
         createdAt: { type: Date, default: Date.now },
     }
 );

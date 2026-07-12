@@ -7,6 +7,8 @@ export interface Env {
     BINANCE_API_KEY: string;
     BINANCE_API_SECRET: string;
     ENCRYPTION_KEY: string;
+    JWT_ACCESS_SECRET: string;
+    JWT_REFRESH_SECRET: string;
 }
 
 export function loadEnv(): Readonly<Env> {
@@ -15,7 +17,9 @@ export function loadEnv(): Readonly<Env> {
         'PORT', 
         'BINANCE_API_KEY', 
         'BINANCE_API_SECRET', 
-        'ENCRYPTION_KEY'
+        'ENCRYPTION_KEY',
+        'JWT_ACCESS_SECRET',
+        'JWT_REFRESH_SECRET'
     ];
     const missingVars: string[] = [];
 
@@ -36,6 +40,8 @@ export function loadEnv(): Readonly<Env> {
         BINANCE_API_KEY: process.env.BINANCE_API_KEY as string,
         BINANCE_API_SECRET: process.env.BINANCE_API_SECRET as string,
         ENCRYPTION_KEY: process.env.ENCRYPTION_KEY as string,
+        JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET as string,
+        JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET as string,
     };
 
     return Object.freeze(config);

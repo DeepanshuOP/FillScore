@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
-import { User } from '../models/User';
+import { ExchangeConnection } from '../models/ExchangeConnection';
 import { encryptApiKey, hashUserId } from '../utils/encryption';
 
 export const connectRouter = Router();
@@ -38,7 +38,7 @@ connectRouter.post('/', connectLimiter, async (req: Request, res: Response) => {
 
         // Upsert the user document into MongoDB
         // Using `new: true` to get the created/updated document.
-        const userDoc = await User.findOneAndUpdate(
+        const userDoc = await ExchangeConnection.findOneAndUpdate(
             { userId: finalUserId },
             {
                 userId: finalUserId,

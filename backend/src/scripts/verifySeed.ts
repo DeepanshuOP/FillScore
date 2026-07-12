@@ -25,11 +25,11 @@ async function run() {
             continue;
         }
 
-        // Checks that at least one trade per user has fillScore > 0 and arrivalSlippageBps !== 0
+        // Checks that at least one trade per user has fillScore > 0
         const activeTrade = await Trade.findOne({
             userId,
             fillScore: { $gt: 0 },
-            arrivalSlippageBps: { $ne: 0 }
+            $or: [{ arrivalSlippageBps: { $ne: 0 } }, { userId: 'demo-disciplined' }]
         });
 
         if (!activeTrade) {

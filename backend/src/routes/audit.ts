@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { User } from '../models/User';
+import { ExchangeConnection } from '../models/ExchangeConnection';
 import { decryptApiKey } from '../utils/encryption';
 import { TradeIngestionService } from '../services/TradeIngestionService';
 import { MarketDataService } from '../services/MarketDataService';
@@ -40,7 +40,7 @@ auditRouter.get('/', async (req: Request, res: Response) => {
             await marketDataService.enrichAllPendingTrades(userId);
         } else {
             // STANDARD USER FLOW
-            const user = await User.findOne({ userId });
+            const user = await ExchangeConnection.findOne({ userId });
             if (!user) {
                 return res.status(404).json({ error: 'User not found' });
             }
