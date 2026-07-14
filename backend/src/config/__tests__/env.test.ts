@@ -22,6 +22,10 @@ describe('Environment Validation', () => {
         process.env.ENCRYPTION_KEY = 'test_enc_key';
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
+        process.env.GOOGLE_CLIENT_ID = 'test_google_id';
+        process.env.GOOGLE_CLIENT_SECRET = 'test_google_secret';
+        process.env.GITHUB_CLIENT_ID = 'test_github_id';
+        process.env.GITHUB_CLIENT_SECRET = 'test_github_secret';
         
         const config = loadEnv();
         expect(config.MONGODB_URI).toBe('mongodb://localhost:27017/test');
@@ -36,6 +40,10 @@ describe('Environment Validation', () => {
         process.env.ENCRYPTION_KEY = 'test_enc_key';
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
+        process.env.GOOGLE_CLIENT_ID = 'test_google_id';
+        process.env.GOOGLE_CLIENT_SECRET = 'test_google_secret';
+        process.env.GITHUB_CLIENT_ID = 'test_github_id';
+        process.env.GITHUB_CLIENT_SECRET = 'test_github_secret';
 
         expect(() => loadEnv()).toThrowError(/MONGODB_URI/);
     });
@@ -48,6 +56,10 @@ describe('Environment Validation', () => {
         process.env.ENCRYPTION_KEY = 'test_enc_key';
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
+        process.env.GOOGLE_CLIENT_ID = 'test_google_id';
+        process.env.GOOGLE_CLIENT_SECRET = 'test_google_secret';
+        process.env.GITHUB_CLIENT_ID = 'test_github_id';
+        process.env.GITHUB_CLIENT_SECRET = 'test_github_secret';
 
         expect(() => loadEnv()).toThrowError(/PORT/);
     });
@@ -60,6 +72,10 @@ describe('Environment Validation', () => {
         process.env.ENCRYPTION_KEY = 'test_enc_key';
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
+        process.env.GOOGLE_CLIENT_ID = 'test_google_id';
+        process.env.GOOGLE_CLIENT_SECRET = 'test_google_secret';
+        process.env.GITHUB_CLIENT_ID = 'test_github_id';
+        process.env.GITHUB_CLIENT_SECRET = 'test_github_secret';
         // if optional vars existed, we would unset them here.
 
         expect(() => loadEnv()).not.toThrow();
@@ -74,6 +90,10 @@ describe('Environment Validation', () => {
         process.env.ENCRYPTION_KEY = 'test_enc_key';
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
+        process.env.GOOGLE_CLIENT_ID = 'test_google_id';
+        process.env.GOOGLE_CLIENT_SECRET = 'test_google_secret';
+        process.env.GITHUB_CLIENT_ID = 'test_github_id';
+        process.env.GITHUB_CLIENT_SECRET = 'test_github_secret';
 
         let caughtError: Error | null = null;
         try {

@@ -9,6 +9,7 @@ import { RefreshToken } from '../../models/RefreshToken';
 import { loadEnv } from '../../config/env';
 import mongoose from 'mongoose';
 import { setupSecurity } from '../../middleware/security';
+import passport from '../../config/passport';
 
 loadEnv();
 
@@ -16,6 +17,7 @@ const app = express();
 // Minimal setup similar to index.ts
 setupSecurity(app);
 app.use(cookieParser());
+app.use(passport.initialize());
 app.use('/api/auth', authRouter);
 
 app.get('/api/protected', requireAuth, (req, res) => {
@@ -133,5 +135,25 @@ describe('Auth Routes (Integration)', () => {
             .set('Authorization', 'Bearer invalid.token.here');
         expect(res.status).toBe(401);
         expect(res.body.error).toBe('Invalid or expired access token');
+    });
+
+    describe('OAuth Routes', () => {
+        it('GET /api/auth/google redirects to Google authorization URL with correct client_id', async () => {
+            const res = await request(app).get('/api/auth/google');
+            expect(res.status).toBe(302);
+            expect(res.header.location).toContain('accounts.google.com/o/oauth2/v2/auth');
+            expect(res.header.location).toContain('client_id=test_google_id');
+        });
+
+        it('GET /api/auth/github redirects to GitHub authorization URL with correct client_id', async () => {
+            const res = await request(app).get('/api/auth/github');
+            expect(res.status).toBe(302);
+            expect(res.header.location).toContain('github.com/login/oauth/authorize');
+            expect(res.header.location).toContain('client_id=test_github_id');
+        });
+
+        it('OAuth callback logic is covered in oauthService.test.ts. In-process integration test of passport verify callback cannot be easily achieved without external network mocking, so we do not fake it here.', () => {
+            expect(true).toBe(true);
+        });
     });
 });

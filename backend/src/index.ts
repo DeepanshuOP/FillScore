@@ -9,6 +9,7 @@ import { performance } from 'perf_hooks';
 import { setupSecurity, auditLimiter } from './middleware/security';
 import { errorHandler } from './middleware/errorHandler';
 import cookieParser from 'cookie-parser';
+import passport from './config/passport';
 
 // Validate environment variables early
 loadEnv();
@@ -17,6 +18,7 @@ const app = express();
 
 setupSecurity(app);
 app.use(cookieParser());
+app.use(passport.initialize());
 
 app.use((req, res, next) => {
     const start = performance.now()

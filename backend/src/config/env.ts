@@ -9,6 +9,12 @@ export interface Env {
     ENCRYPTION_KEY: string;
     JWT_ACCESS_SECRET: string;
     JWT_REFRESH_SECRET: string;
+    GOOGLE_CLIENT_ID: string;
+    GOOGLE_CLIENT_SECRET: string;
+    GITHUB_CLIENT_ID: string;
+    GITHUB_CLIENT_SECRET: string;
+    BACKEND_URL: string;
+    FRONTEND_URL: string;
 }
 
 export function loadEnv(): Readonly<Env> {
@@ -19,7 +25,11 @@ export function loadEnv(): Readonly<Env> {
         'BINANCE_API_SECRET', 
         'ENCRYPTION_KEY',
         'JWT_ACCESS_SECRET',
-        'JWT_REFRESH_SECRET'
+        'JWT_REFRESH_SECRET',
+        'GOOGLE_CLIENT_ID',
+        'GOOGLE_CLIENT_SECRET',
+        'GITHUB_CLIENT_ID',
+        'GITHUB_CLIENT_SECRET'
     ];
     const missingVars: string[] = [];
 
@@ -42,6 +52,12 @@ export function loadEnv(): Readonly<Env> {
         ENCRYPTION_KEY: process.env.ENCRYPTION_KEY as string,
         JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET as string,
         JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET as string,
+        GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID as string,
+        GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET as string,
+        GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID as string,
+        GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET as string,
+        BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3001',
+        FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
     };
 
     return Object.freeze(config);

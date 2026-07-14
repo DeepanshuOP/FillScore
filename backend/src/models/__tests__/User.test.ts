@@ -24,7 +24,7 @@ describe('User Model', () => {
         await User.deleteMany({ email: { $regex: /^test.*@fillscore-test\.local$/i } });
     });
 
-    it('Schema requires email, passwordHash, and sets defaults for plan, emailVerified, and createdAt', async () => {
+    it('Schema requires email, and sets defaults for plan, emailVerified, and createdAt (passwordHash is optional for OAuth)', async () => {
         const user = new User({
             email: `test_defaults_${Date.now()}@fillscore-test.local`,
             passwordHash: 'dummyhash'

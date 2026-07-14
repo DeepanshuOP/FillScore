@@ -1,8 +1,32 @@
+import mongoose from 'mongoose';
 import { User } from '../models/User';
 import { RefreshToken } from '../models/RefreshToken';
 import { hashPassword, verifyPassword } from '../utils/password';
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import crypto from 'crypto';
+
+export async function issueTokenPair(userId: mongoose.Types.ObjectId | string) {
+    const userIdStr = userId.toString();
+    const accessToken = signAccessToken({ userId: userIdStr });
+    const refreshToken = signRefreshToken({ userId: userIdStr, jti: crypto.randomUUID() });
+
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
+    const family = crypto.randomUUID();
+
+    const rtDoc = new RefreshToken({
+        userId: new mongoose.Types.ObjectId(userIdStr),
+        tokenHash,
+        family,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    });
+    await rtDoc.save();
+
+    return {
+        userId: userIdStr,
+        accessToken,
+        refreshToken
+    };
+}
 
 export async function register(email: string, passwordRaw: string) {
     if (!passwordRaw) {
@@ -25,25 +49,7 @@ export async function register(email: string, passwordRaw: string) {
     });
     await user.save();
 
-    const accessToken = signAccessToken({ userId: user._id.toString() });
-    const refreshToken = signRefreshToken({ userId: user._id.toString(), jti: crypto.randomUUID() });
-
-    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
-    const family = crypto.randomUUID();
-
-    const rtDoc = new RefreshToken({
-        userId: user._id,
-        tokenHash,
-        family,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // matches JWT expiry of 7d
-    });
-    await rtDoc.save();
-
-    return {
-        userId: user._id.toString(),
-        accessToken,
-        refreshToken
-    };
+    return await issueTokenPair(user._id);
 }
 
 export async function login(email: string, passwordRaw: string) {
@@ -63,25 +69,7 @@ export async function login(email: string, passwordRaw: string) {
         throw new Error('Invalid email or password');
     }
 
-    const accessToken = signAccessToken({ userId: user._id.toString() });
-    const refreshToken = signRefreshToken({ userId: user._id.toString(), jti: crypto.randomUUID() });
-
-    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
-    const family = crypto.randomUUID();
-
-    const rtDoc = new RefreshToken({
-        userId: user._id,
-        tokenHash,
-        family,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-    });
-    await rtDoc.save();
-
-    return {
-        userId: user._id.toString(),
-        accessToken,
-        refreshToken
-    };
+    return await issueTokenPair(user._id);
 }
 
 export async function rotateRefresh(rawRefreshToken: string) {

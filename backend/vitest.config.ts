@@ -3,6 +3,8 @@ export default defineConfig({
   test: {
     include: ['src/**/*.test.ts'],
     exclude: ['dist/**', 'node_modules/**'],
-    setupFiles: ['src/test-setup.ts']
+    setupFiles: ['src/test-setup.ts'],
+    hookTimeout: 120000,
+    testTimeout: 120000
   }
 })

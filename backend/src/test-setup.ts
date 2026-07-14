@@ -60,7 +60,12 @@ beforeAll(async () => {
     // Start in-memory server and override the default MONGODB_URI for the test process
     mongod = await MongoMemoryServer.create({
         instance: {
-            storageEngine: 'wiredTiger'
+            storageEngine: 'wiredTiger',
+            launchTimeout: 120000
+        },
+        binary: {
+            // Give system binary cold starts more time under parallel vitest load
+            systemBinary: process.env.MONGOMS_SYSTEM_BINARY
         }
     });
     process.env.MONGODB_URI = mongod.getUri();
