@@ -8,6 +8,7 @@ import { performance } from 'perf_hooks';
 
 import { setupSecurity, auditLimiter } from './middleware/security';
 import { errorHandler } from './middleware/errorHandler';
+import cookieParser from 'cookie-parser';
 
 // Validate environment variables early
 loadEnv();
@@ -15,6 +16,7 @@ loadEnv();
 const app = express();
 
 setupSecurity(app);
+app.use(cookieParser());
 
 app.use((req, res, next) => {
     const start = performance.now()
@@ -28,6 +30,7 @@ app.use((req, res, next) => {
 import { connectRouter } from './routes/connect';
 import { auditRouter } from './routes/audit';
 import { attributionRouter } from './routes/attribution';
+import { authRouter } from './routes/auth';
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
@@ -60,6 +63,7 @@ app.use('/api/connect', connectRouter);
 app.use('/api/audit', auditLimiter, auditRouter);
 app.use('/api', auditRouter); // exposes /api/score
 app.use('/api/attribution', attributionRouter);
+app.use('/api/auth', authRouter);
 
 app.use(errorHandler);
 

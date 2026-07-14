@@ -9,6 +9,12 @@ export const auditLimiter = rateLimit({
     message: { error: 'Too many requests', code: 'RATE_LIMIT' }
 });
 
+export const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 15,
+    message: { error: 'Too many auth requests, please try again later.', code: 'RATE_LIMIT' }
+});
+
 export function setupSecurity(app: Application) {
     app.use(helmet({
         contentSecurityPolicy: {
