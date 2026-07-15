@@ -2,6 +2,7 @@ import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
 import { Strategy as GitHubStrategy } from 'passport-github2';
 import { findOrLinkOAuthUser, OAuthProfile } from '../services/oauthService';
+import { fetchPrimaryVerifiedEmail } from '../services/githubEmail';
 import { env } from './env';
 
 const backendUrl = env.BACKEND_URL || 'http://localhost:3001';
@@ -37,17 +38,13 @@ passport.use(new GitHubStrategy({
     scope: ['user:email']
 }, async (accessToken: string, refreshToken: string, profile: any, done: any) => {
     try {
-        const emailObj = profile.emails?.[0];
-        const email = emailObj?.value;
-        // passport-github2 fetches from /user/emails. We strictly require the provider to explicitly confirm verification.
-        // If the 'verified' flag is absent or unknown, we default to FALSE for safety.
-        const emailVerified = (emailObj?.verified === true || emailObj?.verified === 'true') || (profile._json?.email_verified === true) || false;
+        const { email, verified } = await fetchPrimaryVerifiedEmail(accessToken);
 
         const oauthProfile: OAuthProfile = {
             provider: 'github',
             providerId: profile.id,
             email,
-            emailVerified
+            emailVerified: verified
         };
 
         const result = await findOrLinkOAuthUser(oauthProfile);
