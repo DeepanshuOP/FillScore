@@ -113,7 +113,7 @@ async function seedAudit() {
       // 5. Upsert AuditSummary into MongoDB
       await Audit.findOneAndUpdate(
           { userId }, // using userId string mapped to single audit summary per setup
-          summary,
+          { ...summary, accountId: userId },
           { upsert: true, new: true, setDefaultsOnInsert: true }
       );
 

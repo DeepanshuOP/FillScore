@@ -124,7 +124,7 @@ async function run() {
 
             const result = await Trade.updateOne(
                 { userId: enriched.userId, exchange: enriched.exchange, tradeId: enriched.tradeId },
-                { $setOnInsert: enriched },
+                { $setOnInsert: { ...enriched, accountId: enriched.userId } },
                 { upsert: true }
             );
             if (result.upsertedCount > 0) inserted++;
@@ -193,7 +193,7 @@ async function run() {
 
         const result = await Trade.updateOne(
             { userId: enriched.userId, exchange: 'bybit', tradeId: enriched.tradeId },
-            { $setOnInsert: enriched },
+            { $setOnInsert: { ...enriched, accountId: enriched.userId } },
             { upsert: true }
         );
         if (result.upsertedCount > 0) bybitInserted++;
@@ -247,7 +247,7 @@ async function run() {
 
         const result = await Trade.updateOne(
             { userId: enriched.userId, exchange: 'okx', tradeId: enriched.tradeId },
-            { $setOnInsert: enriched },
+            { $setOnInsert: { ...enriched, accountId: enriched.userId } },
             { upsert: true }
         );
         if (result.upsertedCount > 0) okxInserted++;
@@ -315,7 +315,7 @@ async function run() {
 
             const result = await Trade.updateOne(
                 { userId: enriched.userId, exchange: ex.name, tradeId: enriched.tradeId },
-                { $setOnInsert: enriched },
+                { $setOnInsert: { ...enriched, accountId: enriched.userId } },
                 { upsert: true }
             );
             if (result.upsertedCount > 0) multiInserted++;

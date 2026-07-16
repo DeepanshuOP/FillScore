@@ -94,7 +94,7 @@ auditRouter.get('/', async (req: Request, res: Response) => {
         const summary = await computeAuditSummary(userId, validTrades);
 
         // 5. Save AuditSummary to MongoDB
-        const savedAudit = await Audit.create(summary);
+        const savedAudit = await Audit.create({ ...summary, accountId: userId });
 
         return res.status(200).json(savedAudit);
 

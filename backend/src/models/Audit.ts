@@ -3,11 +3,13 @@ import { AuditSummary } from '../types';
 
 export interface AuditSummaryDocument extends AuditSummary, Document {
     createdAt: Date;
+    accountId: string;
 }
 
 const AuditSchema = new Schema<AuditSummaryDocument>(
     {
         userId: { type: String, required: true },
+        accountId: { type: String, required: true, index: true },
         period: {
             start: { type: Date, required: true },
             end: { type: Date, required: true },

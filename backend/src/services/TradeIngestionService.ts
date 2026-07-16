@@ -128,7 +128,7 @@ export class TradeIngestionService {
             // which allows future enrichments (scores, metrics) to not be destroyed by re-ingestion.
             const updateResult = await Trade.updateOne(
                 filter,
-                { $setOnInsert: normalised },
+                { $setOnInsert: { ...normalised, accountId: userId } },
                 { upsert: true }
             );
 
@@ -193,7 +193,7 @@ export class TradeIngestionService {
 
                 const updateResult = await Trade.updateOne(
                     { userId, exchange: 'bybit', tradeId: raw.execId },
-                    { $setOnInsert: normalised },
+                    { $setOnInsert: { ...normalised, accountId: userId } },
                     { upsert: true }
                 );
 
@@ -264,7 +264,7 @@ export class TradeIngestionService {
 
                 const updateResult = await Trade.updateOne(
                     { userId, exchange: 'okx', tradeId: raw.billId },
-                    { $setOnInsert: normalised },
+                    { $setOnInsert: { ...normalised, accountId: userId } },
                     { upsert: true }
                 );
 

@@ -5,11 +5,13 @@ export interface EnrichedTradeDocument extends Omit<EnrichedTrade, 'tradeId' | '
     tradeId: string;
     orderId: string;
     note?: string;
+    accountId: string;
 }
 
 const TradeSchema = new Schema<EnrichedTradeDocument>(
     {
         userId: { type: String, required: true },
+        accountId: { type: String, required: true, index: true },
         exchange: { type: String, enum: ['binance', 'bybit'], required: true },
         symbol: { type: String, required: true },
         tradeId: { type: String, required: true },
