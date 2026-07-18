@@ -11,6 +11,7 @@ import { aggregateCostAttribution } from '../scoring/attribution';
 import { ReportService } from '../services/ReportService';
 import { EnrichedTrade } from '../types';
 import rateLimit from 'express-rate-limit';
+import { resolveAccount, VALID_DEMO_USERS } from '../middleware/resolveAccount';
 
 export const auditRouter = Router();
 
@@ -20,27 +21,23 @@ const shareLimiter = rateLimit({
     message: { error: 'Too many requests for share cards. Try again later.' }
 });
 
-auditRouter.get('/', async (req: Request, res: Response) => {
+auditRouter.get('/', resolveAccount, async (req: Request, res: Response) => {
     try {
-        const userId = req.query.userId as string;
+        const accountId = req.accountId!;
         const daysBackStr = req.query.daysBack as string;
         const daysBack = daysBackStr ? parseInt(daysBackStr, 10) : 30;
 
-        if (!userId) {
-            return res.status(400).json({ error: 'Missing userId parameter' });
-        }
-
-        const isDemoUser = userId.startsWith('demo-');
+        const isDemoUser = req.isDemo;
         const ingestionService = new TradeIngestionService();
         const marketDataService = new MarketDataService();
 
         if (isDemoUser) {
             // DEMO USER FLOW: Skip user lookup, API key decryption and raw trade ingestion completely.
             // Move right to data enrichment formatting of seeded local trade docs.
-            await marketDataService.enrichAllPendingTrades(userId);
+            await marketDataService.enrichAllPendingTrades(accountId);
         } else {
             // STANDARD USER FLOW
-            const user = await ExchangeConnection.findOne({ userId });
+            const user = await ExchangeConnection.findOne({ userId: accountId });
             if (!user) {
                 return res.status(404).json({ error: 'User not found' });
             }
@@ -52,15 +49,15 @@ auditRouter.get('/', async (req: Request, res: Response) => {
 
             // 1. Ingest trades for all major symbols
             for (const symbol of majorSymbols) {
-                await ingestionService.ingestForUser(userId, apiKey, apiSecret, symbol, daysBack);
+                await ingestionService.ingestForUser(accountId, apiKey, apiSecret, symbol, daysBack);
             }
 
             // 2. Enrich pending trades
-            await marketDataService.enrichAllPendingTrades(userId);
+            await marketDataService.enrichAllPendingTrades(accountId);
         }
 
         // 3. Fetch all enriched trades from DB, map to EnrichedTrade object
-        const tradeDocs = await Trade.find({ userId }).lean();
+        const tradeDocs = await Trade.find({ accountId }).lean();
 
         // Ensure the lean object acts like our EnrichedTrade and parses timestamps right
         const trades = tradeDocs.map(doc => {
@@ -91,10 +88,10 @@ auditRouter.get('/', async (req: Request, res: Response) => {
             return res.status(400).json({ error: 'No scoreable trades found to audit.' });
         }
 
-        const summary = await computeAuditSummary(userId, validTrades);
+        const summary = await computeAuditSummary(accountId, validTrades);
 
         // 5. Save AuditSummary to MongoDB
-        const savedAudit = await Audit.create({ ...summary, accountId: userId });
+        const savedAudit = await Audit.create({ ...summary, accountId });
 
         return res.status(200).json(savedAudit);
 
@@ -104,15 +101,11 @@ auditRouter.get('/', async (req: Request, res: Response) => {
     }
 });
 
-auditRouter.get('/score', async (req: Request, res: Response) => {
+auditRouter.get('/score', resolveAccount, async (req: Request, res: Response) => {
     try {
-        const userId = req.query.userId as string;
+        const accountId = req.accountId!;
 
-        if (!userId) {
-            return res.status(400).json({ error: 'Missing userId parameter' });
-        }
-
-        const latestAudit = await Audit.findOne({ userId }).sort({ createdAt: -1 });
+        const latestAudit = await Audit.findOne({ accountId }).sort({ createdAt: -1 });
 
         if (!latestAudit) {
             return res.status(404).json({ error: 'No audit found for this user.' });
@@ -126,31 +119,28 @@ auditRouter.get('/score', async (req: Request, res: Response) => {
     }
 });
 
-auditRouter.get('/report', async (req: Request, res: Response) => {
+auditRouter.get('/report', resolveAccount, async (req: Request, res: Response) => {
     try {
-        const userId = req.query.userId as string;
-        if (!userId) {
-            return res.status(400).json({ error: 'Missing userId parameter' });
-        }
+        const accountId = req.accountId!;
 
-        const latestAudit = await Audit.findOne({ userId }).sort({ createdAt: -1 });
+        const latestAudit = await Audit.findOne({ accountId }).sort({ createdAt: -1 });
         if (!latestAudit) {
             return res.status(404).json({ error: 'No audit found for this user.' });
         }
 
-        const tradeDocs = await Trade.find({ userId, fillScore: { $exists: true, $ne: null } }).lean();
+        const tradeDocs = await Trade.find({ accountId, fillScore: { $exists: true, $ne: null } }).lean();
         const trades = tradeDocs.map(doc => ({ ...doc, executedAt: new Date(doc.executedAt) } as unknown as EnrichedTrade));
         
         const attribution = trades.length > 0 ? aggregateCostAttribution(trades) : null;
         
-        const worstTrades = await Trade.find({ userId, fillScore: { $exists: true, $ne: null } })
+        const worstTrades = await Trade.find({ accountId, fillScore: { $exists: true, $ne: null } })
             .sort({ fillScore: 1 })
             .limit(10)
             .lean();
 
         // Fetch exchange comparison data (same pipeline as /analytics/exchange-comparison)
         const exchPipeline: any[] = [
-            { $match: { userId } },
+            { $match: { accountId } },
             {
                 $group: {
                     _id: '$exchange',
@@ -181,7 +171,7 @@ auditRouter.get('/report', async (req: Request, res: Response) => {
             const venueAlphaBps = Math.abs(exchanges[0].avgSlippageBps - exchanges[exchanges.length - 1].avgSlippageBps);
 
             const symPipeline: any[] = [
-                { $match: { userId } },
+                { $match: { accountId } },
                 { $group: { _id: { symbol: '$symbol', exchange: '$exchange' }, avgScore: { $avg: '$fillScore' } } },
                 { $group: { _id: '$_id.symbol', scores: { $push: { exchange: '$_id.exchange', score: '$avgScore' } } } }
             ];
@@ -202,7 +192,7 @@ auditRouter.get('/report', async (req: Request, res: Response) => {
         const doc = ReportService.generateReport(latestAudit, attribution, worstTrades, comparisonData);
         
         res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename="fillscore-audit-${userId}-${new Date().toISOString().split('T')[0]}.pdf"`);
+        res.setHeader('Content-Disposition', `attachment; filename="fillscore-audit-${accountId}-${new Date().toISOString().split('T')[0]}.pdf"`);
         
         doc.pipe(res);
     } catch (error: any) {
@@ -218,7 +208,11 @@ auditRouter.get('/share/:userId', shareLimiter, async (req: Request, res: Respon
             return res.status(400).json({ error: 'Missing userId parameter' });
         }
 
-        const latestAudit = await Audit.findOne({ userId }).sort({ createdAt: -1 });
+        if (!VALID_DEMO_USERS.has(userId)) {
+            return res.status(404).json({ error: 'This score card is no longer available.' });
+        }
+
+        const latestAudit = await Audit.findOne({ accountId: userId }).sort({ createdAt: -1 });
         if (!latestAudit) {
             return res.status(404).json({ error: 'This score card is no longer available.' });
         }
@@ -253,15 +247,12 @@ auditRouter.get('/share/:userId', shareLimiter, async (req: Request, res: Respon
     }
 });
 
-auditRouter.get('/trades/export', async (req, res) => {
+auditRouter.get('/trades/export', resolveAccount, async (req, res) => {
   try {
-    const { userId, exchange, symbol } = req.query as Record<string, string>;
+    const { exchange, symbol } = req.query as Record<string, string>;
+    const accountId = req.accountId!;
 
-    if (!userId) {
-      return res.status(400).json({ error: 'userId required' });
-    }
-
-    const query: Record<string, unknown> = { userId };
+    const query: Record<string, unknown> = { accountId };
     if (exchange && exchange !== 'multi' && exchange !== 'ALL') {
       query.exchange = new RegExp(`^${exchange}$`, 'i');
     }
@@ -272,7 +263,7 @@ auditRouter.get('/trades/export', async (req, res) => {
     const trades = await Trade.find(query).sort({ executedAt: -1 }).lean();
     
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="fillscore-trades-${userId}-${new Date().toISOString().split('T')[0]}.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="fillscore-trades-${accountId}-${new Date().toISOString().split('T')[0]}.csv"`);
 
     if (trades.length === 0) {
       return res.send('Trade ID,Date,Time (UTC),Symbol,Exchange,Side,Order Type,Notional (USD),Price,Fee (USD),Slippage (bps),Fill Score,Grade,Arrival Price,VWAP 5min,Spread (bps)\n# No trades found for this user\n');
@@ -306,21 +297,17 @@ auditRouter.get('/trades/export', async (req, res) => {
   }
 });
 
-auditRouter.get('/trades', async (req, res) => {
+auditRouter.get('/trades', resolveAccount, async (req, res) => {
   try {
     const { 
-      userId, symbol, side, grade,
+      symbol, side, grade,
       page = '1', limit = '50' 
     } = req.query as Record<string, string>;
-
-    if (!userId) {
-      return res.status(400).json({ 
-        error: 'userId required' 
-      });
-    }
+    
+    const accountId = req.accountId!;
 
     const query: Record<string, unknown> = { 
-      userId
+      accountId
     };
 
     if (symbol && symbol !== 'ALL') 
@@ -361,14 +348,11 @@ auditRouter.get('/trades', async (req, res) => {
   }
 });
 
-auditRouter.patch('/trades/:tradeId/note', shareLimiter, async (req, res) => {
+auditRouter.patch('/trades/:tradeId/note', shareLimiter, resolveAccount, async (req, res) => {
   try {
     const { tradeId } = req.params;
-    const { userId, note } = req.body;
-
-    if (!userId) {
-      return res.status(400).json({ error: 'userId is required' });
-    }
+    const { note } = req.body;
+    const accountId = req.accountId!;
 
     if (typeof note !== 'string') {
       return res.status(400).json({ error: 'note must be a string' });
@@ -377,7 +361,7 @@ auditRouter.patch('/trades/:tradeId/note', shareLimiter, async (req, res) => {
     const trimmedNote = note.trim().substring(0, 500);
 
     const trade = await Trade.findOneAndUpdate(
-      { tradeId, userId },
+      { tradeId, accountId },
       { $set: { note: trimmedNote } },
       { new: true }
     );
@@ -393,15 +377,12 @@ auditRouter.patch('/trades/:tradeId/note', shareLimiter, async (req, res) => {
   }
 });
 
-auditRouter.get('/analytics', async (req, res) => {
+auditRouter.get('/analytics', resolveAccount, async (req, res) => {
   try {
-    const { userId } = req.query as { userId: string }
-    if (!userId) return res.status(400).json({ 
-      error: 'userId required' 
-    })
+    const accountId = req.accountId!;
 
     const trades = await Trade.find({ 
-      userId,
+      accountId,
       fillScore: { $exists: true, $ne: null }
     }).lean()
 
@@ -540,15 +521,12 @@ auditRouter.get('/analytics', async (req, res) => {
   }
 });
 
-auditRouter.get('/analytics/exchange-comparison', async (req, res) => {
+auditRouter.get('/analytics/exchange-comparison', resolveAccount, async (req, res) => {
   try {
-    const { userId } = req.query;
-    if (!userId || typeof userId !== 'string') {
-      return res.status(400).json({ error: 'userId required' });
-    }
+    const accountId = req.accountId!;
 
     const pipeline: any[] = [
-      { $match: { userId } },
+      { $match: { accountId } },
       {
         $group: {
           _id: '$exchange',
@@ -600,7 +578,7 @@ auditRouter.get('/analytics/exchange-comparison', async (req, res) => {
     );
 
     const symbolPipeline: any[] = [
-      { $match: { userId } },
+      { $match: { accountId } },
       {
         $group: {
           _id: { symbol: '$symbol', exchange: '$exchange' },
@@ -653,22 +631,21 @@ auditRouter.get('/analytics/exchange-comparison', async (req, res) => {
   }
 });
 
-auditRouter.get('/coach', async (req: Request, res: Response) => {
+auditRouter.get('/coach', resolveAccount, async (req: Request, res: Response) => {
     try {
-        const userId = req.query.userId as string;
-        if (!userId) return res.status(400).json({ error: 'Missing userId' });
+        const accountId = req.accountId!;
 
-        const latestAudit = await Audit.findOne({ userId }).sort({ createdAt: -1 }).lean();
+        const latestAudit = await Audit.findOne({ accountId }).sort({ createdAt: -1 }).lean();
         if (!latestAudit) return res.status(404).json({ error: 'No audit found' });
 
-        const tradeDocs = await Trade.find({ userId, fillScore: { $exists: true, $ne: null } }).lean();
+        const tradeDocs = await Trade.find({ accountId, fillScore: { $exists: true, $ne: null } }).lean();
         if (tradeDocs.length === 0) return res.status(200).json({ headline: '', actions: [] });
         
         const trades = tradeDocs.map(doc => ({ ...doc, executedAt: new Date(doc.executedAt) } as unknown as EnrichedTrade));
         const attribution = aggregateCostAttribution(trades);
 
         const exchPipeline: any[] = [
-            { $match: { userId } },
+            { $match: { accountId } },
             { $group: { _id: '$exchange', avgSlippageBps: { $avg: '$arrivalSlippageBps' }, tradeCount: { $sum: 1 } } },
             { $project: { exchange: '$_id', _id: 0, avgSlippageBps: 1, tradeCount: 1 } },
             { $sort: { avgSlippageBps: 1 } } // Lowest slippage first
@@ -756,15 +733,12 @@ auditRouter.get('/coach', async (req: Request, res: Response) => {
     }
 });
 
-auditRouter.get('/analytics/whale-correlation', async (req: Request, res: Response) => {
+auditRouter.get('/analytics/whale-correlation', resolveAccount, async (req: Request, res: Response) => {
     try {
-        const userId = req.query.userId as string;
-        if (!userId) {
-            return res.status(400).json({ error: 'Missing userId parameter' });
-        }
+        const accountId = req.accountId!;
 
         const trades = await Trade.find({
-            userId,
+            accountId,
             whaleEnrichedAt: { $exists: true }
         }).sort({ executedAt: 1 }).lean();
 

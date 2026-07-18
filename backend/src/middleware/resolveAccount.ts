@@ -1,10 +1,19 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/jwt';
 
+declare global {
+    namespace Express {
+        interface Request {
+            accountId?: string;
+            isDemo?: boolean;
+        }
+    }
+}
+
 // The six known demo users: demo-disciplined, demo-moderate, demo-aggressive, demo-bybit, demo-okx, demo-multi.
 // We use an explicit anchored set rather than a loose prefix match (like `startsWith('demo-')`)
 // to strictly prevent parameter injection, path traversal (e.g. 'demo-../admin'), or loose matching bugs.
-const VALID_DEMO_USERS = new Set([
+export const VALID_DEMO_USERS = new Set([
     'demo-disciplined',
     'demo-moderate',
     'demo-aggressive',

@@ -25,10 +25,9 @@ describe('GET /api/analytics/whale-correlation', () => {
         await mongoose.disconnect();
     });
 
-    it('returns 400 if userId is missing', async () => {
+    it('returns 401 if userId is missing', async () => {
         const res = await request(app).get('/api/analytics/whale-correlation');
-        expect(res.status).toBe(400);
-        expect(res.body.error).toBe('Missing userId parameter');
+        expect(res.status).toBe(401);
     });
 
     it('returns 200 and valid whale correlation data for demo-disciplined', async () => {

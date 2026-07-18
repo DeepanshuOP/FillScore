@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Trade } from '../models/Trade';
 import { aggregateCostAttribution } from '../scoring/attribution';
 import { EnrichedTrade } from '../types';
+import { resolveAccount } from '../middleware/resolveAccount';
 
 export const attributionRouter = Router();
 
@@ -12,17 +13,13 @@ export const attributionRouter = Router();
  * Decomposes total cost into: slippage, fees, timing penalty, spread.
  * Includes per-symbol drill-down.
  */
-attributionRouter.get('/', async (req: Request, res: Response) => {
+attributionRouter.get('/', resolveAccount, async (req: Request, res: Response) => {
     try {
-        const userId = req.query.userId as string;
-
-        if (!userId) {
-            return res.status(400).json({ error: 'userId required' });
-        }
+        const accountId = req.accountId!;
 
         // Fetch all scored trades with enrichment data
         const tradeDocs = await Trade.find({
-            userId,
+            accountId,
             fillScore: { $exists: true, $ne: null },
         }).lean();
 
