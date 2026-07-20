@@ -10,7 +10,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import StreamingResponse
 import asyncio, json
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +20,41 @@ from pymongo import MongoClient
 from agents.council import run_council
 from agents.schemas import CouncilResult, TradeContext
 
+# ---------------------------------------------------------------------------
+# Auth Guard
+# ---------------------------------------------------------------------------
+from fastapi.security import HTTPBearer
+import jwt
+
+security = HTTPBearer(auto_error=False)
+
+VALID_DEMO_USERS = {
+    "demo-disciplined",
+    "demo-moderate",
+    "demo-aggressive",
+    "demo-bybit",
+    "demo-okx",
+    "demo-multi"
+}
+
+def get_account_id(requested_user_id: str | None, req: Request) -> str:
+    if requested_user_id:
+        if requested_user_id in VALID_DEMO_USERS:
+            return requested_user_id
+        else:
+            raise HTTPException(status_code=403, detail="Forbidden: Invalid userId or unauthorized access")
+    
+    auth_header = req.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    
+    token = auth_header.split(" ")[1]
+    try:
+        payload = jwt.decode(token, JWT_ACCESS_SECRET, algorithms=["HS256"])
+        return payload["userId"]
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired access token")
+
 # Load env: ml-service/.env first (ANTHROPIC_API_KEY), then backend/.env (MONGODB_URI)
 _ml_env = os.path.join(os.path.dirname(__file__), ".env")
 _backend_env = os.path.join(os.path.dirname(__file__), "..", "backend", ".env")
@@ -28,6 +63,10 @@ for _env_path in [_ml_env, _backend_env]:
         load_dotenv(_env_path, override=False)
     except (ValueError, UnicodeDecodeError):
         pass
+
+JWT_ACCESS_SECRET = os.environ.get("JWT_ACCESS_SECRET", "")
+if not JWT_ACCESS_SECRET:
+    raise RuntimeError("JWT_ACCESS_SECRET is required but missing or empty. Fast-failing at startup.")
 
 
 # ---------------------------------------------------------------------------
@@ -89,7 +128,7 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 
 class CouncilRequest(BaseModel):
-    userId: str
+    userId: str | None = None
     symbol: str
 
 
@@ -116,53 +155,52 @@ async def health() -> HealthResponse:
 
 
 @app.post("/ml/agents/council", response_model=CouncilResult)
-async def council_endpoint(req: CouncilRequest) -> CouncilResult:
+async def council_endpoint(req: CouncilRequest, request: Request) -> CouncilResult:
     """Run the Agent Council for a user's trade data."""
+    account_id = get_account_id(req.userId, request)
     db = _get_db()
 
     # Fetch the user's most recent audit
     audit = db.audits.find_one(
-        {"userId": req.userId},
+        {"accountId": account_id},
         sort=[("period.start", -1)],
     )
     if audit is None:
-        raise HTTPException(status_code=404, detail=f"No audit found for userId={req.userId}")
+        raise HTTPException(status_code=404, detail=f"No audit found for accountId={account_id}")
 
-    result = await run_council(req.userId, req.symbol)
+    result = await run_council(account_id, account_id, req.symbol)
     return result
 
 
 @app.get("/ml/agents/council/runs")
-async def list_runs(userId: str, symbol: str = None, limit: int = 20):
+async def list_runs(request: Request, userId: str = None, symbol: str = None, limit: int = 20):
+    account_id = get_account_id(userId, request)
     from agents.persistence import list_council_runs
-    runs = await list_council_runs(userId, symbol, limit)
+    runs = await list_council_runs(account_id, symbol, limit)
     return {"runs": runs, "count": len(runs)}
 
 @app.get("/ml/agents/council/runs/{run_id}")
-async def get_run(run_id: str):
+async def get_run(run_id: str, request: Request):
+    account_id = get_account_id(None, request)
     from agents.persistence import load_council_run
-    run = await load_council_run(run_id)
+    run = await load_council_run(run_id, account_id)
     if not run:
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail=f"Run {run_id} not found")
     return run
 
 @app.get("/ml/agents/council/telemetry")
-async def get_telemetry(userId: str = None):
+async def get_telemetry(request: Request, userId: str = None):
+    account_id = get_account_id(userId, request)
     from agents.persistence import get_telemetry_summary
-    return await get_telemetry_summary(userId)
+    return await get_telemetry_summary(account_id)
 
 @app.post("/ml/agents/council/stream")
-async def council_stream(request: CouncilRequest):
+async def council_stream(request: CouncilRequest, req: Request):
     """
     SSE endpoint for streaming council results.
-    Fires events as each agent completes:
-      - agent_start: {agent, timestamp}
-      - agent_done: {agent, verdict_summary, grounding_score}
-      - synthesis_done: {headline, overallRating, topRecommendations}
-      - complete: {run_id, totalLatencyMs, grounding_report}
     """
-    user_id = request.userId
+    account_id = get_account_id(request.userId, req)
     symbol = request.symbol
 
     async def event_generator():
@@ -175,11 +213,11 @@ async def council_stream(request: CouncilRequest):
         try:
             # Load packets first
             from agents.metrics.loader import load_all_packets
-            fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_all_packets(user_id, symbol)
+            fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_all_packets(account_id, symbol)
 
             from agents.schemas import TradeContext
             context = TradeContext(
-                userId=user_id, symbol=symbol, regime="STABLE",
+                userId=account_id, symbol=symbol, regime="STABLE",
                 fee_packet_hash=fee_pkt.content_hash,
                 risk_packet_hash=risk_pkt.content_hash,
                 liquidity_packet_hash=liquidity_pkt.content_hash,

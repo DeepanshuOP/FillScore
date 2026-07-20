@@ -165,7 +165,7 @@ async def test_council_returns_valid_result() -> None:
     with patch("agents.llm_client.get_groq_client", return_value=mock_client), \
          patch("agents.llm_client.get_openrouter_client", return_value=mock_client), \
          patch("agents.council.load_all_packets", return_value=(dummy_fee, dummy_risk, dummy_liq, dummy_alpha)):
-        result = await run_council("demo-disciplined", "BTCUSDT")
+        result = await run_council("demo-disciplined", "demo-disciplined", "BTCUSDT")
 
     assert isinstance(result, CouncilResult)
     assert result.tradeContext.userId == "demo-disciplined"
@@ -216,7 +216,7 @@ async def test_specialist_failure_produces_default_verdict() -> None:
     with patch("agents.llm_client.get_groq_client", return_value=mock_client), \
          patch("agents.llm_client.get_openrouter_client", return_value=mock_client), \
          patch("agents.council.load_all_packets", return_value=(dummy_fee, dummy_risk, dummy_liq, dummy_alpha)):
-        result = await run_council("demo-disciplined", "BTCUSDT")
+        result = await run_council("demo-disciplined", "demo-disciplined", "BTCUSDT")
 
     assert isinstance(result, CouncilResult)
     # The failed liquidity agent should have confidence=0 and an agent_failed flag
@@ -273,7 +273,7 @@ async def test_synthesis_receives_all_verdicts() -> None:
     with patch("agents.llm_client.get_groq_client", return_value=mock_client), \
          patch("agents.llm_client.get_openrouter_client", return_value=mock_client), \
          patch("agents.council.load_all_packets", return_value=(dummy_fee, dummy_risk, dummy_liq, dummy_alpha)):
-        result = await run_council("demo-disciplined", "BTCUSDT")
+        result = await run_council("demo-disciplined", "demo-disciplined", "BTCUSDT")
 
     assert captured_synthesis_input is not None
     assert "liquidity_scout" in captured_synthesis_input

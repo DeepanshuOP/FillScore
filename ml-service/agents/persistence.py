@@ -27,6 +27,7 @@ def _get_db():
 
 
 async def save_council_run(
+    account_id: str,
     user_id: str,
     symbol: str,
     council_result_dict: dict,
@@ -40,11 +41,17 @@ async def save_council_run(
     Persist a completed council run. Returns the run_id.
     Document is immutable after insert — never update, only insert new runs.
     """
+    if not account_id:
+        import logging
+        logging.warning("save_council_run skipped: account_id is missing or empty")
+        return None
+
     run_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
 
     doc = {
         "run_id": run_id,
+        "accountId": account_id,
         "user_id": user_id,
         "symbol": symbol,
         "created_at": now,
@@ -110,11 +117,11 @@ async def save_agent_trace(
         client.close()
 
 
-async def load_council_run(run_id: str) -> Optional[dict]:
-    """Load a stored council run by run_id. Returns None if not found."""
+async def load_council_run(run_id: str, account_id: str) -> Optional[dict]:
+    """Load a stored council run by run_id, scoped by account_id. Returns None if not found."""
     client, db = _get_db()
     try:
-        doc = await db["council_runs"].find_one({"run_id": run_id})
+        doc = await db["council_runs"].find_one({"run_id": run_id, "accountId": account_id})
         if doc:
             doc.pop("_id", None)
         return doc
@@ -123,21 +130,22 @@ async def load_council_run(run_id: str) -> Optional[dict]:
 
 
 async def list_council_runs(
-    user_id: str,
+    account_id: str,
     symbol: Optional[str] = None,
     limit: int = 20,
 ) -> list[dict]:
     """
-    List recent council runs for a user, newest first.
+    List recent council runs for an account, newest first.
     Returns lightweight summary (no full council_result).
     """
-    query: dict[str, Any] = {"user_id": user_id}
+    query: dict[str, Any] = {"accountId": account_id}
     if symbol:
         query["symbol"] = symbol
 
     projection = {
         "_id": 0,
         "run_id": 1,
+        "accountId": 1,
         "user_id": 1,
         "symbol": 1,
         "created_at": 1,
@@ -158,15 +166,15 @@ async def list_council_runs(
         client.close()
 
 
-async def get_telemetry_summary(user_id: Optional[str] = None) -> dict:
+async def get_telemetry_summary(account_id: Optional[str] = None) -> dict:
     """
     Aggregate telemetry for paper Table: avg latency, avg faithfulness,
     total runs, total violations, per-model stats.
     Used by AC-11 eval harness and AC-14 cost report.
     """
     query = {}
-    if user_id:
-        query["user_id"] = user_id
+    if account_id:
+        query["accountId"] = account_id
 
     client, db = _get_db()
     try:

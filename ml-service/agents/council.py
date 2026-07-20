@@ -285,7 +285,7 @@ _compiled_graph = _build_graph().compile()
 # Public API
 # ---------------------------------------------------------------------------
 
-async def run_council(user_id: str, symbol: str) -> CouncilResult:
+async def run_council(account_id: str, user_id: str, symbol: str) -> CouncilResult:
     """Execute the full Agent Council pipeline and return a CouncilResult."""
     from agents.llm_client import get_groq_client, get_openrouter_client, SYNTHESIS_PROVIDER, SPECIALIST_MODEL, SYNTHESIS_MODEL, rollup_token_usage
     
@@ -383,6 +383,7 @@ async def run_council(user_id: str, symbol: str) -> CouncilResult:
 
     try:
         run_id = await save_council_run(
+            account_id=account_id,
             user_id=user_id,
             symbol=symbol,
             council_result_dict=result.model_dump(),
@@ -410,6 +411,7 @@ def override_synthesis_cost(synthesis, fee_pkt):
 
 
 async def run_council_with_packets(
+    account_id: str,
     user_id: str,
     symbol: str,
     fee_pkt,
@@ -511,6 +513,7 @@ async def run_council_with_packets(
 
     try:
         run_id = await save_council_run(
+            account_id=account_id,
             user_id=user_id,
             symbol=symbol,
             council_result_dict=result.model_dump(),

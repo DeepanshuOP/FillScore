@@ -50,7 +50,7 @@ class TestSaveCouncilRun:
             import asyncio
             from agents.persistence import save_council_run
             run_id = asyncio.run(save_council_run(
-                user_id="u1",
+                account_id="a1", user_id="u1",
                 symbol="BTCUSDT",
                 council_result_dict={"synthesis": {"overallRating": "FAIR"}},
                 grounding_summary={"avg_faithfulness_score": 0.9, "total_violations": 1},
@@ -72,7 +72,7 @@ class TestSaveCouncilRun:
         with patch("agents.persistence._get_db", return_value=(mock_client, mock_db)):
             from agents.persistence import save_council_run
             asyncio.run(save_council_run(
-                user_id="u1", symbol="BTCUSDT",
+                account_id="a1", user_id="u1", symbol="BTCUSDT",
                 council_result_dict={"synthesis": {"overallRating": "GOOD"}},
                 grounding_summary={"avg_faithfulness_score": 1.0, "total_violations": 0},
                 packet_hashes={}, model_usage={}, total_latency_ms=1000.0,
@@ -96,7 +96,7 @@ class TestSaveCouncilRun:
         with patch("agents.persistence._get_db", return_value=(mock_client, mock_db)):
             from agents.persistence import save_council_run
             asyncio.run(save_council_run(
-                user_id="u1", symbol="BTCUSDT",
+                account_id="a1", user_id="u1", symbol="BTCUSDT",
                 council_result_dict={"synthesis": {"overallRating": "POOR"}},
                 grounding_summary={"avg_faithfulness_score": 0.8, "total_violations": 2},
                 packet_hashes={"fee": "hash1"}, model_usage={}, total_latency_ms=3000.0,
@@ -128,7 +128,7 @@ class TestSaveCouncilRun:
         with patch("agents.persistence._get_db", return_value=(mock_client, mock_db)):
             from agents.persistence import save_council_run
             asyncio.run(save_council_run(
-                user_id="u1", symbol="BTCUSDT",
+                account_id="a1", user_id="u1", symbol="BTCUSDT",
                 council_result_dict={"synthesis": {"overallRating": "CRITICAL"}},
                 grounding_summary={}, packet_hashes={}, model_usage={},
                 total_latency_ms=1000.0,
@@ -147,7 +147,7 @@ class TestLoadCouncilRun:
 
         with patch("agents.persistence._get_db", return_value=(mock_client, mock_db)):
             from agents.persistence import load_council_run
-            result = asyncio.run(load_council_run("nonexistent-run-id"))
+            result = asyncio.run(load_council_run("nonexistent-run-id", "a1"))
             assert result is None
 
     def test_strips_mongo_id(self):
@@ -165,7 +165,7 @@ class TestLoadCouncilRun:
 
         with patch("agents.persistence._get_db", return_value=(mock_client, mock_db)):
             from agents.persistence import load_council_run
-            result = asyncio.run(load_council_run("test-run-1"))
+            result = asyncio.run(load_council_run("test-run-1", "a1"))
             assert "_id" not in result
             assert result["run_id"] == "test-run-1"
 
