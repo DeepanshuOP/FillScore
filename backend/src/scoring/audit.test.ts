@@ -83,6 +83,32 @@ describe('computeAuditSummary', () => {
         expect(summary.totalTrades).toBe(0);
         expect(summary.totalNotional).toBe(0);
     });
+
+    it('is strictly deterministic regardless of input order', async () => {
+        // Create 100 trades with vastly varying magnitudes to exaggerate floating point non-associativity if order changes
+        const extremeTrades = [];
+        for (let i = 0; i < 50; i++) {
+            extremeTrades.push(makeTrade({ tradeId: `T${i}`, notional: Math.random() * 1e10, fee: Math.random() * 10, isMaker: i % 2 === 0, executionPrice: 40000 + Math.random() * 100, arrivalPriceProxy: 40000, executedAt: new Date(`2024-01-15T01:${i}:00Z`) }));
+        }
+        for (let i = 50; i < 100; i++) {
+            extremeTrades.push(makeTrade({ tradeId: `T${i}`, notional: Math.random() * 1e-5, fee: Math.random() * 1e-6, isMaker: i % 2 === 0, executionPrice: 40000 + Math.random() * 100, arrivalPriceProxy: 40000, executedAt: new Date(`2024-01-15T01:${i - 50}:00Z`) }));
+        }
+
+        const summary1 = await computeAuditSummary('u1', extremeTrades);
+        
+        // Randomly shuffle
+        const shuffled = [...extremeTrades].sort(() => Math.random() - 0.5);
+        
+        const summary2 = await computeAuditSummary('u1', shuffled);
+
+        // Assert strictly byte-identical (toBe, not toBeCloseTo)
+        // Note: Without stable sort, this CAN fail for floats due to non-associativity.
+        expect(summary1.avgFillScore).toBe(summary2.avgFillScore);
+        expect(summary1.totalNotional).toBe(summary2.totalNotional);
+        expect(summary1.breakdown.avgSlippageBps).toBe(summary2.breakdown.avgSlippageBps);
+        expect(summary1.breakdown.avgFeeDragBps).toBe(summary2.breakdown.avgFeeDragBps);
+        expect(summary1.estimatedLossUSD).toBe(summary2.estimatedLossUSD);
+    });
 });
 
 describe('generateRecommendations', () => {

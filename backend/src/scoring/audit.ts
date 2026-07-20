@@ -31,6 +31,9 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
         };
     }
 
+    // Pin determinism for floating-point math
+    trades.sort((a, b) => a.tradeId.localeCompare(b.tradeId));
+
     let totalNotional = 0;
     let weightedFillScoreSum = 0;
     let weightedSlippageBpsSum = 0;

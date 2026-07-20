@@ -24,6 +24,22 @@ const shareLimiter = rateLimit({
 auditRouter.get('/', resolveAccount, async (req: Request, res: Response) => {
     try {
         const accountId = req.accountId!;
+        const latestAudit = await Audit.findOne({ accountId }).sort({ createdAt: -1 });
+
+        if (!latestAudit) {
+            return res.status(404).json({ error: 'No audit found — run an audit first' });
+        }
+
+        return res.status(200).json(latestAudit);
+    } catch (error: any) {
+        console.error('Error fetching audit:', error);
+        return res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
+});
+
+auditRouter.post('/run', resolveAccount, async (req: Request, res: Response) => {
+    try {
+        const accountId = req.accountId!;
         const daysBackStr = req.query.daysBack as string;
         const daysBack = daysBackStr ? parseInt(daysBackStr, 10) : 30;
 
@@ -90,8 +106,12 @@ auditRouter.get('/', resolveAccount, async (req: Request, res: Response) => {
 
         const summary = await computeAuditSummary(accountId, validTrades);
 
-        // 5. Save AuditSummary to MongoDB
-        const savedAudit = await Audit.create({ ...summary, accountId });
+        // 5. Save AuditSummary to MongoDB via UPSERT
+        const savedAudit = await Audit.findOneAndUpdate(
+            { accountId },
+            { $set: { ...summary, accountId, updatedAt: new Date() } },
+            { new: true, upsert: true }
+        );
 
         return res.status(200).json(savedAudit);
 
