@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Playfair_Display, Inter, JetBrains_Mono } 
   from 'next/font/google'
 import './globals.css'
+import { AuthProvider } from './context/AuthContext'
+import OAuthRedirectHandler from './components/OAuthRedirectHandler'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -43,7 +45,12 @@ export default function RootLayout({
         ${jetbrainsMono.variable}
       `}
     >
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <AuthProvider>
+          <OAuthRedirectHandler />
+          {children}
+        </AuthProvider>
+      </body>
     </html>
   )
 }

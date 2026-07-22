@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { register, login, rotateRefresh, logout } from '../services/authService';
 import { authLimiter } from '../middleware/security';
+import { requireAuth } from '../middleware/requireAuth';
 import passport from 'passport';
 import { env } from '../config/env';
+import { User } from '../models/User';
 
 const router = Router();
 
@@ -99,6 +101,23 @@ router.post('/logout', async (req: Request, res: Response): Promise<void> => {
         }
         clearRefreshCookie(res);
         res.status(200).json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.get('/me', requireAuth, async (req: Request, res: Response): Promise<void> => {
+    try {
+        const user = await User.findById(req.userId).select('email plan');
+        if (!user) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+        res.status(200).json({
+            userId: req.userId,
+            email: user.email,
+            plan: user.plan
+        });
     } catch (err) {
         res.status(500).json({ error: 'Internal server error' });
     }

@@ -137,19 +137,45 @@ describe('Auth Routes (Integration)', () => {
         expect(res.body.error).toBe('Invalid or expired access token');
     });
 
+    describe('/api/auth/me', () => {
+        it('returns user details when authenticated', async () => {
+            // 1. Register a user
+            const regRes = await request(app)
+                .post('/api/auth/register')
+                .send({ email: 'me@test.local', password: 'StrongPassword1!' });
+            const accessToken = regRes.body.accessToken;
+
+            // 2. Fetch /me
+            const meRes = await request(app)
+                .get('/api/auth/me')
+                .set('Authorization', `Bearer ${accessToken}`);
+            
+            expect(meRes.status).toBe(200);
+            expect(meRes.body.email).toBe('me@test.local');
+            expect(meRes.body.plan).toBe('free');
+            expect(meRes.body).toHaveProperty('userId');
+        });
+
+        it('returns 401 when not authenticated', async () => {
+            const meRes = await request(app).get('/api/auth/me');
+            expect(meRes.status).toBe(401);
+            expect(meRes.body.error).toBe('Missing or invalid authorization header');
+        });
+    });
+
     describe('OAuth Routes', () => {
         it('GET /api/auth/google redirects to Google authorization URL with correct client_id', async () => {
             const res = await request(app).get('/api/auth/google');
             expect(res.status).toBe(302);
             expect(res.header.location).toContain('accounts.google.com/o/oauth2/v2/auth');
-            expect(res.header.location).toContain('client_id=test_google_id');
+            expect(res.header.location).toContain(`client_id=${process.env.GOOGLE_CLIENT_ID || 'test_google_id'}`);
         });
 
         it('GET /api/auth/github redirects to GitHub authorization URL with correct client_id', async () => {
             const res = await request(app).get('/api/auth/github');
             expect(res.status).toBe(302);
             expect(res.header.location).toContain('github.com/login/oauth/authorize');
-            expect(res.header.location).toContain('client_id=test_github_id');
+            expect(res.header.location).toContain(`client_id=${process.env.GITHUB_CLIENT_ID || 'test_github_id'}`);
         });
 
         it('OAuth callback logic is covered in oauthService.test.ts. In-process integration test of passport verify callback cannot be easily achieved without external network mocking, so we do not fake it here.', () => {

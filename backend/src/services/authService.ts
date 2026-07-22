@@ -47,7 +47,20 @@ export async function register(email: string, passwordRaw: string) {
         email: emailLower,
         passwordHash
     });
-    await user.save();
+    
+    try {
+        await user.save();
+    } catch (err: any) {
+        if (err.name === 'MongoServerError' && err.code === 11000) {
+            if (err.keyPattern && err.keyPattern.email) {
+                throw new Error('Email already exists');
+            } else {
+                console.error("Unexpected duplicate key error on registration:", err.keyPattern);
+                throw new Error('Database constraint violation');
+            }
+        }
+        throw err;
+    }
 
     return await issueTokenPair(user._id);
 }
