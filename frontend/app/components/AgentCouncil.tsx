@@ -74,10 +74,12 @@ export default function AgentCouncil({
   userId,
   symbol = "BTCUSDT",
   mlBaseUrl = "http://localhost:8000",
+  accessToken,
 }: {
-  userId: string;
+  userId?: string;
   symbol?: string;
   mlBaseUrl?: string;
+  accessToken?: string | null;
 }) {
   const [cards, setCards] = useState<Record<string, AgentCard>>({});
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
@@ -120,10 +122,20 @@ export default function AgentCouncil({
 
     // SSE via fetch+ReadableStream (EventSource doesn't support POST)
     try {
+      const headers: HeadersInit = { "Content-Type": "application/json" };
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
+      
+      const payload: any = { symbol };
+      if (userId) {
+        payload.userId = userId;
+      }
+
       const res = await fetch(`${mlBaseUrl}/ml/agents/council/stream`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, symbol }),
+        headers,
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok || !res.body) {

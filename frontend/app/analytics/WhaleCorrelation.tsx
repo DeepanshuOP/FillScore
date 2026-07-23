@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { useAuth } from "../context/AuthContext";
+import { authFetch } from "../lib/authFetch";
+import { buildQuery } from "../utils/queryBuilder";
 
 // Add Types
 interface WhaleTopEvent {
@@ -38,19 +41,34 @@ interface WhaleData {
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
-export default function WhaleCorrelation({ userId }: { userId: string }) {
+export default function WhaleCorrelation({ userId, dashboardMode }: { userId: string | null; dashboardMode: 'demo' | 'real' }) {
   const [data, setData] = useState<WhaleData | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const { accessToken, refreshAccessToken } = useAuth();
+
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics/whale-correlation?userId=${userId}`)
+    if (!dashboardMode || (dashboardMode === 'demo' && !userId)) return;
+
+    const fetchFn = dashboardMode === 'real' ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken }) : fetch;
+    const query = buildQuery(dashboardMode, userId);
+
+    fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/analytics/whale-correlation${query}`)
       .then((res) => {
-        if (!res.ok) throw new Error("Failed to load whale correlation");
+        if (!res.ok) {
+          if (dashboardMode === 'real') return null;
+          throw new Error("Failed to load whale correlation");
+        }
         return res.json();
       })
-      .then((d: WhaleData) => {
+      .then((d: WhaleData | null) => {
+        if (!d) {
+          setData(null);
+          setLoading(false);
+          return;
+        }
         setData(d);
         if (d.symbols && d.symbols.length > 0) {
           setSelectedSymbol(d.symbols[0]);
@@ -61,7 +79,8 @@ export default function WhaleCorrelation({ userId }: { userId: string }) {
         setError(err.message);
         setLoading(false);
       });
-  }, [userId]);
+  }, [userId, dashboardMode, accessToken]);
+
 
   const heatmapMap = useMemo(() => {
     const map: Record<string, { hasAdverse: boolean; hasEvent: boolean }> = {};
@@ -86,6 +105,8 @@ export default function WhaleCorrelation({ userId }: { userId: string }) {
       .filter(t => t.symbol === selectedSymbol && t.whaleAdverse)
       .sort((a, b) => new Date(b.executedAt).getTime() - new Date(a.executedAt).getTime());
   }, [data, selectedSymbol]);
+
+  if (!data) return null;
 
   if (loading) {
     return (

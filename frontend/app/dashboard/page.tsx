@@ -1,13 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
-import { Clock, ArrowLeftRight, Tag, Activity } from 'lucide-react';
+import { Clock, ArrowLeftRight, Tag, Activity, AlertTriangle } from 'lucide-react';
 import AgentCouncil from '../components/AgentCouncil';
+import { useAuth } from '../context/AuthContext';
+import { authFetch } from '../lib/authFetch';
+import { resolveIdentityState } from '../utils/identityResolver';
+import { buildQuery } from '../utils/queryBuilder';
+import ConnectPrompt from '../components/ConnectPrompt';
 
 interface CostAttribution {
   slippageCost: number;
@@ -178,24 +184,28 @@ export default function Dashboard() {
   const [coach, setCoach] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [barsVisible, setBarsVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
 
+  const { accessToken, isLoading: authLoading, refreshAccessToken } = useAuth();
+  const searchParams = useSearchParams();
+  const [dashboardMode, setDashboardMode] = useState<'demo' | 'real' | null>(null);
+
   const handleShare = () => {
-    if (!userId) return;
-    const url = `${window.location.origin}/share/${userId}`;
+    if (!resolvedUserId) return;
+    const url = `${window.location.origin}/share/${resolvedUserId}`;
     navigator.clipboard.writeText(url);
     setLinkCopied(true);
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
   const handleDownloadReport = () => {
-    if (downloading || !userId) return;
+    if (downloading || !resolvedUserId) return;
     setDownloading(true);
-    window.open(`${process.env.NEXT_PUBLIC_API_URL}/report?userId=${userId}`, '_blank');
+    window.open(`${process.env.NEXT_PUBLIC_API_URL}/report?userId=${resolvedUserId}`, '_blank');
     setTimeout(() => {
       setDownloading(false);
     }, 500);
@@ -212,55 +222,74 @@ export default function Dashboard() {
     }
   }, [audit]);
 
+  const loadDashboard = async (effectiveUserId: string | null, mode: 'demo' | 'real') => {
+    try {
+      const fetchFn = mode === 'real' 
+        ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken }) 
+        : (url: string) => fetch(url);
+        
+      const query = buildQuery(mode, effectiveUserId);
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      
+      const [res, attrRes, analyticsRes, comparisonRes, coachRes] = await Promise.all([
+        fetchFn(`${baseUrl}/score${query}`),
+        fetchFn(`${baseUrl}/attribution${query}`),
+        fetchFn(`${baseUrl}/analytics${query}`),
+        fetchFn(`${baseUrl}/analytics/exchange-comparison${query}`),
+        fetchFn(`${baseUrl}/coach${query}`)
+      ]);
+      
+      if (mode === 'real' && !res.ok) {
+        setAudit(null);
+        setLoading(false);
+        return;
+      }
+
+      if (!res.ok) throw new Error('Failed to fetch audit data');
+      const data = await res.json();
+      setAudit(data);
+      if (attrRes.ok) {
+        const attrData = await attrRes.json();
+        setAttribution(attrData);
+      }
+      if (analyticsRes.ok) {
+        const analyticsData = await analyticsRes.json();
+        setAnalytics(analyticsData);
+      }
+      if (comparisonRes.ok) {
+        const compData = await comparisonRes.json();
+        setExchangeComparison(compData);
+      }
+      if (coachRes.ok) {
+        const coachData = await coachRes.json();
+        setCoach(coachData);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const id = params.get('userId') || localStorage.getItem('userId');
+    if (authLoading) return; // Wait for auth resolution
+    const urlUserId = searchParams.get('userId');
+    const storageUserId = localStorage.getItem('userId');
     
-    if (!id) {
+    const identity = resolveIdentityState(urlUserId, storageUserId, accessToken);
+    
+    if (identity.mode === 'redirect') {
       window.location.href = '/';
       return;
     }
+    if (identity.shouldClearStorage) localStorage.removeItem('userId');
+    if (identity.shouldSetStorage && identity.effectiveUserId) localStorage.setItem('userId', identity.effectiveUserId);
     
-    setUserId(id);
-    localStorage.setItem('userId', id);
+    setDashboardMode(identity.mode);
+    setResolvedUserId(identity.effectiveUserId);
     
-    const fetchAudit = async () => {
-      try {
-        const [res, attrRes, analyticsRes, comparisonRes, coachRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/score?userId=${id}`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/attribution?userId=${id}`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics?userId=${id}`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics/exchange-comparison?userId=${id}`),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/coach?userId=${id}`)
-        ]);
-        if (!res.ok) throw new Error('Failed to fetch audit data');
-        const data = await res.json();
-        setAudit(data);
-        if (attrRes.ok) {
-          const attrData = await attrRes.json();
-          setAttribution(attrData);
-        }
-        if (analyticsRes.ok) {
-          const analyticsData = await analyticsRes.json();
-          setAnalytics(analyticsData);
-        }
-        if (comparisonRes.ok) {
-          const compData = await comparisonRes.json();
-          setExchangeComparison(compData);
-        }
-        if (coachRes.ok) {
-          const coachData = await coachRes.json();
-          setCoach(coachData);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Something went wrong');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchAudit();
-  }, []);
+    loadDashboard(identity.effectiveUserId, identity.mode);
+  }, [authLoading, accessToken, searchParams]);
 
   if (!mounted) {
     return (
@@ -272,7 +301,7 @@ export default function Dashboard() {
         paddingBottom: '4rem'
       }}>
         {/* HEADER SKELETON */}
-        <Navbar userId={userId || undefined} currentPage="dashboard" />
+        <Navbar userId={resolvedUserId || undefined} currentPage="dashboard" />
 
         {/* MAIN CONTENT AREA SKELETON */}
         <main suppressHydrationWarning style={{ maxWidth: '1100px', margin: '0 auto', padding: '48px 2rem 2rem' }}>
@@ -307,7 +336,7 @@ export default function Dashboard() {
     }}>
       
       {/* FIXED HEADER */}
-      <Navbar userId={userId || undefined} exchange={audit?.exchange} currentPage="dashboard" />
+      <Navbar userId={resolvedUserId || undefined} exchange={audit?.exchange} currentPage="dashboard" />
 
       {/* MAIN CONTENT AREA */}
       <main style={{
@@ -381,18 +410,18 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* NO DATA STATE */}
-        {!audit && !loading && !error && (
+        {/* NO DATA STATE (Demo) */}
+        {!audit && !loading && !error && dashboardMode === 'demo' && (
           <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
             <p style={{
               fontFamily: 'var(--font-playfair)', fontStyle: 'italic',
               fontSize: '1.1rem', color: 'var(--text-secondary)',
               marginBottom: '1rem'
-            }}>No audit data found.</p>
+            }}>No demo audit found.</p>
             <p style={{
               fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
               color: 'var(--text-ghost)', letterSpacing: '0.1em'
-            }}>Run an analysis from the home page first.</p>
+            }}>Return to the home page to select a demo account.</p>
             <button
               onClick={() => window.location.href = '/'}
               style={{
@@ -407,18 +436,44 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* NO DATA STATE (Real User - Empty State CTA) */}
+        {!audit && !loading && !error && dashboardMode === 'real' && (
+          <ConnectPrompt />
+        )}
+
         {/* PLACEHOLDER for real content */}
         {audit && !loading && (() => {
           const cfg = gradeConfig[audit.fillGrade];
           return (
             <div>
+              {dashboardMode === 'demo' && (
+                <div style={{
+                  background: 'rgba(167, 139, 113, 0.1)',
+                  border: '1px solid rgba(167, 139, 113, 0.3)',
+                  borderRadius: '4px',
+                  padding: '12px 16px',
+                  marginBottom: '2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  color: '#e8d5b7'
+                }}>
+                  <AlertTriangle size={18} style={{ flexShrink: 0, color: '#c4a882' }} />
+                  <span style={{ fontFamily: 'var(--font-inter)', fontSize: '0.9rem' }}>
+                    Sample data — connect your exchange to score your own trades.
+                  </span>
+                </div>
+              )}
+              
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginBottom: '1rem' }}>
-                <button
-                  onClick={handleShare}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
-                    padding: '6px 12px', color: '#c4a882',
+                {dashboardMode === 'demo' && (
+                  <>
+                    <button
+                      onClick={handleShare}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
+                        padding: '6px 12px', color: '#c4a882',
                     fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
                     cursor: 'pointer', transition: 'all 0.2s ease',
                     height: 'fit-content'
@@ -435,15 +490,33 @@ export default function Dashboard() {
                     display: 'flex', alignItems: 'center', gap: '6px',
                     background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
                     padding: '6px 12px', color: '#c4a882',
-                    fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
-                    cursor: downloading ? 'wait' : 'pointer', transition: 'all 0.2s ease',
-                    opacity: downloading ? 0.6 : 1, height: 'fit-content'
-                  }}
-                  onMouseOver={e => { if (!downloading) e.currentTarget.style.background = 'rgba(167,139,113,0.1)' }}
-                  onMouseOut={e => { if (!downloading) e.currentTarget.style.background = 'transparent' }}
-                >
-                  {downloading ? 'GENERATING...' : '↓ DOWNLOAD REPORT'}
-                </button>
+                        fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
+                        cursor: 'pointer', transition: 'all 0.2s ease',
+                        height: 'fit-content'
+                      }}
+                      onMouseOver={e => e.currentTarget.style.background = 'rgba(167,139,113,0.1)'}
+                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                    >
+                      {linkCopied ? '✓ LINK COPIED!' : '↗ SHARE MY SCORE'}
+                    </button>
+                    <button
+                      onClick={handleDownloadReport}
+                      disabled={downloading}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '6px',
+                        background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
+                        padding: '6px 12px', color: '#c4a882',
+                        fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
+                        cursor: downloading ? 'wait' : 'pointer', transition: 'all 0.2s ease',
+                        opacity: downloading ? 0.6 : 1, height: 'fit-content'
+                      }}
+                      onMouseOver={e => { if (!downloading) e.currentTarget.style.background = 'rgba(167,139,113,0.1)' }}
+                      onMouseOut={e => { if (!downloading) e.currentTarget.style.background = 'transparent' }}
+                    >
+                      {downloading ? 'GENERATING...' : '↓ DOWNLOAD REPORT'}
+                    </button>
+                  </>
+                )}
               </div>
               {/* HERO SECTION — Part 2 */}
               <div 
@@ -615,7 +688,8 @@ export default function Dashboard() {
 
               <div style={{ marginBottom: '2.5rem' }}>
                 <AgentCouncil
-                  userId={audit.userId}
+                  userId={dashboardMode === 'real' ? undefined : audit.userId}
+                  accessToken={accessToken}
                   symbol="BTCUSDT"
                   mlBaseUrl={process.env.NEXT_PUBLIC_ML_URL ?? "http://localhost:8000"}
                 />
@@ -1304,7 +1378,7 @@ export default function Dashboard() {
                   </div>
                   
                   <button
-                    onClick={() => window.location.href = `/trades?userId=${userId}`}
+                    onClick={() => window.location.href = dashboardMode === 'real' ? '/trades' : `/trades?userId=${resolvedUserId}`}
                     onMouseOver={e => {
                       e.currentTarget.style.background = 'rgba(167,139,113,0.08)';
                       e.currentTarget.style.borderColor = 'rgba(167,139,113,0.6)';

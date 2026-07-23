@@ -4,6 +4,10 @@ import { useEffect, useState, Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "../components/Navbar";
 import WhaleCorrelation from "./WhaleCorrelation";
+import { useAuth } from "../context/AuthContext";
+import { authFetch } from "../lib/authFetch";
+import { resolveIdentityState } from "../utils/identityResolver";
+import { buildQuery } from "../utils/queryBuilder";
 import {
   BarChart,
   Bar,
@@ -123,33 +127,62 @@ function AnalyticsContent() {
   const [tradeData, setTradeData] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  
+  const { accessToken, isLoading: authLoading, refreshAccessToken } = useAuth();
+  const [dashboardMode, setDashboardMode] = useState<'demo' | 'real' | null>(null);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!userId) {
+    if (authLoading) return;
+    const urlUserId = searchParams.get("userId");
+    const storageUserId = localStorage.getItem("userId");
+    
+    const identity = resolveIdentityState(urlUserId, storageUserId, accessToken);
+    
+    if (identity.mode === "redirect") {
       router.push("/");
       return;
     }
+    
+    if (identity.shouldClearStorage) localStorage.removeItem("userId");
+    if (identity.shouldSetStorage && identity.effectiveUserId) localStorage.setItem("userId", identity.effectiveUserId);
+    
+    setDashboardMode(identity.mode);
+    setResolvedUserId(identity.effectiveUserId);
+
+    const fetchFn = identity.mode === "real" ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken }) : fetch;
+    
+    const analyticsQuery = buildQuery(identity.mode, identity.effectiveUserId);
+    const tradesQuery = buildQuery(identity.mode, identity.effectiveUserId, { limit: '10000' });
 
     Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/analytics?userId=${userId}`).then((res) => {
-        if (!res.ok) throw new Error("Failed to load analytics");
+      fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/analytics${analyticsQuery}`).then((res) => {
+        if (!res.ok) {
+          if (identity.mode === "real") return null;
+          throw new Error("Failed to load analytics");
+        }
         return res.json();
       }),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/trades?userId=${userId}&limit=10000`).then((res) => {
+      fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/trades${tradesQuery}`).then((res) => {
         if (!res.ok) return { trades: [] };
         return res.json();
       })
     ])
       .then(([analyticsData, tradesData]) => {
-        setData(analyticsData);
-        setTradeData(tradesData.trades || []);
+        if (!analyticsData && identity.mode === 'real') {
+           setData(null);
+           setTradeData([]);
+        } else {
+           setData(analyticsData);
+           setTradeData(tradesData.trades || []);
+        }
         setLoading(false);
       })
       .catch((err) => {
         setError(err.message);
         setLoading(false);
       });
-  }, [userId, router]);
+  }, [authLoading, accessToken, searchParams, router]);
 
   const heatmapMap = useMemo(() => {
     const map: Record<string, HeatmapCell> = {}
@@ -277,7 +310,7 @@ function AnalyticsContent() {
       .sort((a, b) => b.notional - a.notional);
   }, [data, tradeData]);
 
-  if (!userId) return null;
+  if (!dashboardMode || (dashboardMode === 'demo' && !resolvedUserId)) return null;
 
   if (loading) {
     return (
@@ -300,6 +333,18 @@ function AnalyticsContent() {
       </div>
     );
   }
+  
+  if (dashboardMode === 'real' && !data) {
+    return (
+      <div className="min-h-screen text-[#f0ece4] px-[24px] pt-[64px] pb-8 font-sans">
+        <Navbar userId={undefined} currentPage="analytics" />
+        <div className="flex flex-col items-center justify-center mt-32">
+          <div className="text-3xl text-[#585450] mb-4">◎</div>
+          <div className="font-playfair italic text-lg text-[#888078] mb-4">No analytics data found</div>
+        </div>
+      </div>
+    );
+  }
 
   const totalTrades = data.totalTrades;
 
@@ -308,7 +353,7 @@ function AnalyticsContent() {
       <div className="w-full space-y-[32px] mx-auto">
 
         {/* HEADER */}
-        <Navbar userId={userId} exchange={tradeData[0]?.exchange || 'binance'} currentPage="analytics" />
+        <Navbar userId={resolvedUserId || undefined} exchange={tradeData[0]?.exchange || 'binance'} currentPage="analytics" />
 
         <div style={{ marginBottom: '24px' }}>
           <h1 style={{
@@ -324,7 +369,7 @@ function AnalyticsContent() {
             fontSize: '13px',
             color: 'rgba(255,255,255,0.7)'
           }}>
-            {userId} · {totalTrades} trades analysed
+            {dashboardMode === 'demo' ? `${resolvedUserId} · ` : ''}{totalTrades} trades analysed
           </p>
         </div>
 
@@ -622,7 +667,7 @@ function AnalyticsContent() {
         </div>
 
         {/* SECTION 5 — WHALE CORRELATION */}
-        <WhaleCorrelation userId={userId} />
+        <WhaleCorrelation userId={resolvedUserId} dashboardMode={dashboardMode} />
 
       </div>
     </div>

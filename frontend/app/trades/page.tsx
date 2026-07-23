@@ -1,7 +1,12 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Navbar from '../components/Navbar'
+import { useAuth } from '../context/AuthContext'
+import { authFetch } from '../lib/authFetch'
+import { resolveIdentityState } from '../utils/identityResolver'
+import { buildQuery } from '../utils/queryBuilder'
 
 interface Trade {
   _id: string
@@ -42,7 +47,11 @@ export default function Trades() {
   const [loading, setLoading] = useState(true)
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
-  const [userId, setUserId] = useState<string>('')
+  const [userId, setUserId] = useState<string | null>(null)
+  const [dashboardMode, setDashboardMode] = useState<'demo' | 'real' | null>(null)
+  
+  const { accessToken, isLoading: authLoading, refreshAccessToken } = useAuth()
+  const searchParams = useSearchParams()
   const [exporting, setExporting] = useState(false)
   // Human-readable exchange label derived from trades[0].exchange.
   // 'binance' → 'Binance Spot' | 'bybit' → 'Bybit Derivatives' | multiple → 'All Exchanges'
@@ -70,11 +79,21 @@ export default function Trades() {
     if (!selectedTrade) return
     setSavingNote(true)
     setNoteStatus('')
+    if (!dashboardMode) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trades/${selectedTrade.tradeId}/note`, {
+      const fetchFn = dashboardMode === 'real' ? (url: string, opts?: any) => authFetch(url, opts, { accessToken, refreshAccessToken }) : fetch;
+      const query = buildQuery(dashboardMode, userId);
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/trades/${selectedTrade.tradeId}/note${query}`;
+      
+      const payload: any = { note: noteText };
+      if (dashboardMode === 'demo') {
+        payload.userId = userId;
+      }
+      
+      const res = await fetchFn(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, note: noteText })
+        body: JSON.stringify(payload)
       })
       if (!res.ok) throw new Error('Failed to save note')
       const data = await res.json()
@@ -100,10 +119,13 @@ export default function Trades() {
   const [sortBy, setSortBy] = useState('executedAt')
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('desc')
 
-  const fetchStats = async (uid: string) => {
+  const fetchStats = async (uid: string | null, mode: 'demo' | 'real') => {
     try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/trades?userId=${uid}&limit=1000`
+      const fetchFn = mode === 'real' ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken }) : fetch;
+      const query = buildQuery(mode, uid, { limit: '1000' });
+      
+      const res = await fetchFn(
+        `${process.env.NEXT_PUBLIC_API_URL}/trades${query}`
       )
       const data = await res.json()
       const all = data.trades as Trade[]
@@ -114,30 +136,55 @@ export default function Trades() {
   }
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
-    const uid = params.get('userId') || localStorage.getItem('userId') || ''
-    if (!uid) { window.location.href = '/'; return }
-    setUserId(uid)
-    fetchStats(uid)
-  }, [])
+    if (authLoading) return;
+    const urlUserId = searchParams.get('userId')
+    const storageUserId = localStorage.getItem('userId')
+    
+    const identity = resolveIdentityState(urlUserId, storageUserId, accessToken);
+    
+    if (identity.mode === 'redirect') {
+      window.location.href = '/';
+      return;
+    }
+    
+    if (identity.shouldClearStorage) localStorage.removeItem('userId');
+    if (identity.shouldSetStorage && identity.effectiveUserId) localStorage.setItem('userId', identity.effectiveUserId);
+    
+    setDashboardMode(identity.mode);
+    setUserId(identity.effectiveUserId);
+    
+    fetchStats(identity.effectiveUserId, identity.mode);
+  }, [authLoading, accessToken, searchParams])
 
   useEffect(() => {
-    if (!userId) return
+    if (!dashboardMode || (dashboardMode === 'demo' && !userId)) return
     fetchTrades()
-  }, [userId, page, symbolFilter, sideFilter, gradeFilter])
+  }, [userId, dashboardMode, page, symbolFilter, sideFilter, gradeFilter])
 
   const fetchTrades = async () => {
+    if (!dashboardMode) return;
     setLoading(true)
-    try {
-      const params = new URLSearchParams({
-        userId,
-        symbol: symbolFilter,
-        side: sideFilter,
-        grade: gradeFilter,
+    try { 
+      const fetchFn = dashboardMode === 'real' ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken }) : fetch;
+      
+      const paramsObj: Record<string, string> = {
         page: String(page),
         limit: '50'
-      })
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/trades?${params}`)
+      };
+      if (symbolFilter) paramsObj.symbol = symbolFilter;
+      if (sideFilter) paramsObj.side = sideFilter;
+      if (gradeFilter) paramsObj.grade = gradeFilter;
+      
+      const query = buildQuery(dashboardMode, userId, paramsObj);
+      const res = await fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/trades${query}`)
+      
+      if (dashboardMode === 'real' && res.status === 404) {
+        setTrades([])
+        setTotal(0)
+        setPages(1)
+        return;
+      }
+      
       const data: TradesResponse = await res.json()
       setTrades(data.trades)
       setTotal(data.total)
@@ -286,13 +333,16 @@ export default function Trades() {
   const goToNext = () => { if (currentIndex < sortedTrades.length - 1) setSelectedTrade(sortedTrades[currentIndex + 1]) }
 
   const handleExport = () => {
-    if (exporting || !userId) return;
+    if (exporting || !dashboardMode || (dashboardMode === 'demo' && !userId)) return;
     setExporting(true);
     
-    let url = `${process.env.NEXT_PUBLIC_API_URL}/trades/export?userId=${userId}`;
+    const extraParams: Record<string, string> = {};
     if (exchangeRaw && exchangeRaw !== 'multi') {
-      url += `&exchange=${exchangeRaw}`;
+      extraParams.exchange = exchangeRaw;
     }
+    const query = buildQuery(dashboardMode, userId, Object.keys(extraParams).length ? extraParams : undefined);
+    
+    const url = `${process.env.NEXT_PUBLIC_API_URL}/trades/export${query}`;
     
     window.open(url, '_blank');
     
@@ -304,7 +354,7 @@ export default function Trades() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg-base, #0f0f0f)', color: 'var(--text-primary, #ede8e0)', fontFamily: 'var(--font-inter)' }}>
       {/* HEADER */}
-      <Navbar userId={userId} exchange={exchangeRaw || undefined} currentPage="trades" showLive={true} />
+      <Navbar userId={userId || undefined} exchange={exchangeRaw || undefined} currentPage="trades" showLive={true} />
 
       {/* MAIN CONTENT */}
       <main style={{ padding: '48px 2rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
@@ -333,22 +383,24 @@ export default function Trades() {
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.12em', color: '#888078' }}>MAKER FILLS</span>
             </div>
             
-            <button
-              onClick={handleExport}
-              disabled={exporting}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '6px',
-                background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
-                padding: '6px 12px', color: '#c4a882',
-                fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
-                cursor: exporting ? 'wait' : 'pointer', transition: 'all 0.2s ease',
-                opacity: exporting ? 0.6 : 1, marginLeft: '1rem', height: 'fit-content', marginBottom: '2px'
-              }}
-              onMouseOver={e => { if (!exporting) e.currentTarget.style.background = 'rgba(167,139,113,0.1)' }}
-              onMouseOut={e => { if (!exporting) e.currentTarget.style.background = 'transparent' }}
-            >
-              {exporting ? 'EXPORTING...' : '↓ EXPORT CSV'}
-            </button>
+            {dashboardMode === 'demo' && (
+              <button
+                onClick={handleExport}
+                disabled={exporting}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '6px',
+                  background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
+                  padding: '6px 12px', color: '#c4a882',
+                  fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
+                  cursor: exporting ? 'wait' : 'pointer', transition: 'all 0.2s ease',
+                  opacity: exporting ? 0.6 : 1, marginLeft: '1rem', height: 'fit-content', marginBottom: '2px'
+                }}
+                onMouseOver={e => { if (!exporting) e.currentTarget.style.background = 'rgba(167,139,113,0.1)' }}
+                onMouseOut={e => { if (!exporting) e.currentTarget.style.background = 'transparent' }}
+              >
+                {exporting ? 'EXPORTING...' : '↓ EXPORT CSV'}
+              </button>
+            )}
           </div>
         </div>
 

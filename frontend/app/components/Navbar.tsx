@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import AuthNav from './AuthNav';
 
 interface NavbarProps {
   userId?: string;
@@ -113,6 +114,11 @@ export default function Navbar({ userId, exchange, currentPage, showLive }: Navb
 
       {/* RIGHT SECTION */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div className="hidden md:block">
+          <AuthNav />
+        </div>
+        <div className="hidden md:block" style={{ width: '1px', height: '14px', background: 'rgba(167,139,113,0.25)', margin: '0 4px' }} />
+
         {showLive && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
             <div style={{
