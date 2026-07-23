@@ -109,7 +109,10 @@ auditRouter.post('/run', resolveAccount, async (req: Request, res: Response) => 
         // 5. Save AuditSummary to MongoDB via UPSERT
         const savedAudit = await Audit.findOneAndUpdate(
             { accountId },
-            { $set: { ...summary, accountId, updatedAt: new Date() } },
+            { 
+                $set: { ...summary, accountId, updatedAt: new Date() },
+                $setOnInsert: { dataSource: VALID_DEMO_USERS.has(accountId) ? 'synthetic-demo' : 'real-user' }
+            },
             { new: true, upsert: true }
         );
 

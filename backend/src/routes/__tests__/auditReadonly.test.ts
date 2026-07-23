@@ -35,22 +35,28 @@ describe('Audit Route Read-Only and POST /run Tests', () => {
 
         // Seed data for A
         await Audit.create({
-            accountId: userIdA, userId: userIdA, period: { start: new Date(), end: new Date() }, exchange: 'binance', totalTrades: 1, totalNotional: 1000, avgFillScore: 99.9, fillGrade: 'A', estimatedLossUSD: 0, breakdown: { avgSlippageBps: 1, avgFeeDragBps: 1, makerRatio: 1, bestHour: 10, worstHour: 2, bestSymbol: 'BTCUSDT', worstSymbol: 'ETHUSDT' }, createdAt: new Date(), updatedAt: new Date()
+            userId: userA!._id.toString(),
+            accountId: userA!._id.toString(),
+            dataSource: 'real-user',
+            period: { start: new Date(), end: new Date() }, exchange: 'binance', totalTrades: 1, totalNotional: 1000, avgFillScore: 99.9, fillGrade: 'A', estimatedLossUSD: 0, breakdown: { avgSlippageBps: 1, avgFeeDragBps: 1, makerRatio: 1, bestHour: 10, worstHour: 2, bestSymbol: 'BTCUSDT', worstSymbol: 'ETHUSDT' }, createdAt: new Date(), updatedAt: new Date()
         });
 
         // Seed data for demo-disciplined
         await Trade.create([
-            { accountId: 'demo-disciplined', userId: 'demo-disciplined', exchange: 'binance', tradeId: 'DX1', orderId: 'O_DX1', symbol: 'BTCUSDT', side: 'BUY', orderType: 'LIMIT', isMaker: true, quantity: 1, executionPrice: 50000, notional: 50000, fee: 10, feeAsset: 'USDT', realizedPnl: 0, executedAt: new Date(), arrivalPriceProxy: 50000, vwap5min: 50000, spreadBps: 1.0 },
-            { accountId: 'demo-disciplined', userId: 'demo-disciplined', exchange: 'binance', tradeId: 'DX2', orderId: 'O_DX2', symbol: 'BTCUSDT', side: 'SELL', orderType: 'MARKET', isMaker: false, quantity: 1, executionPrice: 50000, notional: 50000, fee: 20, feeAsset: 'USDT', realizedPnl: 0, executedAt: new Date(), arrivalPriceProxy: 50000, vwap5min: 50000, spreadBps: 1.0 }
+            { userId: 'demo-disciplined', accountId: 'demo-disciplined', dataSource: 'synthetic-demo', exchange: 'binance', tradeId: 't1', orderId: 'o1', symbol: 'BTCUSDT', side: 'BUY', orderType: 'MARKET', isMaker: false, quantity: 1, executionPrice: 50000, notional: 50000, fee: 10, feeAsset: 'USDT', executedAt: new Date(Date.now() - 1000), arrivalPriceProxy: 50000, vwap5min: 50000, spreadBps: 1.0 },
+            { userId: 'demo-disciplined', accountId: 'demo-disciplined', dataSource: 'synthetic-demo', exchange: 'binance', tradeId: 't2', orderId: 'o2', symbol: 'BTCUSDT', side: 'SELL', orderType: 'MARKET', isMaker: false, quantity: 1, executionPrice: 51000, notional: 51000, fee: 10, feeAsset: 'USDT', executedAt: new Date(), arrivalPriceProxy: 50000, vwap5min: 50000, spreadBps: 1.0 }
         ]);
 
         await Audit.create({
-            accountId: 'demo-disciplined', userId: 'demo-disciplined', period: { start: new Date(), end: new Date() }, exchange: 'binance', totalTrades: 2, totalNotional: 100000, avgFillScore: 88.88, fillGrade: 'B', estimatedLossUSD: 0, breakdown: { avgSlippageBps: 1, avgFeeDragBps: 2, makerRatio: 0.5, bestHour: 10, worstHour: 2, bestSymbol: 'BTCUSDT', worstSymbol: 'BTCUSDT' }, createdAt: new Date(), updatedAt: new Date()
+            userId: 'demo-disciplined',
+            accountId: 'demo-disciplined',
+            dataSource: 'synthetic-demo',
+            period: { start: new Date(), end: new Date() }, exchange: 'binance', totalTrades: 2, totalNotional: 100000, avgFillScore: 88.88, fillGrade: 'B', estimatedLossUSD: 0, breakdown: { avgSlippageBps: 1, avgFeeDragBps: 2, makerRatio: 0.5, bestHour: 10, worstHour: 2, bestSymbol: 'BTCUSDT', worstSymbol: 'BTCUSDT' }, createdAt: new Date(), updatedAt: new Date()
         });
 
         // Ensure demo-moderate has no audits but has trades
         await Trade.create({
-            accountId: 'demo-moderate', userId: 'demo-moderate', exchange: 'binance', tradeId: 'DY1', orderId: 'O_DY1', symbol: 'ETHUSDT', side: 'BUY', orderType: 'LIMIT', isMaker: true, quantity: 10, executionPrice: 3000, notional: 30000, fee: 5, feeAsset: 'USDT', realizedPnl: 0, executedAt: new Date(), arrivalPriceProxy: 3000, vwap5min: 3000, spreadBps: 1.5
+            userId: userA!._id.toString(), accountId: userA!._id.toString(), dataSource: 'real-user', exchange: 'binance', tradeId: 't3', orderId: 'o3', symbol: 'ETHUSDT', side: 'BUY', orderType: 'MARKET', isMaker: false, quantity: 1, executionPrice: 3000, notional: 3000, fee: 1, feeAsset: 'USDT', executedAt: new Date(), arrivalPriceProxy: 3000, vwap5min: 3000, spreadBps: 1.5
         });
     });
 

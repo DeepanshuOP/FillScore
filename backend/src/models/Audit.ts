@@ -4,12 +4,14 @@ import { AuditSummary } from '../types';
 export interface AuditSummaryDocument extends AuditSummary, Document {
     createdAt: Date;
     accountId: string;
+    dataSource: 'synthetic-demo' | 'real-user';
 }
 
 const AuditSchema = new Schema<AuditSummaryDocument>(
     {
-        userId: { type: String, required: true },
+        userId: { type: String, required: true, index: true },
         accountId: { type: String, required: true, index: true },
+        dataSource: { type: String, enum: ['synthetic-demo', 'real-user'], required: true, immutable: true, index: true },
         period: {
             start: { type: Date, required: true },
             end: { type: Date, required: true },

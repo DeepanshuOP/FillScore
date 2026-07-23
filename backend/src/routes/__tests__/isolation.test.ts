@@ -23,6 +23,7 @@ describe('Data Isolation and Routing Tests', () => {
     let tokenB: string;
     let userIdA: string;
     let userIdB: string;
+    const NOW = Date.now();
 
     beforeAll(async () => {
         const uri = process.env.MONGODB_URI;
@@ -44,28 +45,32 @@ describe('Data Isolation and Routing Tests', () => {
 
         // Seed data for A
         await Trade.create([
-            { accountId: userIdA, userId: userIdA, exchange: 'binance', tradeId: 'A1', orderId: 'O_A1', symbol: 'BTCUSDT', side: 'BUY', orderType: 'LIMIT', isMaker: true, quantity: 1, executionPrice: 50000, notional: 50000, fee: 10, feeAsset: 'USDT', realizedPnl: 0, executedAt: new Date() },
-            { accountId: userIdA, userId: userIdA, exchange: 'binance', tradeId: 'A2', orderId: 'O_A2', symbol: 'ETHUSDT', side: 'SELL', orderType: 'MARKET', isMaker: false, quantity: 10, executionPrice: 3000, notional: 30000, fee: 5, feeAsset: 'USDT', realizedPnl: 100, executedAt: new Date() }
+            { userId: userA!._id.toString(), accountId: userA!._id.toString(), dataSource: 'real-user', exchange: 'binance', symbol: 'BTCUSDT', tradeId: 'A1', orderId: 'O1', side: 'BUY', orderType: 'MARKET', isMaker: false, executionPrice: 50000, quantity: 1, notional: 50000, fee: 10, feeAsset: 'USDT', executedAt: new Date(NOW - 1000) },
+            { userId: userA!._id.toString(), accountId: userA!._id.toString(), dataSource: 'real-user', exchange: 'binance', symbol: 'BTCUSDT', tradeId: 'A2', orderId: 'O2', side: 'SELL', orderType: 'MARKET', isMaker: false, executionPrice: 51000, quantity: 1, notional: 51000, fee: 10, feeAsset: 'USDT', executedAt: new Date() }
         ]);
         await Audit.create({
-            accountId: userIdA, userId: userIdA, period: { start: new Date(), end: new Date() }, exchange: 'binance', totalTrades: 2, totalNotional: 80000, avgFillScore: 90, fillGrade: 'A', estimatedLossUSD: 0, breakdown: { avgSlippageBps: 1, avgFeeDragBps: 2, makerRatio: 0.5, bestHour: 10, worstHour: 2, bestSymbol: 'BTCUSDT', worstSymbol: 'ETHUSDT' }, createdAt: new Date(), updatedAt: new Date()
+            userId: userA!._id.toString(), accountId: userA!._id.toString(), dataSource: 'real-user', period: { start: new Date(NOW - 2000), end: new Date() },
+            exchange: 'binance', totalTrades: 2, totalNotional: 101000, avgFillScore: 85, fillGrade: 'B', estimatedLossUSD: 5,
+            breakdown: { avgSlippageBps: 1, avgFeeDragBps: 1, makerRatio: 0, bestHour: 10, worstHour: 12, bestSymbol: 'BTCUSDT', worstSymbol: 'BTCUSDT' }, createdAt: new Date(), updatedAt: new Date()
         });
 
         // Seed data for B
         await Trade.create([
-            { accountId: userIdB, userId: userIdB, exchange: 'binance', tradeId: 'B1', orderId: 'O_B1', symbol: 'SOLUSDT', side: 'BUY', orderType: 'LIMIT', isMaker: true, quantity: 100, executionPrice: 20, notional: 2000, fee: 1, feeAsset: 'USDT', realizedPnl: 0, executedAt: new Date() },
-            { accountId: userIdB, userId: userIdB, exchange: 'binance', tradeId: 'B2', orderId: 'O_B2', symbol: 'LUNAUSDT', side: 'SELL', orderType: 'MARKET', isMaker: false, quantity: 50, executionPrice: 100, notional: 5000, fee: 2, feeAsset: 'USDT', realizedPnl: -50, executedAt: new Date() }
+            { userId: userB!._id.toString(), accountId: userB!._id.toString(), dataSource: 'real-user', exchange: 'binance', symbol: 'ETHUSDT', tradeId: 'B1', orderId: 'O3', side: 'BUY', orderType: 'MARKET', isMaker: false, executionPrice: 3000, quantity: 10, notional: 30000, fee: 5, feeAsset: 'USDT', executedAt: new Date(NOW - 500) },
+            { accountId: userIdB, userId: userIdB, dataSource: 'real-user', exchange: 'binance', tradeId: 'B2', orderId: 'O_B2', symbol: 'LUNAUSDT', side: 'SELL', orderType: 'MARKET', isMaker: false, quantity: 50, executionPrice: 100, notional: 5000, fee: 2, feeAsset: 'USDT', realizedPnl: -50, executedAt: new Date() }
         ]);
         await Audit.create({
-            accountId: userIdB, userId: userIdB, period: { start: new Date(), end: new Date() }, exchange: 'binance', totalTrades: 2, totalNotional: 7000, avgFillScore: 80, fillGrade: 'B', estimatedLossUSD: 0, breakdown: { avgSlippageBps: 1, avgFeeDragBps: 2, makerRatio: 0.5, bestHour: 10, worstHour: 2, bestSymbol: 'SOLUSDT', worstSymbol: 'LUNAUSDT' }, createdAt: new Date(), updatedAt: new Date()
+            accountId: userIdB, userId: userIdB, dataSource: 'real-user', period: { start: new Date(), end: new Date() }, exchange: 'binance', totalTrades: 2, totalNotional: 7000, avgFillScore: 80, fillGrade: 'B', estimatedLossUSD: 0, breakdown: { avgSlippageBps: 1, avgFeeDragBps: 2, makerRatio: 0.5, bestHour: 10, worstHour: 2, bestSymbol: 'SOLUSDT', worstSymbol: 'LUNAUSDT' }, createdAt: new Date(), updatedAt: new Date()
         });
 
         // Seed demo data
         await Trade.create({
-            accountId: 'demo-disciplined', userId: 'demo-disciplined', exchange: 'binance', tradeId: 'D1', orderId: 'O_D1', symbol: 'DOGEUSDT', side: 'BUY', orderType: 'LIMIT', isMaker: true, quantity: 1000, executionPrice: 0.1, notional: 100, fee: 0, feeAsset: 'USDT', realizedPnl: 0, executedAt: new Date()
+            userId: 'demo-disciplined', accountId: 'demo-disciplined', dataSource: 'synthetic-demo', exchange: 'binance', symbol: 'SOLUSDT', tradeId: 'D1', orderId: 'O4', side: 'SELL', orderType: 'MARKET', isMaker: false, executionPrice: 100, quantity: 50, notional: 5000, fee: 1, feeAsset: 'USDT', executedAt: new Date(NOW - 100)
         });
         await Audit.create({
-            accountId: 'demo-disciplined', userId: 'demo-disciplined', period: { start: new Date(), end: new Date() }, exchange: 'binance', totalTrades: 1, totalNotional: 100, avgFillScore: 90, fillGrade: 'A', estimatedLossUSD: 0, breakdown: { avgSlippageBps: 1, avgFeeDragBps: 2, makerRatio: 1, bestHour: 10, worstHour: 2, bestSymbol: 'DOGEUSDT', worstSymbol: 'DOGEUSDT' }, createdAt: new Date(), updatedAt: new Date()
+            userId: 'demo-disciplined', accountId: 'demo-disciplined', dataSource: 'synthetic-demo', period: { start: new Date(NOW - 500), end: new Date() },
+            exchange: 'binance', totalTrades: 1, totalNotional: 5000, avgFillScore: 99, fillGrade: 'A', estimatedLossUSD: 0.1,
+            breakdown: { avgSlippageBps: 0.1, avgFeeDragBps: 0.1, makerRatio: 0, bestHour: 9, worstHour: 9, bestSymbol: 'SOLUSDT', worstSymbol: 'SOLUSDT' }, createdAt: new Date(), updatedAt: new Date()
         });
     });
 

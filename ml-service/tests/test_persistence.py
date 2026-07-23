@@ -106,7 +106,7 @@ class TestSaveCouncilRun:
             "run_id", "user_id", "symbol", "created_at", "prompt_version",
             "total_latency_ms", "packet_hashes", "grounding_summary",
             "council_result", "overall_rating", "avg_faithfulness_score",
-            "total_violations",
+            "total_violations", "data_source",
         ]
         for f in required_fields:
             assert f in inserted_doc, f"Missing field: {f}"
@@ -134,6 +134,42 @@ class TestSaveCouncilRun:
                 total_latency_ms=1000.0,
             ))
         assert inserted_doc["overall_rating"] == "CRITICAL"
+
+    def test_data_source_is_synthetic_for_demo(self):
+        inserted_doc = {}
+        async def capture_insert(doc):
+            inserted_doc.update(doc)
+        mock_collection = MagicMock()
+        mock_collection.insert_one = capture_insert
+        mock_db = MagicMock()
+        mock_db.__getitem__ = MagicMock(return_value=mock_collection)
+        mock_client = MagicMock()
+        mock_client.close = MagicMock()
+        with patch("agents.persistence._get_db", return_value=(mock_client, mock_db)):
+            from agents.persistence import save_council_run
+            asyncio.run(save_council_run(
+                account_id="demo-disciplined", user_id="demo-disciplined", symbol="BTCUSDT",
+                council_result_dict={}, grounding_summary={}, packet_hashes={}, model_usage={}, total_latency_ms=10.0,
+            ))
+        assert inserted_doc["data_source"] == "synthetic-demo"
+
+    def test_data_source_is_real_user_for_others(self):
+        inserted_doc = {}
+        async def capture_insert(doc):
+            inserted_doc.update(doc)
+        mock_collection = MagicMock()
+        mock_collection.insert_one = capture_insert
+        mock_db = MagicMock()
+        mock_db.__getitem__ = MagicMock(return_value=mock_collection)
+        mock_client = MagicMock()
+        mock_client.close = MagicMock()
+        with patch("agents.persistence._get_db", return_value=(mock_client, mock_db)):
+            from agents.persistence import save_council_run
+            asyncio.run(save_council_run(
+                account_id="some-real-uid", user_id="some-real-uid", symbol="BTCUSDT",
+                council_result_dict={}, grounding_summary={}, packet_hashes={}, model_usage={}, total_latency_ms=10.0,
+            ))
+        assert inserted_doc["data_source"] == "real-user"
 
 
 class TestLoadCouncilRun:

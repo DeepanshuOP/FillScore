@@ -17,6 +17,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config.versions import PROMPT_VERSION
+from config.demo_users import VALID_DEMO_USERS
 
 
 def _get_db():
@@ -53,6 +54,7 @@ async def save_council_run(
         "run_id": run_id,
         "accountId": account_id,
         "user_id": user_id,
+        "data_source": "synthetic-demo" if account_id in VALID_DEMO_USERS else "real-user",
         "symbol": symbol,
         "created_at": now,
         "prompt_version": prompt_version,

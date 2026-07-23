@@ -28,14 +28,7 @@ import jwt
 
 security = HTTPBearer(auto_error=False)
 
-VALID_DEMO_USERS = {
-    "demo-disciplined",
-    "demo-moderate",
-    "demo-aggressive",
-    "demo-bybit",
-    "demo-okx",
-    "demo-multi"
-}
+from config.demo_users import VALID_DEMO_USERS
 
 def get_account_id(requested_user_id: str | None, req: Request) -> str:
     if requested_user_id:

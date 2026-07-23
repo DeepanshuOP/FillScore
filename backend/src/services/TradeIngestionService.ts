@@ -3,6 +3,8 @@ import { BybitClient } from './BybitClient';
 import { OKXClient } from './OKXClient';
 import { BinanceRawTrade, NormalisedTrade, FetchTradesOptions } from '../types';
 import { Trade } from '../models/Trade';
+import crypto from 'crypto';
+import { VALID_DEMO_USERS } from '../middleware/resolveAccount';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -128,7 +130,7 @@ export class TradeIngestionService {
             // which allows future enrichments (scores, metrics) to not be destroyed by re-ingestion.
             const updateResult = await Trade.updateOne(
                 filter,
-                { $setOnInsert: { ...normalised, accountId: userId } },
+                { $setOnInsert: { ...normalised, accountId: userId, dataSource: VALID_DEMO_USERS.has(userId) ? 'synthetic-demo' : 'real-user' } },
                 { upsert: true }
             );
 
@@ -193,7 +195,7 @@ export class TradeIngestionService {
 
                 const updateResult = await Trade.updateOne(
                     { userId, exchange: 'bybit', tradeId: raw.execId },
-                    { $setOnInsert: { ...normalised, accountId: userId } },
+                    { $setOnInsert: { ...normalised, accountId: userId, dataSource: VALID_DEMO_USERS.has(userId) ? 'synthetic-demo' : 'real-user' } },
                     { upsert: true }
                 );
 
@@ -264,7 +266,7 @@ export class TradeIngestionService {
 
                 const updateResult = await Trade.updateOne(
                     { userId, exchange: 'okx', tradeId: raw.billId },
-                    { $setOnInsert: { ...normalised, accountId: userId } },
+                    { $setOnInsert: { ...normalised, accountId: userId, dataSource: VALID_DEMO_USERS.has(userId) ? 'synthetic-demo' : 'real-user' } },
                     { upsert: true }
                 );
 
