@@ -2,8 +2,9 @@ import mongoose, { Schema, Document } from 'mongoose';
 import { EncryptedPayload } from '../utils/encryption';
 
 export interface ExchangeConnectionDocument extends Document {
-    userId: string;
-    exchange: 'binance' | 'bybit';
+    userId?: string;
+    accountId: string;
+    exchange: 'binance' | 'bybit' | 'okx';
     encryptedApiKey: EncryptedPayload;
     encryptedApiSecret: EncryptedPayload;
     createdAt: Date;
@@ -20,12 +21,15 @@ const EncryptedFieldSchema = new Schema(
 
 const ExchangeConnectionSchema = new Schema<ExchangeConnectionDocument>(
     {
-        userId: { type: String, required: true, unique: true, index: true },
-        exchange: { type: String, enum: ['binance', 'bybit'], required: true },
+        userId: { type: String, required: false },
+        accountId: { type: String, required: true, index: true },
+        exchange: { type: String, enum: ['binance', 'bybit', 'okx'], required: true },
         encryptedApiKey: { type: EncryptedFieldSchema, required: true },
         encryptedApiSecret: { type: EncryptedFieldSchema, required: true },
         createdAt: { type: Date, default: Date.now },
     }
 );
+
+ExchangeConnectionSchema.index({ accountId: 1, exchange: 1 }, { unique: true });
 
 export const ExchangeConnection = mongoose.model<ExchangeConnectionDocument>('ExchangeConnection', ExchangeConnectionSchema);

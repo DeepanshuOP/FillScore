@@ -33,6 +33,7 @@ import { connectRouter } from './routes/connect';
 import { auditRouter } from './routes/audit';
 import { attributionRouter } from './routes/attribution';
 import { authRouter } from './routes/auth';
+import { onboardingRouter } from './routes/onboarding';
 
 // Health check endpoint
 app.get('/api/health', (req: Request, res: Response) => {
@@ -66,6 +67,7 @@ app.use('/api/audit', auditLimiter, auditRouter);
 app.use('/api', auditRouter); // exposes /api/score
 app.use('/api/attribution', attributionRouter);
 app.use('/api/auth', authRouter);
+app.use('/api/onboarding', onboardingRouter);
 
 app.use(errorHandler);
 

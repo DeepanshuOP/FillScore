@@ -19,14 +19,23 @@ describe('ExchangeConnection Model', () => {
     
     afterEach(async () => {
         // Cleanup connections created during testing to avoid polluting real seed database
-        await ExchangeConnection.deleteMany({ userId: { $regex: /^test_/ } });
+        await ExchangeConnection.deleteMany({ accountId: { $regex: /^test_/ } });
     });
 
-    it('Duplicate userId throws a Mongo duplicate-key error', async () => {
-        const userId = `test_dup_${Date.now()}`;
+    it('Requires accountId to save', async () => {
+        const conn = new ExchangeConnection({
+            exchange: 'binance',
+            encryptedApiKey: { iv: 'a', encrypted: 'b', authTag: 'c' },
+            encryptedApiSecret: { iv: 'a', encrypted: 'b', authTag: 'c' }
+        });
+        await expect(conn.save()).rejects.toThrow(/Path `accountId` is required/);
+    });
+
+    it('Duplicate accountId+exchange throws a Mongo duplicate-key error', async () => {
+        const accountId = `test_acc_${Date.now()}`;
         
         const conn1 = new ExchangeConnection({
-            userId,
+            accountId,
             exchange: 'binance',
             encryptedApiKey: { iv: 'a', encrypted: 'b', authTag: 'c' },
             encryptedApiSecret: { iv: 'a', encrypted: 'b', authTag: 'c' }
@@ -34,12 +43,36 @@ describe('ExchangeConnection Model', () => {
         await conn1.save();
 
         const conn2 = new ExchangeConnection({
-            userId,
+            accountId,
             exchange: 'binance',
             encryptedApiKey: { iv: 'a', encrypted: 'b', authTag: 'c' },
             encryptedApiSecret: { iv: 'a', encrypted: 'b', authTag: 'c' }
         });
 
         await expect(conn2.save()).rejects.toThrow(/E11000 duplicate key error/);
+    });
+
+    it('Allows the same accountId to connect different exchanges', async () => {
+        const accountId = `test_acc_multi_${Date.now()}`;
+        
+        const conn1 = new ExchangeConnection({
+            accountId,
+            exchange: 'binance',
+            encryptedApiKey: { iv: 'a', encrypted: 'b', authTag: 'c' },
+            encryptedApiSecret: { iv: 'a', encrypted: 'b', authTag: 'c' }
+        });
+        await conn1.save();
+
+        const conn2 = new ExchangeConnection({
+            accountId,
+            exchange: 'bybit',
+            encryptedApiKey: { iv: 'a', encrypted: 'b', authTag: 'c' },
+            encryptedApiSecret: { iv: 'a', encrypted: 'b', authTag: 'c' }
+        });
+
+        await conn2.save(); // Should not throw
+        
+        const count = await ExchangeConnection.countDocuments({ accountId });
+        expect(count).toBe(2);
     });
 });

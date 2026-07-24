@@ -454,7 +454,7 @@ export default function Home() {
                   })}
                 </div>
 
-                {/* API FORM — Part 5 */}
+                {/* CONNECT PROMPT */}
                 <div
                   className={`mt-6 ${selectedExchange ? 'form-visible' : 'form-enter'}`}
                   style={{ display: selectedExchange ? 'block' : 'none' }}
@@ -466,201 +466,22 @@ export default function Home() {
                   </div>
                   
                   <div style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.2rem', color: 'var(--text-primary, #ede8e0)', marginBottom: '1.5rem', fontWeight: 400 }}>
-                    Enter your API credentials
+                    Sign in to connect {selectedExchange}
+                  </div>
+                  
+                  <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: 'var(--text-tertiary, #6a6560)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+                    FillScore requires an account to securely encrypt and store your read-only API keys.
                   </div>
 
-                  {/* API KEY INPUT */}
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
-                      API KEY
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type={showApiKey ? 'text' : 'password'}
-                        placeholder="Paste your API key"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        className="api-input"
-                        style={{
-                          width: '100%', padding: '0.85rem 2.8rem 0.85rem 0.9rem',
-                          background: 'var(--bg-base, #0f0f0f)', border: '1px solid var(--bg-muted, #2a2926)',
-                          borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
-                          color: '#c8b898', outline: 'none', transition: 'border-color 0.18s ease, box-shadow 0.18s ease'
-                        }}
-                      />
-                      <button type="button" onClick={() => setShowApiKey(!showApiKey)}
-                              className="eye-toggle"
-                              style={{
-                                position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)',
-                                background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-ghost, #3d3b38)',
-                                padding: '2px', transition: 'color 0.15s ease'
-                              }}>
-                        {showApiKey ? (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.5"/>
-                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/>
-                          </svg>
-                        ) : (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                            <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* API SECRET INPUT */}
-                  <div style={{ marginBottom: '1rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
-                      API SECRET
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        type={showApiSecret ? 'text' : 'password'}
-                        placeholder="Paste your API secret"
-                        value={apiSecret}
-                        onChange={(e) => setApiSecret(e.target.value)}
-                        className="api-input"
-                        style={{
-                          width: '100%', padding: '0.85rem 2.8rem 0.85rem 0.9rem',
-                          background: 'var(--bg-base, #0f0f0f)', border: '1px solid var(--bg-muted, #2a2926)',
-                          borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
-                          color: '#c8b898', outline: 'none', transition: 'border-color 0.18s ease, box-shadow 0.18s ease'
-                        }}
-                      />
-                      <button type="button" onClick={() => setShowApiSecret(!showApiSecret)}
-                              className="eye-toggle"
-                              style={{
-                                position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)',
-                                background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-ghost, #3d3b38)',
-                                padding: '2px', transition: 'color 0.15s ease'
-                              }}>
-                        {showApiSecret ? (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" stroke="currentColor" strokeWidth="1.5"/>
-                            <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5"/>
-                          </svg>
-                        ) : (
-                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
-                            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                            <line x1="1" y1="1" x2="23" y2="23" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-                          </svg>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* WARNING BOX */}
-                  <div className="warning-box" style={{
-                    display: 'flex', gap: '0.625rem', alignItems: 'flex-start',
-                    padding: '0.875rem 1rem', background: 'rgba(167,139,113,0.05)',
-                    borderLeft: '2px solid rgba(167,139,113,0.6)', borderRadius: '0 2px 2px 0',
-                    margin: '1.25rem 0'
-                  }}>
-                    <span style={{ color: 'var(--gold, #a78b71)', fontSize: '0.82rem', marginTop: '1px', flexShrink: 0 }}>
-                      ⚠
-                    </span>
-                    <span style={{ fontFamily: 'var(--font-inter)', fontSize: '0.78rem', lineHeight: 1.6, color: '#8a7d6a' }}>
-                      Only connect READ-ONLY API keys. FillScore never places orders or accesses withdrawal functions.
-                    </span>
-                  </div>
-
-                  {/* COLLAPSIBLE GUIDE */}
-                  <button type="button" onClick={() => setGuideOpen(!guideOpen)}
-                    className="guide-trigger"
-                    style={{
-                      width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                      background: 'none', border: 'none', borderTop: '1px solid var(--bg-subtle, #201f1d)',
-                      borderBottom: '1px solid var(--bg-subtle, #201f1d)', padding: '0.75rem 0',
-                      cursor: 'pointer', margin: '1rem 0', transition: 'border-color 0.15s ease'
-                    }}>
-                    <span className="guide-left" style={{ fontFamily: 'var(--font-inter)', fontSize: '0.78rem', color: 'var(--text-tertiary, #6a6560)', textTransform: 'capitalize', transition: 'color 0.15s ease' }}>
-                      How to create a read-only key on {selectedExchange}
-                    </span>
-                    <span style={{ fontFamily: 'var(--font-mono)', color: 'var(--gold, #a78b71)', fontSize: '1rem', lineHeight: 1 }}>
-                      {guideOpen ? '−' : '+'}
-                    </span>
-                  </button>
-                  <div style={{
-                    overflow: 'hidden', maxHeight: guideOpen ? '400px' : '0px', transition: 'max-height 0.3s ease'
-                  }}>
-                    <div style={{ padding: '0.75rem 0 0.5rem' }}>
-                      <ol style={{ paddingLeft: '1.1rem', fontFamily: 'var(--font-inter)', fontSize: '0.78rem', color: 'var(--text-tertiary, #6a6560)', lineHeight: 1.9, listStyleType: 'decimal' }}>
-                        {selectedExchange === 'binance' ? (
-                          <>
-                            <li>Log in to binance.com → Profile → API Management</li>
-                            <li>Click "Create API" → System generated</li>
-                            <li>Name it "fillscore-readonly"</li>
-                            <li>Complete email / 2FA verification</li>
-                            <li>Enable "Read Info" ONLY — disable all trading and withdrawal permissions</li>
-                            <li>Copy both your API Key and Secret Key</li>
-                          </>
-                        ) : (
-                          <>
-                            <li>Log in to bybit.com → Account → API Management</li>
-                            <li>Click "Create New Key"</li>
-                            <li>Select "API Transaction" → name it "fillscore"</li>
-                            <li>Set permissions to "Read-Only"</li>
-                            <li>Complete verification</li>
-                            <li>Copy your API Key and Secret</li>
-                          </>
-                        )}
-                      </ol>
-                    </div>
-                  </div>
-
-                  {/* CHECKBOX ROW */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem', margin: '1.25rem 0' }}>
-                    <div style={{ position: 'relative', width: '18px', height: '18px', flexShrink: 0, marginTop: '2px' }}>
-                      <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)}
-                             style={{ position: 'absolute', opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 1, margin: 0 }} />
-                      <div style={{
-                        position: 'absolute', inset: 0, borderRadius: '2px', transition: 'all 0.15s ease',
-                        border: confirmed ? '1px solid var(--gold, #a78b71)' : '1px solid var(--bg-muted, #2a2926)',
-                        background: confirmed ? 'var(--gold, #a78b71)' : 'transparent'
-                      }}>
-                        {confirmed && (
-                          <svg width="10" height="8" viewBox="0 0 10 8" fill="none"
-                            style={{ position: 'absolute', inset: 0, margin: 'auto', display: 'block' }}>
-                            <polyline points="1.5 4 4.5 7 8.5 1"
-                              stroke="#0f0f0f" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                          </svg>
-                        )}
-                      </div>
-                    </div>
-                    <label onClick={() => setConfirmed(!confirmed)} style={{ fontFamily: 'var(--font-inter)', fontSize: '0.78rem', color: 'var(--text-tertiary, #6a6560)', lineHeight: 1.55, cursor: 'pointer' }}>
-                      I confirm this API key has read-only permissions with no trading or withdrawal access
-                    </label>
-                  </div>
-
-                  {/* ERROR MESSAGE */}
-                  {error && (
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start', marginTop: '0.875rem', padding: '0.75rem 0.9rem', background: 'rgba(192,57,43,0.07)', borderLeft: '2px solid rgba(192,57,43,0.65)', borderRadius: '0 2px 2px 0', fontFamily: 'var(--font-inter)', fontSize: '0.78rem', color: '#d9534f', lineHeight: 1.55 }}>
-                      {error}
-                    </div>
-                  )}
-
-                  {/* SUBMIT BUTTON */}
-                  <button type="button" onClick={handleSubmit} disabled={isDisabled || loading}
-                          className={`submit-btn ${isDisabled ? 'disabled' : 'enabled'}`}
+                  <button type="button" onClick={() => window.location.href = '/signup'}
+                          className="submit-btn enabled"
                           style={{
-                            width: '100%', marginTop: '1.25rem', padding: '0.925rem', borderRadius: '2px',
+                            width: '100%', padding: '0.925rem', borderRadius: '2px',
                             fontFamily: 'var(--font-mono)', fontSize: '0.8rem', letterSpacing: '0.1em', fontWeight: 600,
                             transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem',
-                            cursor: (isDisabled || loading) ? 'not-allowed' : 'pointer'
+                            cursor: 'pointer'
                           }}>
-                    {loading ? (
-                      <>
-                        <div style={{
-                          width: 15, height: 15, border: '1.5px solid rgba(15,15,15,0.2)', borderTopColor: '#0f0f0f',
-                          borderRadius: '50%', animation: 'spin 0.7s linear infinite', flexShrink: 0
-                        }}/>
-                        Connecting securely...
-                      </>
-                    ) : (
-                      'Analyse My Trades →'
-                    )}
+                    Create Account →
                   </button>
                   
                   {/* CARD FOOTER SECTION */}

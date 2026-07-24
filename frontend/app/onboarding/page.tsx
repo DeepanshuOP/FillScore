@@ -1,0 +1,1 @@
+export default function Onboarding() { return <div style={{ color: 'white', padding: '2rem' }}>Onboarding (Coming Soon)</div>; }

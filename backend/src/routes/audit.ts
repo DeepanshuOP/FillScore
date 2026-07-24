@@ -13,6 +13,52 @@ import { EnrichedTrade } from '../types';
 import rateLimit from 'express-rate-limit';
 import { resolveAccount, VALID_DEMO_USERS } from '../middleware/resolveAccount';
 
+export async function executeAuditPipeline(accountId: string) {
+    const tradeDocs = await Trade.find({ accountId }).lean();
+
+    const trades = tradeDocs.map(doc => {
+        return {
+            ...doc,
+            executedAt: new Date(doc.executedAt),
+        } as unknown as EnrichedTrade;
+    });
+
+    const validTrades: EnrichedTrade[] = [];
+    let tradesScored = 0;
+    for (const tData of trades) {
+        try {
+            const scores = scoreTrade(tData);
+            tData.slippageScore = scores.slippageScore;
+            tData.feeScore = scores.feeScore;
+            tData.timingScore = scores.timingScore;
+            tData.exchangeScore = scores.exchangeScore;
+            tData.fillScore = scores.fillScore;
+            tData.fillGrade = scores.fillGrade;
+            validTrades.push(tData);
+            tradesScored++;
+        } catch (e) {
+            // Skip
+        }
+    }
+
+    if (validTrades.length === 0) {
+        throw new Error('no_trades_found');
+    }
+
+    const summary = await computeAuditSummary(accountId, validTrades);
+
+    const savedAudit = await Audit.findOneAndUpdate(
+        { accountId },
+        { 
+            $set: { ...summary, accountId, updatedAt: new Date() },
+            $setOnInsert: { dataSource: VALID_DEMO_USERS.has(accountId) ? 'synthetic-demo' : 'real-user' }
+        },
+        { new: true, upsert: true }
+    );
+
+    return { savedAudit, tradesScored, totalIngested: trades.length };
+}
+
 export const auditRouter = Router();
 
 const shareLimiter = rateLimit({
@@ -72,51 +118,15 @@ auditRouter.post('/run', resolveAccount, async (req: Request, res: Response) => 
             await marketDataService.enrichAllPendingTrades(accountId);
         }
 
-        // 3. Fetch all enriched trades from DB, map to EnrichedTrade object
-        const tradeDocs = await Trade.find({ accountId }).lean();
-
-        // Ensure the lean object acts like our EnrichedTrade and parses timestamps right
-        const trades = tradeDocs.map(doc => {
-            return {
-                ...doc,
-                executedAt: new Date(doc.executedAt),
-            } as unknown as EnrichedTrade;
-        });
-
-        // 4. Validate and attach pure scores before passing to audit
-        const validTrades: EnrichedTrade[] = [];
-        for (const tData of trades) {
-            try {
-                const scores = scoreTrade(tData);
-                tData.slippageScore = scores.slippageScore;
-                tData.feeScore = scores.feeScore;
-                tData.timingScore = scores.timingScore;
-                tData.exchangeScore = scores.exchangeScore;
-                tData.fillScore = scores.fillScore;
-                tData.fillGrade = scores.fillGrade;
-                validTrades.push(tData);
-            } catch (e) {
-                // Skip unenrichable or invalid (like 0 quantities or missing data)
+        try {
+            const { savedAudit } = await executeAuditPipeline(accountId);
+            return res.status(200).json(savedAudit);
+        } catch (e: any) {
+            if (e.message === 'no_trades_found') {
+                return res.status(400).json({ error: 'No scoreable trades found to audit.' });
             }
+            throw e;
         }
-
-        if (validTrades.length === 0) {
-            return res.status(400).json({ error: 'No scoreable trades found to audit.' });
-        }
-
-        const summary = await computeAuditSummary(accountId, validTrades);
-
-        // 5. Save AuditSummary to MongoDB via UPSERT
-        const savedAudit = await Audit.findOneAndUpdate(
-            { accountId },
-            { 
-                $set: { ...summary, accountId, updatedAt: new Date() },
-                $setOnInsert: { dataSource: VALID_DEMO_USERS.has(accountId) ? 'synthetic-demo' : 'real-user' }
-            },
-            { new: true, upsert: true }
-        );
-
-        return res.status(200).json(savedAudit);
 
     } catch (error: any) {
         console.error('Error generating audit:', error);
