@@ -1,54 +1,103 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { validateBinanceKey } from '../keyValidation';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// Mock global fetch
-const fetchMock = vi.fn();
-global.fetch = fetchMock;
+describe('validateBinanceKey', () => {
+    let fetchMock: any;
 
-describe('keyValidation', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
+        fetchMock = vi.fn();
+        global.fetch = fetchMock as any;
     });
 
-    it('accepts a genuinely read-only key', async () => {
-        fetchMock.mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({ canTrade: false, canWithdraw: false })
-        });
-
-        await expect(validateBinanceKey('test_key', 'test_secret')).resolves.toBeUndefined();
+    afterEach(() => {
+        vi.resetAllMocks();
     });
 
-    it('rejects a key that can trade', async () => {
-        fetchMock.mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({ canTrade: true, canWithdraw: false })
-        });
-
-        await expect(validateBinanceKey('test_key', 'test_secret')).rejects.toThrow('key_not_read_only');
+    const createSuccessResponse = (body: any) => ({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue(body),
     });
 
-    it('rejects a key that can withdraw', async () => {
-        fetchMock.mockResolvedValueOnce({
-            ok: true,
-            json: async () => ({ canTrade: false, canWithdraw: true })
-        });
-
-        await expect(validateBinanceKey('test_key', 'test_secret')).rejects.toThrow('key_not_read_only');
+    const createErrorResponse = (status: number, body: any = {}) => ({
+        ok: false,
+        status,
+        json: vi.fn().mockResolvedValue(body),
     });
 
-    it('rejects invalid or unauthorized key', async () => {
-        fetchMock.mockResolvedValueOnce({
-            ok: false,
-            status: 401
-        });
+    const defaultValidResponse = {
+        "ipRestrict": false,
+        "createTime": 1784916501000,
+        "enableSpotAndMarginTrading": false,
+        "enableWithdrawals": false,
+        "enableInternalTransfer": false,
+        "permitsUniversalTransfer": false,
+        "enableVanillaOptions": false,
+        "enablePortfolioMarginTrading": false,
+        "enableFixApiTrade": false,
+        "enableFixReadOnly": false,
+        "enableReading": true,
+        "enableFutures": false,
+        "enableMargin": false
+    };
 
-        await expect(validateBinanceKey('test_key', 'test_secret')).rejects.toThrow('invalid_key');
+    it('1. The exact read-only response above -> RESOLVES (accepted)', async () => {
+        fetchMock.mockResolvedValueOnce(createSuccessResponse(defaultValidResponse));
+        await expect(validateBinanceKey('test-key', 'test-secret')).resolves.toBeUndefined();
     });
 
-    it('rejects on network error (fail closed)', async () => {
-        fetchMock.mockRejectedValueOnce(new Error('Network disconnected'));
+    it('2. Same but enableWithdrawals:true -> throws key_not_read_only', async () => {
+        fetchMock.mockResolvedValueOnce(createSuccessResponse({ ...defaultValidResponse, enableWithdrawals: true }));
+        await expect(validateBinanceKey('test-key', 'test-secret')).rejects.toThrow('key_not_read_only');
+    });
 
-        await expect(validateBinanceKey('test_key', 'test_secret')).rejects.toThrow('network_error');
+    it('3. Same but enableSpotAndMarginTrading:true -> throws key_not_read_only', async () => {
+        fetchMock.mockResolvedValueOnce(createSuccessResponse({ ...defaultValidResponse, enableSpotAndMarginTrading: true }));
+        await expect(validateBinanceKey('test-key', 'test-secret')).rejects.toThrow('key_not_read_only');
+    });
+
+    it('4. Same but enableFutures:true -> throws key_not_read_only', async () => {
+        fetchMock.mockResolvedValueOnce(createSuccessResponse({ ...defaultValidResponse, enableFutures: true }));
+        await expect(validateBinanceKey('test-key', 'test-secret')).rejects.toThrow('key_not_read_only');
+    });
+
+    it('5. Same but enableMargin:true -> throws key_not_read_only', async () => {
+        fetchMock.mockResolvedValueOnce(createSuccessResponse({ ...defaultValidResponse, enableMargin: true }));
+        await expect(validateBinanceKey('test-key', 'test-secret')).rejects.toThrow('key_not_read_only');
+    });
+
+    it('6. Same but permitsUniversalTransfer:true -> throws key_not_read_only', async () => {
+        fetchMock.mockResolvedValueOnce(createSuccessResponse({ ...defaultValidResponse, permitsUniversalTransfer: true }));
+        await expect(validateBinanceKey('test-key', 'test-secret')).rejects.toThrow('key_not_read_only');
+    });
+
+    it('7. FAIL-CLOSED ON UNKNOWN: response containing a NEW boolean field not in our allowlist, set to true -> throws key_not_read_only', async () => {
+        fetchMock.mockResolvedValueOnce(createSuccessResponse({ ...defaultValidResponse, enableSomeNewThing: true }));
+        await expect(validateBinanceKey('test-key', 'test-secret')).rejects.toThrow('key_not_read_only');
+    });
+
+    it('8. enableReading:false -> throws key_not_read_only', async () => {
+        fetchMock.mockResolvedValueOnce(createSuccessResponse({ ...defaultValidResponse, enableReading: false }));
+        await expect(validateBinanceKey('test-key', 'test-secret')).rejects.toThrow('key_not_read_only');
+    });
+
+    it('9. HTTP 401 -> throws invalid_key', async () => {
+        fetchMock.mockResolvedValueOnce(createErrorResponse(401, { code: -2015, msg: 'Invalid API-key, IP, or permissions for action.' }));
+        await expect(validateBinanceKey('test-key', 'test-secret')).rejects.toThrow('invalid_key');
+    });
+
+    it('10. HTTP 418/429 or other non-2xx -> throws network_error', async () => {
+        fetchMock.mockResolvedValueOnce(createErrorResponse(418, { msg: 'I am a teapot' }));
+        await expect(validateBinanceKey('test-key', 'test-secret')).rejects.toThrow('network_error');
+    });
+
+    it('11. fetch rejects (network throw) -> throws network_error', async () => {
+        fetchMock.mockRejectedValueOnce(new Error('Network failure'));
+        await expect(validateBinanceKey('test-key', 'test-secret')).rejects.toThrow('network_error');
+    });
+
+    it('12. ipRestrict:true must NOT cause rejection (IP-restricted keys are MORE secure, allowed)', async () => {
+        fetchMock.mockResolvedValueOnce(createSuccessResponse({ ...defaultValidResponse, ipRestrict: true }));
+        await expect(validateBinanceKey('test-key', 'test-secret')).resolves.toBeUndefined();
     });
 });
