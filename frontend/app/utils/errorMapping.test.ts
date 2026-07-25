@@ -26,9 +26,21 @@ describe('mapOnboardingError', () => {
     );
   });
 
-  it('maps 429 status code correctly', () => {
+  it('maps any_code 429 correctly', () => {
     expect(mapOnboardingError('any_code', 429)).toBe(
       "Too many attempts. Please wait a few minutes and try again."
+    );
+  });
+
+  it('maps no_trades_found correctly', () => {
+    expect(mapOnboardingError('no_trades_found')).toBe(
+      "We connected successfully, but found no spot trades in the last 30 days. FillScore analyses your executed trades — once you've traded, come back and sync."
+    );
+  });
+
+  it('maps no_exchange_connections_found correctly', () => {
+    expect(mapOnboardingError('no_exchange_connections_found')).toBe(
+      "Connect an exchange first."
     );
   });
 

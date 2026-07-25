@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/authFetch';
 import { mapOnboardingError } from '../utils/errorMapping';
+import { getGradeColor } from '../utils/gradeColor';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -21,6 +22,17 @@ export default function OnboardingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  
+  // Sync state
+  const [syncing, setSyncing] = useState(false);
+  const [syncStatusText, setSyncStatusText] = useState('');
+  const [syncResult, setSyncResult] = useState<{
+    fillScore: number;
+    grade: string;
+    tradesIngested: number;
+    tradesScored: number;
+  } | null>(null);
+  const [noTrades, setNoTrades] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -88,11 +100,60 @@ export default function OnboardingPage() {
         // Clear secrets from state immediately
         setApiKey('');
         setApiSecret('');
+        setErrorMsg(null);
       }
     } catch (err: any) {
       setErrorMsg(mapOnboardingError('network_error'));
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleSync = async () => {
+    if (syncing) return;
+    setSyncing(true);
+    setErrorMsg(null);
+    setNoTrades(false);
+
+    // ESTIMATED progress messages for the UI, since we don't have a real stream
+    setSyncStatusText('Fetching your trades from Binance...');
+    const timers = [
+      setTimeout(() => setSyncStatusText('Enriching against market data...'), 5000),
+      setTimeout(() => setSyncStatusText('Computing your FillScore...'), 12000)
+    ];
+
+    try {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const res = await authFetch(`${baseUrl}/onboarding/sync`, {
+        method: 'POST'
+      }, { accessToken, refreshAccessToken });
+      
+      const data = await res.json();
+      timers.forEach(clearTimeout);
+
+      if (!res.ok) {
+        if (data.error === 'no_trades_found') {
+          setNoTrades(true);
+        } else if (data.error === 'No exchange connections found' || data.error === 'no_exchange_connections_found') {
+          // Go back to connect step
+          setIsSuccess(false);
+          setErrorMsg(mapOnboardingError('no_exchange_connections_found'));
+        } else {
+          setErrorMsg(mapOnboardingError(data.error || 'unknown', res.status));
+        }
+      } else {
+        setSyncResult({
+          fillScore: data.fillScore,
+          grade: data.grade,
+          tradesIngested: data.tradesIngested,
+          tradesScored: data.tradesScored
+        });
+      }
+    } catch (err: any) {
+      timers.forEach(clearTimeout);
+      setErrorMsg(mapOnboardingError('network_error'));
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -154,8 +215,97 @@ export default function OnboardingPage() {
 
           <div className="px-5 py-5 sm:px-8 sm:pt-7 sm:pb-8">
             
-            {isSuccess ? (
-              // SUCCESS STATE
+            {errorMsg && (
+              <div style={{
+                padding: '0.875rem 1rem', background: 'rgba(255, 68, 68, 0.05)',
+                borderLeft: '2px solid rgba(255, 68, 68, 0.6)', borderRadius: '0 2px 2px 0',
+                marginBottom: '1.5rem'
+              }}>
+                <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.8rem', color: '#ff8888', lineHeight: 1.5 }}>
+                  {errorMsg}
+                </p>
+              </div>
+            )}
+
+            {noTrades ? (
+              // NO TRADES FOUND STATE
+              <div className="text-center py-6">
+                <h2 style={{
+                  fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.4rem',
+                  color: '#ede8e0', fontWeight: 400, marginBottom: '1rem'
+                }}>
+                  No Trades Yet
+                </h2>
+                <div style={{
+                  padding: '1.25rem', background: 'rgba(167,139,113,0.05)',
+                  border: '1px solid rgba(167,139,113,0.2)', borderRadius: '2px',
+                  marginBottom: '2rem', textAlign: 'left'
+                }}>
+                  <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#8a7d6a', lineHeight: 1.6 }}>
+                    We connected successfully, but found no spot trades in the last 30 days. FillScore analyses your executed trades — once you've traded, come back and sync.
+                  </p>
+                </div>
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="w-full relative overflow-hidden flex justify-center items-center rounded-[2px]"
+                  style={{
+                    padding: '1rem', background: '#a78b71', color: '#0f0f0f',
+                    fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 600,
+                    cursor: 'pointer', transition: 'all 0.2s ease'
+                  }}
+                >
+                  GO TO DASHBOARD
+                </button>
+              </div>
+            ) : syncResult ? (
+              // SYNC SUCCESS STATE
+              <div className="text-center py-4">
+                <div style={{ marginBottom: '2rem' }}>
+                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', letterSpacing: '0.2em', color: '#6a6560', textTransform: 'uppercase' }}>
+                    Your FillScore
+                  </span>
+                  <div style={{
+                    fontFamily: 'var(--font-mono)', fontSize: '4rem', fontWeight: 300, color: '#ede8e0',
+                    lineHeight: 1, marginTop: '1rem', marginBottom: '0.5rem'
+                  }}>
+                    {syncResult.fillScore.toFixed(1)}
+                  </div>
+                  <div style={{
+                    display: 'inline-block', padding: '0.25rem 1rem', borderRadius: '100px',
+                    background: `${getGradeColor(syncResult.grade)}15`,
+                    color: getGradeColor(syncResult.grade),
+                    fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: 600
+                  }}>
+                    Grade {syncResult.grade}
+                  </div>
+                </div>
+
+                <div className="flex justify-between items-center px-4 py-3 mb-8" style={{ background: '#1a1917', borderRadius: '2px', border: '1px solid #2a2926' }}>
+                  <div className="text-left">
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#6a6560', letterSpacing: '0.1em' }}>TRADES INGESTED</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', color: '#c8b898', marginTop: '0.25rem' }}>{syncResult.tradesIngested}</div>
+                  </div>
+                  <div className="w-[1px] h-[30px] bg-[#2a2926]" />
+                  <div className="text-right">
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#6a6560', letterSpacing: '0.1em' }}>TRADES SCORED</div>
+                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', color: '#c8b898', marginTop: '0.25rem' }}>{syncResult.tradesScored}</div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="w-full relative overflow-hidden flex justify-center items-center rounded-[2px]"
+                  style={{
+                    padding: '1rem', background: '#a78b71', color: '#0f0f0f',
+                    fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 600,
+                    cursor: 'pointer', transition: 'all 0.2s ease'
+                  }}
+                >
+                  VIEW MY DASHBOARD
+                </button>
+              </div>
+            ) : isSuccess ? (
+              // CONNECTED, READY TO SYNC
               <div className="text-center py-6">
                 <h2 style={{
                   fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.4rem',
@@ -166,20 +316,35 @@ export default function OnboardingPage() {
                 <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#8a7d6a', marginBottom: '2rem' }}>
                   Your read-only key has been verified and securely stored.
                 </p>
-                <button
-                  disabled
-                  className="w-full relative overflow-hidden flex justify-center items-center rounded-[2px]"
-                  style={{
-                    padding: '1rem', background: '#a78b71', color: '#0f0f0f',
-                    fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 600,
-                    opacity: 0.5, cursor: 'not-allowed'
-                  }}
-                >
-                  ANALYSE MY TRADES
-                </button>
-                <p style={{ marginTop: '1rem', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#6a6560' }}>
-                  (Sync functionality coming in part 2)
-                </p>
+                
+                {syncing ? (
+                  <div style={{ padding: '2rem 0' }}>
+                    <div style={{
+                      width: '24px', height: '24px', borderRadius: '50%', border: '2px solid rgba(167,139,113,0.2)',
+                      borderTopColor: '#a78b71', margin: '0 auto 1.5rem',
+                      animation: 'spin 1s linear infinite'
+                    }} />
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#c8b898', letterSpacing: '0.05em' }}>
+                      {syncStatusText}
+                    </p>
+                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#6a6560', marginTop: '0.75rem' }}>
+                      This may take up to 60 seconds
+                    </p>
+                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleSync}
+                    className="w-full relative overflow-hidden flex justify-center items-center rounded-[2px]"
+                    style={{
+                      padding: '1rem', background: '#a78b71', color: '#0f0f0f',
+                      fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 600,
+                      cursor: 'pointer', transition: 'all 0.2s ease'
+                    }}
+                  >
+                    {errorMsg ? 'TRY AGAIN' : 'ANALYSE MY TRADES'}
+                  </button>
+                )}
               </div>
             ) : !selectedExchange ? (
               // EXCHANGE SELECTION
@@ -252,18 +417,6 @@ export default function OnboardingPage() {
                 }}>
                   Connect Binance
                 </h2>
-
-                {errorMsg && (
-                  <div style={{
-                    padding: '0.875rem 1rem', background: 'rgba(255, 68, 68, 0.05)',
-                    borderLeft: '2px solid rgba(255, 68, 68, 0.6)', borderRadius: '0 2px 2px 0',
-                    marginBottom: '1.5rem'
-                  }}>
-                    <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.8rem', color: '#ff8888', lineHeight: 1.5 }}>
-                      {errorMsg}
-                    </p>
-                  </div>
-                )}
 
                 {/* API KEY INPUT */}
                 <div style={{ marginBottom: '1.25rem' }}>
