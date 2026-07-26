@@ -1,14 +1,16 @@
 import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach, vi } from 'vitest';
 import express from 'express';
 import cookieParser from 'cookie-parser';
 import { authRouter } from '../auth';
+import * as emailService from '../../services/emailService';
 import { requireAuth } from '../../middleware/requireAuth';
 import { User } from '../../models/User';
 import { RefreshToken } from '../../models/RefreshToken';
+import { PasswordResetToken } from '../../models/PasswordResetToken';
 import { loadEnv } from '../../config/env';
 import mongoose from 'mongoose';
-import { setupSecurity } from '../../middleware/security';
+import { setupSecurity, authLimiter } from '../../middleware/security';
 import passport from '../../config/passport';
 
 loadEnv();
@@ -32,11 +34,18 @@ describe('Auth Routes (Integration)', () => {
 
         await User.deleteMany({});
         await RefreshToken.deleteMany({});
+        await PasswordResetToken.deleteMany({});
     });
 
     afterEach(async () => {
         await User.deleteMany({});
         await RefreshToken.deleteMany({});
+        await PasswordResetToken.deleteMany({});
+        if (typeof authLimiter.resetKey === 'function') {
+            authLimiter.resetKey('::ffff:127.0.0.1');
+            authLimiter.resetKey('127.0.0.1');
+            authLimiter.resetKey('::1');
+        }
     });
 
     afterAll(async () => {
@@ -160,6 +169,125 @@ describe('Auth Routes (Integration)', () => {
             const meRes = await request(app).get('/api/auth/me');
             expect(meRes.status).toBe(401);
             expect(meRes.body.error).toBe('Missing or invalid authorization header');
+        });
+    });
+
+    describe('Password Reset Routes', () => {
+        const waitForEmailCall = async (mock: any, count = 1) => {
+            for (let i = 0; i < 50; i++) {
+                if (mock.mock.calls.length >= count) return;
+                await new Promise(resolve => setTimeout(resolve, 20));
+            }
+            throw new Error('Timeout waiting for email to be sent');
+        };
+
+        it('forgot-password returns an identical 200 + body for known and unknown emails (assert byte-identical)', async () => {
+            await request(app)
+                .post('/api/auth/register')
+                .send({ email: 'known_route@test.local', password: 'StrongPassword1!' });
+
+            const knownRes = await request(app)
+                .post('/api/auth/forgot-password')
+                .send({ email: 'known_route@test.local' });
+
+            const unknownRes = await request(app)
+                .post('/api/auth/forgot-password')
+                .send({ email: 'nobody_route@test.local' });
+
+            expect(knownRes.status).toBe(200);
+            expect(unknownRes.status).toBe(200);
+            expect(JSON.stringify(knownRes.body)).toBe(JSON.stringify(unknownRes.body));
+            expect(knownRes.body).toEqual({ success: true });
+        });
+
+        it('forgot-password responds immediately without awaiting email resolution (prevents timing-based user enumeration)', async () => {
+            let resolveSendEmail: () => void;
+            const unresolvedPromise = new Promise<void>((resolve) => {
+                resolveSendEmail = resolve;
+            });
+            const sendEmailMock = vi.spyOn(emailService, 'sendEmail').mockImplementation(() => unresolvedPromise);
+
+            await request(app)
+                .post('/api/auth/register')
+                .send({ email: 'timing_route_enum@test.local', password: 'StrongPassword1!' });
+
+            const res = await request(app)
+                .post('/api/auth/forgot-password')
+                .send({ email: 'timing_route_enum@test.local' });
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ success: true });
+
+            await waitForEmailCall(sendEmailMock, 1);
+            expect(sendEmailMock).toHaveBeenCalledTimes(1);
+
+            resolveSendEmail!();
+            sendEmailMock.mockRestore();
+        });
+
+        it('reset-password happy path', async () => {
+            const sendEmailMock = vi.spyOn(emailService, 'sendEmail').mockResolvedValue(undefined);
+
+            await request(app)
+                .post('/api/auth/register')
+                .send({ email: 'happy_reset_route@test.local', password: 'OldPassword1!' });
+
+            await request(app)
+                .post('/api/auth/forgot-password')
+                .send({ email: 'happy_reset_route@test.local' });
+
+            await waitForEmailCall(sendEmailMock, 1);
+            const match = sendEmailMock.mock.calls[0][0].html.match(/token=([a-f0-9]{64})/);
+            expect(match).toBeDefined();
+            const rawToken = match![1];
+
+            const resetRes = await request(app)
+                .post('/api/auth/reset-password')
+                .send({ token: rawToken, password: 'NewStrongPassword1!' });
+
+            expect(resetRes.status).toBe(200);
+            expect(resetRes.body).toEqual({ success: true });
+
+            const loginRes = await request(app)
+                .post('/api/auth/login')
+                .send({ email: 'happy_reset_route@test.local', password: 'NewStrongPassword1!' });
+            expect(loginRes.status).toBe(200);
+
+            sendEmailMock.mockRestore();
+        });
+
+        it('reset-password error paths: invalid token and weak password', async () => {
+            const sendEmailMock = vi.spyOn(emailService, 'sendEmail').mockResolvedValue(undefined);
+
+            // 1. Invalid token
+            const resBad = await request(app)
+                .post('/api/auth/reset-password')
+                .send({ token: 'invalid-token-12345678901234567890', password: 'NewStrongPassword1!' });
+
+            expect(resBad.status).toBe(400);
+            expect(resBad.body.error).toBe('invalid_or_expired_token');
+
+            // 2. Weak password
+            await request(app)
+                .post('/api/auth/register')
+                .send({ email: 'weak_reset_route@test.local', password: 'OldPassword1!' });
+
+            await request(app)
+                .post('/api/auth/forgot-password')
+                .send({ email: 'weak_reset_route@test.local' });
+
+            await waitForEmailCall(sendEmailMock, 1);
+            const match = sendEmailMock.mock.calls[sendEmailMock.mock.calls.length - 1][0].html.match(/token=([a-f0-9]{64})/);
+            const rawToken = match![1];
+
+            const resWeak = await request(app)
+                .post('/api/auth/reset-password')
+                .send({ token: rawToken, password: 'short' });
+
+            expect(resWeak.status).toBe(400);
+            expect(resWeak.body.error).toBe('weak_password');
+
+            sendEmailMock.mockRestore();
         });
     });
 

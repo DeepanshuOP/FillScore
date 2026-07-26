@@ -15,6 +15,8 @@ export interface Env {
     GITHUB_CLIENT_SECRET: string;
     BACKEND_URL: string;
     FRONTEND_URL: string;
+    RESEND_API_KEY?: string;
+    EMAIL_FROM?: string;
 }
 
 export function loadEnv(): Readonly<Env> {
@@ -58,6 +60,8 @@ export function loadEnv(): Readonly<Env> {
         GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET as string,
         BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3001',
         FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
+        RESEND_API_KEY: process.env.RESEND_API_KEY,
+        EMAIL_FROM: process.env.EMAIL_FROM || 'onboarding@resend.dev',
     };
 
     return Object.freeze(config);

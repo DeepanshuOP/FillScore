@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { register, login, rotateRefresh, logout } from '../services/authService';
+import { requestPasswordReset, resetPassword } from '../services/passwordResetService';
 import { authLimiter } from '../middleware/security';
 import { requireAuth } from '../middleware/requireAuth';
 import passport from 'passport';
@@ -67,6 +68,39 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
     } catch (err: any) {
         if (err.message === 'Invalid email or password') {
             res.status(401).json({ error: err.message });
+        } else {
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+});
+
+router.post('/forgot-password', authLimiter, async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { email } = req.body;
+        if (email && typeof email === 'string') {
+            requestPasswordReset(email).catch(() => {
+                console.error('[auth] forgot-password background error');
+            });
+        }
+        res.status(200).json({ success: true });
+    } catch (err) {
+        res.status(200).json({ success: true });
+    }
+});
+
+router.post('/reset-password', authLimiter, async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { token, password } = req.body;
+        if (!token || typeof token !== 'string') {
+            res.status(400).json({ error: 'invalid_or_expired_token' });
+            return;
+        }
+
+        await resetPassword(token, password);
+        res.status(200).json({ success: true });
+    } catch (err: any) {
+        if (err.message === 'invalid_or_expired_token' || err.message === 'weak_password') {
+            res.status(400).json({ error: err.message });
         } else {
             res.status(500).json({ error: 'Internal server error' });
         }
