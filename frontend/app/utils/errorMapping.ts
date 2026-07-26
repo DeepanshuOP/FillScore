@@ -17,6 +17,10 @@ export function mapOnboardingError(code: string, status?: number): string {
     case 'no_exchange_connections_found':
     case 'No exchange connections found':
       return "Connect an exchange first.";
+    case 'invalid_or_expired_token':
+      return "This reset link is invalid or has expired. Request a new one.";
+    case 'weak_password':
+      return "Password must be at least 8 characters.";
     default:
       return "Something went wrong. Please try again.";
   }

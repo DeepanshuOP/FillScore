@@ -122,6 +122,11 @@ export default function LoginPage() {
                     color: '#c8b898', outline: 'none'
                   }}
                 />
+                <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
+                  <a href="/forgot-password" style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#a78b71', textDecoration: 'none' }}>
+                    Forgot password?
+                  </a>
+                </div>
               </div>
 
               {error && (

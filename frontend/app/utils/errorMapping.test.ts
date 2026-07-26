@@ -44,6 +44,18 @@ describe('mapOnboardingError', () => {
     );
   });
 
+  it('maps invalid_or_expired_token correctly', () => {
+    expect(mapOnboardingError('invalid_or_expired_token')).toBe(
+      "This reset link is invalid or has expired. Request a new one."
+    );
+  });
+
+  it('maps weak_password correctly', () => {
+    expect(mapOnboardingError('weak_password')).toBe(
+      "Password must be at least 8 characters."
+    );
+  });
+
   it('returns a fallback message for unknown errors', () => {
     expect(mapOnboardingError('something_weird')).toBe(
       "Something went wrong. Please try again."

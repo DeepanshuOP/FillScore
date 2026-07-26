@@ -22,10 +22,12 @@ describe('emailService', () => {
         await sendEmail({
             to: 'test@example.com',
             subject: 'Password Reset',
-            html: '<p>Reset link</p>'
+            html: '<p>Reset link</p>',
+            text: 'Reset link text'
         });
 
         expect(consoleSpy).toHaveBeenCalledWith('[email] would send to <redacted> — subject: Password Reset');
+        expect(consoleSpy).toHaveBeenCalledWith('[email-body] Reset link text');
     });
 
     it('throws in production without key', async () => {
@@ -36,9 +38,11 @@ describe('emailService', () => {
             sendEmail({
                 to: 'test@example.com',
                 subject: 'Password Reset',
-                html: '<p>Reset link</p>'
+                html: '<p>Reset link</p>',
+                text: 'Reset link text'
             })
         ).rejects.toThrow('Email sending is not configured in production environment.');
+        expect(consoleSpy).not.toHaveBeenCalled();
     });
 
     it('sends with key present using fetch', async () => {

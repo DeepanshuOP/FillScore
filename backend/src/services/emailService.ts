@@ -16,6 +16,12 @@ export async function sendEmail({ to, subject, html, text }: SendEmailOptions): 
             throw new Error('Email sending is not configured in production environment.');
         }
         console.log(`[email] would send to <redacted> — subject: ${subject}`);
+        // DELIBERATE DEV-ONLY EXCEPTION: Log plain-text body in non-production environments
+        // so that password reset links can be tested locally without an email provider.
+        // This must NEVER execute in production (guarded by the production check above).
+        if (text || html) {
+            console.log(`[email-body] ${text || html}`);
+        }
         return;
     }
 
