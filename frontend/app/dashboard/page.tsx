@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import {
@@ -176,7 +176,7 @@ const getExchangeColor = (exchange: string) => {
   return '#ede8e0';
 };
 
-export default function Dashboard() {
+function DashboardContent() {
   const [audit, setAudit] = useState<AuditSummary | null>(null);
   const [attribution, setAttribution] = useState<CostAttribution | null>(null);
   const [analytics, setAnalytics] = useState<any>(null);
@@ -1442,5 +1442,49 @@ export default function Dashboard() {
         })()}
       </main>
     </div>
+  );
+}
+
+function DashboardFallback() {
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'var(--bg-base, #0f0f0f)',
+      color: 'var(--text-primary, #ede8e0)',
+      fontFamily: 'var(--font-inter)',
+      paddingBottom: '4rem'
+    }}>
+      <Navbar currentPage="dashboard" />
+      <main style={{
+        maxWidth: '1100px',
+        margin: '0 auto',
+        padding: '48px 2rem 2rem'
+      }}>
+        <div>
+          <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
+            <SkeletonBlock width="200px" height="200px" borderRadius="4px"/>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <SkeletonBlock width="60%" height="2.5rem"/>
+              <SkeletonBlock width="40%" height="1.25rem"/>
+              <SkeletonBlock width="80%" height="1.25rem"/>
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+            {[1,2,3,4].map(i => <SkeletonBlock key={i} height="100px" borderRadius="3px"/>)}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
+            {[1,2,3].map(i => <SkeletonBlock key={i} height="72px" borderRadius="3px"/>)}
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<DashboardFallback />}>
+      <DashboardContent />
+    </Suspense>
   );
 }

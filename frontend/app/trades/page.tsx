@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
@@ -39,7 +39,7 @@ interface TradesResponse {
   pages: number
 }
 
-export default function Trades() {
+function TradesContent() {
   const [trades, setTrades] = useState<Trade[]>([])
   const [total, setTotal] = useState(0)
   const [pages, setPages] = useState(1)
@@ -786,5 +786,62 @@ export default function Trades() {
         )}
       </div>
     </div>
+  )
+}
+
+function TradesFallback() {
+  return (
+    <div style={{ minHeight: '100vh', background: 'var(--bg-base, #0f0f0f)', color: 'var(--text-primary, #ede8e0)', fontFamily: 'var(--font-inter)' }}>
+      <Navbar currentPage="trades" showLive={true} />
+      <main style={{ padding: '48px 2rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+        <div style={{ background: '#1a1917', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', marginTop: 0 }}>
+          <div className="hidden md:grid" style={{
+            gridTemplateColumns: '2rem 7rem 4.5rem 3.5rem 3.5rem 7.5rem 7rem 6rem 5rem 4.5rem 4.5rem 5rem',
+            alignItems: 'center', padding: '0 1.25rem', height: '40px', background: '#121210',
+            borderBottom: '1px solid rgba(255,255,255,0.1)', position: 'sticky', top: '64px', zIndex: 10
+          }}>
+            <div></div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>TIME</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SYMBOL</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>EXCH</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SIDE</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>NOTIONAL</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>PRICE</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450', textAlign: 'right' }}>FEE</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450', textAlign: 'right' }}>SLIP BPS</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#888078', textAlign: 'center' }}>ORDER</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450', textAlign: 'right' }}>SCORE</div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#888078', textAlign: 'center' }}>GRADE</div>
+          </div>
+          <div>
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="grid grid-cols-[2rem_7rem_3.5rem_3.5rem_3.5rem_5rem_4.5rem_5rem] md:grid-cols-[2rem_7rem_4.5rem_3.5rem_3.5rem_7.5rem_7rem_6rem_5rem_4.5rem_4.5rem_5rem]"
+                style={{ alignItems:'center', padding:'0 1.25rem', height:'52px', borderBottom:'1px solid rgba(255,255,255,0.1)' }}>
+                <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div className="hidden md:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div className="hidden md:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div className="hidden md:block" style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div className="hidden md:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
+    </div>
+  )
+}
+
+export default function Trades() {
+  return (
+    <Suspense fallback={<TradesFallback />}>
+      <TradesContent />
+    </Suspense>
   )
 }
