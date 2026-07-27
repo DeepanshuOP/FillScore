@@ -2,6 +2,7 @@ import express, { Application } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
+import { env, parseAllowedOrigins } from '../config/env';
 
 export const auditLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -26,10 +27,7 @@ export function setupSecurity(app: Application) {
     }));
 
     app.use(cors({
-        origin: [
-            'http://localhost:3000',
-            process.env.FRONTEND_URL ?? 'http://localhost:3000'
-        ],
+        origin: parseAllowedOrigins(env.ALLOWED_ORIGINS),
         credentials: true,
         methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
         allowedHeaders: ['Content-Type', 'Authorization']

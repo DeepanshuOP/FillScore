@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { loadEnv } from '../env';
+import { loadEnv, parseAllowedOrigins } from '../env';
 
 describe('Environment Validation', () => {
     let originalEnv: NodeJS.ProcessEnv;
@@ -105,5 +105,37 @@ describe('Environment Validation', () => {
         expect(caughtError).not.toBeNull();
         expect(caughtError!.message).not.toContain(secretDecoy);
         expect(caughtError!.message).toContain('PORT');
+    });
+
+    it('6. Parses ALLOWED_ORIGINS from a comma-separated string and trims whitespace', () => {
+        const parsed = parseAllowedOrigins('http://localhost:3000, https://fillscore.vercel.app , https://test.app ');
+        expect(parsed).toEqual([
+            'http://localhost:3000',
+            'https://fillscore.vercel.app',
+            'https://test.app'
+        ]);
+        expect(parseAllowedOrigins(undefined)).toEqual(['http://localhost:3000']);
+    });
+
+    it('7. FRONTEND_URL defaults to http://localhost:3000 when absent and ALLOWED_ORIGINS contains no undefined entries', () => {
+        delete process.env.FRONTEND_URL;
+        delete process.env.ALLOWED_ORIGINS;
+        process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
+        process.env.PORT = '3001';
+        process.env.BINANCE_API_KEY = 'test_key';
+        process.env.BINANCE_API_SECRET = 'test_secret';
+        process.env.ENCRYPTION_KEY = 'test_enc_key';
+        process.env.JWT_ACCESS_SECRET = 'test_access';
+        process.env.JWT_REFRESH_SECRET = 'test_refresh';
+        process.env.GOOGLE_CLIENT_ID = 'test_google_id';
+        process.env.GOOGLE_CLIENT_SECRET = 'test_google_secret';
+        process.env.GITHUB_CLIENT_ID = 'test_github_id';
+        process.env.GITHUB_CLIENT_SECRET = 'test_github_secret';
+
+        const config = loadEnv();
+        expect(config.FRONTEND_URL).toBe('http://localhost:3000');
+        const origins = parseAllowedOrigins(config.ALLOWED_ORIGINS);
+        expect(origins).toContain('http://localhost:3000');
+        expect(origins.some(o => o.includes('undefined'))).toBe(false);
     });
 });

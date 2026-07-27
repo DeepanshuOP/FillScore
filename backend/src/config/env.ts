@@ -17,6 +17,18 @@ export interface Env {
     FRONTEND_URL: string;
     RESEND_API_KEY?: string;
     EMAIL_FROM?: string;
+    ALLOWED_ORIGINS?: string;
+}
+
+export function parseAllowedOrigins(originsStr?: string): string[] {
+    if (!originsStr || originsStr.trim() === '') {
+        return ['http://localhost:3000'];
+    }
+    const origins = originsStr
+        .split(',')
+        .map(o => o.trim())
+        .filter(o => o.length > 0);
+    return Array.from(new Set(origins));
 }
 
 export function loadEnv(): Readonly<Env> {
@@ -62,6 +74,7 @@ export function loadEnv(): Readonly<Env> {
         FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
         RESEND_API_KEY: process.env.RESEND_API_KEY,
         EMAIL_FROM: process.env.EMAIL_FROM || 'onboarding@resend.dev',
+        ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS || `${process.env.FRONTEND_URL || 'http://localhost:3000'},http://localhost:3000`,
     };
 
     return Object.freeze(config);

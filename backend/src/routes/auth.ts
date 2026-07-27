@@ -7,23 +7,26 @@ import passport from 'passport';
 import { env } from '../config/env';
 import { User } from '../models/User';
 
+import { getRefreshCookieOptions } from '../utils/cookieConfig';
+
 const router = Router();
 
-const setRefreshCookie = (res: Response, token: string, sameSite: 'strict' | 'lax' = 'strict') => {
-    res.cookie('refreshToken', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite,
-        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+// SameSite=None is REQUIRED in production because the frontend (Vercel) and API (Railway) are different sites; None requires Secure.
+const setRefreshCookie = (res: Response, token: string, isOAuthCallback: boolean = false) => {
+    const options = getRefreshCookieOptions({
+        isProduction: process.env.NODE_ENV === 'production',
+        isOAuthCallback
     });
+    res.cookie('refreshToken', token, options);
 };
 
 const clearRefreshCookie = (res: Response) => {
-    res.clearCookie('refreshToken', {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict'
+    const options = getRefreshCookieOptions({
+        isProduction: process.env.NODE_ENV === 'production'
     });
+    // Destructure out maxAge; httpOnly, secure, sameSite, and path MUST match the set-cookie options exactly or the browser will not remove the cookie
+    const { maxAge, ...clearOptions } = options;
+    res.clearCookie('refreshToken', clearOptions);
 };
 
 router.post('/register', authLimiter, async (req: Request, res: Response): Promise<void> => {
@@ -163,9 +166,9 @@ const handleOAuthCallback = (req: Request, res: Response) => {
     const user = req.user as any; 
     
     // The OAuth callback is a top-level cross-site redirect. 
-    // The refresh cookie set on the callback MUST use sameSite:'lax' (not 'strict'), 
-    // or the browser drops it on the redirect. Password-auth cookies stay 'strict'.
-    setRefreshCookie(res, user.refreshToken, 'lax');
+    // The refresh cookie set on the callback MUST use sameSite:'lax' in dev, 
+    // or the browser drops it on the redirect. In production SameSite=None is used.
+    setRefreshCookie(res, user.refreshToken, true);
     
     res.redirect(`${frontendUrl}/?accessToken=${user.accessToken}`);
 };
