@@ -12,6 +12,7 @@ import { ReportService } from '../services/ReportService';
 import { EnrichedTrade } from '../types';
 import rateLimit from 'express-rate-limit';
 import { resolveAccount, VALID_DEMO_USERS } from '../middleware/resolveAccount';
+import { INGEST_SYMBOLS, INGEST_DAYS_BACK } from '../config/ingestion';
 
 export async function executeAuditPipeline(accountId: string) {
     const tradeDocs = await Trade.find({ accountId }).lean();
@@ -87,7 +88,7 @@ auditRouter.post('/run', resolveAccount, async (req: Request, res: Response) => 
     try {
         const accountId = req.accountId!;
         const daysBackStr = req.query.daysBack as string;
-        const daysBack = daysBackStr ? parseInt(daysBackStr, 10) : 30;
+        const daysBack = daysBackStr ? parseInt(daysBackStr, 10) : INGEST_DAYS_BACK;
 
         const isDemoUser = req.isDemo;
         const ingestionService = new TradeIngestionService();
@@ -107,12 +108,19 @@ auditRouter.post('/run', resolveAccount, async (req: Request, res: Response) => 
             const apiKey = decryptApiKey(user.encryptedApiKey);
             const apiSecret = decryptApiKey(user.encryptedApiSecret);
 
-            const majorSymbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'];
-
             // 1. Ingest trades for all major symbols
-            for (const symbol of majorSymbols) {
-                await ingestionService.ingestForUser(accountId, apiKey, apiSecret, symbol, daysBack);
-            }
+            // 4 parallel calls = 80 weight, well inside the 6000/min budget
+            const results = await Promise.allSettled(
+                INGEST_SYMBOLS.map(symbol =>
+                    ingestionService.ingestForUser(accountId, apiKey, apiSecret, symbol, daysBack)
+                )
+            );
+
+            results.forEach((res, index) => {
+                if (res.status === 'rejected') {
+                    console.error(`[Ingest] Failed syncing symbol ${INGEST_SYMBOLS[index]}:`, res.reason);
+                }
+            });
 
             // 2. Enrich pending trades
             await marketDataService.enrichAllPendingTrades(accountId);

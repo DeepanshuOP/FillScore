@@ -1,0 +1,2 @@
+export const INGEST_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'];
+export const INGEST_DAYS_BACK = 30;

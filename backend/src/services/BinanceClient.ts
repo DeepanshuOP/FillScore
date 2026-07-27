@@ -46,20 +46,19 @@ export class BinanceClient {
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
 
-    public async fetchTradesForWindow(symbol: string, startTime: number, endTime: number): Promise<BinanceRawTrade[]> {
-        const params = {
-            symbol,
-            startTime,
-            endTime,
-            timestamp: Date.now(),
-            limit: 1000 // Binance max limit per page
+    private async executeWithRetry(getParams: () => Record<string, string | number>): Promise<BinanceRawTrade[]> {
+        const makeRequest = async () => {
+            const params = {
+                ...getParams(),
+                timestamp: Date.now()
+            };
+            const signedQuery = this.signQuery(params);
+            const url = `/api/v3/myTrades?${signedQuery}`;
+            return this.axiosInstance.get<BinanceRawTrade[]>(url);
         };
 
-        const signedQuery = this.signQuery(params);
-        const url = `/api/v3/myTrades?${signedQuery}`;
-
         try {
-            const response = await this.axiosInstance.get<BinanceRawTrade[]>(url);
+            const response = await makeRequest();
             return response.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
@@ -70,19 +69,8 @@ export class BinanceClient {
                     console.warn(`[BinanceClient] Rate limited HTTP 429. Retrying after ${retryAfterMs}ms...`);
                     await this.sleep(retryAfterMs);
 
-                    // Retry logic (only once)
-                    const retryParams = {
-                        symbol,
-                        startTime,
-                        endTime,
-                        timestamp: Date.now(),
-                        limit: 1000
-                    };
-                    const retrySignedQuery = this.signQuery(retryParams);
-                    const retryUrl = `/api/v3/myTrades?${retrySignedQuery}`;
-
                     try {
-                        const retryResponse = await this.axiosInstance.get<BinanceRawTrade[]>(retryUrl);
+                        const retryResponse = await makeRequest();
                         return retryResponse.data;
                     } catch (retryError) {
                         if (axios.isAxiosError(retryError)) {
@@ -97,8 +85,24 @@ export class BinanceClient {
                     error.response?.status
                 );
             }
-            throw new BinanceApiError('Unknown error during fetchTradesForWindow');
+            throw new BinanceApiError('Unknown error during Binance API request');
         }
+    }
+
+    public async fetchTradesForWindow(symbol: string, startTime: number, endTime: number): Promise<BinanceRawTrade[]> {
+        return this.executeWithRetry(() => ({
+            symbol,
+            startTime,
+            endTime,
+            limit: 1000 // Binance max limit per page
+        }));
+    }
+
+    public async fetchRecentTrades(symbol: string, limit = 1000): Promise<BinanceRawTrade[]> {
+        return this.executeWithRetry(() => ({
+            symbol,
+            limit
+        }));
     }
 
     public async fetchFeeRate(symbol: string): Promise<{ makerRate: number; takerRate: number }> {

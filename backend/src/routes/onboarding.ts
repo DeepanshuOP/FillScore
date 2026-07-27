@@ -7,6 +7,7 @@ import { validateBinanceKey } from '../services/keyValidation';
 import { TradeIngestionService } from '../services/TradeIngestionService';
 import { MarketDataService } from '../services/MarketDataService';
 import { executeAuditPipeline } from './audit';
+import { INGEST_SYMBOLS, INGEST_DAYS_BACK } from '../config/ingestion';
 
 export const onboardingRouter = Router();
 
@@ -85,12 +86,19 @@ onboardingRouter.post('/sync', requireAuth, async (req: Request, res: Response) 
         for (const conn of connections) {
             const apiKey = decryptApiKey(conn.encryptedApiKey);
             const apiSecret = decryptApiKey(conn.encryptedApiSecret);
-            const majorSymbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'];
-
             if (conn.exchange === 'binance') {
-                for (const symbol of majorSymbols) {
-                    await ingestionService.ingestForUser(accountId, apiKey, apiSecret, symbol, 30);
-                }
+                // 4 parallel calls = 80 weight, well inside the 6000/min budget
+                const results = await Promise.allSettled(
+                    INGEST_SYMBOLS.map(symbol =>
+                        ingestionService.ingestForUser(accountId, apiKey, apiSecret, symbol, INGEST_DAYS_BACK)
+                    )
+                );
+
+                results.forEach((res, index) => {
+                    if (res.status === 'rejected') {
+                        console.error(`[Ingest] Failed syncing symbol ${INGEST_SYMBOLS[index]}:`, res.reason);
+                    }
+                });
             }
             // other exchanges removed pending validation implementation
         }

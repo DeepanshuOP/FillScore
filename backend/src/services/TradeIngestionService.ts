@@ -15,42 +15,39 @@ export class TradeIngestionService {
         client: BinanceClient
     ): Promise<BinanceRawTrade[]> {
         const { symbol, startTime, endTime } = options;
-        const allTrades: BinanceRawTrade[] = [];
 
-        // We deduct seen trades by ID to prevent overlap/duplicates at exact chunk boundaries
+        const recentTrades = await client.fetchRecentTrades(symbol, 1000);
+        const oldestTime = recentTrades.length > 0
+            ? Math.min(...recentTrades.map(t => t.time))
+            : Infinity;
+
+        if (recentTrades.length < 1000 || oldestTime <= startTime) {
+            return recentTrades.filter(t => t.time >= startTime && t.time <= endTime);
+        }
+
+        console.log(`[Ingest] >1000 trades for ${symbol} within window; falling back to 24h day-loop.`);
+
+        const allTrades: BinanceRawTrade[] = [];
         const seenTrades = new Set<number>();
 
-        const duration = endTime - startTime;
-        const totalDays = Math.ceil(duration / MS_PER_DAY);
-
         let currentStart = startTime;
-        let dayIndex = 1;
-
         while (currentStart < endTime) {
-            // Chunk must not exceed 24 hours, nor should it exceed the requested exact endTime.
             let currentEnd = currentStart + MS_PER_DAY;
             if (currentEnd > endTime) {
                 currentEnd = endTime;
             }
 
-            // Fetch from API wrapper
             const chunkTrades = await client.fetchTradesForWindow(symbol, currentStart, currentEnd);
 
-            let newInChunk = 0;
             for (const trade of chunkTrades) {
                 if (!seenTrades.has(trade.id)) {
                     seenTrades.add(trade.id);
                     allTrades.push(trade);
-                    newInChunk++;
                 }
             }
 
-            console.log(`[Ingest] Day ${dayIndex}/${totalDays}: fetched ${newInChunk} trades for ${symbol}`);
-
             currentStart = currentEnd;
-            dayIndex++;
 
-            // Delay between requests to safely stay inside rate limits
             if (currentStart < endTime) {
                 await new Promise(resolve => setTimeout(resolve, 200));
             }
