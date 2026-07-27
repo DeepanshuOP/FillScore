@@ -13,3 +13,7 @@ httpx
 pytest
 pytest-asyncio
 openai
+certifi
+groq
+motor
+pyjwt

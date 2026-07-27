@@ -6,7 +6,7 @@ export class ReportService {
     attributionData: any,
     worstTrades: any[],
     comparisonData?: any
-  ): PDFDocument {
+  ): PDFKit.PDFDocument {
     const doc = new PDFDocument({ size: 'A4', margin: 50, bufferPages: true, autoFirstPage: false });
 
     const gold = '#c9b99a';

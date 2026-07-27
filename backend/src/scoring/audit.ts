@@ -44,8 +44,8 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
     let minDate = trades[0].executedAt;
     let maxDate = trades[0].executedAt;
 
-    const hourStats: Record<number, { sum: number; notional: number }> = {};
-    const symbolStats: Record<string, { sum: number; notional: number }> = {};
+    const hourStats: Record<number, { sum: number; notional: number; count: number }> = {};
+    const symbolStats: Record<string, { sum: number; notional: number; count: number }> = {};
 
     for (const trade of trades) {
         let scores;

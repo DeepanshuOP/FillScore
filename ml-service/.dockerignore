@@ -1,0 +1,14 @@
+__pycache__
+.pytest_cache
+*.pyc
+.env*
+whale/.cache
+tests
+.git
+*.log
+Dockerfile
+.dockerignore
+eval/
+scripts/
+test_stream.py
+whale/test_*.py

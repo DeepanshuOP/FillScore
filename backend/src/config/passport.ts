@@ -15,7 +15,7 @@ passport.use(new GoogleStrategy({
     try {
         const emailObj = profile.emails?.[0];
         const email = emailObj?.value;
-        const emailVerified = emailObj?.verified === true || emailObj?.verified === 'true' || profile._json.email_verified === true;
+        const emailVerified = emailObj?.verified === true || String(emailObj?.verified) === 'true' || profile._json.email_verified === true;
 
         const oauthProfile: OAuthProfile = {
             provider: 'google',

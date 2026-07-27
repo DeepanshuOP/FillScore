@@ -36,7 +36,7 @@ import { authRouter } from './routes/auth';
 import { onboardingRouter } from './routes/onboarding';
 
 // Health check endpoint
-app.get('/api/health', (req: Request, res: Response) => {
+app.get(['/health', '/api/health'], (req: Request, res: Response) => {
     res.json({
         status: 'ok',
         timestamp: new Date().toISOString()
