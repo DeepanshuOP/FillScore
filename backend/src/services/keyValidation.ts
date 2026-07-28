@@ -19,11 +19,24 @@ export async function validateBinanceKey(apiKey: string, apiSecret: string): Pro
                 'X-MBX-APIKEY': apiKey,
             },
         });
-    } catch (error) {
+    } catch (error: any) {
+        console.error(`[keyValidation] Binance request failed: ${error?.name || 'Error'}`);
         throw new Error('network_error');
     }
 
     if (!response.ok) {
+        let code: string | number = 'unknown';
+        let msg = 'unknown';
+        try {
+            const body = await response.json();
+            if (body && typeof body === 'object') {
+                if ('code' in body && body.code !== undefined) code = body.code;
+                if ('msg' in body && body.msg !== undefined) msg = body.msg;
+            }
+        } catch {
+            // Ignore JSON parse errors on error bodies
+        }
+        console.error(`[keyValidation] Binance rejected: status=${response.status} code=${code} msg=${msg}`);
         if (response.status === 401) {
             throw new Error('invalid_key');
         }

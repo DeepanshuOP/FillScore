@@ -100,4 +100,21 @@ describe('validateBinanceKey', () => {
         fetchMock.mockResolvedValueOnce(createSuccessResponse({ ...defaultValidResponse, ipRestrict: true }));
         await expect(validateBinanceKey('test-key', 'test-secret')).resolves.toBeUndefined();
     });
+
+    it('13. Non-2xx response logs diagnostic status/code/msg and NEVER logs apiKey or apiSecret', async () => {
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const dummyKey = 'SECRET_KEY_MARKER_API_KEY';
+        const dummySecret = 'SECRET_KEY_MARKER_API_SECRET';
+        fetchMock.mockResolvedValueOnce(createErrorResponse(400, { code: -2015, msg: 'Invalid API-key, IP, or permissions for action.' }));
+
+        await expect(validateBinanceKey(dummyKey, dummySecret)).rejects.toThrow('network_error');
+
+        expect(consoleSpy).toHaveBeenCalledWith(
+            '[keyValidation] Binance rejected: status=400 code=-2015 msg=Invalid API-key, IP, or permissions for action.'
+        );
+        const loggedText = consoleSpy.mock.calls.map((call: any[]) => call.join(' ')).join(' ');
+        expect(loggedText).not.toContain(dummyKey);
+        expect(loggedText).not.toContain(dummySecret);
+        consoleSpy.mockRestore();
+    });
 });
