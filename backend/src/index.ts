@@ -16,6 +16,15 @@ loadEnv();
 
 const app = express();
 
+// Configure trust proxy BEFORE mounting security middleware so express-rate-limit
+// can correctly resolve client IPs from X-Forwarded-For behind a reverse proxy (e.g., Railway).
+// We set 'trust proxy' to 1 (trusting only the FIRST proxy hop) rather than true.
+// Setting 'true' trusts every hop in X-Forwarded-For, which would allow an attacker
+// to spoof an arbitrary IP header and completely evade rate limits. Railway sits exactly 1 hop ahead.
+if (process.env.NODE_ENV === 'production' || process.env.TRUST_PROXY === 'true' || process.env.TRUST_PROXY === '1') {
+    app.set('trust proxy', 1);
+}
+
 setupSecurity(app);
 app.use(cookieParser());
 app.use(passport.initialize());
