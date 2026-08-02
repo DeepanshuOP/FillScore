@@ -1,0 +1,41 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(./backend/.env)",
+      "Read(./frontend/.env.local)",
+      "Read(./ml-service/.env)",
+      "Read(./**/.env*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(npm run seed:*)"
+    ],
+    "ask": [
+      "Bash(git add:*)",
+      "Bash(docker:*)",
+      "Bash(npx prisma:*)"
+    ],
+    "allow": [
+      "Bash(npm test:*)",
+      "Bash(npx vitest:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npm run build:*)",
+      "Bash(pytest:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell|Read|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/guard.ps1"
+          }
+        ]
+      }
+    ]
+  }
+}
