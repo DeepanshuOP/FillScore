@@ -29,6 +29,7 @@ import jwt
 security = HTTPBearer(auto_error=False)
 
 from config.demo_users import VALID_DEMO_USERS
+from config.flags import council_enabled, council_maintenance_message
 
 def get_account_id(requested_user_id: str | None, req: Request) -> str:
     if requested_user_id:
@@ -131,6 +132,7 @@ class CouncilRequest(BaseModel):
 class HealthResponse(BaseModel):
     status: str
     models: dict
+    flags: dict
 
 
 # ---------------------------------------------------------------------------
@@ -147,6 +149,15 @@ async def health() -> HealthResponse:
             "specialists": f"{SPECIALIST_MODEL} (Groq)",
             "synthesis": f"{SYNTHESIS_MODEL} ({SYNTHESIS_PROVIDER})",
         },
+        flags={"council_enabled": council_enabled()},
+    )
+
+
+def _council_maintenance_response() -> JSONResponse:
+    return JSONResponse(
+        status_code=503,
+        headers={"Retry-After": "300"},
+        content={"status": "unavailable", "feature": "council", "detail": council_maintenance_message()},
     )
 
 
@@ -181,6 +192,8 @@ async def ready() -> JSONResponse:
 @app.post("/ml/agents/council", response_model=CouncilResult)
 async def council_endpoint(req: CouncilRequest, request: Request) -> CouncilResult:
     """Run the Agent Council for a user's trade data."""
+    if not council_enabled():
+        return _council_maintenance_response()
     account_id = get_account_id(req.userId, request)
     db = _get_db()
 
@@ -224,6 +237,8 @@ async def council_stream(request: CouncilRequest, req: Request):
     """
     SSE endpoint for streaming council results.
     """
+    if not council_enabled():
+        return _council_maintenance_response()
     account_id = get_account_id(request.userId, req)
     symbol = request.symbol
 

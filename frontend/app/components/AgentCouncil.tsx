@@ -1,5 +1,6 @@
 "use client";
 import { useState, useRef, useCallback } from "react";
+import { councilMaintenanceMessage } from "../utils/councilStatus";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface AgentCard {
@@ -137,6 +138,12 @@ export default function AgentCouncil({
         headers,
         body: JSON.stringify(payload),
       });
+
+      if (res.status === 503) {
+        const body = await res.json().catch(() => null);
+        setError(councilMaintenanceMessage(503, body));
+        return;
+      }
 
       if (!res.ok || !res.body) {
         throw new Error(`HTTP ${res.status}`);

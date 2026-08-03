@@ -53,6 +53,8 @@ hop in front (see the comment at `backend/src/index.ts` near the top).
 | `MONGODB_URI` | same Atlas connection string as backend |
 | `GROQ_API_KEY` | required — startup-fatal if missing, and now also checked by `/ready` |
 | `OPENROUTER_API_KEY` | only needed if `SYNTHESIS_PROVIDER` is ever switched off `"groq"` |
+| `COUNCIL_ENABLED` | optional, defaults to enabled (`true`). Set to `false` to take the Council offline honestly (503 + maintenance message) instead of it failing mid-Groq-outage. See R6-D9. |
+| `COUNCIL_DISABLED_MESSAGE` | optional. Custom text shown to users while `COUNCIL_ENABLED=false` (e.g. "Groq quota exhausted, back at 00:00 UTC"). Falls back to a generic message if unset. |
 
 ## 4. Vercel env vars (frontend project settings, not this repo)
 
@@ -99,6 +101,14 @@ curl https://ml.fillscore.YOURDOMAIN.tld/version
 reachable (backend: Mongo connected; ml-service: Mongo ping succeeds and
 `GROQ_API_KEY` is set) — a 503 here means a real env var or network problem,
 not a bug in the endpoint.
+
+`ml-service`'s `/health` also reports `flags.council_enabled`. A deliberately
+disabled Council (`COUNCIL_ENABLED=false`) shows up there, **not** as a
+`/ready` failure — `/ready` measures whether the service *can* run the
+Council, not whether an operator has chosen to. Don't add `council_enabled`
+to `/ready`'s checks; that would pull a healthy-but-paused service out of
+load-balancer rotation, which is the wrong failure mode for an intentional
+maintenance state.
 
 ## 8. Cookie config — no action needed
 
