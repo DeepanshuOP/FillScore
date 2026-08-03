@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { performance } from 'perf_hooks';
 
-import { setupSecurity, auditLimiter } from './middleware/security';
+import { setupSecurity, auditLimiter, availabilityLimiter } from './middleware/security';
 import { errorHandler } from './middleware/errorHandler';
 import cookieParser from 'cookie-parser';
 import passport from './config/passport';
@@ -43,6 +43,7 @@ import { auditRouter } from './routes/audit';
 import { attributionRouter } from './routes/attribution';
 import { authRouter } from './routes/auth';
 import { onboardingRouter } from './routes/onboarding';
+import { exchangesRouter } from './routes/exchanges';
 
 // Health check endpoint
 app.get(['/health', '/api/health'], (req: Request, res: Response) => {
@@ -77,6 +78,7 @@ app.use('/api', auditRouter); // exposes /api/score
 app.use('/api/attribution', attributionRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/onboarding', onboardingRouter);
+app.use('/api/exchanges', availabilityLimiter, exchangesRouter);
 
 app.use(errorHandler);
 

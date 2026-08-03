@@ -16,6 +16,12 @@ export const authLimiter = rateLimit({
     message: { error: 'Too many auth requests, please try again later.', code: 'RATE_LIMIT' }
 });
 
+export const availabilityLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 20,
+    message: { error: 'Too many availability checks, please try again later.', code: 'RATE_LIMIT' }
+});
+
 export function setupSecurity(app: Application) {
     app.use(helmet({
         contentSecurityPolicy: {
