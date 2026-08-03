@@ -14,7 +14,7 @@ export interface RefreshCookieOptions {
 
 /**
  * Generates production-correct cookie options for the refresh token cookie.
- * SameSite=None is REQUIRED in production because the frontend (Vercel) and API (Railway)
+ * SameSite=None is REQUIRED in production because the frontend (Vercel) and API
  * are different sites; None requires Secure.
  */
 export function getRefreshCookieOptions(options: RefreshCookieConfigOptions): RefreshCookieOptions {

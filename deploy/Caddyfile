@@ -1,0 +1,16 @@
+# ==============================================================================
+# Caddy reverse-proxy config for the Oracle Cloud VM.
+# Replace the two domains below with the real subdomains before first boot.
+# Caddy issues and renews HTTPS certs automatically (Let's Encrypt) the first
+# time each domain receives a request — requires DNS A records pointing at
+# this VM's public IP, and ports 80/443 open in the OCI Security List, before
+# `docker compose up`.
+# ==============================================================================
+
+api.fillscore.YOURDOMAIN.tld {
+	reverse_proxy backend:3001
+}
+
+ml.fillscore.YOURDOMAIN.tld {
+	reverse_proxy ml-service:8000
+}

@@ -11,7 +11,7 @@ from typing import AsyncGenerator
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Depends
-from fastapi.responses import StreamingResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 import asyncio, json
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -147,6 +147,34 @@ async def health() -> HealthResponse:
             "specialists": f"{SPECIALIST_MODEL} (Groq)",
             "synthesis": f"{SYNTHESIS_MODEL} ({SYNTHESIS_PROVIDER})",
         },
+    )
+
+
+@app.get("/version")
+async def version() -> dict:
+    """Service version, sourced from the FastAPI app's own version string."""
+    return {"version": app.version}
+
+
+@app.get("/ready")
+async def ready() -> JSONResponse:
+    """Readiness check: Mongo reachable and GROQ_API_KEY configured.
+
+    A presence check on GROQ_API_KEY (not a live Groq call) matches how
+    JWT_ACCESS_SECRET is validated at startup — no quota burned per probe.
+    """
+    checks = {"mongo": False, "groq_api_key": bool(os.environ.get("GROQ_API_KEY"))}
+    try:
+        db = _get_db()
+        db.client.admin.command("ping")
+        checks["mongo"] = True
+    except Exception:
+        checks["mongo"] = False
+
+    is_ready = all(checks.values())
+    return JSONResponse(
+        status_code=200 if is_ready else 503,
+        content={"status": "ready" if is_ready else "not ready", "checks": checks},
     )
 
 

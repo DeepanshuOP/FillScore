@@ -1,0 +1,43 @@
+# ==============================================================================
+# PRODUCTION OVERRIDE — apply on top of docker-compose.yml on the Oracle Cloud
+# VM. Does not affect local dev (`docker compose up` with no -f flags).
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+#
+# - backend/ml-service ports are rebound to loopback only; Caddy is the sole
+#   public entrypoint and terminates HTTPS via its automatic ACME.
+# - See deploy/Caddyfile for the reverse-proxy routes and docs/PROD_DEPLOY.md
+#   for the full env-var / DNS / OAuth checklist this depends on.
+# ==============================================================================
+
+services:
+  backend:
+    # !override forces Compose to replace the base file's ports list rather
+    # than append to it (plain YAML merge concatenates ports: lists, which
+    # would leave the service reachable on both bindings at once).
+    ports: !override
+      - "127.0.0.1:3001:3001"
+
+  ml-service:
+    ports: !override
+      - "127.0.0.1:8000:8000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      ml-service:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:
