@@ -138,4 +138,45 @@ describe('Environment Validation', () => {
         expect(origins).toContain('http://localhost:3000');
         expect(origins.some(o => o.includes('undefined'))).toBe(false);
     });
+
+    it('8. Throws naming BACKEND_URL and FRONTEND_URL when NODE_ENV=production and both are unset', () => {
+        process.env.NODE_ENV = 'production';
+        delete process.env.BACKEND_URL;
+        delete process.env.FRONTEND_URL;
+        process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
+        process.env.PORT = '3001';
+        process.env.BINANCE_API_KEY = 'test_key';
+        process.env.BINANCE_API_SECRET = 'test_secret';
+        process.env.ENCRYPTION_KEY = 'test_enc_key';
+        process.env.JWT_ACCESS_SECRET = 'test_access';
+        process.env.JWT_REFRESH_SECRET = 'test_refresh';
+        process.env.GOOGLE_CLIENT_ID = 'test_google_id';
+        process.env.GOOGLE_CLIENT_SECRET = 'test_google_secret';
+        process.env.GITHUB_CLIENT_ID = 'test_github_id';
+        process.env.GITHUB_CLIENT_SECRET = 'test_github_secret';
+
+        expect(() => loadEnv()).toThrowError(/BACKEND_URL/);
+        expect(() => loadEnv()).toThrowError(/FRONTEND_URL/);
+    });
+
+    it('9. Succeeds with the real values (not localhost defaults) when NODE_ENV=production and both are set', () => {
+        process.env.NODE_ENV = 'production';
+        process.env.BACKEND_URL = 'https://api.fillscore.example.com';
+        process.env.FRONTEND_URL = 'https://fillscore.example.com';
+        process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
+        process.env.PORT = '3001';
+        process.env.BINANCE_API_KEY = 'test_key';
+        process.env.BINANCE_API_SECRET = 'test_secret';
+        process.env.ENCRYPTION_KEY = 'test_enc_key';
+        process.env.JWT_ACCESS_SECRET = 'test_access';
+        process.env.JWT_REFRESH_SECRET = 'test_refresh';
+        process.env.GOOGLE_CLIENT_ID = 'test_google_id';
+        process.env.GOOGLE_CLIENT_SECRET = 'test_google_secret';
+        process.env.GITHUB_CLIENT_ID = 'test_github_id';
+        process.env.GITHUB_CLIENT_SECRET = 'test_github_secret';
+
+        const config = loadEnv();
+        expect(config.BACKEND_URL).toBe('https://api.fillscore.example.com');
+        expect(config.FRONTEND_URL).toBe('https://fillscore.example.com');
+    });
 });

@@ -45,6 +45,9 @@ export function loadEnv(): Readonly<Env> {
         'GITHUB_CLIENT_ID',
         'GITHUB_CLIENT_SECRET'
     ];
+    if (process.env.NODE_ENV === 'production') {
+        requiredVars.push('BACKEND_URL', 'FRONTEND_URL');
+    }
     const missingVars: string[] = [];
 
     for (const varName of requiredVars) {
