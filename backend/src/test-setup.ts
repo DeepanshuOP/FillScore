@@ -4,11 +4,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Ensure the MONGOMS_SYSTEM_BINARY variable is loaded
 dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
-if (!process.env.MONGOMS_SYSTEM_BINARY) {
-    process.env.MONGOMS_SYSTEM_BINARY = 'C:\\Program Files\\MongoDB\\Server\\8.0\\bin\\mongod.exe';
-}
 
 let mongod: MongoMemoryServer;
 
@@ -63,10 +59,12 @@ beforeAll(async () => {
             storageEngine: 'wiredTiger',
             launchTimeout: 120000
         },
-        binary: {
-            // Give system binary cold starts more time under parallel vitest load
-            systemBinary: process.env.MONGOMS_SYSTEM_BINARY
-        }
+        // Uses a local mongod install when MONGOMS_SYSTEM_BINARY is set in the
+        // environment (not committed); otherwise mongodb-memory-server downloads
+        // and caches its own binary, which works on any machine including CI.
+        ...(process.env.MONGOMS_SYSTEM_BINARY
+            ? { binary: { systemBinary: process.env.MONGOMS_SYSTEM_BINARY } }
+            : {})
     });
     process.env.MONGODB_URI = mongod.getUri();
 });

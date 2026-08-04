@@ -16,6 +16,11 @@ jobs:
       GOOGLE_CLIENT_SECRET: x
       GITHUB_CLIENT_ID: x
       GITHUB_CLIENT_SECRET: x
+      MONGODB_URI: mongodb://127.0.0.1:27017/fillscore_test
+      PORT: "3001"
+      BINANCE_API_KEY: test-key
+      BINANCE_API_SECRET: test-secret
+      ENCRYPTION_KEY: 6470df2f901f61569c667de386f434a71f51e1f2d44c913698859b16e42054cd
     steps:
       - uses: actions/checkout@v4
 
