@@ -9,6 +9,10 @@ import pytest
 import pandas as pd
 from whale.aggtrades_window import fetch_aggtrades_window
 
+# R5-C7: every test in this file hits the real Binance REST/archive endpoints
+# with no mocking — excluded from the CI unit-test run (see R6-G11).
+pytestmark = pytest.mark.integration
+
 # ---------------------------------------------------------------------------
 # Real timestamps from Atlas (demo-aggressive, BTCUSDT, sorted ascending)
 # Obtained via: db.trades.find({userId:'demo-aggressive',symbol:'BTCUSDT'}).sort({executedAt:1}).limit(3)

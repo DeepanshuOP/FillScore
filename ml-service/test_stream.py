@@ -2,6 +2,8 @@ import urllib.request, json
 from urllib.error import HTTPError, URLError
 import pytest
 
+# R5-C7 / R6-G11: needs a live server on localhost:8000 — excluded from CI.
+@pytest.mark.integration
 def test_stream_manual():
     try:
         req = urllib.request.Request(
