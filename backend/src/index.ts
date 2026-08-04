@@ -40,7 +40,7 @@ import { auditRouter } from './routes/audit';
 import { attributionRouter } from './routes/attribution';
 import { authRouter } from './routes/auth';
 import { onboardingRouter } from './routes/onboarding';
-import { exchangesRouter } from './routes/exchanges';
+import { preflightRouter } from './routes/preflight';
 import { healthRouter } from './routes/health';
 
 app.use(healthRouter);
@@ -51,7 +51,7 @@ app.use('/api', auditRouter); // exposes /api/score
 app.use('/api/attribution', attributionRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/onboarding', onboardingRouter);
-app.use('/api/exchanges', availabilityLimiter, exchangesRouter);
+app.use('/api/preflight', availabilityLimiter, preflightRouter);
 
 app.use(errorHandler);
 
