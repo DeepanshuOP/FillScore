@@ -1,3 +1,6 @@
+// Requires a live MongoDB Atlas connection with real seeded demo data.
+// Excluded from CI (no non-secret dummy can satisfy real seeded data).
+// Run manually: npx vitest run --config vitest.network.config.ts
 import express from 'express';
 import request from 'supertest';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
