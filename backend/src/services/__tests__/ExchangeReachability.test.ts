@@ -100,12 +100,16 @@ describe('probeAllExchanges', () => {
         mockedGet
             .mockResolvedValueOnce(okResponse(200)) // binance
             .mockRejectedValueOnce(new Error('boom')) // bybit
-            .mockResolvedValueOnce(okResponse(200)); // okx
+            .mockResolvedValueOnce(okResponse(200)) // okx
+            .mockResolvedValueOnce(okResponse(200)) // binance-data
+            .mockResolvedValueOnce(okResponse(200)); // bybit-alt
 
         const results = await probeAllExchanges();
 
-        expect(results).toHaveLength(3);
-        expect(results.map(r => r.exchange).sort()).toEqual(['binance', 'bybit', 'okx']);
+        expect(results).toHaveLength(5);
+        expect(results.map(r => r.exchange).sort()).toEqual(
+            ['binance', 'binance-data', 'bybit', 'bybit-alt', 'okx'].sort()
+        );
         expect(results.find(r => r.exchange === 'binance')?.status).toBe('reachable');
         expect(results.find(r => r.exchange === 'bybit')?.status).toBe('unreachable');
         expect(results.find(r => r.exchange === 'okx')?.status).toBe('reachable');
@@ -123,7 +127,8 @@ describe('probeAllExchanges', () => {
         }
     });
 
-    // Fixture 8: never leaks a header, key, or signature
+    // Fixture 8: never leaks a header, key, or signature (generic over all results,
+    // so this already covers the 2 new alternate-domain targets below)
     it('8. no probe result ever contains a header, key, or signature', async () => {
         mockedGet.mockResolvedValue(okResponse(200));
 
@@ -135,6 +140,62 @@ describe('probeAllExchanges', () => {
         expect(serialized.toLowerCase()).not.toContain('api_key');
         expect(serialized.toLowerCase()).not.toContain('signature');
         expect(serialized.toLowerCase()).not.toContain('x-mbx');
+    });
+
+    // Fixture 12: all five targets are probed, in parallel, and one failing does not affect the others
+    it('12. all five targets are probed in parallel; one failing does not affect the others', async () => {
+        mockedGet
+            .mockResolvedValueOnce(okResponse(200)) // binance
+            .mockResolvedValueOnce(okResponse(200)) // bybit
+            .mockResolvedValueOnce(okResponse(200)) // okx
+            .mockRejectedValueOnce(new Error('boom')) // binance-data
+            .mockResolvedValueOnce(okResponse(200)); // bybit-alt
+
+        const results = await probeAllExchanges();
+
+        expect(results).toHaveLength(5);
+        expect(results.find(r => r.exchange === 'binance')?.status).toBe('reachable');
+        expect(results.find(r => r.exchange === 'bybit')?.status).toBe('reachable');
+        expect(results.find(r => r.exchange === 'okx')?.status).toBe('reachable');
+        expect(results.find(r => r.exchange === 'binance-data')?.status).toBe('unreachable');
+        expect(results.find(r => r.exchange === 'bybit-alt')?.status).toBe('reachable');
+    });
+
+    // Fixture 13: 451 from binance-data classifies as geo_blocked via the same classification map
+    it('13. 451 from binance-data -> status geo_blocked, httpStatus 451', async () => {
+        mockedGet
+            .mockResolvedValueOnce(okResponse(200)) // binance
+            .mockResolvedValueOnce(okResponse(200)) // bybit
+            .mockResolvedValueOnce(okResponse(200)) // okx
+            .mockResolvedValueOnce(okResponse(451)) // binance-data
+            .mockResolvedValueOnce(okResponse(200)); // bybit-alt
+
+        const results = await probeAllExchanges();
+        const binanceData = results.find(r => r.exchange === 'binance-data');
+
+        expect(binanceData).toMatchObject({ exchange: 'binance-data', status: 'geo_blocked', httpStatus: 451 });
+    });
+
+    // Fixture 14: 200 from bybit-alt classifies as reachable
+    it('14. 200 from bybit-alt -> status reachable, httpStatus 200', async () => {
+        mockedGet.mockResolvedValue(okResponse(200));
+
+        const results = await probeAllExchanges();
+        const bybitAlt = results.find(r => r.exchange === 'bybit-alt');
+
+        expect(bybitAlt).toMatchObject({ exchange: 'bybit-alt', status: 'reachable', httpStatus: 200 });
+    });
+
+    // Fixture 15: exact result count and exact exchange labels
+    it('15. response array has exactly 5 entries with the exact exchange labels', async () => {
+        mockedGet.mockResolvedValue(okResponse(200));
+
+        const results = await probeAllExchanges();
+
+        expect(results).toHaveLength(5);
+        expect(results.map(r => r.exchange).sort()).toEqual(
+            ['binance', 'binance-data', 'bybit', 'bybit-alt', 'okx'].sort()
+        );
     });
 });
 
@@ -155,7 +216,7 @@ describe('getExchangeReachability (60s in-process cache)', () => {
         const first = await getExchangeReachability();
         const second = await getExchangeReachability();
 
-        expect(mockedGet).toHaveBeenCalledTimes(3); // 3 exchanges, probed once
+        expect(mockedGet).toHaveBeenCalledTimes(5); // 5 exchanges, probed once
         expect(second.exchanges).toEqual(first.exchanges);
         expect(second.checkedAt).toBe(first.checkedAt);
         expect(first.cached).toBe(false);
@@ -171,7 +232,7 @@ describe('getExchangeReachability (60s in-process cache)', () => {
         vi.advanceTimersByTime(60_001);
         const second = await getExchangeReachability();
 
-        expect(mockedGet).toHaveBeenCalledTimes(6);
+        expect(mockedGet).toHaveBeenCalledTimes(10);
         expect(second.cached).toBe(false);
     });
 
@@ -184,7 +245,7 @@ describe('getExchangeReachability (60s in-process cache)', () => {
         vi.advanceTimersByTime(59_000);
         const second = await getExchangeReachability();
 
-        expect(mockedGet).toHaveBeenCalledTimes(3);
+        expect(mockedGet).toHaveBeenCalledTimes(5);
         expect(second.cached).toBe(true);
     });
 });

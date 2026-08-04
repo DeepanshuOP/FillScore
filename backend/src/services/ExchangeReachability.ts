@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-export type ExchangeName = 'binance' | 'bybit' | 'okx';
+export type ExchangeName = 'binance' | 'binance-data' | 'bybit' | 'bybit-alt' | 'okx';
 
 export type ReachabilityStatus =
     | 'reachable'
@@ -26,6 +26,8 @@ const PROBE_TARGETS: { exchange: ExchangeName; url: string }[] = [
     { exchange: 'binance', url: 'https://api.binance.com/api/v3/time' },
     { exchange: 'bybit', url: 'https://api.bybit.com/v5/market/time' },
     { exchange: 'okx', url: 'https://www.okx.com/api/v5/public/time' },
+    { exchange: 'binance-data', url: 'https://data-api.binance.vision/api/v3/time' },
+    { exchange: 'bybit-alt', url: 'https://api.bytick.com/v5/market/time' },
 ];
 
 /**
