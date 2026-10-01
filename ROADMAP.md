@@ -55,8 +55,8 @@ those were retired after the P0 scoring-drift fix and the June whale re-enrichme
 Accept A/B/C. Never chase a D. ~931 seeded trades total. Deterministic PRNG (mulberry32, seed 42) plus
 a parquet window cache (`ml-service/whale/.cache/windows`) make reruns near-instant.
 
-**Test counts:** backend 250 (30 files) · frontend 42 (7 files) · ml-service 221 passed + 1 skipped =
-**513 total**. Any document saying "184 tests" is a start-of-session snapshot.
+**Test counts:** backend 451 (49 files) · frontend 101 (15 files) · ml-service 261 passed (10 integration
+tests deselected) = **813 total**. Any document saying "184 tests" or "513 total" is an older snapshot.
 
 **Fee constants (real 2026 spot):** Binance 0.10/0.10 · Bybit 0.10/0.10 · OKX 0.08/0.10. Any roadmap
 showing Bybit 0.02/0.055 is quoting futures rates mislabelled as spot.
@@ -88,28 +88,74 @@ powered trend. E4 cost/latency: 27 runs / 264K tokens / $0.
 | Scoring engine (4-component weighted) | ✅ | ✅ Live | `scoring/engine.ts` |
 | Audit aggregation + determinism fix | ✅ | ✅ Live | `scoring/audit.ts:35` stable sort; `POST /audit/run` sole writer |
 | Binance ingestion + enrichment | ✅ | 🟥 **Blocked — HTTP 451 from Railway `sin1`** | `TradeIngestionService.ts` |
-| Bybit / OKX connectors | 🟨 Coded, unreachable | 🟥 Dead code | no route reaches them; no key validator exists for either |
+| Bybit / OKX connectors | ✅ Wired (R5-C10) | 🟨 Not yet run against live keys | read-only key validators, `Trade.exchange` enum, OKX passphrase storage and `SyncService` are in; Bybit now queries the `spot` category |
 | JWT auth + OAuth (Google/GitHub) | ✅ | ✅ Live, both verified | `authService.ts`, `passport.ts` |
 | Per-account isolation | ✅ | ✅ Live | `resolveAccount.ts` — identity always from JWT |
 | Immutable provenance tagging | ✅ | ✅ Live | `Trade.ts:16`, `Audit.ts:14` |
-| Real-user onboarding | 🟨 Partial | 🟥 Blocked by 451 | report card + trend chart unmet |
+| Real-user onboarding | ✅ Code complete | 🟥 Blocked by 451 | PDF works for real users, trend is stored history; needs a reachable host (R6-B0.3) |
 | Agent Council (AC-0…AC-11, 14, 15) | ✅ | 🟥 **NOT DEPLOYED** | ml-service has no host |
 | Council replay endpoint | 🟥 | — | `main.py` has load, not replay |
-| Whale correlation | 🟨 Hardcoded to 3 demo users | 🟥 Silently empty for real users | `whale/enrich.py:158-162` |
-| PDF/CSV export, share card, Coach, Journal | ✅ | 🟨 Hidden from real users | `dashboard/page.tsx:469` demo-only gate |
+| Whale correlation | 🟨 Hardcoded to 3 demo users | ✅ Explicit "unavailable" for real users (R5-M6 option b) | `whale/enrich.py:158-162` still hardcoded |
+| PDF/CSV export, share card, Coach, Journal | ✅ | ✅ PDF and CSV for real users via one-minute link tokens | share card stays demo-only on purpose (it is a public page) |
 | Docker | ✅ | 🟨 x86 only; ARM rebuild unverified | both Dockerfiles exist |
-| CI/CD | 🟥 | — | no `.github/workflows` |
+| CI/CD | ✅ | ✅ Runs on push and PR to `main` | `.github/workflows/ci.yml`; still missing: the leakage assertion and a branch-protection rule that makes it required |
 | Stripe / metering / GDPR / compliance | 🟥 | — | no `stripe` dependency |
 | Redis / queue / distributed rate limit | 🟥 | — | no `ioredis` |
 | Observability (Sentry/OTel/Langfuse) | 🟥 | — | no matching dependency |
 | Injection isolation + SECURITY.md | 🟥 | — | no reader/writer split |
 | Groq multi-tenant budget | 🟥 | 🟥 **~8 council runs/day, all users combined** | 100K TPD ÷ 11.6K/run |
-| ToS / Privacy Policy | 🟥 | 🟥 Legal precondition for EU users | — |
-| Email verification (password signups) | 🟥 Dead code | 🟥 `emailVerified` never set true | only OAuth sets it |
+| ToS / Privacy Policy | ✅ Pages shipped | 🟨 Needs legal review before launch | `/terms`, `/privacy`, linked from signup and the footer |
+| Email verification (password signups) | ✅ | ✅ | verification email on sign-up, `/verify-email`, resend; a completed password reset also verifies |
 | Standalone ML (LSTM/K-Means/IF/HMM) | 🟥 | — | three revived with new framing (§4.6), two cut (§7) |
 
 **`ARCHITECTURE.md` is stale** — it predates all of Phase 4 and lists already-rotated secrets as open
 gaps. Do not trust it for build status until R6-D10 regenerates it.
+
+### 2.4 — Build log: the pass after the audit
+
+Delivered, each as its own commit with tests written first:
+
+| ID | What changed | Caveat |
+|---|---|---|
+| R5-M2, R6-G14 | Unique index on `Audit.accountId`; `'okx'` added to `Trade.exchange` | A database that already holds duplicate audits per account must be cleaned before the unique index can build |
+| R5-M7 | `auditRouter` mounted once, at `/api/audit`. The frontend had been relying on the double mount (`/score`, `/analytics`, `/trades`, `/report`, `/coach`, `/share`), so its calls were repointed in the same change | Limiters were re-tiered: reads 300 per 15 min, `POST /run` 10 per 15 min, global 600 |
+| R5-M8 | zod validation on run, trades, export, note, connect, history, download-token | Other routes still validate by hand |
+| R5-M3 | `Origin`/`Referer` check on refresh, logout, OAuth exchange | Fails closed when neither header is present |
+| R6-G3 | OAuth callback redirects with a 30 second single-use code; frontend exchanges it | The refresh cookie is still set on the callback |
+| R6-G2 | Email verification; plus an account pre-hijacking fix (an unverified password is dropped when a provider claims the address) | One existing test was changed on purpose: it asserted the old, unsafe behaviour |
+| R5-C10 | Bybit and OKX read-only key validators, OKX passphrase storage, `SyncService`, onboarding UI | Follows the exchanges' documented permission fields; **not yet run against live keys** |
+| R5-M4 | Append-only `AuditHistory`, `GET /api/audit/history`, fabricated trend deleted | R6-D1's full event-sourced model is not built |
+| R5-M5 | PDF and CSV for signed-in users through `POST /api/audit/download-token` | Tokens last 60 seconds and are multi-use inside that window |
+| R5-M6 (b) | Whale correlation answers `available: false` for connected accounts | Option (a), enriching real accounts, still waits on R6-E5 |
+| R5-M9 | Typed, sanitized Council errors end to end | |
+| R6-G1 | Terms of Service and Privacy Policy pages, footer, signup consent | Draft wording; needs legal review |
+| R6-D10 | `ARCHITECTURE.md` regenerated; `npm run docs:routes`; a test fails if the route table drifts | |
+| — | ml-service run budget (`COUNCIL_DAILY_RUN_CAP`, `COUNCIL_ACCOUNT_RUNS_PER_HOUR`), env precedence fix (audit F1) | In memory, per instance |
+| — | Open-source files: `SECURITY.md`, `CONTRIBUTING.md`, `LICENSE` (MIT, as the README already claimed) | |
+
+Found to be already done or wrongly described, so closed without code:
+
+- **R5-C7 (CI)** existed (`.github/workflows/ci.yml`); §2.2 said it did not. What is still missing is the
+  leakage assertion and a required-status rule on `main`.
+- **R6-G8 (guest flash)**: the dashboard keeps its skeleton until auth resolves and `AuthNav` shows a
+  placeholder while loading. Nothing to fix.
+- **T4.18 (incremental sync)** is partly present: ingestion already resumes each symbol from its newest stored
+  trade. What is missing is a delta cursor and weight accounting (R6-G12).
+- **Audit finding F12** (hero "exactlywhat") is a text-extraction artefact of `<br />`; it renders on two lines.
+  A space was added anyway for copy and screen readers.
+
+Defects found in this pass that no earlier document listed, now fixed: `POST /audit/run` looked connections up
+by `userId`, which onboarding never writes (real users got 404); Bybit was queried for perpetuals
+(`category: linear`) while the product scores spot; the CSV export built a `RegExp` from a query parameter;
+`/trades` accepted unbounded page sizes; several routes echoed `error.message` in 500 responses; the Coach
+printed unsourced market claims ("spreads 2-4x wider") and labelled period totals as "/month"; the landing
+page showed retired grades and unsourced statistics and carried a key form posting to a retired route;
+register and login returned 500 for non-string credentials.
+
+**Open, needs a decision:** the ml-service loader and alpha packet read `vwap5m`, but the Trade model and every
+writer use `vwap5min`. If the live data has no `vwap5m`, the Council's VWAP-deviation evidence has been empty
+in every run. The fix is three lines, but it changes packet contents and hashes, so it should be made together
+with re-running the evaluation tables, not silently.
 
 ### 2.3 — Corrections to prior roadmaps (evidence-backed)
 
