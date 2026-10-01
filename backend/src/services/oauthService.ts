@@ -1,4 +1,5 @@
 import { User } from '../models/User';
+import { RefreshToken } from '../models/RefreshToken';
 import { issueTokenPair } from './authService';
 
 export interface OAuthProfile {
@@ -41,6 +42,18 @@ export async function findOrLinkOAuthUser(profile: OAuthProfile) {
             user.authProviders = [];
         }
         user.authProviders.push({ provider, providerId });
+
+        // The provider just proved control of this inbox. If the local account was never
+        // verified, whoever created it may not own the address (pre-registration squatting),
+        // so their password and live sessions are discarded.
+        if (!user.emailVerified) {
+            user.passwordHash = undefined;
+            user.emailVerified = true;
+            await RefreshToken.updateMany(
+                { userId: user._id, status: { $ne: 'revoked' } },
+                { $set: { status: 'revoked' } }
+            );
+        }
         await user.save();
         
         return await issueTokenPair(user._id);

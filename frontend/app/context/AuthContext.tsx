@@ -7,6 +7,7 @@ type User = {
   userId: string;
   email?: string;
   plan?: string;
+  emailVerified?: boolean;
 };
 
 type AuthContextType = {

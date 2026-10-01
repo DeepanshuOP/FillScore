@@ -14,7 +14,7 @@ const TradeSchema = new Schema<EnrichedTradeDocument>(
         userId: { type: String, required: true, index: true },
         accountId: { type: String, required: true, index: true },
         dataSource: { type: String, enum: ['synthetic-demo', 'real-user'], required: true, immutable: true, index: true },
-        exchange: { type: String, enum: ['binance', 'bybit'], required: true },
+        exchange: { type: String, enum: ['binance', 'bybit', 'okx'], required: true },
         symbol: { type: String, required: true },
         tradeId: { type: String, required: true },
         orderId: { type: String, required: true },
