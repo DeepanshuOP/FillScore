@@ -27,7 +27,7 @@ export default function LegalDocument({ title, intro, sections, otherHref, other
         <nav aria-label="Sections" style={{ marginBottom: '2.5rem' }}>
           <ol style={{ paddingLeft: '1.2rem', fontFamily: 'var(--font-inter)', fontSize: '0.8rem', lineHeight: 2, color: '#888078' }}>
             {sections.map((s) => (
-              <li key={s.id}><a href={`#${s.id}`} style={{ color: '#a78b71', textDecoration: 'none' }}>{s.heading}</a></li>
+              <li key={s.id}><a href={`#${s.id}`} style={{ color: '#a78b71', textDecoration: 'none', display: 'inline-block', padding: '0.35rem 0' }}>{s.heading}</a></li>
             ))}
           </ol>
         </nav>

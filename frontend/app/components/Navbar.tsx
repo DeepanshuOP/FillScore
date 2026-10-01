@@ -145,7 +145,9 @@ export default function Navbar({ userId, exchange, currentPage, showLive }: Navb
         <button 
           className="md:hidden" 
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          style={{ background: 'none', border: 'none', color: '#888078', cursor: 'pointer', padding: '4px' }}
+          aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          aria-expanded={mobileMenuOpen}
+          style={{ background: 'none', border: 'none', color: '#888078', cursor: 'pointer', padding: '12px', margin: '-8px' }}
         >
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="3" y1="12" x2="21" y2="12"></line>

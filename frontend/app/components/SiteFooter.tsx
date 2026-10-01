@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 
 export default function SiteFooter() {
-  const linkStyle: React.CSSProperties = { color: '#a78b71', textDecoration: 'none' };
+  const linkStyle: React.CSSProperties = { color: '#a78b71', textDecoration: 'none', display: 'inline-block', padding: '0.6rem 0.25rem' };
   return (
     <footer style={{
       borderTop: '1px solid rgba(255,255,255,0.06)', background: '#0f0f0f',

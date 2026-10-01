@@ -34,9 +34,9 @@ function VerifyEmailContent() {
 
   return (
     <div className="px-[1.5rem] py-[2rem] sm:px-[2rem]" style={{ textAlign: 'center' }}>
-      <h2 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '1rem' }}>
+      <h1 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '1rem' }}>
         {status === 'success' ? 'Email verified' : status === 'verifying' ? 'Verifying…' : 'Link not valid'}
-      </h2>
+      </h1>
 
       {status === 'verifying' && (
         <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#8a8078' }}>One moment.</p>

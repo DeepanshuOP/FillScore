@@ -1,3 +1,4 @@
+import { serverApiBase } from '../../lib/serverApiBase';
 import { ImageResponse } from 'next/og';
 
 export const runtime = 'edge';
@@ -12,7 +13,7 @@ export default async function Image({ params }: Props) {
   const { userId } = await params;
   
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/audit/share/${userId}`, { next: { revalidate: 3600 } });
+    const res = await fetch(`${serverApiBase()}/audit/share/${userId}`, { next: { revalidate: 3600 } });
     
     if (!res.ok) {
       // Return default generic card if no data
