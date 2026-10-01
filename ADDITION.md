@@ -305,44 +305,92 @@ To publish FillScore as a viral, star-worthy open-source repository on GitHub, t
 ## 7. Prioritized Implementation Roadmap (Phased Execution)
 
 ```
-┌────────────────────────────────────────────────────────────────────────┐
+┌───────────────────────────────────────────────────────────────────────────────────────────────┐
 │ Phase 1: Critical Bug Fixes & Integrity Lock (Sprint 1)               │
 │ • Fix ml-service Mongo auth & isolate .env loading (F1)                │
 │ • Fix landing page hero typo & sync canonical demo grades (F12, F13)   │
 │ • Fix Analytics dynamic maker copy (F4) & blotter 2-decimal format(F14)│
 │ • Add 'okx' to Trade.exchange enum & wire Bybit/OKX validator (F5, F6) │
 │ • Add unique index on Audit.accountId (F15)                           │
-└────────────────────────────────────┬───────────────────────────────────┘
+└───────────────────────────────────────────────────────────────────────────────────────────────┘
                                      │
-┌────────────────────────────────────▼───────────────────────────────────┐
+┌────────────────────────────────────▼───────────────────────────────────────────────────────────────┐
 │ Phase 2: Security, Auth & History Hardening (Sprint 2)                 │
 │ • Implement Event-Sourced AuditHistory to replace fake trend chart(F3) │
 │ • Add CSRF protection on refresh/logout & secure OAuth code redirect   │
 │ • Add Zod schema validation to POST /audit/run & /connect              │
 │ • Create Terms of Service & Privacy Policy pages (GDPR readiness)     │
 │ • Setup GitHub Actions CI/CD workflow (.github/workflows/ci.yml)       │
-└────────────────────────────────────┬───────────────────────────────────┘
+└───────────────────────────────────────────────────────────────────────────────────────────────┘
                                      │
-┌────────────────────────────────────▼───────────────────────────────────┐
+┌────────────────────────────────────▼───────────────────────────────────────────────────────────────┐
 │ Phase 3: Premium UI/UX Redesign & Awwwards Polish (Sprint 3)           │
 │ • Typeface swap: Geist / Satoshi + JetBrains Mono tabular figures      │
 │ • Layered dark glass design system, gradient borders & noise texture   │
 │ • Interactive Hero Execution Terminal Preview                          │
 │ • Visual LangGraph Council deliberative graph UI with real-time audio  │
 │ • Replace raw unicode emojis with standardized Lucide icon system      │
-└────────────────────────────────────┬───────────────────────────────────┘
+└───────────────────────────────────────────────────────────────────────────────────────────────┘
                                      │
-┌────────────────────────────────────▼───────────────────────────────────┐
+┌────────────────────────────────────▼───────────────────────────────────────────────────────┐
 │ Phase 4: Flagship Capabilities & Ecosystem Expansion (Sprint 4)        │
 │ • R6-A8: FastMCP Agent Gateway on FastAPI port 8000                   │
 │ • R6-A4: Longitudinal Memory via Atlas Vector Search RAG               │
 │ • R6-C1: Verified Multimodal Screenshot Ingestion with Market Gate     │
 │ • R6-A3: FillScore-Mini LoRA distillation on Colab T4                  │
 │ • R5-C8 / R5-C1: Redis caching + BullMQ background worker queue       │
-└────────────────────────────────────────────────────────────────────────┘
+└───────────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
 *Report prepared by Antigravity Senior Developer & Project Manager Agent.*  
 *Ready for user review and approval prior to executing code modifications.*
+
+---
+
+## 8. Verification pass (after the audit)
+
+Every finding above was re-checked against the code before anything was changed. I did not open the app in
+a browser and had no access to the Atlas database, so runtime claims below are from reading code and from
+tests, not from a live session.
+
+| Finding | Result | What was done |
+|---|---|---|
+| F1 Council Mongo auth | Cause is real: `ml-service/.env` was loaded first and shadowed `backend/.env` | `config/env_loader.py` fixes precedence for shared keys. Not confirmed against the live database |
+| F2 raw errors in the Council UI | Confirmed | Typed, sanitized error codes end to end |
+| F3 fabricated trend | Confirmed | Append-only `AuditHistory`; chart reads stored points and says so when there are fewer than two |
+| F4 maker copy | Confirmed, and the premise is weaker than reported: the roadmap's spot fee constants (Binance 0.10/0.10) mean more maker fills do not lower fees on every venue | Note is now conditional on the measured ratio and no longer promises savings |
+| F5 `okx` missing from `Trade.exchange` | Confirmed | Enum fixed |
+| F6 onboarding rejects Bybit/OKX | Confirmed; also OKX needs a passphrase the model could not store | Validators, passphrase field, shared sync service |
+| F7 no CSRF protection | Confirmed | `Origin`/`Referer` check |
+| F8 token in OAuth redirect | Confirmed | One-time code exchange |
+| F9 email verification unused | Confirmed; also an account pre-hijacking path | Verification flow and the hijack fix |
+| F10 unbounded `daysBack` | Confirmed | zod bounds 1–90 |
+| F11 double mount | Confirmed, **but the suggested remedy would have broken the app**: the frontend called `/score`, `/analytics`, `/trades`, `/report`, `/coach`, `/share` through the alias, and `auditLimiter` (10 per 15 min) would have blocked a normal dashboard load | Mounted once, frontend repointed, limiters re-tiered |
+| F12 hero "exactlywhat" | **Not a bug**: `<br />` renders two lines; only extracted text runs the words together | Space added for copy and screen readers |
+| F13 stale landing grades | Confirmed, plus unsourced statistics and a dead key form | Canonical grades, live data with fallback, unsourced stats removed |
+| F14 notional precision | Confirmed | Two decimals |
+| F15 `Audit.accountId` not unique | Confirmed | Unique index (see the duplicate-data caveat in ROADMAP §2.4) |
+| "No CI/CD pipeline" | **Wrong**: `.github/workflows/ci.yml` exists | Roadmap corrected |
+| "Guest-flash redirects" | Not found in the code: the dashboard keeps a skeleton until auth resolves | None needed |
+
+### Additional findings
+
+1. `POST /audit/run` looked up exchange connections by `userId`, a field onboarding never writes, so real users got 404.
+2. `BybitClient` queried `category: linear` (perpetuals) while the product scores spot trades.
+3. `GET /trades/export` built a `RegExp` from a query parameter (injection and ReDoS).
+4. `GET /trades` accepted unbounded `page` and `limit`.
+5. Several routes returned `error.message` in 500 responses.
+6. The Coach printed unsourced claims ("spreads 2-4x wider", "deepest liquidity") and labelled period totals "/month".
+7. PDF and CSV downloads could not work for signed-in users, because `window.open` cannot send a bearer token.
+8. The Council could be driven by anyone against a demo account with no budget, and a mid-run Groq 429 silently turns into default verdicts. A run budget now refuses runs up front.
+9. `register` and `login` answered 500 to non-string credentials.
+10. **Still open:** the ml-service loader and alpha packet read `vwap5m`; the Trade model and all writers use `vwap5min`. Fixing it changes packet contents and hashes, so it needs a decision tied to re-running the evaluation.
+
+### Judgement on the proposed additions (section 5)
+
+- **MCP gateway (R6-A8):** worth building after the Council is deployed and isolation exists; the roadmap already sequences it that way (D5). Its value depends on the run budget and per-key scoping, both of which now have a foundation.
+- **Vector memory (R6-A4):** the roadmap's own test applies: retrieval must have a purpose. Longitudinal memory is only meaningful once real audit history accumulates, which the new `AuditHistory` collection now makes possible.
+- **Distilled judge (R6-A3), screenshot ingestion (R6-C1), Redis and queues (R5-C8, R5-C1):** unchanged recommendations. Redis is the prerequisite that makes rate limits and the run budget correct across instances.
+- **Visual redesign of the Council graph and the typography swap:** subjective and untested here; not started. The functional defects came first.
