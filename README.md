@@ -1,6 +1,6 @@
 # FillScore: Execution Quality Auditing
 
-![Tests](https://img.shields.io/badge/Tests-184_passing-brightgreen)
+![CI](https://github.com/DeepanshuOP/FillScore/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
@@ -59,7 +59,7 @@ FillScore assesses execution quality across four deterministic metrics:
 
 | Layer | Technology | Port |
 | :--- | :--- | :--- |
-| **Frontend** | Next.js 14, TypeScript, Tailwind CSS (Neural Noir design) | 3000 |
+| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS 4 (Neural Noir design) | 3000 |
 | **Backend** | Node.js 20, Express, Mongoose, MongoDB Atlas | 3001 |
 | **ML Service** | Python 3.11, FastAPI scaffold, LangGraph, Motor | 8000 |
 
@@ -95,23 +95,27 @@ pip install -r requirements.txt
 python -m agents.council   # runs a council on demo-aggressive
 ```
 
-**Seed demo data:**
+**Seed demo data (empty database only):**
 ```bash
 cd backend
-npm run seed
+npm run seed          # overwrites the six demo accounts; never run it against data you care about
 npm run verify-seed   # confirms 6 demo users, all grades locked
 ```
 
+**Run the checks:** see [CONTRIBUTING.md](CONTRIBUTING.md) for the exact commands. The same ones run in CI.
+
 ## Features
 
-- **Real exchange connectors:** Binance, Bybit, OKX (API-verified, 3 integration tests)
+- **Exchange connections:** Binance, Bybit and OKX through read-only keys. Each key is checked against the exchange itself and refused if it can trade or withdraw; keys are stored AES-256-GCM encrypted.
+- **Real score history:** every audit run appends an immutable snapshot, and the dashboard trend plots only stored results.
 - **Multi-exchange venue comparison** with venue alpha (bps) calculation
-- **Whale correlation:** real Binance aggTrades via REST, burst-detection algorithm, adverse selection scoring per trade
-- **PDF audit report, CSV export, shareable scorecard** (OpenGraph)
-- **Execution Coach mode**
+- **Whale correlation:** real Binance aggTrades via REST, burst-detection algorithm, adverse selection scoring per trade (sample accounts only; connected accounts get an explicit "unavailable")
+- **PDF audit report and CSV export** for signed-in users, shareable scorecard (OpenGraph) for the sample accounts
+- **Execution Coach mode**, with every figure labelled by the period it covers
 - **Trade Journal** (annotate trades with notes via `PATCH /api/audit/trades/:id/note`)
 - **Agent Council streaming UI** (SSE, Neural Noir design, cards light up sequentially)
-- **184 tests passing** across backend + ML service
+- **Accounts:** email and password with verification, Google and GitHub sign-in, password reset, rotating sessions
+- **Tested across all three services** (backend, frontend, ml-service) with CI on every push and pull request
 
 ## Research
 
@@ -119,9 +123,9 @@ FillScore is the subject of an ongoing research paper examining verifiable LLM-b
 
 | User Profile | Score (Grade) | E1 Faithfulness | E2 Consistency | E3 Utility (Pass Rate) | % Vacuous | Actionable Recs |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **demo-disciplined** | 95.68 (A) | 1.0 | 100% | 100% | 88.89% | 1/9 |
-| **demo-moderate** | 84.57 (B) | 1.0 | 100% | n/a (0 actionable) | 100.00% | 0/9 |
-| **demo-aggressive** | 60.77 (C) | 1.0 | 100% | 100% | 22.22% | 7/9 |
+| **demo-disciplined** | 95.89 (A) | 1.0 | 100% | 100% | 88.89% | 1/9 |
+| **demo-moderate** | 84.81 (B) | 1.0 | 100% | n/a (0 actionable) | 100.00% | 0/9 |
+| **demo-aggressive** | 60.67 (C) | 1.0 | 100% | 100% | 22.22% | 7/9 |
 
 *Note: whale-adversity vs slippage showed no statistically significant relationship on this dataset (Mann-Whitney p>0.13 across all symbols); the null result is an honest finding documented in `ml-service/eval/artifacts/whale_slippage_results.md`.*
 
@@ -136,6 +140,18 @@ FillScore/
     ├── eval/                 # Evaluation harness, paper artifacts
     └── whale/                # Whale correlation algorithms, REST connectors
 ```
+
+## Documentation
+
+- [ARCHITECTURE.md](ARCHITECTURE.md): how the three services fit together, the API surface, the data model, and what is not built yet
+- [SECURITY.md](SECURITY.md): threat model, known limits, and how to report a vulnerability
+- [CONTRIBUTING.md](CONTRIBUTING.md): the product rules and how to run the checks
+- [docs/PROD_DEPLOY.md](docs/PROD_DEPLOY.md): deploying the backend and ml-service behind Caddy
+- [ROADMAP.md](ROADMAP.md): the task register
+
+## License
+
+MIT, see [LICENSE](LICENSE).
 
 ## Disclaimer
 

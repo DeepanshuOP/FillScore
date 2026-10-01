@@ -3,6 +3,7 @@
 import React, { useRef, useState, useEffect } from 'react';
 import WaveBackground from '../components/ui/wave-background';
 import Navbar from './components/Navbar';
+import { DEMO_PROFILES, gradeFromScore } from './utils/demoProfiles';
 
 export default function Home() {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -10,44 +11,6 @@ export default function Home() {
   const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
   const [cardVisible, setCardVisible] = useState(false);
   const [userId, setUserId] = useState<string>('');
-  const [apiKey, setApiKey] = useState('');
-  const [apiSecret, setApiSecret] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [showApiSecret, setShowApiSecret] = useState(false);
-  const [confirmed, setConfirmed] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const isDisabled = !confirmed || !apiKey.trim() || !apiSecret.trim() || !selectedExchange;
-
-  const handleSubmit = async () => {
-    if (isDisabled || loading) return
-    setLoading(true)
-    setError(null)
-    try {
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/connect`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            apiKey: apiKey.trim(),
-            apiSecret: apiSecret.trim(),
-            exchange: selectedExchange
-          })
-        }
-      )
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? 'Connection failed')
-      localStorage.setItem('userId', data.userId)
-      window.location.href = `/dashboard?userId=${data.userId}`
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleDemoSelect = (profileId: string, exchange: string) => {
     setSelectedDemo(profileId)
@@ -55,74 +18,47 @@ export default function Home() {
     window.location.href = `/dashboard?userId=${profileId}&exchange=${exchange}`
   }
 
-  const demoProfiles = [
-    {
-      id: 'demo-disciplined',
-      exchange: 'binance',
-      exchangeLabel: 'BINANCE',
-      exchangeColor: '#F0B90B',
-      archetype: 'The Disciplined Trader',
-      grade: 'A',
-      avgScore: 84,
-      makerRatio: '82%',
-      tagline: 'Limit orders. Trades 8–16 UTC. Minimal slippage.'
-    },
-    {
-      id: 'demo-moderate',
-      exchange: 'binance',
-      exchangeLabel: 'BINANCE',
-      exchangeColor: '#F0B90B',
-      archetype: 'The Moderate Trader',
-      grade: 'B',
-      avgScore: 67,
-      makerRatio: '50%',
-      tagline: 'Mixed strategy. Average execution quality.'
-    },
-    {
-      id: 'demo-aggressive',
-      exchange: 'binance',
-      exchangeLabel: 'BINANCE',
-      exchangeColor: '#F0B90B',
-      archetype: 'The Aggressive Trader',
-      grade: 'D',
-      avgScore: 41,
-      makerRatio: '25%',
-      tagline: 'Market orders. Night trading. High fee drag.'
-    },
-    {
-      id: 'demo-bybit',
-      exchange: 'bybit',
-      exchangeLabel: 'BYBIT',
-      exchangeColor: '#F7A600',
-      archetype: 'The Bybit Trader',
-      grade: 'B',
-      avgScore: 72,
-      makerRatio: '50%',
-      tagline: 'Derivatives platform. Institutional-grade fills.'
-    },
-    {
-      id: 'demo-okx',
-      exchange: 'okx',
-      exchangeLabel: 'OKX',
-      exchangeColor: '#1E8FFF',
-      archetype: 'The OKX Trader',
-      grade: 'B',
-      avgScore: 72,
-      makerRatio: '50%',
-      tagline: 'Unified account. Spot + derivatives. Low fees.'
-    },
-    {
-      id: 'demo-multi',
-      exchange: 'multi',
-      exchangeLabel: 'MULTI',
-      exchangeColor: '#2dd4bf',
-      archetype: 'The Multi-Exchange Trader',
-      grade: '3 EXCHANGES',
-      avgScore: 68,
-      makerRatio: '50%',
-      tagline: 'Trades across Binance, Bybit, and OKX. Compare venue alpha and execution quality.'
-    }
-  ]
+  // Canonical scores render immediately; live audits replace them when the API answers.
+  const [liveStats, setLiveStats] = useState<Record<string, { score: number; makerRatio: number }>>({});
+
+  useEffect(() => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    if (!baseUrl) return;
+    let cancelled = false;
+
+    Promise.all(
+      DEMO_PROFILES.map(async (p) => {
+        try {
+          const res = await fetch(`${baseUrl}/audit/score?userId=${p.id}`);
+          if (!res.ok) return null;
+          const audit = await res.json();
+          return [p.id, { score: audit.avgFillScore, makerRatio: audit.breakdown?.makerRatio }] as const;
+        } catch {
+          return null;
+        }
+      })
+    ).then((entries) => {
+      if (cancelled) return;
+      const next: Record<string, { score: number; makerRatio: number }> = {};
+      for (const entry of entries) {
+        if (entry && typeof entry[1].score === 'number') next[entry[0]] = entry[1];
+      }
+      setLiveStats(next);
+    });
+
+    return () => { cancelled = true; };
+  }, []);
+
+  const demoProfiles = DEMO_PROFILES.map((p) => {
+    const live = liveStats[p.id];
+    const score = live?.score ?? p.score;
+    return {
+      ...p,
+      grade: p.id === 'demo-multi' ? '3 EXCHANGES' : gradeFromScore(score),
+      avgScore: Math.round(score),
+      makerRatio: typeof live?.makerRatio === 'number' ? `${Math.round(live.makerRatio * 100)}%` : null,
+    };
+  });
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -223,7 +159,7 @@ export default function Home() {
               fontWeight: 400, 
               letterSpacing: '-0.015em'
             }}>
-              Understand exactly<br />
+              Understand exactly{' '}<br />
               what your trades{' '}
               <span style={{
                 fontStyle: 'italic',
@@ -255,9 +191,9 @@ export default function Home() {
           <div className="anim-fadein w-full sm:w-auto mt-0" style={{ animationDelay: '0.48s' }}>
             <div className="flex flex-col sm:flex-row items-stretch border border-[rgba(167,139,113,0.22)] rounded-[3px] bg-[rgba(20,19,17,0.9)] backdrop-blur-[12px] overflow-hidden hover:border-[rgba(167,139,113,0.3)] transition-colors duration-300 w-full sm:w-auto">
               {[
-                { label: 'avg slippage', value: '15–25 bps' },
-                { label: 'fee drag', value: 'up to 10 bps' },
-                { label: 'night spread', value: '2–4× wider' }
+                { label: 'score parts', value: 'slippage · fees · timing · spread' },
+                { label: 'exchanges', value: 'Binance · Bybit · OKX' },
+                { label: 'access', value: 'read-only keys' }
               ].map((stat, i, arr) => (
                 <React.Fragment key={stat.label}>
                   <div className="flex items-center gap-[8px] py-[0.6rem] px-[1.25rem] w-full sm:w-auto" style={{
@@ -616,15 +552,17 @@ export default function Home() {
                               }}>
                                 {profile.avgScore} avg
                               </div>
-                              <div style={{
-                                fontFamily: 'var(--font-mono)', fontSize: '10px',
-                                color: 'rgba(255,255,255,0.6)', padding: '3px 8px',
-                                background: 'rgba(255,255,255,0.04)',
-                                border: '1px solid rgba(255,255,255,0.08)',
-                                borderRadius: '3px'
-                              }}>
-                                {profile.makerRatio} maker
-                              </div>
+                              {profile.makerRatio && (
+                                <div style={{
+                                  fontFamily: 'var(--font-mono)', fontSize: '10px',
+                                  color: 'rgba(255,255,255,0.6)', padding: '3px 8px',
+                                  background: 'rgba(255,255,255,0.04)',
+                                  border: '1px solid rgba(255,255,255,0.08)',
+                                  borderRadius: '3px'
+                                }}>
+                                  {profile.makerRatio} maker
+                                </div>
+                              )}
                             </div>
                           </button>
                         )

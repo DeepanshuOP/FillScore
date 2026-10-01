@@ -1,15 +1,21 @@
-export function mapOnboardingError(code: string, status?: number): string {
+export function mapOnboardingError(code: string, status?: number, exchange: string = 'Binance'): string {
   if (status === 429) {
     return "Too many attempts. Please wait a few minutes and try again.";
   }
 
   switch (code) {
     case 'key_not_read_only':
-      return "This key has trading or withdrawal permissions enabled. Create a new key with ONLY 'Enable Reading' turned on.";
+      return exchange === 'Binance'
+        ? "This key has trading or withdrawal permissions enabled. Create a new key with ONLY 'Enable Reading' turned on."
+        : "This key has trading or withdrawal permissions enabled. Create a new key with read-only permission and nothing else.";
     case 'invalid_key':
-      return "Binance rejected this key. Check the key and secret are copied correctly and haven't expired.";
+      return `${exchange} rejected this key. Check the key and secret are copied correctly and haven't expired.`;
     case 'network_error':
-      return "Couldn't reach Binance right now. Please try again in a moment.";
+      return `Couldn't reach ${exchange} right now. Please try again in a moment.`;
+    case 'passphrase_required':
+      return "OKX needs the passphrase you set when you created the key.";
+    case 'invalid_request':
+      return "Check that the key, secret and passphrase fields are filled in correctly.";
     case 'exchange_not_supported_yet':
       return "Only Binance is supported right now.";
     case 'no_trades_found':

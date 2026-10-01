@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useCallback } from "react";
-import { councilMaintenanceMessage } from "../utils/councilStatus";
+import { councilMaintenanceMessage, councilErrorMessage, councilOfflineMessage } from "../utils/councilStatus";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 interface AgentCard {
@@ -70,7 +70,7 @@ function overallToGrade(rating: string): string {
 
 const AGENT_ORDER = ["liquidity_scout", "alpha_architect", "risk_auditor", "fee_optimizer"];
 
-// ── Component ──────────────────────────────────────────────────────────────
+// ── Component ─────────────────────────────────────────────────────────────────
 export default function AgentCouncil({
   userId,
   symbol = "BTCUSDT",
@@ -116,7 +116,7 @@ export default function AgentCouncil({
       const health = await fetch(`${mlBaseUrl}/health`, { method: "GET" });
       if (!health.ok) throw new Error("unhealthy");
     } catch {
-      setError("Agent Council service is offline. Open a terminal, run: cd ml-service && python -m uvicorn main:app --port 8000, then try again.");
+      setError(councilOfflineMessage(process.env.NODE_ENV !== 'production'));
       setRunning(false);
       return;
     }
@@ -183,9 +183,9 @@ export default function AgentCouncil({
     } catch (e: any) {
       const msg = e.message ?? "";
       if (msg.includes("fetch") || msg.includes("refused") || msg.includes("network")) {
-        setError("Cannot connect to Agent Council (ml-service not running). Start it with: cd ml-service && python -m uvicorn main:app --port 8000");
+        setError(councilOfflineMessage(process.env.NODE_ENV !== 'production'));
       } else {
-        setError(`Analysis failed: ${msg}`);
+        setError(councilErrorMessage(undefined));
       }
     } finally {
       setRunning(false);
@@ -238,7 +238,7 @@ export default function AgentCouncil({
       setTotalLatencyMs(payload.totalLatencyMs);
       setGrounding(payload.grounding_report);
     } else if (eventType === "error") {
-      setError(payload.message);
+      setError(councilErrorMessage(payload.code));
     }
   }
 

@@ -55,6 +55,8 @@ hop in front (see the comment at `backend/src/index.ts` near the top).
 | `OPENROUTER_API_KEY` | only needed if `SYNTHESIS_PROVIDER` is ever switched off `"groq"` |
 | `COUNCIL_ENABLED` | optional, defaults to enabled (`true`). Set to `false` to take the Council offline honestly (503 + maintenance message) instead of it failing mid-Groq-outage. See R6-D9. |
 | `COUNCIL_DISABLED_MESSAGE` | optional. Custom text shown to users while `COUNCIL_ENABLED=false` (e.g. "Groq quota exhausted, back at 00:00 UTC"). Falls back to a generic message if unset. |
+| `COUNCIL_DAILY_RUN_CAP` | optional, defaults to `8`. Council runs allowed per UTC day across all accounts; one run is roughly 11.6K tokens, so 8 runs is about the free Groq 70B allowance of 100K tokens a day. Past the cap runs are refused with a typed `RATE_LIMIT_EXHAUSTED` error instead of failing partway into default verdicts. `0` disables the cap. |
+| `COUNCIL_ACCOUNT_RUNS_PER_HOUR` | optional, defaults to `3`. Council runs one account may start per rolling hour. `0` disables the limit. The counters live in memory, so they reset on restart and are per instance. |
 
 ## 4. Vercel env vars (frontend project settings, not this repo)
 

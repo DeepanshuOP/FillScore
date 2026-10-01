@@ -33,6 +33,7 @@ interface WhaleSummary {
 }
 
 interface WhaleData {
+  available?: boolean;
   symbols: string[];
   summaryBySymbol: Record<string, WhaleSummary>;
   trades: WhaleTrade[];
@@ -55,7 +56,7 @@ export default function WhaleCorrelation({ userId, dashboardMode }: { userId: st
     const fetchFn = dashboardMode === 'real' ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken }) : fetch;
     const query = buildQuery(dashboardMode, userId);
 
-    fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/analytics/whale-correlation${query}`)
+    fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/audit/analytics/whale-correlation${query}`)
       .then((res) => {
         if (!res.ok) {
           if (dashboardMode === 'real') return null;
@@ -106,13 +107,24 @@ export default function WhaleCorrelation({ userId, dashboardMode }: { userId: st
       .sort((a, b) => new Date(b.executedAt).getTime() - new Date(a.executedAt).getTime());
   }, [data, selectedSymbol]);
 
-  if (!data) return null;
-
   if (loading) {
     return (
       <section className="w-full bg-[rgba(26,25,23,0.8)] border border-[rgba(255,255,255,0.06)] rounded-[4px] p-[20px] animate-pulse">
         <div className="h-6 w-1/4 bg-[#ffffff0a] mb-4"></div>
         <div className="h-32 w-full bg-[#ffffff05]"></div>
+      </section>
+    );
+  }
+
+  if (!data && !error) return null;
+
+  if (data?.available === false) {
+    return (
+      <section className="w-full bg-[rgba(26,25,23,0.8)] border border-[rgba(255,255,255,0.06)] rounded-[4px] p-[20px]">
+        <h2 className="text-[11px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-2">Whale Correlation</h2>
+        <p className="text-sm text-[#888078]">
+          Whale correlation is only computed for the sample accounts. It is not available for connected accounts yet, so nothing is shown here rather than an empty result.
+        </p>
       </section>
     );
   }

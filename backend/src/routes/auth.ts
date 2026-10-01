@@ -3,8 +3,11 @@ import { register, login, rotateRefresh, logout } from '../services/authService'
 import { requestPasswordReset, resetPassword } from '../services/passwordResetService';
 import { authLimiter } from '../middleware/security';
 import { requireAuth } from '../middleware/requireAuth';
+import { requireTrustedOrigin } from '../middleware/csrf';
 import passport from 'passport';
 import { env } from '../config/env';
+import { createOAuthCode, redeemOAuthCode } from '../services/oauthCodeService';
+import { sendVerificationEmail, verifyEmail } from '../services/emailVerificationService';
 import { User } from '../models/User';
 
 import { getRefreshCookieOptions } from '../utils/cookieConfig';
@@ -32,13 +35,18 @@ const clearRefreshCookie = (res: Response) => {
 router.post('/register', authLimiter, async (req: Request, res: Response): Promise<void> => {
     try {
         const { email, password } = req.body;
-        if (!email || !password) {
+        if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
             res.status(400).json({ error: 'Email and password are required' });
             return;
         }
 
         const result = await register(email, password);
         setRefreshCookie(res, result.refreshToken);
+
+        // Fire and forget: a mail provider outage must not block sign-up
+        sendVerificationEmail(result.userId).catch(() => {
+            console.error('[auth] verification email failed to send');
+        });
 
         res.status(201).json({
             userId: result.userId,
@@ -56,7 +64,7 @@ router.post('/register', authLimiter, async (req: Request, res: Response): Promi
 router.post('/login', authLimiter, async (req: Request, res: Response): Promise<void> => {
     try {
         const { email, password } = req.body;
-        if (!email || !password) {
+        if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
             res.status(400).json({ error: 'Email and password are required' });
             return;
         }
@@ -110,7 +118,35 @@ router.post('/reset-password', authLimiter, async (req: Request, res: Response):
     }
 });
 
-router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
+router.post('/verify-email', authLimiter, async (req: Request, res: Response): Promise<void> => {
+    const token = req.body?.token;
+    if (typeof token !== 'string' || token === '') {
+        res.status(400).json({ error: 'invalid_or_expired_token' });
+        return;
+    }
+    try {
+        await verifyEmail(token);
+        res.status(200).json({ success: true });
+    } catch (err: any) {
+        if (err.message === 'invalid_or_expired_token') {
+            res.status(400).json({ error: 'invalid_or_expired_token' });
+        } else {
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+});
+
+router.post('/resend-verification', authLimiter, requireAuth, async (req: Request, res: Response): Promise<void> => {
+    try {
+        await sendVerificationEmail(req.userId!);
+        res.status(200).json({ success: true });
+    } catch (err) {
+        console.error('[auth] resend verification failed');
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+router.post('/refresh', requireTrustedOrigin(), async (req: Request, res: Response): Promise<void> => {
     try {
         const token = req.cookies?.refreshToken;
         if (!token) {
@@ -130,7 +166,7 @@ router.post('/refresh', async (req: Request, res: Response): Promise<void> => {
     }
 });
 
-router.post('/logout', async (req: Request, res: Response): Promise<void> => {
+router.post('/logout', requireTrustedOrigin(), async (req: Request, res: Response): Promise<void> => {
     try {
         const token = req.cookies?.refreshToken;
         if (token) {
@@ -145,7 +181,7 @@ router.post('/logout', async (req: Request, res: Response): Promise<void> => {
 
 router.get('/me', requireAuth, async (req: Request, res: Response): Promise<void> => {
     try {
-        const user = await User.findById(req.userId).select('email plan');
+        const user = await User.findById(req.userId).select('email plan emailVerified');
         if (!user) {
             res.status(404).json({ error: 'User not found' });
             return;
@@ -153,7 +189,8 @@ router.get('/me', requireAuth, async (req: Request, res: Response): Promise<void
         res.status(200).json({
             userId: req.userId,
             email: user.email,
-            plan: user.plan
+            plan: user.plan,
+            emailVerified: user.emailVerified === true
         });
     } catch (err) {
         res.status(500).json({ error: 'Internal server error' });
@@ -162,16 +199,40 @@ router.get('/me', requireAuth, async (req: Request, res: Response): Promise<void
 
 const frontendUrl = env.FRONTEND_URL || 'http://localhost:3000';
 
-const handleOAuthCallback = (req: Request, res: Response) => {
-    const user = req.user as any; 
-    
-    // The OAuth callback is a top-level cross-site redirect. 
-    // The refresh cookie set on the callback MUST use sameSite:'lax' in dev, 
+export const handleOAuthCallback = async (req: Request, res: Response) => {
+    const user = req.user as any;
+
+    // The OAuth callback is a top-level cross-site redirect.
+    // The refresh cookie set on the callback MUST use sameSite:'lax' in dev,
     // or the browser drops it on the redirect. In production SameSite=None is used.
     setRefreshCookie(res, user.refreshToken, true);
-    
-    res.redirect(`${frontendUrl}/?accessToken=${user.accessToken}`);
+
+    // Never put a token in the URL: hand over a 30 second single-use code instead.
+    try {
+        const code = await createOAuthCode(user.userId);
+        res.redirect(`${frontendUrl}/?oauthCode=${code}`);
+    } catch {
+        res.redirect(`${frontendUrl}/login?error=auth_failed`);
+    }
 };
+
+router.post('/oauth/exchange', authLimiter, requireTrustedOrigin(), async (req: Request, res: Response): Promise<void> => {
+    const code = req.body?.code;
+    if (typeof code !== 'string' || !/^[a-f0-9]{64}$/.test(code)) {
+        res.status(400).json({ error: 'invalid_request' });
+        return;
+    }
+    try {
+        const { accessToken } = await redeemOAuthCode(code);
+        res.status(200).json({ accessToken });
+    } catch (err: any) {
+        if (err.message === 'invalid_or_expired_code') {
+            res.status(401).json({ error: 'invalid_or_expired_code' });
+        } else {
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+});
 
 const oauthErrorHandler = (provider: string) => {
     return (req: Request, res: Response, next: any) => {

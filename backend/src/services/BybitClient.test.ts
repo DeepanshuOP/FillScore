@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { BybitClient } from './BybitClient';
 import { BybitRawTrade } from '../types';
 
@@ -40,5 +40,19 @@ describe('BybitClient', () => {
             expect(normalised.executedAt).toBeInstanceOf(Date);
             expect(normalised.executedAt.getTime()).toBe(1704067200000);
         });
+    });
+});
+
+describe('BybitClient request shape', () => {
+    it('asks for the spot category, not linear perpetuals', async () => {
+        const client = new BybitClient('dummy_key', 'dummy_secret');
+        const get = vi.fn().mockResolvedValue({ data: { retCode: 0, result: { list: [], nextPageCursor: '' } } });
+        (client as any).axiosInstance = { get };
+
+        await client.fetchTradesForWindow('BTCUSDT', 1704067200000, 1704153600000);
+
+        const url: string = get.mock.calls[0][0];
+        expect(url).toContain('category=spot');
+        expect(url).not.toContain('linear');
     });
 });

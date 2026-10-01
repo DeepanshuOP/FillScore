@@ -8,7 +8,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { userId } = await params;
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/share/${userId}`, { next: { revalidate: 3600 } });
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/audit/share/${userId}`, { next: { revalidate: 3600 } });
   if (!res.ok) return { title: 'FillScore' };
   
   const data = await res.json();
@@ -33,7 +33,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SharePage({ params }: Props) {
   const { userId } = await params;
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/share/${userId}`, { next: { revalidate: 60 } });
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/audit/share/${userId}`, { next: { revalidate: 60 } });
   
   if (!res.ok) {
     return (

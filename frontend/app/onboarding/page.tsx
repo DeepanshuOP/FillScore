@@ -6,14 +6,17 @@ import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/authFetch';
 import { mapOnboardingError } from '../utils/errorMapping';
 import { getGradeColor } from '../utils/gradeColor';
+import { EXCHANGES, getExchange, ExchangeId } from '../utils/exchanges';
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, isLoading, accessToken, refreshAccessToken } = useAuth();
   
-  const [selectedExchange, setSelectedExchange] = useState<'binance' | 'bybit' | 'okx' | null>(null);
+  const [selectedExchange, setSelectedExchange] = useState<ExchangeId | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
+  const [apiPassphrase, setApiPassphrase] = useState('');
+  const [showPassphrase, setShowPassphrase] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
   const [showApiSecret, setShowApiSecret] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -50,28 +53,9 @@ export default function OnboardingPage() {
     );
   }
 
-  const exchanges = [
-    {
-      id: 'binance' as const,
-      name: 'Binance',
-      desc: "World's largest crypto exchange",
-      enabled: true
-    },
-    {
-      id: 'bybit' as const,
-      name: 'Bybit',
-      desc: "Coming soon",
-      enabled: false
-    },
-    {
-      id: 'okx' as const,
-      name: 'OKX',
-      desc: 'Coming soon',
-      enabled: false
-    }
-  ];
+  const selected = selectedExchange ? getExchange(selectedExchange) : null;
 
-  const isFormDisabled = !confirmed || !apiKey.trim() || !apiSecret.trim();
+  const isFormDisabled = !confirmed || !apiKey.trim() || !apiSecret.trim() || (!!selected?.needsPassphrase && !apiPassphrase.trim());
 
   const handleSubmit = async () => {
     if (isFormDisabled || submitting) return;
@@ -87,23 +71,25 @@ export default function OnboardingPage() {
         body: JSON.stringify({
           exchange: selectedExchange,
           apiKey: apiKey.trim(),
-          apiSecret: apiSecret.trim()
+          apiSecret: apiSecret.trim(),
+          ...(selected?.needsPassphrase ? { apiPassphrase: apiPassphrase.trim() } : {})
         })
       }, { accessToken, refreshAccessToken });
       
       const data = await res.json();
       
       if (!res.ok) {
-        setErrorMsg(mapOnboardingError(data.error || 'unknown', res.status));
+        setErrorMsg(mapOnboardingError(data.error || 'unknown', res.status, selected?.name));
       } else {
         setIsSuccess(true);
         // Clear secrets from state immediately
         setApiKey('');
         setApiSecret('');
+        setApiPassphrase('');
         setErrorMsg(null);
       }
     } catch (err: any) {
-      setErrorMsg(mapOnboardingError('network_error'));
+      setErrorMsg(mapOnboardingError('network_error', undefined, selected?.name));
     } finally {
       setSubmitting(false);
     }
@@ -116,7 +102,7 @@ export default function OnboardingPage() {
     setNoTrades(false);
 
     // ESTIMATED progress messages for the UI, since we don't have a real stream
-    setSyncStatusText('Fetching your trades from Binance...');
+    setSyncStatusText(`Fetching your trades from ${selected?.name ?? 'your exchange'}...`);
     const timers = [
       setTimeout(() => setSyncStatusText('Enriching against market data...'), 5000),
       setTimeout(() => setSyncStatusText('Computing your FillScore...'), 12000)
@@ -356,7 +342,7 @@ export default function OnboardingPage() {
                   Select Your Exchange
                 </h2>
                 <div className="flex flex-col gap-3">
-                  {exchanges.map((ex) => (
+                  {EXCHANGES.map((ex) => (
                     <button 
                       key={ex.id}
                       onClick={() => {
@@ -415,7 +401,7 @@ export default function OnboardingPage() {
                   fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.4rem',
                   color: '#ede8e0', fontWeight: 400, marginBottom: '1.5rem'
                 }}>
-                  Connect Binance
+                  Connect {selected?.name}
                 </h2>
 
                 {/* API KEY INPUT */}
@@ -474,6 +460,36 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
+                {/* PASSPHRASE INPUT (OKX only) */}
+                {selected?.needsPassphrase && (
+                  <div style={{ marginBottom: '1.25rem' }}>
+                    <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', color: '#6a6560' }}>
+                      API PASSPHRASE
+                    </label>
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type={showPassphrase ? 'text' : 'password'}
+                        placeholder="The passphrase you chose for this key"
+                        value={apiPassphrase}
+                        onChange={(e) => setApiPassphrase(e.target.value)}
+                        style={{
+                          width: '100%', padding: '0.85rem 2.8rem 0.85rem 0.9rem',
+                          background: '#0f0f0f', border: '1px solid #2a2926',
+                          borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
+                          color: '#c8b898', outline: 'none'
+                        }}
+                      />
+                      <button type="button" onClick={() => setShowPassphrase(!showPassphrase)}
+                              style={{
+                                position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)',
+                                background: 'none', border: 'none', cursor: 'pointer', color: '#3d3b38', padding: '2px'
+                              }}>
+                        {showPassphrase ? 'HIDE' : 'SHOW'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* WARNING BOX */}
                 <div style={{
                   display: 'flex', gap: '0.625rem', alignItems: 'flex-start',
@@ -496,7 +512,7 @@ export default function OnboardingPage() {
                     cursor: 'pointer', margin: '1rem 0'
                   }}>
                   <span style={{ fontFamily: 'var(--font-inter)', fontSize: '0.78rem', color: '#6a6560' }}>
-                    How to create a read-only key on Binance
+                    How to create a read-only key on {selected?.name}
                   </span>
                   <span style={{ fontFamily: 'var(--font-mono)', color: '#a78b71', fontSize: '1rem', lineHeight: 1 }}>
                     {guideOpen ? '−' : '+'}
@@ -507,12 +523,7 @@ export default function OnboardingPage() {
                 }}>
                   <div style={{ padding: '0.75rem 0 0.5rem' }}>
                     <ol style={{ paddingLeft: '1.1rem', fontFamily: 'var(--font-inter)', fontSize: '0.78rem', color: '#6a6560', lineHeight: 1.9, listStyleType: 'decimal' }}>
-                      <li>Log in to binance.com → Profile → API Management</li>
-                      <li>Click "Create API" → System generated</li>
-                      <li>Name it "fillscore-readonly"</li>
-                      <li>Complete email / 2FA verification</li>
-                      <li>Enable "Enable Reading" ONLY — disable Spot/Margin trading, Futures, and Withdrawals</li>
-                      <li>Copy both your API Key and Secret Key</li>
+                      {selected?.guideSteps.map((step) => <li key={step}>{step}</li>)}
                     </ol>
                   </div>
                 </div>

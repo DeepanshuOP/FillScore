@@ -13,6 +13,8 @@ import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/authFetch';
 import { resolveIdentityState } from '../utils/identityResolver';
 import { buildQuery } from '../utils/queryBuilder';
+import { buildTrend, HistoryPoint } from '../utils/trend';
+import { openAuthenticatedDownload } from '../lib/downloads';
 import ConnectPrompt from '../components/ConnectPrompt';
 
 interface CostAttribution {
@@ -77,16 +79,6 @@ const gradeConfig = {
   C: { color: '#fcd34d', glow: 'rgba(252,211,77,0.2)', label: 'Average' },
   D: { color: '#f97316', glow: 'rgba(249,115,22,0.2)', label: 'Poor' },
   F: { color: '#ef4444', glow: 'rgba(239,68,68,0.2)',  label: 'Critical' },
-};
-
-const generateTrendData = (currentScore: number) => {
-  const months = ['Aug', 'Sep', 'Oct', 'Nov', 'Dec', 'Jan'];
-  const variance = [-12, -8, -5, -2, -1, 0];
-  return months.map((month, i) => ({
-    month,
-    score: Math.min(100, Math.max(0, Math.round(currentScore + variance[i]))),
-    isCurrent: i === months.length - 1
-  }));
 };
 
 const getScoreColor = (score: number) => {
@@ -182,12 +174,14 @@ function DashboardContent() {
   const [analytics, setAnalytics] = useState<any>(null);
   const [exchangeComparison, setExchangeComparison] = useState<any>(null);
   const [coach, setCoach] = useState<any>(null);
+  const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
   const [barsVisible, setBarsVisible] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState<string | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
 
   const { accessToken, isLoading: authLoading, refreshAccessToken } = useAuth();
@@ -202,13 +196,20 @@ function DashboardContent() {
     setTimeout(() => setLinkCopied(false), 2000);
   };
 
-  const handleDownloadReport = () => {
-    if (downloading || !resolvedUserId) return;
+  const handleDownloadReport = async () => {
+    if (downloading) return;
     setDownloading(true);
-    window.open(`${process.env.NEXT_PUBLIC_API_URL}/report?userId=${resolvedUserId}`, '_blank');
-    setTimeout(() => {
-      setDownloading(false);
-    }, 500);
+    setDownloadError(null);
+    try {
+      if (dashboardMode === 'real') {
+        const ok = await openAuthenticatedDownload('report', '/audit/report', {}, { accessToken, refreshAccessToken });
+        if (!ok) setDownloadError('Could not prepare the report. Please try again.');
+      } else if (resolvedUserId) {
+        window.open(`${process.env.NEXT_PUBLIC_API_URL}/audit/report?userId=${resolvedUserId}`, '_blank');
+      }
+    } finally {
+      setTimeout(() => setDownloading(false), 500);
+    }
   };
 
   useEffect(() => {
@@ -231,12 +232,13 @@ function DashboardContent() {
       const query = buildQuery(mode, effectiveUserId);
       const baseUrl = process.env.NEXT_PUBLIC_API_URL;
       
-      const [res, attrRes, analyticsRes, comparisonRes, coachRes] = await Promise.all([
-        fetchFn(`${baseUrl}/score${query}`),
+      const [res, attrRes, analyticsRes, comparisonRes, coachRes, historyRes] = await Promise.all([
+        fetchFn(`${baseUrl}/audit/score${query}`),
         fetchFn(`${baseUrl}/attribution${query}`),
-        fetchFn(`${baseUrl}/analytics${query}`),
-        fetchFn(`${baseUrl}/analytics/exchange-comparison${query}`),
-        fetchFn(`${baseUrl}/coach${query}`)
+        fetchFn(`${baseUrl}/audit/analytics${query}`),
+        fetchFn(`${baseUrl}/audit/analytics/exchange-comparison${query}`),
+        fetchFn(`${baseUrl}/audit/coach${query}`),
+        fetchFn(`${baseUrl}/audit/history${query}`)
       ]);
       
       if (mode === 'real' && !res.ok) {
@@ -263,6 +265,10 @@ function DashboardContent() {
       if (coachRes.ok) {
         const coachData = await coachRes.json();
         setCoach(coachData);
+      }
+      if (historyRes.ok) {
+        const historyData = await historyRes.json();
+        setHistory(historyData.points ?? []);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -465,42 +471,45 @@ function DashboardContent() {
                 </div>
               )}
               
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginBottom: '1rem' }}>
-                {dashboardMode === 'demo' && (
-                  <>
-                    <button
-                      onClick={handleShare}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
-                        padding: '6px 12px', color: '#c4a882',
-                        fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
-                        cursor: 'pointer', transition: 'all 0.2s ease',
-                        height: 'fit-content'
-                      }}
-                      onMouseOver={e => e.currentTarget.style.background = 'rgba(167,139,113,0.1)'}
-                      onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-                    >
-                      {linkCopied ? '✓ LINK COPIED!' : '↗ SHARE MY SCORE'}
-                    </button>
-                    <button
-                      onClick={handleDownloadReport}
-                      disabled={downloading}
-                      style={{
-                        display: 'flex', alignItems: 'center', gap: '6px',
-                        background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
-                        padding: '6px 12px', color: '#c4a882',
-                        fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
-                        cursor: downloading ? 'wait' : 'pointer', transition: 'all 0.2s ease',
-                        opacity: downloading ? 0.6 : 1, height: 'fit-content'
-                      }}
-                      onMouseOver={e => { if (!downloading) e.currentTarget.style.background = 'rgba(167,139,113,0.1)' }}
-                      onMouseOut={e => { if (!downloading) e.currentTarget.style.background = 'transparent' }}
-                    >
-                      {downloading ? 'GENERATING...' : '↓ DOWNLOAD REPORT'}
-                    </button>
-                  </>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
+                {downloadError && (
+                  <span role="alert" style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#f97316' }}>
+                    {downloadError}
+                  </span>
                 )}
+                {dashboardMode === 'demo' && (
+                  <button
+                    onClick={handleShare}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '6px',
+                      background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
+                      padding: '6px 12px', color: '#c4a882',
+                      fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
+                      cursor: 'pointer', transition: 'all 0.2s ease',
+                      height: 'fit-content'
+                    }}
+                    onMouseOver={e => e.currentTarget.style.background = 'rgba(167,139,113,0.1)'}
+                    onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                  >
+                    {linkCopied ? '✓ LINK COPIED!' : '↗ SHARE MY SCORE'}
+                  </button>
+                )}
+                <button
+                  onClick={handleDownloadReport}
+                  disabled={downloading}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '6px',
+                    background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
+                    padding: '6px 12px', color: '#c4a882',
+                    fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
+                    cursor: downloading ? 'wait' : 'pointer', transition: 'all 0.2s ease',
+                    opacity: downloading ? 0.6 : 1, height: 'fit-content'
+                  }}
+                  onMouseOver={e => { if (!downloading) e.currentTarget.style.background = 'rgba(167,139,113,0.1)' }}
+                  onMouseOut={e => { if (!downloading) e.currentTarget.style.background = 'transparent' }}
+                >
+                  {downloading ? 'GENERATING...' : '↓ DOWNLOAD REPORT'}
+                </button>
               </div>
               {/* HERO SECTION — Part 2 */}
               <div 
@@ -846,7 +855,7 @@ function DashboardContent() {
                       <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '2rem', color: '#f97316', lineHeight: 1, letterSpacing: '-0.03em' }}>{formatCurrency(attribution.totalCost)}</div>
                       <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.82rem', color: '#4ade80', marginTop: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <span style={{ fontSize: '0.8rem' }}>◈</span>
-                        Improving timing could save ~{formatCurrency(attribution.timingCost)}/month
+                        Modelled timing cost: ~{formatCurrency(attribution.timingCost)} over this audit period
                       </div>
                     </div>
                   </div>
@@ -867,14 +876,31 @@ function DashboardContent() {
                       </div>
                     </div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#585450', padding: '2px 8px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                      6 MONTHS
+                      {history.length} {history.length === 1 ? 'AUDIT' : 'AUDITS'}
                     </div>
                   </div>
                 </div>
 
                 {(() => {
-                  const trendData = generateTrendData(Math.round(audit.avgFillScore));
-                  const scoreDiff = trendData[trendData.length - 1].score - trendData[0].score;
+                  const trend = buildTrend(history);
+
+                  if (trend.state !== 'series') {
+                    return (
+                      <div style={{ padding: '1.75rem 1.5rem', background: '#161614', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '3px' }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', letterSpacing: '0.1em', color: '#c8b898', marginBottom: '0.5rem' }}>
+                          {trend.state === 'single'
+                            ? `Initial audit recorded ${trend.label} — score ${trend.score}`
+                            : 'No audit history yet'}
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.8rem', lineHeight: 1.6, color: '#888078' }}>
+                          Your trend is built from stored audits only. It appears once a second audit has run, so every point on it is a real result.
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const trendData = trend.data;
+                  const scoreDiff = trend.delta;
                   const isPositive = scoreDiff >= 0;
 
                   return (
@@ -886,7 +912,7 @@ function DashboardContent() {
                           <ResponsiveContainer width="100%" height="100%">
                             <LineChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                              <XAxis dataKey="month" tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#888078', letterSpacing: '0.1em' }} axisLine={false} tickLine={false} dy={8} />
+                              <XAxis dataKey="label" tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#888078', letterSpacing: '0.1em' }} axisLine={false} tickLine={false} dy={8} />
                               <YAxis domain={[0, 100]} tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#888078' }} axisLine={false} tickLine={false} tickCount={5} dx={-4} />
                               <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(167,139,113,0.15)', strokeWidth: 1, strokeDasharray: '4 4' }} />
                               <ReferenceLine y={75} stroke="rgba(167,139,113,0.12)" strokeDasharray="4 4" label={{ value: 'GOOD', position: 'right', fontFamily: 'var(--font-mono)', fontSize: 9, fill: 'rgba(167,139,113,0.4)', letterSpacing: '0.1em' }} />
@@ -906,11 +932,11 @@ function DashboardContent() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span style={{ fontSize: '0.8rem', color: isPositive ? '#4ade80' : '#f97316' }}>{isPositive ? '↑' : '↓'}</span>
                           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.1em', color: isPositive ? '#4ade80' : '#f97316' }}>
-                            {Math.abs(scoreDiff)} pts over 6 months
+                            {Math.abs(scoreDiff)} pts over {trend.spanDays} {trend.spanDays === 1 ? 'day' : 'days'}
                           </span>
                         </div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.08em', color: '#888078' }}>
-                          simulated trend  ·  real data after 2nd audit
+                          from {trendData.length} stored audits
                         </div>
                       </div>
 
@@ -1197,12 +1223,12 @@ function DashboardContent() {
                       <div style={{ padding: '1rem', background: '#161614', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '3px' }}>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#4ade80', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>BEST WINDOW</div>
                         <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1rem', color: '#ede8e0', marginBottom: '0.25rem' }}>{coach.bestWindow.hour}</div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#888078' }}>{coach.bestWindow.reason}</div>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#888078' }}>{coach.bestWindow.reason ?? ''}</div>
                       </div>
                       <div style={{ padding: '1rem', background: '#161614', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '3px' }}>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#ef4444', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>WORST WINDOW</div>
                         <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1rem', color: '#ede8e0', marginBottom: '0.25rem' }}>{coach.worstWindow.hour}</div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#888078' }}>{coach.worstWindow.reason}</div>
+                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#888078' }}>{coach.worstWindow.reason ?? ''}</div>
                       </div>
                     </div>
                   )}

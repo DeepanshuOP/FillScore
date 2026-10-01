@@ -1,17 +1,18 @@
 import { Router, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import { ExchangeConnection } from '../models/ExchangeConnection';
-import { encryptApiKey, decryptApiKey } from '../utils/encryption';
+import { encryptApiKey } from '../utils/encryption';
 import { requireAuth } from '../middleware/requireAuth';
-import { validateBinanceKey } from '../services/keyValidation';
-import { TradeIngestionService } from '../services/TradeIngestionService';
+import { validateBinanceKey, validateBybitKey, validateOKXKey } from '../services/keyValidation';
+import { syncAccountTrades } from '../services/SyncService';
+import { parseOrReject, connectBodySchema } from '../validation/schemas';
 import { MarketDataService } from '../services/MarketDataService';
 import { executeAuditPipeline } from './audit';
-import { INGEST_SYMBOLS, INGEST_DAYS_BACK } from '../config/ingestion';
+import { INGEST_DAYS_BACK } from '../config/ingestion';
 
 export const onboardingRouter = Router();
 
-const connectLimiter = rateLimit({
+export const connectLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 5,
     message: { error: 'Too many connection attempts from this IP, please try again after 15 minutes.' },
@@ -19,24 +20,24 @@ const connectLimiter = rateLimit({
 
 onboardingRouter.post('/connect', requireAuth, connectLimiter, async (req: Request, res: Response) => {
     try {
-        const { apiKey, apiSecret, exchange } = req.body;
+        const body = parseOrReject(connectBodySchema, req.body, res);
+        if (!body) return;
+        const { apiKey, apiSecret, exchange, apiPassphrase } = body;
         const accountId = req.userId!;
 
-        if (
-            !apiKey || typeof apiKey !== 'string' || apiKey.trim() === '' ||
-            !apiSecret || typeof apiSecret !== 'string' || apiSecret.trim() === '' ||
-            !exchange
-        ) {
-            return res.status(400).json({ error: 'Missing or invalid fields' });
+        if (exchange === 'okx' && !apiPassphrase) {
+            return res.status(400).json({ error: 'passphrase_required' });
         }
 
-        if (exchange !== 'binance') {
-            return res.status(400).json({ error: 'exchange_not_supported_yet' });
-        }
-
-        // Only binance is supported and validated right now
+        // Every exchange is checked against the exchange itself: a key is stored only if it is read-only.
         try {
-            await validateBinanceKey(apiKey, apiSecret);
+            if (exchange === 'binance') {
+                await validateBinanceKey(apiKey, apiSecret);
+            } else if (exchange === 'bybit') {
+                await validateBybitKey(apiKey, apiSecret);
+            } else {
+                await validateOKXKey(apiKey, apiSecret, apiPassphrase!);
+            }
         } catch (err: any) {
             if (err.message === 'key_not_read_only') {
                 return res.status(400).json({ error: 'key_not_read_only' });
@@ -47,17 +48,22 @@ onboardingRouter.post('/connect', requireAuth, connectLimiter, async (req: Reque
             return res.status(502).json({ error: 'network_error' });
         }
 
-        const encryptedKeyData = encryptApiKey(apiKey);
-        const encryptedSecretData = encryptApiKey(apiSecret);
+        const update: Record<string, unknown> = {
+            accountId,
+            exchange,
+            encryptedApiKey: encryptApiKey(apiKey),
+            encryptedApiSecret: encryptApiKey(apiSecret),
+        };
+        const unset: Record<string, ''> = {};
+        if (exchange === 'okx') {
+            update.encryptedPassphrase = encryptApiKey(apiPassphrase!);
+        } else {
+            unset.encryptedPassphrase = '';
+        }
 
         await ExchangeConnection.findOneAndUpdate(
             { accountId, exchange },
-            {
-                accountId,
-                exchange,
-                encryptedApiKey: encryptedKeyData,
-                encryptedApiSecret: encryptedSecretData,
-            },
+            { $set: update, ...(Object.keys(unset).length ? { $unset: unset } : {}) },
             { upsert: true, new: true, setDefaultsOnInsert: true }
         );
 
@@ -75,32 +81,15 @@ onboardingRouter.post('/sync', requireAuth, async (req: Request, res: Response) 
     try {
         const accountId = req.userId!;
 
-        const connections = await ExchangeConnection.find({ accountId });
-        if (connections.length === 0) {
-            return res.status(400).json({ error: 'No exchange connections found' });
-        }
-
-        const ingestionService = new TradeIngestionService();
         const marketDataService = new MarketDataService();
 
-        for (const conn of connections) {
-            const apiKey = decryptApiKey(conn.encryptedApiKey);
-            const apiSecret = decryptApiKey(conn.encryptedApiSecret);
-            if (conn.exchange === 'binance') {
-                // 4 parallel calls = 80 weight, well inside the 6000/min budget
-                const results = await Promise.allSettled(
-                    INGEST_SYMBOLS.map(symbol =>
-                        ingestionService.ingestForUser(accountId, apiKey, apiSecret, symbol, INGEST_DAYS_BACK)
-                    )
-                );
-
-                results.forEach((res, index) => {
-                    if (res.status === 'rejected') {
-                        console.error(`[Ingest] Failed syncing symbol ${INGEST_SYMBOLS[index]}:`, res.reason);
-                    }
-                });
+        try {
+            await syncAccountTrades(accountId, INGEST_DAYS_BACK);
+        } catch (e: any) {
+            if (e.message === 'no_exchange_connections') {
+                return res.status(400).json({ error: 'No exchange connections found' });
             }
-            // other exchanges removed pending validation implementation
+            throw e;
         }
 
         await marketDataService.enrichAllPendingTrades(accountId);

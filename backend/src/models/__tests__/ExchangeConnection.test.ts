@@ -75,4 +75,17 @@ describe('ExchangeConnection Model', () => {
         const count = await ExchangeConnection.countDocuments({ accountId });
         expect(count).toBe(2);
     });
+
+    it('stores an optional encrypted passphrase (OKX)', async () => {
+        const accountId = `test_pass_${Date.now()}`;
+        const saved = await new ExchangeConnection({
+            accountId,
+            exchange: 'okx',
+            encryptedApiKey: { iv: 'a', encrypted: 'b', authTag: 'c' },
+            encryptedApiSecret: { iv: 'a', encrypted: 'b', authTag: 'c' },
+            encryptedPassphrase: { iv: 'd', encrypted: 'e', authTag: 'f' }
+        }).save();
+        const raw = await ExchangeConnection.collection.findOne({ _id: saved._id });
+        expect(raw?.encryptedPassphrase).toEqual({ iv: 'd', encrypted: 'e', authTag: 'f' });
+    });
 });

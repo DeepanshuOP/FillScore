@@ -40,7 +40,7 @@ attributionRouter.get('/', resolveAccount, async (req: Request, res: Response) =
     } catch (error: any) {
         console.error('GET /attribution error:', error);
         return res.status(500).json({
-            error: error.message || 'Failed to compute cost attribution',
+            error: 'Failed to compute cost attribution',
         });
     }
 });

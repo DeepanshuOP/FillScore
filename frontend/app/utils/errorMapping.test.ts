@@ -61,4 +61,29 @@ describe('mapOnboardingError', () => {
       "Something went wrong. Please try again."
     );
   });
+
+  it('names the exchange in key and network errors when one is given', () => {
+    expect(mapOnboardingError('invalid_key', 401, 'Bybit')).toBe(
+      "Bybit rejected this key. Check the key and secret are copied correctly and haven't expired."
+    );
+    expect(mapOnboardingError('network_error', 502, 'OKX')).toBe(
+      "Couldn't reach OKX right now. Please try again in a moment."
+    );
+  });
+
+  it('describes a read-only failure in exchange-neutral terms', () => {
+    expect(mapOnboardingError('key_not_read_only', 400, 'OKX')).toMatch(/read.?only/i);
+  });
+
+  it('maps passphrase_required', () => {
+    expect(mapOnboardingError('passphrase_required')).toBe(
+      "OKX needs the passphrase you set when you created the key."
+    );
+  });
+
+  it('maps invalid_request to a field problem message', () => {
+    expect(mapOnboardingError('invalid_request')).toBe(
+      "Check that the key, secret and passphrase fields are filled in correctly."
+    );
+  });
 });

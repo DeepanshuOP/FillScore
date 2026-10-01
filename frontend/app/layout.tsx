@@ -4,6 +4,7 @@ import { Playfair_Display, Inter, JetBrains_Mono }
 import './globals.css'
 import { AuthProvider } from './context/AuthContext'
 import OAuthRedirectHandler from './components/OAuthRedirectHandler'
+import SiteFooter from './components/SiteFooter'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -49,6 +50,7 @@ export default function RootLayout({
         <AuthProvider>
           <OAuthRedirectHandler />
           {children}
+          <SiteFooter />
         </AuthProvider>
       </body>
     </html>

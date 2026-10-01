@@ -30,6 +30,8 @@ security = HTTPBearer(auto_error=False)
 
 from config.demo_users import VALID_DEMO_USERS
 from config.flags import council_enabled, council_maintenance_message
+from config.budget import council_budget
+from agents.errors import CouncilError, classify_exception, safe_message, RATE_LIMIT_EXHAUSTED, NO_DATA
 
 def get_account_id(requested_user_id: str | None, req: Request) -> str:
     if requested_user_id:
@@ -49,14 +51,13 @@ def get_account_id(requested_user_id: str | None, req: Request) -> str:
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired access token")
 
-# Load env: ml-service/.env first (ANTHROPIC_API_KEY), then backend/.env (MONGODB_URI)
-_ml_env = os.path.join(os.path.dirname(__file__), ".env")
-_backend_env = os.path.join(os.path.dirname(__file__), "..", "backend", ".env")
-for _env_path in [_ml_env, _backend_env]:
-    try:
-        load_dotenv(_env_path, override=False)
-    except (ValueError, UnicodeDecodeError):
-        pass
+# Env files: see config/env_loader.py for precedence (real environment > backend/.env for shared keys > ml-service/.env)
+from config.env_loader import load_service_env
+
+load_service_env(
+    os.path.join(os.path.dirname(__file__), ".env"),
+    os.path.join(os.path.dirname(__file__), "..", "backend", ".env"),
+)
 
 JWT_ACCESS_SECRET = os.environ.get("JWT_ACCESS_SECRET", "")
 if not JWT_ACCESS_SECRET:
@@ -115,8 +116,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
@@ -205,6 +206,14 @@ async def council_endpoint(req: CouncilRequest, request: Request) -> CouncilResu
     if audit is None:
         raise HTTPException(status_code=404, detail=f"No audit found for accountId={account_id}")
 
+    decision = council_budget.try_acquire(account_id)
+    if not decision.allowed:
+        raise HTTPException(
+            status_code=429,
+            detail={"code": RATE_LIMIT_EXHAUSTED, "message": safe_message(RATE_LIMIT_EXHAUSTED)},
+            headers={"Retry-After": str(decision.retry_after_s)},
+        )
+
     result = await run_council(account_id, account_id, req.symbol)
     return result
 
@@ -253,6 +262,14 @@ async def council_stream(request: CouncilRequest, req: Request):
             # Load packets first
             from agents.metrics.loader import load_all_packets
             fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_all_packets(account_id, symbol)
+
+            if fee_pkt.trade_count == 0:
+                raise CouncilError(NO_DATA)
+
+            # Checked after the data load so an empty account or a database outage costs no budget
+            decision = council_budget.try_acquire(account_id)
+            if not decision.allowed:
+                raise CouncilError(RATE_LIMIT_EXHAUSTED)
 
             from agents.schemas import TradeContext
             context = TradeContext(
@@ -374,7 +391,10 @@ async def council_stream(request: CouncilRequest, req: Request):
             })
 
         except Exception as e:
-            yield sse("error", {"message": str(e)})
+            code = classify_exception(e)
+            # Class name only: exception text can contain connection strings or credentials
+            print(f"[council] stream failed code={code} type={type(e).__name__}")
+            yield sse("error", {"code": code, "message": safe_message(code)})
 
     return StreamingResponse(
         event_generator(),

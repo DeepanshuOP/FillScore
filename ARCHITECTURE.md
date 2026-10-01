@@ -1,123 +1,208 @@
-# Architecture Map
+# Architecture
 
-## 1. Project Summary
-FillScore is a reproducible crypto execution-quality (TCA) auditing platform that GRADES past execution against real market microstructure. It is explicitly not a trading-signal or prediction product. Instead, its flagship feature is the multi-agent Execution Council, which utilizes LLM-driven agents alongside rigorous deterministic metrics to analyze historical trade efficiency, execution alpha, and liquidity conditions.
+FillScore grades **past** crypto execution quality against real market microstructure. It does not
+predict, signal, or advise. Every number shown to a user comes from deterministic code; language
+models only label, argue, and explain (the Grounding Contract).
 
-## 2. System Map (Three Tiers)
+This file describes what is in the code today. The route tables are checked against the running app
+by `backend/src/__tests__/architectureDocs.test.ts`, so a route cannot be added or removed without
+this file changing. Regenerate the backend table with `npm run docs:routes` in `backend/`.
 
-### Backend (Node/Express, port 3001)
-| File Path | What it does | Status |
+## 1. Shape of the system
+
+```text
+ Browser ──► Next.js frontend (:3000, Vercel)
+              │   REST + cookies                       SSE (council stream)
+              ▼                                              ▼
+        Express API (:3001) ───── MongoDB Atlas ◄───── FastAPI ml-service (:8000)
+              │                    (db: fillscore)            │
+              ├─► Binance / Bybit / OKX (read-only keys)      └─► Groq (llama-3.3-70b-versatile)
+              └─► Binance public klines (arrival price, VWAP, spread proxy)
+```
+
+| Tier | Stack | Responsibility |
 |---|---|---|
-| `backend/src/index.ts` | Top-level Express app, global middleware, and primary router mounting | REAL/wired |
-| `backend/src/models/Audit.ts` | Mongoose schema for saved Audit reports | REAL/wired |
-| `backend/src/models/Trade.ts` | Mongoose schema for trade records | REAL/wired |
-| `backend/src/models/User.ts` | Mongoose schema for user accounts/demo tracking | REAL/wired |
-| `backend/src/routes/attribution.ts` | Attribution router endpoints | REAL/wired |
-| `backend/src/routes/audit.ts` | Core endpoints for score, export, analytics, SSE streams, etc. | REAL/wired |
-| `backend/src/routes/connect.ts` | Connection simulation/auth route | REAL/wired |
-| `backend/src/scoring/attribution.ts` | Deterministic trade attribution logic | REAL/wired |
-| `backend/src/scoring/engine.ts` | Core engine for evaluating basic trade scoring rules | REAL/wired |
-| `backend/src/services/BinanceClient.ts` | Exchange client for Binance integration | REAL/wired |
-| `backend/src/services/BybitClient.ts` | Exchange client for Bybit integration | REAL/wired |
-| `backend/src/services/OKXClient.ts` | Exchange client for OKX integration | REAL/wired |
-| `backend/src/services/ReportService.ts` | Generates PDF summaries, comparison reports, and scorecards | REAL/wired |
-| `backend/src/scripts/downloadMarketData.ts` | Script for pulling specific CSV trade data sets | REAL/wired |
-| `backend/src/scripts/generateSyntheticTrades.ts` | Utility to create synthetic data for demo populations | REAL/wired |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind 4, Recharts | UI, auth state, SSE client for the Council |
+| Backend | Node 20, Express 4, Mongoose 8, zod, PDFKit | Auth, exchange sync, scoring, audits, exports |
+| ml-service | Python 3.11, FastAPI, LangGraph, Motor/PyMongo | Agent Council, evaluation harness, whale analysis |
 
-### ML-Service (Python, port 8000 scaffolded)
-| File Path | What it does | Status |
-|---|---|---|
-| `ml-service/agents/council.py` | Agent Council — LangGraph StateGraph wiring for parallel specialist execution | REAL/wired |
-| `ml-service/agents/debate.py` | Execution Trial debate logic — Prosecution/Defense/Judge | REAL/wired |
-| `ml-service/agents/liquidity_scout.py` | Liquidity Scout — specialist agent for slippage & liquidity analysis | REAL/wired |
-| `ml-service/agents/fee_optimizer.py` | Fee Optimizer — specialist agent for fee efficiency analysis | REAL/wired |
-| `ml-service/agents/alpha_architect.py` | Alpha Architect — specialist agent for execution alpha analysis | REAL/wired |
-| `ml-service/agents/risk_auditor.py` | Risk Auditor — specialist agent for concentration & adverse selection risk | REAL/wired |
-| `ml-service/agents/synthesis.py` | Synthesis Agent — conflict resolution & recommendation generation | REAL/wired |
-| `ml-service/agents/grounding.py` | Grounding contract, checking metric validity vs claim | REAL/wired |
-| `ml-service/agents/verification.py` | Verification gate preventing unsafe trade logic | REAL/wired |
-| `ml-service/agents/confidence.py` | Deterministic evidence coverage confidence scoring | REAL/wired |
-| `ml-service/agents/helpers.py` | Helper functions like override_synthesis_cost | REAL/wired |
-| `ml-service/agents/llm_client.py` | Groq async client connection factory | REAL/wired |
-| `ml-service/agents/persistence.py` | MongoDB interactions for runs and traces | REAL/wired |
-| `ml-service/eval/harness.py` | Eval framework execution | REAL/wired |
-| `ml-service/eval/cost_report.py` | Generates cost telemetry stats table | REAL/wired |
-| `ml-service/eval/paper_artifacts.py` | Artifact builder mapping evaluation data to paper formats | REAL/wired |
-| `ml-service/whale/aggtrades_window.py` | Fetches raw local or REST aggregate trades for window contexts | REAL/wired |
-| `ml-service/whale/enrich.py` | Correlates trades against order book imbalance factors | REAL/wired |
-| `ml-service/whale/analyze_slippage.py` | Calculates primary Mann-Whitney and secondary t-tests | REAL/wired |
-| `ml-service/whale/regen_fills.py` | Determines fallback versus genuine market fill paths | REAL/wired |
+Identity is always taken from the JWT (`resolveAccount`), never from a request parameter. The only
+parameter that selects an account is `userId=demo-*`, and only the six known demo slugs are accepted.
 
-### Frontend (Next.js, port 3000)
-| File Path | What it does | Status |
-|---|---|---|
-| `frontend/app/page.tsx` | Main landing page | REAL/wired |
-| `frontend/app/dashboard/page.tsx` | Main user execution dashboard | REAL/wired |
-| `frontend/app/analytics/page.tsx` | Detailed analytics breakdown | REAL/wired |
-| `frontend/app/analytics/WhaleCorrelation.tsx` | Whale/Slippage visual analysis component | REAL/wired |
-| `frontend/app/components/AgentCouncil.tsx` | Core UI component for execution streaming and reporting | REAL/wired |
-| `frontend/app/trades/page.tsx` | Raw trade listing view | REAL/wired |
-| `frontend/app/share/[userId]/page.tsx` | Shareable scorecard page | REAL/wired |
+## 2. Backend (`backend/src`)
 
-## 3. Backend API Surface
+| Path | Purpose |
+|---|---|
+| `app.ts` | `createApp()` builds the Express app (used by `index.ts` and by tests) |
+| `index.ts` | Loads env, connects to Mongo, listens |
+| `config/` | `env.ts` fail-fast env validation, `ingestion.ts` (symbols, window), `versions.ts` (`SCORING_VERSION`), `passport.ts` |
+| `middleware/` | `security.ts` (helmet, CORS, rate limiters), `csrf.ts` (Origin check), `requireAuth.ts`, `resolveAccount.ts` (incl. `resolveDownloadAccount`), `errorHandler.ts` |
+| `routes/` | `auth`, `audit`, `onboarding`, `attribution`, `preflight`, `health`, `connect` (retired, answers 410) |
+| `services/` | Exchange clients (`BinanceClient`, `BybitClient`, `OKXClient`), `keyValidation` (read-only checks), `TradeIngestionService`, `SyncService`, `MarketDataService`, `ReportService` (PDF), `authService`, `oauthService`, `oauthCodeService`, `emailVerificationService`, `passwordResetService`, `emailService` |
+| `scoring/` | `engine.ts` (per-trade score), `audit.ts` (account summary), `attribution.ts` (cost decomposition), `history.ts` (snapshots), `coach.ts` |
+| `validation/` | zod schemas and `parseOrReject` |
+| `utils/` | `encryption.ts` (AES-256-GCM), `jwt.ts`, `downloadToken.ts`, `password.ts`, `cookieConfig.ts`, `listRoutes.ts` |
+| `scripts/` | Seeding, backfills, probes. Several are destructive; read before running |
 
-| Method | Path | Feature it serves |
-|---|---|---|
-| GET | `/api/health` | Service health check |
-| GET | `/api/ready` | Service readiness probe |
-| GET | `/api/version` | Endpoint for build verification |
-| POST | `/api/connect/` | User exchange connection simulation |
-| GET | `/api/audit/` | Audit initiation |
-| GET | `/api/audit/score` | Primary execution score endpoint |
-| GET | `/api/audit/report` | PDF export retrieval |
-| GET | `/api/audit/share/:userId` | Shareable scorecard deep-link |
-| GET | `/api/audit/trades/export` | CSV export of executed trades |
-| GET | `/api/audit/trades` | Retrieves trade list |
-| PATCH | `/api/audit/trades/:tradeId/note` | Trade Journal Notes submission |
-| GET | `/api/audit/analytics` | Deep-dive analytics entrypoint |
-| GET | `/api/audit/analytics/exchange-comparison` | Venue Alpha / comparative analysis |
-| GET | `/api/audit/coach` | Execution Coach mode logic |
-| GET | `/api/audit/analytics/whale-correlation` | Whale/slippage specific analysis |
-| GET | `/api/attribution/` | Trade attribution processing |
+### Scoring
 
-## 4. Feature Status Ledger
-*(This replaces the v3 roadmap table)*
+Four components, weights fixed in `scoring/engine.ts`: slippage 35%, fees 25%, timing 25%, spread 15%.
+Grade bands: A ≥ 90, B ≥ 75, C ≥ 60, D ≥ 40, F below. Account summaries sort trades by id before
+aggregating so results are deterministic. `POST /api/audit/run` is the only writer of the canonical
+`Audit` document (one per account, enforced by a unique index) and appends one immutable
+`AuditHistory` row per run.
 
-No demo-visible feature is missing. The repository reflects its true, final, built state.
+### Authentication and session handling
 
-| Feature | Roadmap ID | Status | Evidence (File/Commit) |
+- Access token: JWT, 15 minutes. Refresh token: JWT in an HTTP-only cookie, 7 days, stored only as a
+  SHA-256 hash, rotated on every use with family revocation on reuse.
+- `/api/auth/refresh`, `/logout` and `/oauth/exchange` require a trusted `Origin` (or `Referer`).
+- OAuth (Google, GitHub) never puts a token in a URL: the callback redirects with a 30 second,
+  single-use code that the frontend exchanges for an access token.
+- Email/password sign-ups receive a verification link. When a provider later claims the same
+  address, an unverified password is discarded and its sessions are revoked.
+- Browsers cannot send `Authorization` on `window.open`, so PDF and CSV downloads use a one-minute
+  link token (`POST /api/audit/download-token`) signed with a key derived from, but not equal to,
+  the access secret.
+
+### Rate limits
+
+| Limiter | Window | Max | Applies to |
 |---|---|---|---|
-| Scoring engine | N/A | BUILT | `backend/src/scoring/engine.ts` |
-| 3 Exchange connectors | N/A | BUILT | `BinanceClient.ts`, `BybitClient.ts`, `OKXClient.ts` |
-| Analytics deep-dive | N/A | BUILT | `app/analytics/page.tsx` |
-| Exchange comparison/venue alpha | T2.4 | BUILT | `backend/src/routes/audit.ts` |
-| PDF export | T2.5 | BUILT | `backend/src/services/ReportService.ts` |
-| CSV export | T2.6 | BUILT | `backend/src/routes/audit.ts` |
-| Shareable scorecard | T2.8 | BUILT | `backend/src/routes/audit.ts` |
-| Execution Coach | N/A | BUILT | `backend/src/routes/audit.ts` |
-| Trade Journal Notes | N/A | BUILT | `backend/src/routes/audit.ts` |
-| Whale Correlation pipeline | T2.12 | BUILT | `ml-service/whale/*.py` |
-| Full Agent Council (AC-0 to AC-15) | N/A | BUILT | `ml-service/agents/*.py`, `council_runs` in DB |
-| Eval Harness & Reproducibility Pack | N/A | BUILT | `ml-service/eval/harness.py`, `eval_tables.md` |
-| Cost Telemetry | N/A | BUILT | `ml-service/eval/cost_report.py` |
-| Live-price WebSockets | T2.9 | DEFERRED-BY-DESIGN | Requires live InfluxDB/Redis infra incompatible with static demo |
-| Benchmark/FillScore Index | T2.10 | DEFERRED-BY-DESIGN | Requires live InfluxDB/Redis infra incompatible with static demo |
-| OBI Engine | T2.11 | DEFERRED-BY-DESIGN | Requires live InfluxDB/Redis infra incompatible with static demo |
-| Latency Benchmarking | T2.13 | DEFERRED-BY-DESIGN | Requires live InfluxDB/Redis infra incompatible with static demo |
-| Spoofing Detector | T2.14 | DEFERRED-BY-DESIGN | Requires live InfluxDB/Redis infra incompatible with static demo |
-| Weekly Email Digest | T2.7 | DEFERRED-BY-DESIGN | Requires live InfluxDB/Redis infra incompatible with static demo |
+| global | 15 min | 600 | everything |
+| `auditReadLimiter` | 15 min | 300 | all of `/api/audit/*` |
+| `auditRunLimiter` | 15 min | 10 | `POST /api/audit/run` |
+| `shareLimiter` | 60 min | 100 | `GET /api/audit/share/:userId`, `PATCH /api/audit/trades/:tradeId/note` |
+| `authLimiter` | 15 min | 15 | sign-in, sign-up, reset, verify, exchange |
+| `connectLimiter` | 15 min | 5 | `POST /api/onboarding/connect` |
+| `availabilityLimiter` | 15 min | 20 | `/api/preflight` |
 
-## 5. Data Model
+All are per IP and held in memory, so they are per instance. See the gaps below.
 
-- **Demo Users**:
-  - Main Evaluation Set: `demo-disciplined`, `demo-moderate`, `demo-aggressive`. These are whale-enriched, real January-2024-timestamped Binance users used strictly for analytical performance eval.
-  - Comparison Set: `demo-bybit`, `demo-okx`, `demo-multi`. These users act as benchmark and comparative baselines.
-- **Trade Schema Fields**: Trade documents use `fee` and `notional` directly (the previously duplicated seeder properties like `feePaid` or `notionalValue` are obsolete/absent).
-- **Whale Enrichment Fields**: Main users are enriched directly in the DB with fields like `whaleAdverse`, `whalePressure`, `arrivalSlippageBps`, and `realFillComputed` representing deep historical context.
+### API surface
 
-## 6. Known Gaps / Tech Debt (Honest & Brief)
+Generated from the app (`npm run docs:routes`).
 
-- **Trade.exchange Enum**: Missing the explicit `'okx'` member inside the mongoose schema definition, which could cause ingest errors on strict type enforcement.
-- **CamelCase Mapping in `loader.py`**: The python data loader assumes snake_case fields (`whale_adverse`, `reversion_30s`), while Mongo strictly uses camelCase (`whaleAdverse`, `reversion30s`), resulting in silent `None` parsing. Needs to be confirmed if this missing data is load-bearing.
-- **Constant Duplication**: `metrics_version` and `prompt_version` are hardcoded strings independently duplicated across multiple scripts rather than centralized in one constants module.
-- **Hardcoded URI Secrets**: MongoDB URIs and passwords are leaked and hardcoded into specific `.py` files inside the `whale/` pipeline. These need to be immediately rotated and moved purely to `.env`.
+| Method | Path |
+|---|---|
+| GET | `/api/attribution/` |
+| GET | `/api/audit/` |
+| GET | `/api/audit/analytics` |
+| GET | `/api/audit/analytics/exchange-comparison` |
+| GET | `/api/audit/analytics/whale-correlation` |
+| GET | `/api/audit/coach` |
+| POST | `/api/audit/download-token` |
+| GET | `/api/audit/history` |
+| GET | `/api/audit/report` |
+| POST | `/api/audit/run` |
+| GET | `/api/audit/score` |
+| GET | `/api/audit/share/:userId` |
+| GET | `/api/audit/trades` |
+| PATCH | `/api/audit/trades/:tradeId/note` |
+| GET | `/api/audit/trades/export` |
+| POST | `/api/auth/forgot-password` |
+| GET | `/api/auth/github` |
+| GET | `/api/auth/github/callback` |
+| GET | `/api/auth/google` |
+| GET | `/api/auth/google/callback` |
+| POST | `/api/auth/login` |
+| POST | `/api/auth/logout` |
+| GET | `/api/auth/me` |
+| POST | `/api/auth/oauth/exchange` |
+| POST | `/api/auth/refresh` |
+| POST | `/api/auth/register` |
+| POST | `/api/auth/resend-verification` |
+| POST | `/api/auth/reset-password` |
+| POST | `/api/auth/verify-email` |
+| POST | `/api/connect/` |
+| GET | `/api/health` |
+| POST | `/api/onboarding/connect` |
+| POST | `/api/onboarding/sync` |
+| GET | `/api/preflight/exchanges` |
+| GET | `/api/ready` |
+| GET | `/api/version` |
+| GET | `/health` |
+| GET | `/ready` |
+| GET | `/version` |
+
+## 3. ml-service (`ml-service`)
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/health` | Model names and feature flags |
+| GET | `/ready` | Mongo reachable and `GROQ_API_KEY` set |
+| GET | `/version` | Service version |
+| POST | `/ml/agents/council` | Run the Council, return the full result |
+| POST | `/ml/agents/council/stream` | Same run, streamed as server-sent events |
+| GET | `/ml/agents/council/runs` | Past runs for the account |
+| GET | `/ml/agents/council/runs/{run_id}` | One persisted run |
+| GET | `/ml/agents/council/telemetry` | Token and latency summary |
+
+Pipeline: deterministic metric packets (`agents/metrics`) → four specialists (liquidity, fee, alpha,
+risk) → bounded two-round prosecution/defense debate → synthesis → verification gate that recomputes
+every claimed saving → grounding check that every cited number exists in a packet. Errors reach the
+browser only as typed codes (`RATE_LIMIT_EXHAUSTED`, `DB_UNAVAILABLE`, `NO_DATA`, `INTERNAL`) with
+fixed messages. A run budget (`config/budget.py`) refuses runs past the free-tier allowance instead
+of letting a mid-run 429 degrade the result into default verdicts. `config/env_loader.py` fixes env
+precedence: real environment, then `backend/.env` for shared keys, then `ml-service/.env`.
+
+## 4. Frontend (`frontend/app`)
+
+| Route | Purpose |
+|---|---|
+| `/` | Landing page, demo account cards |
+| `/signup`, `/login`, `/forgot-password`, `/reset-password`, `/verify-email` | Account flows |
+| `/onboarding` | Connect Binance, Bybit or OKX with a read-only key, then sync |
+| `/dashboard` | Score, attribution, trend from stored history, coach, Council |
+| `/analytics`, `/trades` | Deep dive, trade blotter, CSV export, trade notes |
+| `/share/[userId]` | Public score card for demo accounts, with Open Graph image |
+| `/terms`, `/privacy` | Legal pages |
+| `/api/preflight` | Server route that probes Binance, Bybit and OKX reachability from the frontend host |
+
+## 5. Data model (MongoDB, database `fillscore`)
+
+| Collection | Notes |
+|---|---|
+| `users` | Email, bcrypt hash or provider ids, `emailVerified`, `plan` |
+| `refreshtokens`, `passwordresettokens`, `emailverificationtokens`, `oauthcodes` | Hashed, TTL-expired |
+| `exchangeconnections` | One per account and exchange; key, secret and (OKX) passphrase are AES-256-GCM payloads |
+| `trades` | Native `fee` and `notional`; `dataSource` immutable; `exchange` is `binance`, `bybit` or `okx` |
+| `audits` | One canonical document per account (unique `accountId`) |
+| `audithistories` | Append-only snapshots, edits refused, deletes allowed for erasure |
+| `marketcaches` | Kline cache, 24 hour TTL |
+| `council_runs` | Persisted Council runs (written by ml-service; `created_at` is an ISO string) |
+
+`dataSource` (`synthetic-demo` or `real-user`) is set once and enforced at schema level. Only trader
+behaviour in the demo accounts is synthetic; market data and whale data are real.
+
+Canonical demo scores: `demo-disciplined` 95.885 (A), `demo-moderate` 84.809 (B),
+`demo-aggressive` 60.675 (C), `demo-bybit` 76.164 (B), `demo-okx` 81.659 (B), `demo-multi` 70.720 (C).
+
+## 6. Build status
+
+| Area | State |
+|---|---|
+| Scoring engine, audits, history, analytics, attribution | Built |
+| Binance, Bybit, OKX connection with read-only key verification and one shared sync path | Built; Bybit and OKX key checks follow each exchange's documented permission fields and have not been run against live keys |
+| Auth: JWT, rotation, OAuth, CSRF origin check, email verification, password reset | Built |
+| PDF and CSV for signed-in users | Built (link tokens) |
+| Agent Council, evaluation harness, cost telemetry | Built |
+| CI (backend, frontend, ml-service tests, typecheck, frontend build) | Built (`.github/workflows/ci.yml`) |
+| Whale correlation | Sample accounts only; connected accounts get an explicit "unavailable" response |
+
+## 7. Known gaps
+
+- **ml-service is not deployed** and the Railway region is geo-blocked by Binance (HTTP 451). See ROADMAP §3.
+- **Council replay** endpoint does not exist; runs are persisted but not replayable.
+- **State is per instance:** rate limiters and the Council run budget live in memory. Running more
+  than one instance needs a shared store (ROADMAP R5-C8).
+- **No billing, quotas per plan, or GDPR export/erasure endpoints** (ROADMAP R5-C4, R5-C5).
+- **No observability** (error tracking, traces, Council run tracing) (ROADMAP R5-C9).
+- **No prompt-injection isolation layer** beyond the Council only receiving numeric packets, and no
+  `ENCRYPTION_KEY` rotation tooling (ROADMAP R5-C2, R5-M1).
+- **Field-name drift risk:** the ml-service loader projects `vwap5m` while the Trade model stores
+  `vwap5min`; nothing writes `vwap5m`. Fixing it changes packet contents and hashes, so it is held
+  until the evaluation is re-run.
+- **Git history** contains credentials from before they were moved to the environment. They are
+  rotated; whether to purge history before the repository goes public is an open decision
+  (ROADMAP R6-G13).

@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/jwt';
+import { verifyDownloadToken, DownloadKind } from '../utils/downloadToken';
 
 declare global {
     namespace Express {
@@ -57,3 +58,30 @@ export const resolveAccount = (req: Request, res: Response, next: NextFunction):
         return;
     }
 };
+
+/**
+ * For endpoints opened with window.open. A `dl` token (see utils/downloadToken.ts) identifies a
+ * signed-in user for that one kind of download; without one it behaves like resolveAccount, so
+ * the demo flow is unchanged. A `dl` token cannot be combined with a userId parameter.
+ */
+export const resolveDownloadAccount = (kind: DownloadKind) =>
+    (req: Request, res: Response, next: NextFunction): void => {
+        const dl = req.query.dl;
+        if (dl === undefined) {
+            return resolveAccount(req, res, next);
+        }
+
+        if (req.query.userId !== undefined) {
+            res.status(403).json({ error: 'Forbidden: Invalid userId or unauthorized access' });
+            return;
+        }
+
+        try {
+            if (typeof dl !== 'string') throw new Error('invalid_download_token');
+            req.accountId = verifyDownloadToken(dl, kind).userId;
+            req.isDemo = false;
+            return next();
+        } catch {
+            res.status(401).json({ error: 'Invalid or expired download link' });
+        }
+    };
