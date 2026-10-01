@@ -11,12 +11,14 @@ from pymongo.errors import PyMongoError
 RATE_LIMIT_EXHAUSTED = "RATE_LIMIT_EXHAUSTED"
 DB_UNAVAILABLE = "DB_UNAVAILABLE"
 NO_DATA = "NO_DATA"
+MODEL_UNAVAILABLE = "MODEL_UNAVAILABLE"
 INTERNAL = "INTERNAL"
 
 _MESSAGES = {
     RATE_LIMIT_EXHAUSTED: "The Council is at capacity right now. Please try again in a few minutes.",
     DB_UNAVAILABLE: "The Council can't reach its data right now. Please try again shortly.",
     NO_DATA: "There are no scored trades to analyse for this account yet.",
+    MODEL_UNAVAILABLE: "The Council's AI model is unavailable right now. This is a configuration problem on our side, not yours.",
     INTERNAL: "The Council hit an unexpected problem. Please try again.",
 }
 
@@ -37,6 +39,9 @@ def classify_exception(exc: BaseException) -> str:
         return exc.code
     if isinstance(exc, PyMongoError):
         return DB_UNAVAILABLE
+
+    if type(exc).__name__ == "NotFoundError":
+        return MODEL_UNAVAILABLE
 
     text = str(exc).lower()
     if any(marker in text for marker in _RATE_LIMIT_MARKERS):
