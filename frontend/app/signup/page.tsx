@@ -170,6 +170,12 @@ export default function SignupPage() {
                 }}>
                 {loading ? 'Creating account...' : 'Sign Up'}
               </button>
+              <p style={{ marginTop: '0.75rem', fontFamily: 'var(--font-inter)', fontSize: '0.72rem', lineHeight: 1.6, color: '#6a6560', textAlign: 'center' }}>
+                By creating an account you agree to the{' '}
+                <a href="/terms" style={{ color: '#a78b71', textDecoration: 'none' }}>Terms of Service</a>{' '}
+                and the{' '}
+                <a href="/privacy" style={{ color: '#a78b71', textDecoration: 'none' }}>Privacy Policy</a>.
+              </p>
             </form>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', margin: '1.5rem 0' }}>
