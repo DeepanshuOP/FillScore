@@ -7,6 +7,8 @@ export interface ExchangeConnectionDocument extends Document {
     exchange: 'binance' | 'bybit' | 'okx';
     encryptedApiKey: EncryptedPayload;
     encryptedApiSecret: EncryptedPayload;
+    // OKX only; other exchanges leave it unset
+    encryptedPassphrase?: EncryptedPayload;
     createdAt: Date;
 }
 
@@ -26,6 +28,7 @@ const ExchangeConnectionSchema = new Schema<ExchangeConnectionDocument>(
         exchange: { type: String, enum: ['binance', 'bybit', 'okx'], required: true },
         encryptedApiKey: { type: EncryptedFieldSchema, required: true },
         encryptedApiSecret: { type: EncryptedFieldSchema, required: true },
+        encryptedPassphrase: { type: EncryptedFieldSchema, required: false },
         createdAt: { type: Date, default: Date.now },
     }
 );

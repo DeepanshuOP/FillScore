@@ -4,10 +4,18 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { env, parseAllowedOrigins } from '../config/env';
 
-export const auditLimiter = rateLimit({
+// Reads power the dashboard (five calls per page load), so they get a generous ceiling.
+export const auditReadLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 300,
+    message: { error: 'Too many requests', code: 'RATE_LIMIT' }
+});
+
+// POST /run ingests from exchanges and rescoring is expensive, so it stays tight.
+export const auditRunLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 10,
-    message: { error: 'Too many requests', code: 'RATE_LIMIT' }
+    message: { error: 'Too many audit runs, please try again later.', code: 'RATE_LIMIT' }
 });
 
 export const authLimiter = rateLimit({
@@ -43,7 +51,7 @@ export function setupSecurity(app: Application) {
 
     const globalLimiter = rateLimit({
         windowMs: 15 * 60 * 1000, // 15 minutes
-        max: 100,
+        max: 600,
         message: { error: 'Too many requests', code: 'RATE_LIMIT' }
     });
     app.use(globalLimiter);

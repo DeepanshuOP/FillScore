@@ -12,7 +12,8 @@
     "verify-seed": "ts-node src/scripts/verifySeed.ts",
     "download:data": "ts-node src/scripts/downloadMarketData.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "docs:routes": "ts-node src/scripts/printRoutes.ts"
   },
   "dependencies": {
     "@types/cookie-parser": "^1.4.10",

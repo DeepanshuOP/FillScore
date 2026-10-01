@@ -10,7 +10,7 @@ export interface AuditSummaryDocument extends AuditSummary, Document {
 const AuditSchema = new Schema<AuditSummaryDocument>(
     {
         userId: { type: String, required: true, index: true },
-        accountId: { type: String, required: true, index: true },
+        accountId: { type: String, required: true, unique: true },
         dataSource: { type: String, enum: ['synthetic-demo', 'real-user'], required: true, immutable: true, index: true },
         period: {
             start: { type: Date, required: true },
