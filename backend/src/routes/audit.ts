@@ -1,18 +1,30 @@
 import { Router, Request, Response } from 'express';
-import { ExchangeConnection } from '../models/ExchangeConnection';
-import { decryptApiKey } from '../utils/encryption';
-import { TradeIngestionService } from '../services/TradeIngestionService';
+import { syncAccountTrades } from '../services/SyncService';
 import { MarketDataService } from '../services/MarketDataService';
 import { Trade } from '../models/Trade';
 import { Audit } from '../models/Audit';
 import { computeAuditSummary } from '../scoring/audit';
+import { recordAuditSnapshot, getAuditHistory } from '../scoring/history';
+import { hourSummary, describePeriod, describeWindow } from '../scoring/coach';
 import { scoreTrade } from '../scoring/engine';
 import { aggregateCostAttribution } from '../scoring/attribution';
 import { ReportService } from '../services/ReportService';
 import { EnrichedTrade } from '../types';
 import rateLimit from 'express-rate-limit';
-import { resolveAccount, VALID_DEMO_USERS } from '../middleware/resolveAccount';
-import { INGEST_SYMBOLS, INGEST_DAYS_BACK } from '../config/ingestion';
+import { resolveAccount, resolveDownloadAccount, VALID_DEMO_USERS } from '../middleware/resolveAccount';
+import { requireAuth } from '../middleware/requireAuth';
+import { signDownloadToken, DOWNLOAD_TOKEN_TTL_SECONDS } from '../utils/downloadToken';
+import { INGEST_DAYS_BACK } from '../config/ingestion';
+import { auditRunLimiter } from '../middleware/security';
+import {
+    parseOrReject,
+    runAuditQuerySchema,
+    tradesQuerySchema,
+    exportQuerySchema,
+    historyQuerySchema,
+    downloadTokenBodySchema,
+    noteBodySchema,
+} from '../validation/schemas';
 
 export async function executeAuditPipeline(accountId: string) {
     const tradeDocs = await Trade.find({ accountId }).lean();
@@ -57,6 +69,8 @@ export async function executeAuditPipeline(accountId: string) {
         { new: true, upsert: true }
     );
 
+    await recordAuditSnapshot(accountId, savedAudit.dataSource, savedAudit);
+
     return { savedAudit, tradesScored, totalIngested: trades.length };
 }
 
@@ -80,18 +94,18 @@ auditRouter.get('/', resolveAccount, async (req: Request, res: Response) => {
         return res.status(200).json(latestAudit);
     } catch (error: any) {
         console.error('Error fetching audit:', error);
-        return res.status(500).json({ error: error.message || 'Internal Server Error' });
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-auditRouter.post('/run', resolveAccount, async (req: Request, res: Response) => {
+auditRouter.post('/run', auditRunLimiter, resolveAccount, async (req: Request, res: Response) => {
     try {
         const accountId = req.accountId!;
-        const daysBackStr = req.query.daysBack as string;
-        const daysBack = daysBackStr ? parseInt(daysBackStr, 10) : INGEST_DAYS_BACK;
+        const query = parseOrReject(runAuditQuerySchema, req.query, res);
+        if (!query) return;
+        const daysBack = query.daysBack ?? INGEST_DAYS_BACK;
 
         const isDemoUser = req.isDemo;
-        const ingestionService = new TradeIngestionService();
         const marketDataService = new MarketDataService();
 
         if (isDemoUser) {
@@ -100,27 +114,14 @@ auditRouter.post('/run', resolveAccount, async (req: Request, res: Response) => 
             await marketDataService.enrichAllPendingTrades(accountId);
         } else {
             // STANDARD USER FLOW
-            const user = await ExchangeConnection.findOne({ userId: accountId });
-            if (!user) {
-                return res.status(404).json({ error: 'User not found' });
-            }
-
-            const apiKey = decryptApiKey(user.encryptedApiKey);
-            const apiSecret = decryptApiKey(user.encryptedApiSecret);
-
-            // 1. Ingest trades for all major symbols
-            // 4 parallel calls = 80 weight, well inside the 6000/min budget
-            const results = await Promise.allSettled(
-                INGEST_SYMBOLS.map(symbol =>
-                    ingestionService.ingestForUser(accountId, apiKey, apiSecret, symbol, daysBack)
-                )
-            );
-
-            results.forEach((res, index) => {
-                if (res.status === 'rejected') {
-                    console.error(`[Ingest] Failed syncing symbol ${INGEST_SYMBOLS[index]}:`, res.reason);
+            try {
+                await syncAccountTrades(accountId, daysBack);
+            } catch (e: any) {
+                if (e.message === 'no_exchange_connections') {
+                    return res.status(404).json({ error: 'No exchange connection found' });
                 }
-            });
+                throw e;
+            }
 
             // 2. Enrich pending trades
             await marketDataService.enrichAllPendingTrades(accountId);
@@ -138,7 +139,7 @@ auditRouter.post('/run', resolveAccount, async (req: Request, res: Response) => 
 
     } catch (error: any) {
         console.error('Error generating audit:', error);
-        return res.status(500).json({ error: error.message || 'Internal Server Error' });
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
@@ -156,11 +157,32 @@ auditRouter.get('/score', resolveAccount, async (req: Request, res: Response) =>
 
     } catch (error: any) {
         console.error('Error fetching score:', error);
-        return res.status(500).json({ error: error.message || 'Internal Server Error' });
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
-auditRouter.get('/report', resolveAccount, async (req: Request, res: Response) => {
+auditRouter.get('/history', resolveAccount, async (req: Request, res: Response) => {
+    try {
+        const query = parseOrReject(historyQuerySchema, req.query, res);
+        if (!query) return;
+        const points = await getAuditHistory(req.accountId!, query.limit);
+        return res.status(200).json({ points });
+    } catch (error) {
+        console.error('Error fetching audit history:', error);
+        return res.status(500).json({ error: 'Failed to fetch history' });
+    }
+});
+
+auditRouter.post('/download-token', requireAuth, (req: Request, res: Response) => {
+    const body = parseOrReject(downloadTokenBodySchema, req.body, res);
+    if (!body) return;
+    return res.status(200).json({
+        token: signDownloadToken(req.userId!, body.kind),
+        expiresInSeconds: DOWNLOAD_TOKEN_TTL_SECONDS,
+    });
+});
+
+auditRouter.get('/report', resolveDownloadAccount('report'), async (req: Request, res: Response) => {
     try {
         const accountId = req.accountId!;
 
@@ -288,14 +310,16 @@ auditRouter.get('/share/:userId', shareLimiter, async (req: Request, res: Respon
     }
 });
 
-auditRouter.get('/trades/export', resolveAccount, async (req, res) => {
+auditRouter.get('/trades/export', resolveDownloadAccount('export'), async (req, res) => {
   try {
-    const { exchange, symbol } = req.query as Record<string, string>;
+    const filters = parseOrReject(exportQuerySchema, req.query, res);
+    if (!filters) return;
+    const { exchange, symbol } = filters;
     const accountId = req.accountId!;
 
     const query: Record<string, unknown> = { accountId };
-    if (exchange && exchange !== 'multi' && exchange !== 'ALL') {
-      query.exchange = new RegExp(`^${exchange}$`, 'i');
+    if (exchange && exchange !== 'multi' && exchange !== 'all') {
+      query.exchange = exchange;
     }
     if (symbol && symbol !== 'ALL') {
       query.symbol = symbol;
@@ -340,11 +364,10 @@ auditRouter.get('/trades/export', resolveAccount, async (req, res) => {
 
 auditRouter.get('/trades', resolveAccount, async (req, res) => {
   try {
-    const { 
-      symbol, side, grade,
-      page = '1', limit = '50' 
-    } = req.query as Record<string, string>;
-    
+    const filters = parseOrReject(tradesQuerySchema, req.query, res);
+    if (!filters) return;
+    const { symbol, side, grade, page: pageNum, limit: limitNum } = filters;
+
     const accountId = req.accountId!;
 
     const query: Record<string, unknown> = { 
@@ -357,9 +380,6 @@ auditRouter.get('/trades', resolveAccount, async (req, res) => {
       query.side = side;
     if (grade && grade !== 'ALL') 
       query.fillGrade = grade;
-
-    const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
 
     const total = await Trade.countDocuments(query);
     const trades = await Trade.find(query)
@@ -392,14 +412,11 @@ auditRouter.get('/trades', resolveAccount, async (req, res) => {
 auditRouter.patch('/trades/:tradeId/note', shareLimiter, resolveAccount, async (req, res) => {
   try {
     const { tradeId } = req.params;
-    const { note } = req.body;
+    const body = parseOrReject(noteBodySchema, req.body, res);
+    if (!body) return;
     const accountId = req.accountId!;
 
-    if (typeof note !== 'string') {
-      return res.status(400).json({ error: 'note must be a string' });
-    }
-
-    const trimmedNote = note.trim().substring(0, 500);
+    const trimmedNote = body.note;
 
     const trade = await Trade.findOneAndUpdate(
       { tradeId, accountId },
@@ -702,6 +719,9 @@ auditRouter.get('/coach', resolveAccount, async (req: Request, res: Response) =>
         }
 
         const actions: any[] = [];
+        // Cost figures cover the audited span, so say so rather than implying a monthly rate
+        const periodText = latestAudit.period ? describePeriod(latestAudit.period) : null;
+        const overPeriod = periodText ? ` over ${periodText}` : '';
 
         // TIMING action
         const b: any = latestAudit.breakdown || {};
@@ -712,7 +732,7 @@ auditRouter.get('/coach', resolveAccount, async (req: Request, res: Response) =>
                 category: "TIMING",
                 title: `Trade around ${bestH} UTC`,
                 detail: `Your worst-scoring trades cluster around ${worstH} UTC. Trading closer to your best window (${bestH} UTC) historically scores higher.`,
-                estimatedImpact: `~$${Math.round(attribution.timingCost)}/month`,
+                estimatedImpact: `~$${Math.round(attribution.timingCost)}${overPeriod} (modelled)`,
                 impactValue: attribution.timingCost,
                 icon: "clock"
             });
@@ -738,7 +758,7 @@ auditRouter.get('/coach', resolveAccount, async (req: Request, res: Response) =>
                 category: "ORDER_TYPE",
                 title: "Increase maker ratio to 70%+",
                 detail: `You're at ${Math.round(b.makerRatio * 100)}% maker. Using more limit orders reduces fee drag.`,
-                estimatedImpact: `~$${Math.round(potentialSavings)}/month in fees`,
+                estimatedImpact: `~$${Math.round(potentialSavings)} in fees${overPeriod}`,
                 impactValue: potentialSavings,
                 icon: "tag"
             });
@@ -765,17 +785,29 @@ auditRouter.get('/coach', resolveAccount, async (req: Request, res: Response) =>
         return res.status(200).json({
             headline,
             actions,
-            bestWindow: { hour: bestH, reason: "tightest spreads, deepest liquidity" },
-            worstWindow: { hour: worstH, reason: "spreads 2-4x wider" }
+            bestWindow: { hour: bestH, reason: b.bestHour != null ? describeWindow(hourSummary(trades, b.bestHour)) : null },
+            worstWindow: { hour: worstH, reason: b.worstHour != null ? describeWindow(hourSummary(trades, b.worstHour)) : null }
         });
     } catch (err: any) {
         console.error('Error in Coach endpoint:', err);
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
 auditRouter.get('/analytics/whale-correlation', resolveAccount, async (req: Request, res: Response) => {
     try {
+        // Whale enrichment only exists for the sample accounts. Answering an empty result for a
+        // connected account would read as "no whale activity", which is not what we measured.
+        if (!req.isDemo) {
+            return res.status(200).json({
+                available: false,
+                reason: 'not_available_for_account',
+                symbols: [],
+                summaryBySymbol: {},
+                trades: [],
+            });
+        }
+
         const accountId = req.accountId!;
 
         const trades = await Trade.find({
@@ -823,12 +855,13 @@ auditRouter.get('/analytics/whale-correlation', resolveAccount, async (req: Requ
         }
 
         return res.status(200).json({
+            available: true,
             symbols,
             summaryBySymbol,
             trades: formattedTrades
         });
     } catch (err: any) {
         console.error('Error in /analytics/whale-correlation endpoint:', err);
-        return res.status(500).json({ error: err.message });
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
