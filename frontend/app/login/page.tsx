@@ -80,19 +80,19 @@ export default function LoginPage() {
           }} />
 
           <div className="px-[1.5rem] py-[2rem] sm:px-[2rem]">
-            <h2 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '0.5rem', textAlign: 'center' }}>
+            <h1 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '0.5rem', textAlign: 'center' }}>
               Welcome back
-            </h2>
+            </h1>
             <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#8a8078', textAlign: 'center', marginBottom: '2rem' }}>
               Log in to your FillScore account
             </p>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
+                <label htmlFor="login-email" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
                   Email
                 </label>
-                <input
+                <input id="login-email"
                   type="email"
                   placeholder="name@example.com"
                   value={email}
@@ -107,10 +107,10 @@ export default function LoginPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
+                <label htmlFor="login-password" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
                   Password
                 </label>
-                <input
+                <input id="login-password"
                   type="password"
                   placeholder="••••••••"
                   value={password}
@@ -122,8 +122,8 @@ export default function LoginPage() {
                     color: '#c8b898', outline: 'none'
                   }}
                 />
-                <div style={{ marginTop: '0.5rem', textAlign: 'right' }}>
-                  <a href="/forgot-password" style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#a78b71', textDecoration: 'none' }}>
+                <div style={{ marginTop: '0.25rem', textAlign: 'right' }}>
+                  <a href="/forgot-password" style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#a78b71', textDecoration: 'none', display: 'inline-block', padding: '0.5rem 0' }}>
                     Forgot password?
                   </a>
                 </div>

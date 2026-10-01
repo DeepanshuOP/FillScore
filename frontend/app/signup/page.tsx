@@ -91,19 +91,19 @@ export default function SignupPage() {
           }} />
 
           <div className="px-[1.5rem] py-[2rem] sm:px-[2rem]">
-            <h2 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '0.5rem', textAlign: 'center' }}>
+            <h1 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '0.5rem', textAlign: 'center' }}>
               Create an account
-            </h2>
+            </h1>
             <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#8a8078', textAlign: 'center', marginBottom: '2rem' }}>
               Join FillScore to analyze your trades
             </p>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
               <div>
-                <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
+                <label htmlFor="signup-email" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
                   Email
                 </label>
-                <input
+                <input id="signup-email"
                   type="email"
                   placeholder="name@example.com"
                   value={email}
@@ -118,10 +118,10 @@ export default function SignupPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
+                <label htmlFor="signup-password" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
                   Password
                 </label>
-                <input
+                <input id="signup-password"
                   type="password"
                   placeholder="••••••••"
                   value={password}
@@ -136,10 +136,10 @@ export default function SignupPage() {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
+                <label htmlFor="signup-confirm" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
                   Confirm Password
                 </label>
-                <input
+                <input id="signup-confirm"
                   type="password"
                   placeholder="••••••••"
                   value={confirmPassword}

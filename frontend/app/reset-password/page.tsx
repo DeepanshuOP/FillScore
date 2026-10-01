@@ -18,9 +18,9 @@ function ResetPasswordContent() {
   if (!token) {
     return (
       <div className="px-[1.5rem] py-[2rem] sm:px-[2rem]" style={{ textAlign: 'center' }}>
-        <h2 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '1rem' }}>
+        <h1 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '1rem' }}>
           Invalid Reset Link
-        </h2>
+        </h1>
         <div style={{ padding: '1rem', background: 'rgba(192,57,43,0.07)', borderLeft: '2px solid rgba(192,57,43,0.65)', borderRadius: '0 2px 2px 0', marginBottom: '1.5rem', textAlign: 'left' }}>
           <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#d9534f', margin: 0 }}>
             This reset link is invalid or has expired.
@@ -72,9 +72,9 @@ function ResetPasswordContent() {
 
   return (
     <div className="px-[1.5rem] py-[2rem] sm:px-[2rem]">
-      <h2 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '0.5rem', textAlign: 'center' }}>
+      <h1 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '0.5rem', textAlign: 'center' }}>
         Set new password
-      </h2>
+      </h1>
       <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#8a8078', textAlign: 'center', marginBottom: '2rem' }}>
         Enter and confirm your new password below.
       </p>
@@ -100,7 +100,7 @@ function ResetPasswordContent() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-              <label style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
+              <label htmlFor="reset-password" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
                 New Password
               </label>
               <button
@@ -110,7 +110,7 @@ function ResetPasswordContent() {
                 {showPassword ? 'HIDE' : 'SHOW'}
               </button>
             </div>
-            <input
+            <input id="reset-password"
               type={showPassword ? 'text' : 'password'}
               placeholder="At least 8 characters"
               value={password}
@@ -130,10 +130,10 @@ function ResetPasswordContent() {
           </div>
 
           <div>
-            <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
+            <label htmlFor="reset-confirm" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
               Confirm Password
             </label>
-            <input
+            <input id="reset-confirm"
               type={showPassword ? 'text' : 'password'}
               placeholder="Repeat your new password"
               value={confirmPassword}
