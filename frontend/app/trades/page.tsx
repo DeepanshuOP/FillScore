@@ -1,5 +1,6 @@
 'use client'
 
+import { pageWindow } from '../utils/pagination';
 import React, { useState, useEffect, Suspense } from 'react'
 import { openAuthenticatedDownload } from '../lib/downloads';
 import { formatUsd } from '../utils/format';
@@ -362,6 +363,7 @@ function TradesContent() {
 
       {/* MAIN CONTENT */}
       <main style={{ padding: '48px 2rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
+        <h1 className="sr-only">Trade ledger</h1>
         
         {/* SECTION A — Title + Stats */}
         <div style={{ marginBottom: '1.75rem', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
@@ -433,12 +435,12 @@ function TradesContent() {
         {/* SECTION C — Trade Table */}
         <div style={{ background: '#1a1917', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', marginTop: 0 }}>
           
-          <div className="hidden md:grid" style={{
-            gridTemplateColumns: '2rem 7rem 4.5rem 3.5rem 3.5rem 7.5rem 7rem 6rem 5rem 4.5rem 4.5rem 5rem',
+          <div className="hidden lg:grid" style={{
+            gridTemplateColumns: '2rem 5.5rem 4rem 3.25rem 3.5rem minmax(5.75rem,1fr) minmax(5.75rem,1fr) 4.75rem 4.25rem 4.25rem 3.5rem 3.5rem',
             alignItems: 'center', padding: '0 1.25rem', height: '40px', background: '#121210',
             borderBottom: '1px solid rgba(255,255,255,0.1)', position: 'sticky', top: '64px', zIndex: 10
           }}>
-            <div></div>
+            <div className="hidden lg:block"></div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>TIME</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SYMBOL</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>EXCH</div>
@@ -452,12 +454,12 @@ function TradesContent() {
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#888078', textAlign: 'center' }}>GRADE</div>
           </div>
 
-          <div className="grid md:hidden" style={{
-            gridTemplateColumns: '2rem 7rem 3.5rem 3.5rem 3.5rem 5rem 4.5rem 5rem',
+          <div className="grid lg:hidden" style={{
+            gridTemplateColumns: '4rem minmax(0,1fr) 2.5rem 2.75rem 4.25rem 2.25rem 2rem',
             alignItems: 'center', padding: '0 1.25rem', height: '40px', background: '#121210',
             borderBottom: '1px solid rgba(255,255,255,0.1)'
           }}>
-             <div></div>
+             <div className="hidden lg:block"></div>
              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>TIME</div>
              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SYM</div>
              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>EXCH</div>
@@ -470,17 +472,17 @@ function TradesContent() {
           {loading ? (
             <div>
               {[...Array(8)].map((_, i) => (
-                <div key={i} className="grid grid-cols-[2rem_7rem_3.5rem_3.5rem_3.5rem_5rem_4.5rem_5rem] md:grid-cols-[2rem_7rem_4.5rem_3.5rem_3.5rem_7.5rem_7rem_6rem_5rem_4.5rem_4.5rem_5rem]"
+                <div key={i} className="grid grid-cols-[4rem_minmax(0,1fr)_2.5rem_2.75rem_4.25rem_2.25rem_2rem] lg:grid-cols-[2rem_5.5rem_4rem_3.25rem_3.5rem_minmax(5.75rem,1fr)_minmax(5.75rem,1fr)_4.75rem_4.25rem_4.25rem_3.5rem_3.5rem]"
                   style={{ alignItems:'center', padding:'0 1.25rem', height:'52px', borderBottom:'1px solid rgba(255,255,255,0.1)' }}>
-                  <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                  <div className="hidden lg:block" style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div className="hidden md:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div className="hidden md:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div className="hidden md:block" style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div className="hidden md:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                  <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                  <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                  <div className="hidden lg:block" style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                  <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                   <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
@@ -506,7 +508,7 @@ function TradesContent() {
                 return (
                   <div key={trade._id}
                     onClick={() => { setSelectedTrade(trade); setDrawerOpen(true); }}
-                    className="grid grid-cols-[2rem_7rem_3.5rem_3.5rem_3.5rem_5rem_4.5rem_5rem] md:grid-cols-[2rem_7rem_4.5rem_3.5rem_3.5rem_7.5rem_7rem_6rem_5rem_4.5rem_4.5rem_5rem]"
+                    className="grid grid-cols-[4rem_minmax(0,1fr)_2.5rem_2.75rem_4.25rem_2.25rem_2rem] lg:grid-cols-[2rem_5.5rem_4rem_3.25rem_3.5rem_minmax(5.75rem,1fr)_minmax(5.75rem,1fr)_4.75rem_4.25rem_4.25rem_3.5rem_3.5rem]"
                     style={{
                       alignItems: 'center', padding: '0 1.25rem', height: '52px', borderBottom: '1px solid rgba(255,255,255,0.1)',
                       cursor: 'pointer', transition: 'background 0.15s ease',
@@ -516,7 +518,7 @@ function TradesContent() {
                     onMouseOver={e => { if (selectedTrade?._id !== trade._id) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
                     onMouseOut={e => { if (selectedTrade?._id !== trade._id) e.currentTarget.style.background = 'transparent' }}
                   >
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.52rem', color: '#585450' }}>
+                    <div className="hidden lg:block" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.52rem', color: '#585450' }}>
                       {String((page-1)*50 + i + 1).padStart(3, '0')}
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
@@ -554,25 +556,25 @@ function TradesContent() {
                       {trade.side}
                     </div>
                     
-                    <div className="hidden md:block" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#f0ece4', letterSpacing: '0.02em' }}>
+                    <div className="hidden lg:block" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#f0ece4', letterSpacing: '0.02em' }}>
                       {formatUsd(trade.notionalValue)}
                     </div>
-                    <div className="hidden md:block" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#b8b0a6' }}>
+                    <div className="hidden lg:block" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#b8b0a6' }}>
                       {formatPrice(trade.executionPrice)}
                     </div>
                     
                     {/* Mobile Price */}
-                    <div className="block md:hidden" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#f0ece4' }}>
+                    <div className="block lg:hidden" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#f0ece4' }}>
                       {formatPrice(trade.executionPrice)}
                     </div>
 
-                    <div className="hidden md:block" style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888078' }}>
+                    <div className="hidden lg:block" style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888078' }}>
                       {trade.feePaid != null ? `$${trade.feePaid.toFixed(4)}` : '—'}
                     </div>
-                    <div className="hidden md:block" style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: trade.slippageBps < 2 ? '#4ade80' : trade.slippageBps < 5 ? '#fcd34d' : '#f97316' }}>
+                    <div className="hidden lg:block" style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: trade.slippageBps < 2 ? '#4ade80' : trade.slippageBps < 5 ? '#fcd34d' : '#f97316' }}>
                       {trade.slippageBps?.toFixed(1) ?? '—'}
                     </div>
-                    <div className="hidden md:block" style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: trade.isMaker ? '#c4a882' : '#888078' }}>
+                    <div className="hidden lg:block" style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: trade.isMaker ? '#c4a882' : '#888078' }}>
                       {trade.isMaker ? 'MAKER' : 'TAKER'}
                     </div>
 
@@ -609,23 +611,27 @@ function TradesContent() {
           )}
 
           {/* SECTION D — Pagination */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.05)', background: '#121210' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', padding: '1rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.05)', background: '#121210' }}>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#888078' }}>
               Showing {Math.min((page-1)*50 + 1, total)}–{Math.min(page*50, total)} of {total}
             </div>
-            <div style={{ display: 'flex', gap: '4px' }}>
-              {[...Array(pages)].map((_, i) => (
-                <button key={i} onClick={() => setPage(i+1)}
+            <nav aria-label="Pagination" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+              {pageWindow(page, pages).map((item, idx) => item === 'ellipsis' ? (
+                <span key={`gap-${idx}`} aria-hidden="true" style={{ width: '20px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#585450' }}>…</span>
+              ) : (
+                <button key={item} onClick={() => setPage(item)}
+                  aria-label={`Page ${item}`}
+                  aria-current={page === item ? 'page' : undefined}
                   style={{
-                    width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: page === i+1 ? 'rgba(167,139,113,0.15)' : 'transparent',
-                    border: page === i+1 ? '1px solid rgba(167,139,113,0.4)' : '1px solid rgba(255,255,255,0.1)',
+                    minWidth: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: page === item ? 'rgba(167,139,113,0.15)' : 'transparent',
+                    border: page === item ? '1px solid rgba(167,139,113,0.4)' : '1px solid rgba(255,255,255,0.1)',
                     borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.6rem',
-                    color: page === i+1 ? '#c4a882' : '#888078', cursor: 'pointer'
+                    color: page === item ? '#c4a882' : '#888078', cursor: 'pointer'
                   }}
-                >{i+1}</button>
+                >{item}</button>
               ))}
-            </div>
+            </nav>
           </div>
         </div>
       </main>
@@ -799,12 +805,12 @@ function TradesFallback() {
       <Navbar currentPage="trades" showLive={true} />
       <main style={{ padding: '48px 2rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ background: '#1a1917', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', marginTop: 0 }}>
-          <div className="hidden md:grid" style={{
-            gridTemplateColumns: '2rem 7rem 4.5rem 3.5rem 3.5rem 7.5rem 7rem 6rem 5rem 4.5rem 4.5rem 5rem',
+          <div className="hidden lg:grid" style={{
+            gridTemplateColumns: '2rem 5.5rem 4rem 3.25rem 3.5rem minmax(5.75rem,1fr) minmax(5.75rem,1fr) 4.75rem 4.25rem 4.25rem 3.5rem 3.5rem',
             alignItems: 'center', padding: '0 1.25rem', height: '40px', background: '#121210',
             borderBottom: '1px solid rgba(255,255,255,0.1)', position: 'sticky', top: '64px', zIndex: 10
           }}>
-            <div></div>
+            <div className="hidden lg:block"></div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>TIME</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SYMBOL</div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>EXCH</div>
@@ -819,17 +825,17 @@ function TradesFallback() {
           </div>
           <div>
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="grid grid-cols-[2rem_7rem_3.5rem_3.5rem_3.5rem_5rem_4.5rem_5rem] md:grid-cols-[2rem_7rem_4.5rem_3.5rem_3.5rem_7.5rem_7rem_6rem_5rem_4.5rem_4.5rem_5rem]"
+              <div key={i} className="grid grid-cols-[4rem_minmax(0,1fr)_2.5rem_2.75rem_4.25rem_2.25rem_2rem] lg:grid-cols-[2rem_5.5rem_4rem_3.25rem_3.5rem_minmax(5.75rem,1fr)_minmax(5.75rem,1fr)_4.75rem_4.25rem_4.25rem_3.5rem_3.5rem]"
                 style={{ alignItems:'center', padding:'0 1.25rem', height:'52px', borderBottom:'1px solid rgba(255,255,255,0.1)' }}>
-                <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div className="hidden lg:block" style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                 <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                 <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                 <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                 <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div className="hidden md:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div className="hidden md:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div className="hidden md:block" style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div className="hidden md:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div className="hidden lg:block" style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+                <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                 <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                 <div style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
                 <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
