@@ -49,7 +49,7 @@ export class BybitClient {
         while (true) {
             const timestamp = Date.now().toString();
             const params: Record<string, string | number> = {
-                category: 'linear',
+                category: 'spot',
                 symbol,
                 startTime,
                 endTime,

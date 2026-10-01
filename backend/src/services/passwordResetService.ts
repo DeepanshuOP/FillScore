@@ -84,7 +84,7 @@ export async function resetPassword(rawToken: string, newPassword: string): Prom
 
     const passwordHash = await hashPassword(newPassword);
 
-    await User.updateOne({ _id: claimed.userId }, { $set: { passwordHash } });
+    await User.updateOne({ _id: claimed.userId }, { $set: { passwordHash, emailVerified: true } });
 
     // Revoke all existing RefreshToken sessions for this user on every device
     await RefreshToken.updateMany(
