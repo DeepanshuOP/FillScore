@@ -11,6 +11,7 @@ import { authRouter } from './routes/auth';
 import { onboardingRouter } from './routes/onboarding';
 import { preflightRouter } from './routes/preflight';
 import { healthRouter } from './routes/health';
+import { resolveTrustProxyHops } from './utils/trustProxy';
 
 export function createApp(): Application {
     const app = express();
@@ -20,8 +21,10 @@ export function createApp(): Application {
     // We set 'trust proxy' to 1 (trusting only the FIRST proxy hop) rather than true.
     // Setting 'true' trusts every hop in X-Forwarded-For, which would allow an attacker
     // to spoof an arbitrary IP header and completely evade rate limits. Caddy sits exactly 1 hop ahead.
-    if (process.env.NODE_ENV === 'production' || process.env.TRUST_PROXY === 'true' || process.env.TRUST_PROXY === '1') {
-        app.set('trust proxy', 1);
+    // The hop count comes from resolveTrustProxyHops: 1 behind Caddy, 2 behind Vercel then Render.
+    const trustedHops = resolveTrustProxyHops(process.env);
+    if (trustedHops > 0) {
+        app.set('trust proxy', trustedHops);
     }
 
     setupSecurity(app);
