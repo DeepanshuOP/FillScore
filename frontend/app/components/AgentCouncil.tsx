@@ -2,7 +2,7 @@
 import { useState, useRef, useCallback } from "react";
 import { councilMaintenanceMessage, councilErrorMessage, councilOfflineMessage } from "../utils/councilStatus";
 
-// ── Types ────────────────────────────────────────────────────────────────────────────────────
+// ── Types ──────────────────────────────────────────────────────────────────
 interface AgentCard {
   agent: string;
   rating: string;
@@ -70,7 +70,7 @@ function overallToGrade(rating: string): string {
 
 const AGENT_ORDER = ["liquidity_scout", "alpha_architect", "risk_auditor", "fee_optimizer"];
 
-// ── Component ───────────────────────────────────────────────────────────────────────────────────
+// ── Component ────────────────────────────────────────────────────────────────────────────────────
 export default function AgentCouncil({
   userId,
   symbol = "BTCUSDT",
