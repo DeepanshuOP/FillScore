@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense, useMemo } from "react";
+import { makerRatioNote } from '../utils/makerAdvice';
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "../components/Navbar";
 import WhaleCorrelation from "./WhaleCorrelation";
@@ -156,14 +157,14 @@ function AnalyticsContent() {
     const tradesQuery = buildQuery(identity.mode, identity.effectiveUserId, { limit: '10000' });
 
     Promise.all([
-      fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/analytics${analyticsQuery}`).then((res) => {
+      fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/audit/analytics${analyticsQuery}`).then((res) => {
         if (!res.ok) {
           if (identity.mode === "real") return null;
           throw new Error("Failed to load analytics");
         }
         return res.json();
       }),
-      fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/trades${tradesQuery}`).then((res) => {
+      fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/audit/trades${tradesQuery}`).then((res) => {
         if (!res.ok) return { trades: [] };
         return res.json();
       })
@@ -612,7 +613,7 @@ function AnalyticsContent() {
                 </div>
                 <div className="text-xs text-[#a78b71] bg-[rgba(167,139,113,0.05)] border border-[rgba(167,139,113,0.2)] p-3 rounded-sm flex items-start gap-2">
                   <span className="mt-0.5">◈</span>
-                  <p>If you increase maker ratio to 80%, you could reduce fee drag</p>
+                  <p>{makerRatioNote(feeStats.makerRatio)}</p>
                 </div>
               </div>
             </div>
