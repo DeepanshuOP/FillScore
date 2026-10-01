@@ -51,6 +51,12 @@ describe('councilErrorMessage', () => {
         );
     });
 
+    it('maps a retired or missing AI model to a message that blames the configuration, not the user', () => {
+        expect(councilErrorMessage('MODEL_UNAVAILABLE')).toBe(
+            "The Council's AI model is unavailable right now. This is a configuration problem on our side, not yours."
+        );
+    });
+
     it('falls back to a generic message for unknown or missing codes', () => {
         const generic = 'The Council hit an unexpected problem. Please try again.';
         expect(councilErrorMessage('SOMETHING_NEW')).toBe(generic);

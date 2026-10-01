@@ -19,6 +19,7 @@ const COUNCIL_ERROR_MESSAGES: Record<string, string> = {
     RATE_LIMIT_EXHAUSTED: 'The Council is at capacity right now. Please try again in a few minutes.',
     DB_UNAVAILABLE: "The Council can't reach its data right now. Please try again shortly.",
     NO_DATA: 'There are no scored trades to analyse for this account yet.',
+    MODEL_UNAVAILABLE: "The Council's AI model is unavailable right now. This is a configuration problem on our side, not yours.",
 };
 
 /**

@@ -187,12 +187,13 @@ async def test_council_returns_valid_result() -> None:
 async def test_specialist_failure_produces_default_verdict() -> None:
     """When a specialist agent fails, a default verdict with confidence=0 is used."""
     from agents.council import run_council
+    from agents.llm_client import SPECIALIST_MODEL
 
     async def _route_create(**kwargs: object) -> MagicMock:
         model = str(kwargs.get("model", ""))
         messages = kwargs.get("messages", [])
         system = str(messages[0].get("content", "")) if messages else ""
-        if "llama" in model:
+        if model == SPECIALIST_MODEL:
             if "liquidity" in system.lower():
                 raise TimeoutError("Simulated timeout")
             elif "alpha" in system.lower():
@@ -301,5 +302,6 @@ async def test_health_endpoint() -> None:
     assert resp.status_code == 200
     body = resp.json()
     assert body["status"] == "ok"
-    assert "llama-3.3-70b-versatile" in body["models"]["specialists"]
-    assert "llama-3.3-70b-versatile" in body["models"]["synthesis"]
+    from agents.llm_client import SPECIALIST_MODEL, SYNTHESIS_MODEL
+    assert SPECIALIST_MODEL in body["models"]["specialists"]
+    assert SYNTHESIS_MODEL in body["models"]["synthesis"]
