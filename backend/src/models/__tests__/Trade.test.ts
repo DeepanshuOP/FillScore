@@ -152,4 +152,25 @@ describe('Trade Model', () => {
         );
         expect(updated?.dataSource).toBe('synthetic-demo');
     });
+    it('accepts okx as an exchange', async () => {
+        const trade = new Trade({
+            userId: 'user1',
+            accountId: 'acc1',
+            dataSource: 'real-user',
+            exchange: 'okx',
+            symbol: 'BTCUSDT',
+            tradeId: 'okx-1',
+            orderId: 'o1',
+            side: 'BUY',
+            orderType: 'MARKET',
+            isMaker: false,
+            executionPrice: 50000,
+            quantity: 1,
+            notional: 50000,
+            fee: 10,
+            feeAsset: 'USDT',
+            executedAt: new Date()
+        });
+        await expect(trade.validate()).resolves.toBeUndefined();
+    });
 });

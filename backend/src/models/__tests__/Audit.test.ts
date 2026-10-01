@@ -152,4 +152,25 @@ describe('Audit Model', () => {
         );
         expect(updated?.dataSource).toBe('synthetic-demo');
     });
+    it('enforces one canonical audit per account at the database level', async () => {
+        await Audit.init();
+        const base = {
+            userId: 'user1',
+            accountId: 'acc-unique',
+            dataSource: 'synthetic-demo',
+            period: { start: new Date(), end: new Date() },
+            exchange: 'binance',
+            totalTrades: 10,
+            totalNotional: 1000,
+            avgFillScore: 90,
+            fillGrade: 'A',
+            estimatedLossUSD: 5,
+            breakdown: {
+                avgSlippageBps: 1, avgFeeDragBps: 1, makerRatio: 0.5,
+                bestHour: 10, worstHour: 15, bestSymbol: 'BTC', worstSymbol: 'ETH'
+            }
+        };
+        await Audit.create(base);
+        await expect(Audit.create(base)).rejects.toThrow(/E11000/);
+    });
 });

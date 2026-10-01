@@ -3,6 +3,8 @@ import mongoose from 'mongoose';
 import { User } from '../../models/User';
 import { RefreshToken } from '../../models/RefreshToken';
 import { findOrLinkOAuthUser, OAuthProfile } from '../oauthService';
+import { issueTokenPair } from '../authService';
+import crypto from 'crypto';
 import { loadEnv } from '../../config/env';
 
 loadEnv();
@@ -51,7 +53,8 @@ describe('oauthService', () => {
         // Seed a password user
         const passwordUser = new User({
             email: 'existing@oauth.local',
-            passwordHash: 'dummy-hash'
+            passwordHash: 'dummy-hash',
+            emailVerified: true
         });
         await passwordUser.save();
 
@@ -71,6 +74,31 @@ describe('oauthService', () => {
         expect(userDoc?.authProviders?.length).toBe(1);
         expect(userDoc?.authProviders![0].provider).toBe('github');
         expect(userDoc?.authProviders![0].providerId).toBe('github-456');
+    });
+
+    it('2b. Linking onto an UNVERIFIED password account drops that password and revokes its sessions', async () => {
+        // An attacker can pre-register a victim's email with a password they know.
+        // When the real owner later signs in with a verified provider, the attacker's password must stop working.
+        const squatted = await User.create({
+            email: 'victim@oauth.local',
+            passwordHash: 'attacker-chosen-hash'
+        });
+        const attackerSession = await issueTokenPair(squatted._id);
+
+        await findOrLinkOAuthUser({
+            provider: 'google',
+            providerId: 'google-victim',
+            email: 'victim@oauth.local',
+            emailVerified: true
+        });
+
+        const userDoc = await User.findOne({ email: 'victim@oauth.local' });
+        expect(userDoc?.passwordHash).toBeUndefined();
+        expect(userDoc?.emailVerified).toBe(true);
+
+        const attackerHash = crypto.createHash('sha256').update(attackerSession.refreshToken).digest('hex');
+        const attackerToken = await RefreshToken.findOne({ tokenHash: attackerHash });
+        expect(attackerToken?.status).toBe('revoked');
     });
 
     it('3. Same provider+providerId logging in again -> finds existing link, returns token pair', async () => {
