@@ -216,12 +216,12 @@ export default function OnboardingPage() {
             {noTrades ? (
               // NO TRADES FOUND STATE
               <div className="text-center py-6">
-                <h2 style={{
+                <h1 style={{
                   fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.4rem',
                   color: '#ede8e0', fontWeight: 400, marginBottom: '1rem'
                 }}>
                   No Trades Yet
-                </h2>
+                </h1>
                 <div style={{
                   padding: '1.25rem', background: 'rgba(167,139,113,0.05)',
                   border: '1px solid rgba(167,139,113,0.2)', borderRadius: '2px',
@@ -293,12 +293,12 @@ export default function OnboardingPage() {
             ) : isSuccess ? (
               // CONNECTED, READY TO SYNC
               <div className="text-center py-6">
-                <h2 style={{
+                <h1 style={{
                   fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.4rem',
                   color: '#ede8e0', fontWeight: 400, marginBottom: '1rem'
                 }}>
                   Connected Successfully
-                </h2>
+                </h1>
                 <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#8a7d6a', marginBottom: '2rem' }}>
                   Your read-only key has been verified and securely stored.
                 </p>
@@ -335,12 +335,12 @@ export default function OnboardingPage() {
             ) : !selectedExchange ? (
               // EXCHANGE SELECTION
               <>
-                <h2 style={{
+                <h1 style={{
                   fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.4rem',
                   color: '#ede8e0', fontWeight: 400, marginBottom: '1.5rem'
                 }}>
                   Select Your Exchange
-                </h2>
+                </h1>
                 <div className="flex flex-col gap-3">
                   {EXCHANGES.map((ex) => (
                     <button 
@@ -397,20 +397,21 @@ export default function OnboardingPage() {
                   ← BACK
                 </button>
                 
-                <h2 style={{
+                <h1 style={{
                   fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.4rem',
                   color: '#ede8e0', fontWeight: 400, marginBottom: '1.5rem'
                 }}>
                   Connect {selected?.name}
-                </h2>
+                </h1>
 
                 {/* API KEY INPUT */}
                 <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', color: '#6a6560' }}>
+                  <label htmlFor="onb-api-key" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', color: '#6a6560' }}>
                     API KEY
                   </label>
                   <div style={{ position: 'relative' }}>
                     <input
+                      id="onb-api-key"
                       type={showApiKey ? 'text' : 'password'}
                       placeholder="Paste your API key"
                       value={apiKey}
@@ -434,11 +435,12 @@ export default function OnboardingPage() {
 
                 {/* API SECRET INPUT */}
                 <div style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', color: '#6a6560' }}>
+                  <label htmlFor="onb-api-secret" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', color: '#6a6560' }}>
                     API SECRET
                   </label>
                   <div style={{ position: 'relative' }}>
                     <input
+                      id="onb-api-secret"
                       type={showApiSecret ? 'text' : 'password'}
                       placeholder="Paste your API secret"
                       value={apiSecret}
@@ -463,11 +465,12 @@ export default function OnboardingPage() {
                 {/* PASSPHRASE INPUT (OKX only) */}
                 {selected?.needsPassphrase && (
                   <div style={{ marginBottom: '1.25rem' }}>
-                    <label style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', color: '#6a6560' }}>
+                    <label htmlFor="onb-api-passphrase" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', color: '#6a6560' }}>
                       API PASSPHRASE
                     </label>
                     <div style={{ position: 'relative' }}>
                       <input
+                        id="onb-api-passphrase"
                         type={showPassphrase ? 'text' : 'password'}
                         placeholder="The passphrase you chose for this key"
                         value={apiPassphrase}
