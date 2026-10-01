@@ -15,6 +15,8 @@ import passport from '../../config/passport';
 
 loadEnv();
 
+const TRUSTED_ORIGIN = 'http://localhost:3000';
+
 const app = express();
 // Minimal setup similar to index.ts
 setupSecurity(app);
@@ -25,6 +27,14 @@ app.use('/api/auth', authRouter);
 app.get('/api/protected', requireAuth, (req, res) => {
     res.status(200).json({ ok: true, userId: req.userId });
 });
+
+const waitForEmailCall = async (mock: any, count = 1) => {
+    for (let i = 0; i < 50; i++) {
+        if (mock.mock.calls.length >= count) return;
+        await new Promise(resolve => setTimeout(resolve, 20));
+    }
+    throw new Error('Timeout waiting for email to be sent');
+};
 
 describe('Auth Routes (Integration)', () => {
     beforeAll(async () => {
@@ -52,6 +62,126 @@ describe('Auth Routes (Integration)', () => {
         // Cleanup handled by test-setup.ts
     });
 
+    it('refresh and logout reject cross-site requests without rotating or revoking anything', async () => {
+        const regRes = await request(app)
+            .post('/api/auth/register')
+            .send({ email: 'csrf@test.local', password: 'StrongPassword1!' });
+        const cookie = regRes.headers['set-cookie'];
+        const before = await RefreshToken.countDocuments({});
+
+        const refreshRes = await request(app)
+            .post('/api/auth/refresh')
+            .set('Origin', 'https://evil.example')
+            .set('Cookie', cookie);
+        expect(refreshRes.status).toBe(403);
+        expect(refreshRes.body.error).toBe('csrf_origin_rejected');
+
+        const logoutRes = await request(app)
+            .post('/api/auth/logout')
+            .set('Origin', 'https://evil.example')
+            .set('Cookie', cookie);
+        expect(logoutRes.status).toBe(403);
+
+        const noOriginRes = await request(app).post('/api/auth/refresh').set('Cookie', cookie);
+        expect(noOriginRes.status).toBe(403);
+
+        // nothing was rotated or revoked: the original cookie still works from the real origin
+        expect(await RefreshToken.countDocuments({})).toBe(before);
+        const ok = await request(app)
+            .post('/api/auth/refresh')
+            .set('Origin', TRUSTED_ORIGIN)
+            .set('Cookie', cookie);
+        expect(ok.status).toBe(200);
+    });
+
+    describe('credential input types', () => {
+        it.each([
+            ['register', { email: { $gt: '' }, password: 'StrongPassword1!' }],
+            ['register', { email: 'a@b.co', password: { $ne: null } }],
+            ['register', { email: ['a@b.co'], password: 'StrongPassword1!' }],
+            ['login', { email: { $ne: null }, password: 'x' }],
+            ['login', { email: 'a@b.co', password: 12345678 }],
+        ])('%s rejects non-string credentials with 400, not a server error', async (route, body) => {
+            const res = await request(app).post(`/api/auth/${route}`).send(body);
+            expect(res.status).toBe(400);
+            expect(res.body.error).toBe('Email and password are required');
+        });
+    });
+
+    describe('email verification', () => {
+        it('register sends a verification email and still succeeds if the provider fails', async () => {
+            const sendEmailMock = vi.spyOn(emailService, 'sendEmail').mockRejectedValue(new Error('provider down'));
+            const res = await request(app)
+                .post('/api/auth/register')
+                .send({ email: 'verify-me@test.local', password: 'StrongPassword1!' });
+            expect(res.status).toBe(201);
+            await waitForEmailCall(sendEmailMock, 1);
+            expect(sendEmailMock.mock.calls[0][0].to).toBe('verify-me@test.local');
+            expect(sendEmailMock.mock.calls[0][0].subject).toMatch(/verify/i);
+            sendEmailMock.mockRestore();
+        });
+
+        it('POST /verify-email flips the flag, and /me reports it', async () => {
+            const sendEmailMock = vi.spyOn(emailService, 'sendEmail').mockResolvedValue(undefined);
+            const reg = await request(app)
+                .post('/api/auth/register')
+                .send({ email: 'flip@test.local', password: 'StrongPassword1!' });
+            const me1 = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${reg.body.accessToken}`);
+            expect(me1.body.emailVerified).toBe(false);
+
+            await waitForEmailCall(sendEmailMock, 1);
+            const token = sendEmailMock.mock.calls[0][0].html.match(/token=([a-f0-9]{64})/)![1];
+            const verify = await request(app).post('/api/auth/verify-email').send({ token });
+            expect(verify.status).toBe(200);
+
+            const me2 = await request(app).get('/api/auth/me').set('Authorization', `Bearer ${reg.body.accessToken}`);
+            expect(me2.body.emailVerified).toBe(true);
+
+            const replay = await request(app).post('/api/auth/verify-email').send({ token });
+            expect(replay.status).toBe(400);
+            expect(replay.body.error).toBe('invalid_or_expired_token');
+            sendEmailMock.mockRestore();
+        });
+
+        it('POST /verify-email rejects a missing or non-string token', async () => {
+            for (const body of [{}, { token: 3 }, { token: { $ne: 1 } }]) {
+                const res = await request(app).post('/api/auth/verify-email').send(body);
+                expect(res.status).toBe(400);
+            }
+        });
+
+        it('POST /resend-verification needs auth and sends a fresh email', async () => {
+            const sendEmailMock = vi.spyOn(emailService, 'sendEmail').mockResolvedValue(undefined);
+            const anon = await request(app).post('/api/auth/resend-verification');
+            expect(anon.status).toBe(401);
+
+            const reg = await request(app)
+                .post('/api/auth/register')
+                .send({ email: 'resend@test.local', password: 'StrongPassword1!' });
+            await waitForEmailCall(sendEmailMock, 1);
+            const res = await request(app)
+                .post('/api/auth/resend-verification')
+                .set('Authorization', `Bearer ${reg.body.accessToken}`);
+            expect(res.status).toBe(200);
+            await waitForEmailCall(sendEmailMock, 2);
+            sendEmailMock.mockRestore();
+        });
+
+        it('a completed password reset also proves control of the inbox', async () => {
+            const sendEmailMock = vi.spyOn(emailService, 'sendEmail').mockResolvedValue(undefined);
+            await request(app).post('/api/auth/register').send({ email: 'reset-verifies@test.local', password: 'StrongPassword1!' });
+            await waitForEmailCall(sendEmailMock, 1);
+            await request(app).post('/api/auth/forgot-password').send({ email: 'reset-verifies@test.local' });
+            await waitForEmailCall(sendEmailMock, 2);
+            const resetToken = sendEmailMock.mock.calls[1][0].html.match(/token=([a-f0-9]{64})/)![1];
+            await request(app).post('/api/auth/reset-password').send({ token: resetToken, password: 'AnotherStrong1!' });
+
+            const user = await User.findOne({ email: 'reset-verifies@test.local' });
+            expect(user?.emailVerified).toBe(true);
+            sendEmailMock.mockRestore();
+        });
+    });
+
     it('Full happy path: register -> protected route -> refresh -> logout -> refresh fails', async () => {
         // 1. Register
         const regRes = await request(app)
@@ -76,6 +206,7 @@ describe('Auth Routes (Integration)', () => {
         // 3. Refresh (provides new pair)
         const refRes = await request(app)
             .post('/api/auth/refresh')
+            .set('Origin', TRUSTED_ORIGIN)
             .set('Cookie', cookies);
         
         expect(refRes.status).toBe(200);
@@ -87,6 +218,7 @@ describe('Auth Routes (Integration)', () => {
         // 4. Logout
         const logoutRes = await request(app)
             .post('/api/auth/logout')
+            .set('Origin', TRUSTED_ORIGIN)
             .set('Cookie', cookies);
         
         expect(logoutRes.status).toBe(200);
@@ -94,6 +226,7 @@ describe('Auth Routes (Integration)', () => {
         // 5. Refresh again fails
         const failRefRes = await request(app)
             .post('/api/auth/refresh')
+            .set('Origin', TRUSTED_ORIGIN)
             .set('Cookie', cookies);
         
         expect(failRefRes.status).toBe(401);
@@ -111,6 +244,7 @@ describe('Auth Routes (Integration)', () => {
         // 2. Rotate once (Valid)
         const refRes1 = await request(app)
             .post('/api/auth/refresh')
+            .set('Origin', TRUSTED_ORIGIN)
             .set('Cookie', cookies1);
         
         expect(refRes1.status).toBe(200);
@@ -119,6 +253,7 @@ describe('Auth Routes (Integration)', () => {
         // 3. Present the OLD token again (Reuse detection!)
         const refRes2 = await request(app)
             .post('/api/auth/refresh')
+            .set('Origin', TRUSTED_ORIGIN)
             .set('Cookie', cookies1);
         
         // Assert the whole family is revoked and the response is a 401
@@ -127,6 +262,7 @@ describe('Auth Routes (Integration)', () => {
         // 4. Subsequent refresh with the NEWEST token ALSO fails (family killed)
         const refRes3 = await request(app)
             .post('/api/auth/refresh')
+            .set('Origin', TRUSTED_ORIGIN)
             .set('Cookie', cookies2);
         
         expect(refRes3.status).toBe(401);
@@ -173,14 +309,6 @@ describe('Auth Routes (Integration)', () => {
     });
 
     describe('Password Reset Routes', () => {
-        const waitForEmailCall = async (mock: any, count = 1) => {
-            for (let i = 0; i < 50; i++) {
-                if (mock.mock.calls.length >= count) return;
-                await new Promise(resolve => setTimeout(resolve, 20));
-            }
-            throw new Error('Timeout waiting for email to be sent');
-        };
-
         it('forgot-password returns an identical 200 + body for known and unknown emails (assert byte-identical)', async () => {
             await request(app)
                 .post('/api/auth/register')
@@ -210,6 +338,9 @@ describe('Auth Routes (Integration)', () => {
             await request(app)
                 .post('/api/auth/register')
                 .send({ email: 'timing_route_enum@test.local', password: 'StrongPassword1!' });
+            // sign-up sends its own verification email; this test is about the reset email
+            await waitForEmailCall(sendEmailMock, 1);
+            sendEmailMock.mockClear();
 
             const res = await request(app)
                 .post('/api/auth/forgot-password')
@@ -231,6 +362,9 @@ describe('Auth Routes (Integration)', () => {
             await request(app)
                 .post('/api/auth/register')
                 .send({ email: 'happy_reset_route@test.local', password: 'OldPassword1!' });
+            // sign-up sends its own verification email; this test is about the reset email
+            await waitForEmailCall(sendEmailMock, 1);
+            sendEmailMock.mockClear();
 
             await request(app)
                 .post('/api/auth/forgot-password')
