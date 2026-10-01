@@ -350,6 +350,7 @@ function DashboardContent() {
         margin: '0 auto',
         padding: '48px 2rem 2rem'
       }}>
+        <h1 className="sr-only">Execution quality dashboard</h1>
 
         {/* SKELETON LOADER */}
         {loading && (
@@ -989,7 +990,7 @@ function DashboardContent() {
 
                       <div style={{
                         display: 'grid',
-                        gridTemplateColumns: `repeat(${exchangeComparison.exchanges.length}, 1fr)`,
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
                         gap: '16px',
                         marginBottom: '24px'
                       }}>
