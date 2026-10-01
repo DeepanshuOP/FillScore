@@ -5,7 +5,7 @@ import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
 import passport from '../../config/passport';
 import { setupSecurity } from '../../middleware/security';
-import { onboardingRouter } from '../onboarding';
+import { onboardingRouter, connectLimiter } from '../onboarding';
 import { ExchangeConnection } from '../../models/ExchangeConnection';
 import { User } from '../../models/User';
 import { Trade } from '../../models/Trade';
@@ -17,10 +17,14 @@ import { encryptApiKey } from '../../utils/encryption';
 loadEnv();
 
 vi.mock('../../services/keyValidation', () => ({
-    validateBinanceKey: vi.fn()
+    validateBinanceKey: vi.fn(),
+    validateBybitKey: vi.fn(),
+    validateOKXKey: vi.fn()
 }));
-import { validateBinanceKey } from '../../services/keyValidation';
+import { validateBinanceKey, validateBybitKey, validateOKXKey } from '../../services/keyValidation';
 const mockValidateBinanceKey = validateBinanceKey as any;
+const mockValidateBybitKey = validateBybitKey as any;
+const mockValidateOKXKey = validateOKXKey as any;
 
 vi.mock('../../services/TradeIngestionService', () => {
     return {
@@ -117,6 +121,9 @@ describe('Onboarding Routes', () => {
         await Trade.deleteMany({ accountId: userId });
         await Audit.deleteMany({ accountId: userId });
         vi.clearAllMocks();
+        for (const key of ['::ffff:127.0.0.1', '127.0.0.1', '::1']) {
+            await connectLimiter.resetKey(key);
+        }
     });
 
     describe('POST /api/onboarding/connect', () => {
@@ -129,20 +136,92 @@ describe('Onboarding Routes', () => {
             expect(res.status).toBe(401);
         });
 
-        it('returns 400 for unsupported exchange (bybit/okx) until validation exists', async () => {
+        it('rejects an exchange name we do not know', async () => {
             const res = await request(app)
                 .post('/api/onboarding/connect')
                 .set('Authorization', `Bearer ${accessToken}`)
-                .send({
-                    exchange: 'bybit',
-                    apiKey: 'test_key',
-                    apiSecret: 'test_secret'
-                });
+                .send({ exchange: 'kraken', apiKey: 'test_key', apiSecret: 'test_secret' });
 
             expect(res.status).toBe(400);
-            expect(res.body.error).toBe('exchange_not_supported_yet');
-            const count = await ExchangeConnection.countDocuments({ accountId: userId });
-            expect(count).toBe(0);
+            expect(res.body.error).toBe('invalid_request');
+            expect(await ExchangeConnection.countDocuments({ accountId: userId })).toBe(0);
+        });
+
+        it('rejects oversized credentials before they reach an exchange', async () => {
+            const res = await request(app)
+                .post('/api/onboarding/connect')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({ exchange: 'binance', apiKey: 'k'.repeat(300), apiSecret: 's' });
+
+            expect(res.status).toBe(400);
+            expect(mockValidateBinanceKey).not.toHaveBeenCalled();
+        });
+
+        it('connects a read-only Bybit key and stores it encrypted', async () => {
+            mockValidateBybitKey.mockResolvedValueOnce(undefined);
+            const res = await request(app)
+                .post('/api/onboarding/connect')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({ exchange: 'bybit', apiKey: 'bybit_plain_key', apiSecret: 'bybit_plain_secret' });
+
+            expect(res.status).toBe(200);
+            expect(res.body).toEqual({ success: true, exchange: 'bybit' });
+            expect(mockValidateBybitKey).toHaveBeenCalledWith('bybit_plain_key', 'bybit_plain_secret');
+
+            const raw = await ExchangeConnection.collection.findOne({ accountId: userId, exchange: 'bybit' });
+            expect(JSON.stringify(raw)).not.toContain('bybit_plain_key');
+            expect(JSON.stringify(raw)).not.toContain('bybit_plain_secret');
+        });
+
+        it('rejects a Bybit key with trading rights and stores nothing', async () => {
+            mockValidateBybitKey.mockRejectedValueOnce(new Error('key_not_read_only'));
+            const res = await request(app)
+                .post('/api/onboarding/connect')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({ exchange: 'bybit', apiKey: 'k', apiSecret: 's' });
+
+            expect(res.status).toBe(400);
+            expect(res.body.error).toBe('key_not_read_only');
+            expect(await ExchangeConnection.countDocuments({ accountId: userId })).toBe(0);
+        });
+
+        it('requires a passphrase for OKX', async () => {
+            const res = await request(app)
+                .post('/api/onboarding/connect')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({ exchange: 'okx', apiKey: 'k', apiSecret: 's' });
+
+            expect(res.status).toBe(400);
+            expect(res.body.error).toBe('passphrase_required');
+            expect(mockValidateOKXKey).not.toHaveBeenCalled();
+        });
+
+        it('connects a read-only OKX key and stores the passphrase encrypted', async () => {
+            mockValidateOKXKey.mockResolvedValueOnce(undefined);
+            const res = await request(app)
+                .post('/api/onboarding/connect')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({ exchange: 'okx', apiKey: 'okx_plain_key', apiSecret: 'okx_plain_secret', apiPassphrase: 'okx_plain_pass' });
+
+            expect(res.status).toBe(200);
+            expect(mockValidateOKXKey).toHaveBeenCalledWith('okx_plain_key', 'okx_plain_secret', 'okx_plain_pass');
+
+            const raw = await ExchangeConnection.collection.findOne({ accountId: userId, exchange: 'okx' });
+            expect(raw?.encryptedPassphrase).toBeDefined();
+            const stored = JSON.stringify(raw);
+            expect(stored).not.toContain('okx_plain_key');
+            expect(stored).not.toContain('okx_plain_pass');
+        });
+
+        it('does not store a passphrase for exchanges that do not use one', async () => {
+            mockValidateBinanceKey.mockResolvedValueOnce(undefined);
+            await request(app)
+                .post('/api/onboarding/connect')
+                .set('Authorization', `Bearer ${accessToken}`)
+                .send({ exchange: 'binance', apiKey: 'k', apiSecret: 's', apiPassphrase: 'ignored' });
+
+            const raw = await ExchangeConnection.collection.findOne({ accountId: userId, exchange: 'binance' });
+            expect(raw?.encryptedPassphrase).toBeUndefined();
         });
 
         it('returns 400 key_not_read_only if validation throws key_not_read_only and stores nothing', async () => {
