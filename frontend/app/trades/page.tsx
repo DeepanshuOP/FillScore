@@ -1,6 +1,8 @@
 'use client'
 
 import React, { useState, useEffect, Suspense } from 'react'
+import { openAuthenticatedDownload } from '../lib/downloads';
+import { formatUsd } from '../utils/format';
 import { useSearchParams } from 'next/navigation'
 import Navbar from '../components/Navbar'
 import { useAuth } from '../context/AuthContext'
@@ -83,7 +85,7 @@ function TradesContent() {
     try {
       const fetchFn = dashboardMode === 'real' ? (url: string, opts?: any) => authFetch(url, opts, { accessToken, refreshAccessToken }) : fetch;
       const query = buildQuery(dashboardMode, userId);
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/trades/${selectedTrade.tradeId}/note${query}`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/audit/trades/${selectedTrade.tradeId}/note${query}`;
       
       const payload: any = { note: noteText };
       if (dashboardMode === 'demo') {
@@ -125,7 +127,7 @@ function TradesContent() {
       const query = buildQuery(mode, uid, { limit: '1000' });
       
       const res = await fetchFn(
-        `${process.env.NEXT_PUBLIC_API_URL}/trades${query}`
+        `${process.env.NEXT_PUBLIC_API_URL}/audit/trades${query}`
       )
       const data = await res.json()
       const all = data.trades as Trade[]
@@ -176,7 +178,7 @@ function TradesContent() {
       if (gradeFilter) paramsObj.grade = gradeFilter;
       
       const query = buildQuery(dashboardMode, userId, paramsObj);
-      const res = await fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/trades${query}`)
+      const res = await fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/audit/trades${query}`)
       
       if (dashboardMode === 'real' && res.status === 404) {
         setTrades([])
@@ -332,23 +334,25 @@ function TradesContent() {
   const goToPrev = () => { if (currentIndex > 0) setSelectedTrade(sortedTrades[currentIndex - 1]) }
   const goToNext = () => { if (currentIndex < sortedTrades.length - 1) setSelectedTrade(sortedTrades[currentIndex + 1]) }
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (exporting || !dashboardMode || (dashboardMode === 'demo' && !userId)) return;
     setExporting(true);
-    
-    const extraParams: Record<string, string> = {};
+
+    const filters: Record<string, string> = {};
     if (exchangeRaw && exchangeRaw !== 'multi') {
-      extraParams.exchange = exchangeRaw;
+      filters.exchange = exchangeRaw;
     }
-    const query = buildQuery(dashboardMode, userId, Object.keys(extraParams).length ? extraParams : undefined);
-    
-    const url = `${process.env.NEXT_PUBLIC_API_URL}/trades/export${query}`;
-    
-    window.open(url, '_blank');
-    
-    setTimeout(() => {
-      setExporting(false);
-    }, 300);
+
+    try {
+      if (dashboardMode === 'real') {
+        await openAuthenticatedDownload('export', '/audit/trades/export', filters, { accessToken, refreshAccessToken });
+      } else {
+        const query = buildQuery(dashboardMode, userId, Object.keys(filters).length ? filters : undefined);
+        window.open(`${process.env.NEXT_PUBLIC_API_URL}/audit/trades/export${query}`, '_blank');
+      }
+    } finally {
+      setTimeout(() => setExporting(false), 300);
+    }
   };
 
   return (
@@ -551,7 +555,7 @@ function TradesContent() {
                     </div>
                     
                     <div className="hidden md:block" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#f0ece4', letterSpacing: '0.02em' }}>
-                      ${formatPrice(trade.notionalValue)}
+                      {formatUsd(trade.notionalValue)}
                     </div>
                     <div className="hidden md:block" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#b8b0a6' }}>
                       {formatPrice(trade.executionPrice)}
@@ -691,7 +695,7 @@ function TradesContent() {
                   { label: "QUANTITY", value: selectedTrade.quantity?.toFixed(6) ?? '—' },
                   { label: "EXEC PRICE", value: `$${formatPrice(selectedTrade.executionPrice)}` },
                   { label: "ARRIVAL PRICE", value: `$${formatPrice(selectedTrade.arrivalPriceProxy)}` },
-                  { label: "NOTIONAL", value: selectedTrade.notionalValue != null ? `$${selectedTrade.notionalValue.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}` : '—' },
+                  { label: "NOTIONAL", value: formatUsd(selectedTrade.notionalValue) },
                   { label: "FEE PAID", value: selectedTrade.feePaid != null ? `$${selectedTrade.feePaid.toFixed(4)}` : '—' },
                   { label: "SPREAD", value: `${selectedTrade.spreadBps?.toFixed(1) ?? '—'} bps` },
                   { label: "SLIPPAGE", value: <span style={{color: selectedTrade.slippageBps < 2 ? '#4ade80' : selectedTrade.slippageBps < 5 ? '#fcd34d' : '#f97316'}}>{selectedTrade.slippageBps?.toFixed(2) ?? '—'} bps</span> },
