@@ -1,0 +1,74 @@
+# Render Blueprint: backend API and ml-service on Render's free plan.
+# Setup steps are in docs/FREE_HOSTING.md. Secret values are never stored here:
+# every `sync: false` entry is typed into the Render dashboard by hand.
+#
+# Free web services sleep after 15 idle minutes and wake in about a minute.
+# Free instance hours (750 a month) are shared by every free service in the
+# workspace, and a sleeping service does not use any.
+
+services:
+  - type: web
+    name: fillscore-api
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      # Two proxies sit in front of the app: Vercel (rewrites /api) and Render's own.
+      - key: TRUST_PROXY_HOPS
+        value: "2"
+      - key: BACKEND_URL
+        sync: false # the Vercel URL, e.g. https://fill-score-kappa.vercel.app (OAuth callbacks go through the proxy)
+      - key: FRONTEND_URL
+        sync: false # same Vercel URL
+      - key: ALLOWED_ORIGINS
+        sync: false # same Vercel URL
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        sync: false # must equal the ml-service value
+      - key: JWT_REFRESH_SECRET
+        sync: false
+      - key: ENCRYPTION_KEY
+        sync: false
+      - key: BINANCE_API_KEY
+        sync: false
+      - key: BINANCE_API_SECRET
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+
+  - type: web
+    name: fillscore-ml
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./ml-service/Dockerfile
+    dockerContext: ./ml-service
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # The image listens on 8000; tell Render so it routes traffic there.
+      - key: PORT
+        value: "8000"
+      - key: ALLOWED_ORIGINS
+        sync: false # the Vercel URL (the browser calls this service directly for the Council stream)
+      - key: JWT_ACCESS_SECRET
+        sync: false # must equal the backend value
+      - key: MONGODB_URI
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: COUNCIL_DAILY_RUN_CAP
+        value: "8"
