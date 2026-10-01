@@ -15,6 +15,23 @@ file is the "what happened and why" history.
 - **Hosting**: Vercel (frontend) + Render free (backend, ml-service) + Atlas M0. See `docs/FREE_HOSTING.md`.
 - **Rules that must not break**: audit the past only; LLMs never create numbers; `dataSource` is immutable; secrets come from env only. Details in `CLAUDE.md`.
 
+## 2026-10-01 (later) - First live deploy: what broke and how it was fixed
+
+The free hosting from the entry below went live on Render. Three things failed on the first run, in this order.
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `/ready` showed `mongo: false`; backend log said `bad auth : authentication failed` | `MONGODB_URI` still held Atlas's template text (`<db_password>`) and had no database name | New letters-and-digits password for the Atlas user; URI in the form `mongodb+srv://USER:PASSWORD@HOST/fillscore?retryWrites=true&w=majority`, identical on both services |
+| Council stopped right after "Liquidity Scout thinking" with "unexpected problem"; Render log said `NotFoundError` | Groq retired `llama-3.3-70b-versatile` and `llama-3.1-8b-instant` in August 2026, so every call returned 404 | Models are now read from `GROQ_SPECIALIST_MODEL` and `GROQ_SYNTHESIS_MODEL`, default `openai/gpt-oss-120b` |
+| (found while fixing the above) | The free plan now allows about 8,000 tokens a minute and 200,000 a day on that model, and the old retry waited only 1 to 5 seconds | Retry now waits as long as Groq asks (capped at 30 s, up to 4 retries). One adapter around the Groq client (`adapt_client_for_models`) asks gpt-oss for low reasoning effort, scales the answer budget up 1.8x so thinking does not use it all, and swaps any retired model name for the current one, so no agent file had to change |
+
+Other changes in this entry:
+
+- A missing or retired model is now its own error code, `MODEL_UNAVAILABLE`, with a message that says it is a configuration problem, so it is not mistaken for a generic failure next time.
+- ml-service tests: 274 passing, with new tests for model selection, the client adapter, retry timing and the new error code. Frontend: 117 passing.
+
+Not verified: a full live Council run on the new model. One run is about 11,600 tokens, so on the free plan expect roughly 17 runs a day, and a run that starts inside a busy minute may pause for a few seconds while it waits for the limit. `CLAUDE.md` still names the old Llama models; update it when convenient.
+
 ## 2026-10-01 — Free hosting, API proxy, UI fixes
 
 ### Decisions
