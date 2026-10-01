@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(JWT_ACCESS_SECRET=test1 JWT_REFRESH_SECRET=test2 GOOGLE_CLIENT_ID=x GOOGLE_CLIENT_SECRET=x GITHUB_CLIENT_ID=x GITHUB_CLIENT_SECRET=x npx vitest run src/config/__tests__/env.test.ts --no-file-parallelism)",
+      "Bash(JWT_ACCESS_SECRET=test1 JWT_REFRESH_SECRET=test2 GOOGLE_CLIENT_ID=x GOOGLE_CLIENT_SECRET=x GITHUB_CLIENT_ID=x GITHUB_CLIENT_SECRET=x npm test -- --no-file-parallelism)",
+      "Bash(python -m pytest tests/test_main.py -v -k \"council or flag\")",
+      "Bash(python -m pytest)",
+      "Bash(npx vitest *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Skill(update-config)",
+      "Skill(update-config:*)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/guard.ps1)",
+      "Bash(echo \"EXIT CODE: $?\")",
+      "Bash(echo \"push EXIT: $?\")",
+      "Bash(echo \"blanket add EXIT: $?\")",
+      "Bash(echo \".env read EXIT: $?\")",
+      "Bash(jobs -l)"
+    ]
+  }
+}

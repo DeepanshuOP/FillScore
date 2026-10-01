@@ -246,32 +246,32 @@ export default function AgentCouncil({
     Object.values(cards).every((c) => c.status === "done");
 
   return (
-    <div className="bg-[#0a0a0f] border border-slate-800 rounded-2xl p-6 space-y-6">
+    <div className="bg-[#161614] border border-[rgba(255,255,255,0.08)] rounded p-6 space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-white font-semibold text-lg tracking-tight">
+          <h2 className="text-[#f0ece4] font-semibold text-base tracking-wide">
             Agent Council
           </h2>
-          <p className="text-slate-500 text-sm mt-0.5">
+          <p className="text-[#888078] text-xs font-mono tracking-wide mt-0.5">
             Multi-agent execution audit · {symbol}
           </p>
         </div>
         <button
           onClick={runAnalysis}
           disabled={running}
-          className={`px-5 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+          className={`px-4 py-2 rounded text-xs font-mono tracking-wider font-semibold transition-all duration-200 inline-flex items-center justify-center ${
             running
-              ? "bg-slate-800 text-slate-500 cursor-not-allowed"
-              : "bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-900/40"
+              ? "bg-[#201f1d] text-[#888078] cursor-not-allowed border border-[rgba(255,255,255,0.08)]"
+              : "bg-[rgba(167,139,113,0.15)] hover:bg-[rgba(167,139,113,0.25)] text-[#e8d5b7] border border-[rgba(167,139,113,0.35)] shadow-sm"
           }`}
         >
-          {running ? "Analysing…" : "RUN ANALYSIS"}
+          {running ? "ANALYSING…" : "RUN ANALYSIS"}
         </button>
       </div>
 
       {error && (
-        <div className="text-red-400 text-sm bg-red-400/10 border border-red-400/20 rounded-lg px-4 py-3">
+        <div className="text-red-400 text-xs font-mono bg-red-400/10 border border-red-400/20 rounded px-4 py-3">
           {error}
         </div>
       )}
@@ -286,20 +286,20 @@ export default function AgentCouncil({
           return (
             <div
               key={agent}
-              className={`border rounded-xl p-4 transition-all duration-500 ${
+              className={`border rounded p-4 transition-all duration-300 ${
                 isRunning
-                  ? "border-violet-500/60 bg-violet-500/5 shadow-lg shadow-violet-900/20"
+                  ? "border-[rgba(167,139,113,0.6)] bg-[rgba(167,139,113,0.05)] shadow-sm"
                   : card?.status === "done"
-                  ? "border-slate-700 bg-slate-900/60"
-                  : "border-slate-800 bg-slate-900/20 opacity-40"
+                  ? "border-[rgba(255,255,255,0.1)] bg-[#1c1c1a]"
+                  : "border-[rgba(255,255,255,0.05)] bg-[#121210] opacity-70"
               }`}
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-violet-400 text-lg">
+                  <span className="text-[#c4a882] text-sm">
                     {AGENT_ICONS[agent]}
                   </span>
-                  <span className="text-slate-300 text-sm font-medium">
+                  <span className="text-[#f0ece4] text-xs font-mono font-medium tracking-wide">
                     {AGENT_LABELS[agent]}
                   </span>
                 </div>

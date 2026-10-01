@@ -1,0 +1,25 @@
+- generic [active] [ref=f8e1]:
+  - generic [ref=f8e6]:
+    - heading "Create an account" [level=2] [ref=f8e7]
+    - paragraph [ref=f8e8]: Join FillScore to analyze your trades
+    - generic [ref=f8e9]:
+      - generic [ref=f8e10]:
+        - generic [ref=f8e11]: Email
+        - textbox "name@example.com" [ref=f8e12]
+      - generic [ref=f8e13]:
+        - generic [ref=f8e14]: Password
+        - textbox "••••••••" [ref=f8e15]
+      - generic [ref=f8e16]:
+        - generic [ref=f8e17]: Confirm Password
+        - textbox "••••••••" [ref=f8e18]
+      - button "Sign Up" [disabled] [ref=f8e19]
+    - generic [ref=f8e20]: OR
+    - generic [ref=f8e24]:
+      - button "Continue with Google" [ref=f8e25] [cursor=pointer]
+      - button "Continue with GitHub" [ref=f8e26] [cursor=pointer]
+    - paragraph [ref=f8e27]:
+      - text: Already have an account?
+      - link "Log in" [ref=f8e28] [cursor=pointer]:
+        - /url: /login
+  - button "Open Next.js Dev Tools" [ref=f8e34] [cursor=pointer]
+  - alert [ref=f8e38]

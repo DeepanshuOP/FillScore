@@ -37,10 +37,11 @@ if ($cmd -match '(cat|type|Get-Content|gc|more|Select-String|sls)\s+[^\|;]*\.env
     Deny "This would print .env contents. Check env vars by key name or non-empty check only."
 }
 
-# --- 2. Never commit or push without explicit authorization -------------------------------------
-if ($cmd -match '\bgit\s+(commit|push)\b') {
-    Deny "Commits and pushes require explicit per-task authorization from Deepanshu. Stage nothing, print the diff, and ask."
-}
+# --- 2. Commits/pushes require Deepanshu's explicit in-chat authorization for that specific task -
+# (Enforced by instruction, not by this hook: a PreToolUse hook only ever sees the tool call itself
+# — tool_name/tool_input on stdin — with no access to conversation history, so it cannot verify
+# whether authorization was actually given. Deepanshu chose chat-based authorization on 2026-08-04
+# knowing this means trusting the agent's judgment on that, same as before this hook existed.)
 if ($cmd -match '\bgit\s+add\s+(\.|\*|:/|-A|--all|-u)(\s|$)') {
     Deny "Blanket staging is forbidden. Stage an explicit file list."
 }

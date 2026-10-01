@@ -474,22 +474,6 @@ function DashboardContent() {
                         display: 'flex', alignItems: 'center', gap: '6px',
                         background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
                         padding: '6px 12px', color: '#c4a882',
-                    fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
-                    cursor: 'pointer', transition: 'all 0.2s ease',
-                    height: 'fit-content'
-                  }}
-                  onMouseOver={e => e.currentTarget.style.background = 'rgba(167,139,113,0.1)'}
-                  onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  {linkCopied ? '✓ LINK COPIED!' : '↗ SHARE MY SCORE'}
-                </button>
-                <button
-                  onClick={handleDownloadReport}
-                  disabled={downloading}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
-                    padding: '6px 12px', color: '#c4a882',
                         fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
                         cursor: 'pointer', transition: 'all 0.2s ease',
                         height: 'fit-content'

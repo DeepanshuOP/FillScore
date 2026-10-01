@@ -5,6 +5,7 @@
       "Read(./frontend/.env.local)",
       "Read(./ml-service/.env)",
       "Read(./**/.env*)",
+      "Bash(git commit:*)",
       "Bash(git push:*)",
       "Bash(npm run seed:*)"
     ],
@@ -32,24 +33,6 @@
           {
             "type": "command",
             "command": "powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/guard.ps1"
-          }
-        ]
-      },
-      {
-        "matcher": "Bash|Grep",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "C:/Users/SHREE/.local/bin/graphify.EXE hook-guard search"
-          }
-        ]
-      },
-      {
-        "matcher": "Read|Glob",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "C:/Users/SHREE/.local/bin/graphify.EXE hook-guard read"
           }
         ]
       }

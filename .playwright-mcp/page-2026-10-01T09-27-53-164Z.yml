@@ -1,0 +1,75 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e6]:
+    - banner [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]: FILLSCORE
+        - generic [ref=e11]: v0.9 beta
+      - navigation [ref=e12]:
+        - link "HOME" [ref=e13] [cursor=pointer]:
+          - /url: /
+        - link "DASHBOARD" [ref=e14] [cursor=pointer]:
+          - /url: /dashboard
+        - link "TRADES" [ref=e15] [cursor=pointer]:
+          - /url: /trades
+        - link "ANALYTICS" [ref=e16] [cursor=pointer]:
+          - /url: /analytics
+      - generic [ref=e17]: LIVE
+    - main [ref=e25]:
+      - generic: TCA
+      - generic [ref=e28]: INSTITUTIONAL-GRADE TCA
+      - heading "Understand exactly what your trades cost you." [level=1] [ref=e34]: Understand exactlywhat your trades cost you.
+      - paragraph [ref=e35]: Institutional transaction cost analysis for retail crypto traders. Discover how much slippage, poor timing, and fees are costing you — trade by trade.
+      - generic [ref=e37]:
+        - generic [ref=e38]:
+          - generic [ref=e39]: avg slippage
+          - generic [ref=e40]: ·
+          - generic [ref=e41]: 15–25 bps
+        - generic [ref=e43]:
+          - generic [ref=e44]: fee drag
+          - generic [ref=e45]: ·
+          - generic [ref=e46]: up to 10 bps
+        - generic [ref=e48]:
+          - generic [ref=e49]: night spread
+          - generic [ref=e50]: ·
+          - generic [ref=e51]: 2–4× wider
+      - button "scroll" [ref=e52] [cursor=pointer]
+    - generic [ref=e58]:
+      - generic [ref=e59]:
+        - generic [ref=e60]: 01 / CONNECT
+        - generic [ref=e61]: READY
+      - generic [ref=e64]:
+        - heading "Select Your Exchange" [level=2] [ref=e65]
+        - generic [ref=e66]:
+          - 'button "Binance World''s largest crypto exchange Spot Futures #1 Volume" [ref=e67] [cursor=pointer]':
+            - generic [ref=e75]: Binance
+            - generic [ref=e78]: World's largest crypto exchange
+            - generic [ref=e79]:
+              - generic [ref=e80]: Spot
+              - generic [ref=e81]: Futures
+              - generic [ref=e82]: "#1 Volume"
+          - button "Bybit Institutional-grade derivatives platform Derivatives Perpetuals Institutional" [ref=e83] [cursor=pointer]:
+            - generic [ref=e90]: Bybit
+            - generic [ref=e93]: Institutional-grade derivatives platform
+            - generic [ref=e94]:
+              - generic [ref=e95]: Derivatives
+              - generic [ref=e96]: Perpetuals
+              - generic [ref=e97]: Institutional
+          - button "OKX OKX Unified account. Spot + derivatives. Low fees. Spot Derivatives Low Fees" [ref=e98] [cursor=pointer]:
+            - generic [ref=e100]: OKX
+            - generic [ref=e101]: OKX
+            - generic [ref=e104]: Unified account. Spot + derivatives. Low fees.
+            - generic [ref=e105]:
+              - generic [ref=e106]: Spot
+              - generic [ref=e107]: Derivatives
+              - generic [ref=e108]: Low Fees
+  - generic [ref=e110]:
+    - generic [ref=e111]:
+      - generic [ref=e112]: 🔒
+      - generic [ref=e113]: Read-only keys only
+    - generic [ref=e115]:
+      - generic [ref=e116]: ⚡
+      - generic [ref=e117]: AES-256-GCM encrypted
+    - generic [ref=e119]:
+      - generic [ref=e120]: ◎
+      - generic [ref=e121]: No trading access
+  - alert [ref=e122]

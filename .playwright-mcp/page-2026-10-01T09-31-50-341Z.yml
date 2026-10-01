@@ -1,0 +1,41 @@
+- generic [active] [ref=f6e1]:
+  - generic [ref=f6e2]:
+    - generic [ref=f6e3]:
+      - generic [ref=f6e4]: FILLSCORE
+      - generic [ref=f6e5]: Jan 1 - Feb 1, 2024
+      - generic [ref=f6e6]: A
+      - generic [ref=f6e7]: 96 / 100
+      - generic [ref=f6e8]: EXCELLENT
+      - generic [ref=f6e9]: BINANCE
+      - generic [ref=f6e11]:
+        - generic [ref=f6e12]:
+          - generic [ref=f6e13]: TRADES
+          - generic [ref=f6e14]: "145"
+        - generic [ref=f6e15]:
+          - generic [ref=f6e16]: MAKER RATIO
+          - generic [ref=f6e17]: 100%
+        - generic [ref=f6e18]:
+          - generic [ref=f6e19]: AVG SLIPPAGE
+          - generic [ref=f6e20]: 0 bps
+        - generic [ref=f6e21]:
+          - generic [ref=f6e22]: BEST SYMBOL
+          - generic [ref=f6e23]: BTCUSDT
+    - generic [ref=f6e24]:
+      - paragraph [ref=f6e25]: How well do you actually execute?
+      - link "GET YOUR FILLSCORE →" [ref=f6e26] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f6e27]:
+        - link "X / TWITTER" [ref=f6e28] [cursor=pointer]:
+          - /url: https://twitter.com/intent/tweet?text=I%20scored%2096%2F100%20(Grade%20A)%20on%20crypto%20execution%20quality.%20How%20well%20do%20you%20execute%3F%20%F0%9F%93%8A&url=http%3A%2F%2Flocalhost%3A3000%2Fshare%2Fdemo-disciplined
+        - link "LINKEDIN" [ref=f6e29] [cursor=pointer]:
+          - /url: https://www.linkedin.com/sharing/share-offsite/?url=http%3A%2F%2Flocalhost%3A3000%2Fshare%2Fdemo-disciplined
+        - link "WHATSAPP" [ref=f6e30] [cursor=pointer]:
+          - /url: https://wa.me/?text=I%20scored%2096%2F100%20(Grade%20A)%20on%20crypto%20execution%20quality.%20How%20well%20do%20you%20execute%3F%20%F0%9F%93%8A%20http%3A%2F%2Flocalhost%3A3000%2Fshare%2Fdemo-disciplined
+        - link "TELEGRAM" [ref=f6e31] [cursor=pointer]:
+          - /url: https://t.me/share/url?url=http%3A%2F%2Flocalhost%3A3000%2Fshare%2Fdemo-disciplined&text=I%20scored%2096%2F100%20(Grade%20A)%20on%20crypto%20execution%20quality.%20How%20well%20do%20you%20execute%3F%20%F0%9F%93%8A
+        - link "REDDIT" [ref=f6e32] [cursor=pointer]:
+          - /url: https://www.reddit.com/submit?url=http%3A%2F%2Flocalhost%3A3000%2Fshare%2Fdemo-disciplined&title=I%20scored%2096%2F100%20(Grade%20A)%20on%20crypto%20execution%20quality.%20How%20well%20do%20you%20execute%3F%20%F0%9F%93%8A
+        - button "COPY LINK" [ref=f6e33] [cursor=pointer]
+        - button "SHARE..." [ref=f6e34] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=f6e40] [cursor=pointer]
+  - alert [ref=f6e44]
