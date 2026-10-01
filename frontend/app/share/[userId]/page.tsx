@@ -1,3 +1,4 @@
+import { serverApiBase } from '../../lib/serverApiBase';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import ShareButtons from './ShareButtons';
@@ -8,7 +9,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { userId } = await params;
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/audit/share/${userId}`, { next: { revalidate: 3600 } });
+  const res = await fetch(`${serverApiBase()}/audit/share/${userId}`, { next: { revalidate: 3600 } });
   if (!res.ok) return { title: 'FillScore' };
   
   const data = await res.json();
@@ -33,7 +34,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SharePage({ params }: Props) {
   const { userId } = await params;
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/audit/share/${userId}`, { next: { revalidate: 60 } });
+  const res = await fetch(`${serverApiBase()}/audit/share/${userId}`, { next: { revalidate: 60 } });
   
   if (!res.ok) {
     return (
@@ -97,9 +98,9 @@ export default async function SharePage({ params }: Props) {
           opacity: 0.05, filter: 'blur(100px)', borderRadius: '50%', pointerEvents: 'none'
         }} />
 
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', letterSpacing: '0.2em', color: '#c9b99a', marginBottom: '0.5rem' }}>
+        <h1 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', letterSpacing: '0.2em', color: '#c9b99a', marginBottom: '0.5rem', fontWeight: 400 }}>
           FILLSCORE
-        </div>
+        </h1>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#888078', letterSpacing: '0.1em', marginBottom: '2rem' }}>
           {data.period}
         </div>
