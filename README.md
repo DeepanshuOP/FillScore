@@ -25,7 +25,7 @@ The flagship feature of FillScore is the Execution Council, a multi-agent system
       [Prosecution]        [Defense]
       (Argues bad)        (Argues good)
             │                  │
-            └────────┬─────────┘
+            └────────┬──────────┘
                      ▼
             [Verification Gate]
           (Counterfactual Checks)
