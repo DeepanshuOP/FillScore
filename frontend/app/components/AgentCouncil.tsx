@@ -1,8 +1,9 @@
 "use client";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { waitForHealthy } from "../utils/serviceWarmup";
 import { councilMaintenanceMessage, councilErrorMessage, councilOfflineMessage } from "../utils/councilStatus";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface AgentCard {
   agent: string;
   rating: string;
@@ -70,7 +71,7 @@ function overallToGrade(rating: string): string {
 
 const AGENT_ORDER = ["liquidity_scout", "alpha_architect", "risk_auditor", "fee_optimizer"];
 
-// ── Component ─────────────────────────────────────────────────────────────────
+// ── Component ────────────────────────────────────────────────────────────────────
 export default function AgentCouncil({
   userId,
   symbol = "BTCUSDT",
@@ -91,6 +92,13 @@ export default function AgentCouncil({
   const [debateRunning, setDebateRunning] = useState(false);
   const [totalLatencyMs, setTotalLatencyMs] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
+  const [waking, setWaking] = useState(false);
+
+  // Free hosting puts the service to sleep; ping it as soon as the panel mounts so it is
+  // already waking while the user reads the dashboard.
+  useEffect(() => {
+    fetch(`${mlBaseUrl}/health`).catch(() => {});
+  }, [mlBaseUrl]);
   const [error, setError] = useState<string | null>(null);
   const esRef = useRef<EventSource | null>(null);
 
@@ -112,10 +120,9 @@ export default function AgentCouncil({
     setRunning(true);
 
     // Verify ml-service is reachable before attempting stream
-    try {
-      const health = await fetch(`${mlBaseUrl}/health`, { method: "GET" });
-      if (!health.ok) throw new Error("unhealthy");
-    } catch {
+    const healthy = await waitForHealthy(`${mlBaseUrl}/health`, { onSlow: () => setWaking(true) });
+    setWaking(false);
+    if (!healthy) {
       setError(councilOfflineMessage(process.env.NODE_ENV !== 'production'));
       setRunning(false);
       return;
@@ -269,6 +276,12 @@ export default function AgentCouncil({
           {running ? "ANALYSING…" : "RUN ANALYSIS"}
         </button>
       </div>
+
+      {waking && (
+        <div role="status" className="text-[#c4a882] text-xs font-mono bg-[rgba(167,139,113,0.08)] border border-[rgba(167,139,113,0.25)] rounded px-4 py-3">
+          The Council service was asleep and is waking up. This can take up to a minute the first time.
+        </div>
+      )}
 
       {error && (
         <div className="text-red-400 text-xs font-mono bg-red-400/10 border border-red-400/20 rounded px-4 py-3">
