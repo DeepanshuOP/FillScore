@@ -26,6 +26,8 @@ const TradeSchema = new Schema<EnrichedTradeDocument>(
         notional: { type: Number, required: true },
         fee: { type: Number, required: true },
         feeAsset: { type: String, required: true },
+        // F-10: fee converted to USD at ingest (see scoring/fees.ts)
+        feeUsd: { type: Number },
         executedAt: { type: Date, required: true },
 
         // Market Snapshot (optional)

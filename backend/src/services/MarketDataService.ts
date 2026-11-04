@@ -7,10 +7,10 @@ export class MarketDataService {
     /**
      * Helper to fetch klines with caching mechanism
      */
-    private async getKlineData(symbol: string, startTime: number, endTime: number, limit: number): Promise<BinanceKline[]> {
+    private async getKlineData(symbol: string, startTime: number, endTime: number, limit: number, keyTag = ''): Promise<BinanceKline[]> {
         // Round to nearest minute for uniform cache keys
         const minuteStart = Math.floor(startTime / 60000) * 60000;
-        const key = `${symbol}_${minuteStart}_${limit}`;
+        const key = `${symbol}_${minuteStart}_${limit}${keyTag}`;
 
         const cached = await MarketCache.findOne({ key }).lean();
         if (cached) {
@@ -43,6 +43,19 @@ export class MarketDataService {
         }
 
         return parseFloat(klines[0][1] as string);
+    }
+
+    /**
+     * Close of the 1m kline that contains `timestampMs` (used to convert third-asset fees to USD).
+     * Cached under its own key tag so it never collides with the arrival-price cache entries.
+     */
+    public async fetchClosePrice(symbol: string, timestampMs: number): Promise<number> {
+        const minuteStart = Math.floor(timestampMs / 60000) * 60000;
+        const klines = await this.getKlineData(symbol, minuteStart, minuteStart + 59999, 1, '_close');
+        if (!klines || klines.length === 0) {
+            throw new Error(`No close kline data found for ${symbol}`);
+        }
+        return parseFloat(klines[0][4] as string);
     }
 
     public async fetchVwap5min(symbol: string, tradeTimestampMs: number): Promise<number> {

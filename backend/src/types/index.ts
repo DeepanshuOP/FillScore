@@ -57,6 +57,8 @@ export interface NormalisedTrade {
     notional: number;
     fee: number;
     feeAsset: string;
+    /** Fee in USD, computed at ingest (F-10). Absent on legacy/demo docs. */
+    feeUsd?: number;
     executedAt: Date;
 }
 

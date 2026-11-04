@@ -1,4 +1,5 @@
 import { EnrichedTrade } from '../types';
+import { tradeFeeUsd } from './fees';
 
 // ─────────────────────────────────────────────────────────
 // Cost Attribution Engine
@@ -146,7 +147,7 @@ export function computeTradeCost(trade: EnrichedTrade): TradeCostBreakdown {
         trade.notional
     );
 
-    const feeCost = computeFeeCost(trade.fee);
+    const feeCost = computeFeeCost(tradeFeeUsd(trade));
 
     const timingCost = computeTimingCost(
         trade.executedAt,

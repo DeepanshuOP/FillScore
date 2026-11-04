@@ -5,10 +5,27 @@ import { BinanceRawTrade, NormalisedTrade, FetchTradesOptions } from '../types';
 import { Trade } from '../models/Trade';
 import crypto from 'crypto';
 import { VALID_DEMO_USERS } from '../middleware/resolveAccount';
+import { MarketDataService } from './MarketDataService';
+import { computeFeeUsd } from '../scoring/fees';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export class TradeIngestionService {
+    private marketData = new MarketDataService();
+
+    /**
+     * F-10: attach the fee in USD. Third-asset fees (e.g. BNB) are priced with the 1m kline close at
+     * execution time. If that price cannot be fetched the trade is still stored, without feeUsd.
+     */
+    public async withFeeUsd<T extends NormalisedTrade>(trade: T): Promise<T> {
+        try {
+            const feeUsd = await computeFeeUsd(trade, (pair, ts) => this.marketData.fetchClosePrice(pair, ts));
+            return { ...trade, feeUsd };
+        } catch (e: any) {
+            console.error(`[Ingest] feeUsd unavailable for ${trade.exchange} ${trade.tradeId} (${trade.feeAsset}): ${e?.message ?? e}`);
+            return trade;
+        }
+    }
 
     public async fetchAllTrades(
         options: FetchTradesOptions,
@@ -115,7 +132,7 @@ export class TradeIngestionService {
 
         // Orchestration step 2 & 3: Normalise & Upsert
         for (const raw of rawTrades) {
-            const normalised = this.normaliseTrade(raw, userId);
+            const normalised = await this.withFeeUsd(this.normaliseTrade(raw, userId));
 
             const filter = {
                 userId: normalised.userId,
@@ -188,7 +205,7 @@ export class TradeIngestionService {
             // Normalise and upsert each trade; $setOnInsert prevents re-ingestion
             // from overwriting downstream enrichments (scores, metrics).
             for (const raw of rawTrades) {
-                const normalised = bybitClient.normaliseBybitTrade(raw, userId);
+                const normalised = await this.withFeeUsd(bybitClient.normaliseBybitTrade(raw, userId));
 
                 const updateResult = await Trade.updateOne(
                     { userId, exchange: 'bybit', tradeId: raw.execId },
@@ -259,7 +276,7 @@ export class TradeIngestionService {
             console.log(`[OKX Ingest] Day ${dayIndex}/${totalDays}: fetched ${rawTrades.length} trades for ${instId}`);
 
             for (const raw of rawTrades) {
-                const normalised = okxClient.normaliseOKXTrade(raw, userId);
+                const normalised = await this.withFeeUsd(okxClient.normaliseOKXTrade(raw, userId));
 
                 const updateResult = await Trade.updateOne(
                     { userId, exchange: 'okx', tradeId: raw.billId },

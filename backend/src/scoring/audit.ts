@@ -5,6 +5,7 @@ import {
     computeArrivalSlippageBps,
     computeFeeDragBps
 } from './engine';
+import { tradeFeeUsd } from './fees';
 
 export async function computeAuditSummary(userId: string, trades: EnrichedTrade[]): Promise<AuditSummary> {
     if (trades.length === 0) {
@@ -62,7 +63,7 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
         if (trade.executedAt > maxDate) maxDate = trade.executedAt;
 
         const arrivalSlippageBps = Math.abs(computeArrivalSlippageBps(trade.executionPrice, trade.arrivalPriceProxy!, trade.side));
-        const feeDragBps = computeFeeDragBps(trade.fee, trade.notional);
+        const feeDragBps = computeFeeDragBps(tradeFeeUsd(trade), trade.notional);
 
         weightedFillScoreSum += scores.fillScore * notional;
         weightedSlippageBpsSum += arrivalSlippageBps * notional;

@@ -6,8 +6,9 @@ import { Audit } from '../models/Audit';
 import { computeAuditSummary } from '../scoring/audit';
 import { recordAuditSnapshot, getAuditHistory } from '../scoring/history';
 import { hourSummary, describePeriod, describeWindow } from '../scoring/coach';
-import { scoreTrade } from '../scoring/engine';
+import { scoreTrade, scoreTiming, computeArrivalSlippageBps, computeFeeDragBps } from '../scoring/engine';
 import { aggregateCostAttribution } from '../scoring/attribution';
+import { tradeFeeUsd, FEE_USD_EXPR, computeFeeUsd } from '../scoring/fees';
 import { ReportService } from '../services/ReportService';
 import { EnrichedTrade } from '../types';
 import rateLimit from 'express-rate-limit';
@@ -25,6 +26,22 @@ import {
     downloadTokenBodySchema,
     noteBodySchema,
 } from '../validation/schemas';
+
+/** Per-trade score and metric fields written back to `trades` after scoring (F-01). */
+export function perTradeFields(t: EnrichedTrade) {
+    return {
+        slippageScore: t.slippageScore,
+        feeScore: t.feeScore,
+        timingScore: t.timingScore,
+        exchangeScore: t.exchangeScore,
+        fillScore: t.fillScore,
+        fillGrade: t.fillGrade,
+        arrivalSlippageBps: computeArrivalSlippageBps(t.executionPrice, t.arrivalPriceProxy!, t.side),
+        feeDragBps: t.notional > 0 ? computeFeeDragBps(tradeFeeUsd(t), t.notional) : undefined,
+        liquidityWindow: scoreTiming(t.executedAt).window,
+        ...(t.feeUsd != null ? { feeUsd: t.feeUsd } : {}),
+    };
+}
 
 export async function executeAuditPipeline(accountId: string) {
     const tradeDocs = await Trade.find({ accountId }).lean();
@@ -56,6 +73,30 @@ export async function executeAuditPipeline(accountId: string) {
 
     if (validTrades.length === 0) {
         throw new Error('no_trades_found');
+    }
+
+    // F-10: a trade stored without feeUsd (price lookup failed at ingest) gets another try here.
+    if (!VALID_DEMO_USERS.has(accountId)) {
+        const marketData = new MarketDataService();
+        for (const t of validTrades) {
+            if (t.feeUsd != null) continue;
+            try {
+                t.feeUsd = await computeFeeUsd(t, (pair, ts) => marketData.fetchClosePrice(pair, ts));
+            } catch (e: any) {
+                console.error(`[Audit] feeUsd still unavailable for trade ${t.tradeId} (${t.feeAsset})`);
+            }
+        }
+    }
+
+    // F-01: persist the per-trade fields the readers query (analytics, coach, attribution, PDF,
+    // trades list/export, exchange comparison, ml-service loader). Demo trades are locked seed data.
+    if (!VALID_DEMO_USERS.has(accountId)) {
+        await Trade.bulkWrite(validTrades.map(t => ({
+            updateOne: {
+                filter: { _id: (t as any)._id, accountId },
+                update: { $set: perTradeFields(t) },
+            },
+        })), { ordered: false });
     }
 
     const summary = await computeAuditSummary(accountId, validTrades);
@@ -212,7 +253,7 @@ auditRouter.get('/report', resolveDownloadAccount('report'), async (req: Request
                     tradeCount: { $sum: 1 },
                     makerCount: { $sum: { $cond: [{ $eq: ['$isMaker', true] }, 1, 0] } },
                     avgSlippageBps: { $avg: '$arrivalSlippageBps' },
-                    avgFeeDragBps: { $avg: { $multiply: [{ $divide: ['$fee', '$notional'] }, 10000] } }
+                    avgFeeDragBps: { $avg: { $multiply: [{ $divide: [FEE_USD_EXPR, '$notional'] }, 10000] } }
                 }
             },
             {
@@ -344,7 +385,7 @@ auditRouter.get('/trades/export', resolveDownloadAccount('export'), async (req, 
       const orderType = t.isMaker ? 'MAKER' : 'TAKER';
       const notional = t.notionalValue ?? t.notional ?? 0;
       const price = t.executionPrice ?? t.price ?? 0;
-      const fee = t.feePaid ?? t.fee ?? 0;
+      const fee = t.feePaid ?? tradeFeeUsd(t);
       const slippage = t.arrivalSlippageBps ?? 0;
       const fillScore = t.fillScore ?? '';
       const grade = t.fillGrade ?? '';
@@ -391,7 +432,7 @@ auditRouter.get('/trades', resolveAccount, async (req, res) => {
     const formattedTrades = trades.map((t: any) => ({
       ...t,
       notionalValue: t.notionalValue ?? t.notional,
-      feePaid: t.feePaid ?? t.fee,
+      feePaid: t.feePaid ?? tradeFeeUsd(t),
       slippageBps: t.slippageBps ?? t.arrivalSlippageBps ?? t.vwapSlippageBps ?? 0
     }));
 
@@ -508,7 +549,7 @@ auditRouter.get('/analytics', resolveAccount, async (req, res) => {
       symbolMap[t.symbol].totalNotional += 
         (t as any).notionalValue ?? t.notional ?? 0
       symbolMap[t.symbol].totalFees += 
-        (t as any).feePaid ?? t.fee ?? 0
+        (t as any).feePaid ?? tradeFeeUsd(t)
       if (t.isMaker) symbolMap[t.symbol].makerCount++
     })
 
@@ -597,7 +638,7 @@ auditRouter.get('/analytics/exchange-comparison', resolveAccount, async (req, re
           avgSlippageBps: { $avg: '$arrivalSlippageBps' },
           avgFeeDragBps: {
             $avg: {
-              $multiply: [{ $divide: ['$fee', '$notional'] }, 10000]
+              $multiply: [{ $divide: [FEE_USD_EXPR, '$notional'] }, 10000]
             }
           }
         }

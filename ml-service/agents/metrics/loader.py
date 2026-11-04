@@ -14,6 +14,27 @@ from agents.metrics.liquidity_packet import build_liquidity_packet, LiquidityMet
 from agents.metrics.alpha_packet import build_alpha_packet, AlphaMetricsPacket
 
 
+# Fields every packet builder reads. feeUsd (F-10) is the fee converted to USD at ingest.
+TRADE_PROJECTION = {
+    "_id": 1, "symbol": 1, "exchange": 1,
+    "isMaker": 1, "fee": 1, "feeUsd": 1, "notional": 1,
+    "orderType": 1, "arrivalSlippageBps": 1,
+    "fillScore": 1, "executedAt": 1, "side": 1,
+    "executionPrice": 1, "vwap5m": 1,
+    "whaleAdverse": 1,
+}
+
+
+def normalise_trade_doc(doc: dict) -> dict:
+    """Map a raw trade doc onto the field names the packet builders expect. feePaid is USD:
+    feeUsd when ingest stored it, else the native fee (legacy/demo docs, which pay in USDT)."""
+    doc["id"] = str(doc.get("_id", ""))  # string _id for evidence indexing
+    fee_usd = doc.get("feeUsd")
+    doc["feePaid"] = fee_usd if fee_usd is not None else doc.get("fee", 0.0)
+    doc["notionalValue"] = doc.get("notional", 0.0)
+    return doc
+
+
 def _get_mongo_client() -> AsyncIOMotorClient:
     uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
     return AsyncIOMotorClient(uri)
@@ -36,31 +57,12 @@ async def load_all_packets(
 
         cursor = collection.find(
             {"userId": user_id, "symbol": symbol},
-            {
-                "_id": 1,
-                "symbol": 1,
-                "exchange": 1,
-                "isMaker": 1,
-                "fee": 1,
-                "notional": 1,
-                "orderType": 1,
-                "arrivalSlippageBps": 1,
-                "fillScore": 1,
-                "executedAt": 1,
-                "side": 1,
-                "executionPrice": 1,
-                "vwap5m": 1,
-                "whaleAdverse": 1,
-            }
+            TRADE_PROJECTION,
         ).sort("executedAt", 1)
 
         trades = []
         async for doc in cursor:
-            # normalise _id to string for evidence indexing
-            doc["id"] = str(doc.get("_id", ""))
-            doc["feePaid"] = doc.get("fee", 0.0)
-            doc["notionalValue"] = doc.get("notional", 0.0)
-            trades.append(doc)
+            trades.append(normalise_trade_doc(doc))
 
     finally:
         client.close()
@@ -88,21 +90,11 @@ async def load_all_packets_for_user(
         collection = db[collection_name]
         cursor = collection.find(
             {"userId": user_id},
-            {
-                "_id": 1, "symbol": 1, "exchange": 1,
-                "isMaker": 1, "fee": 1, "notional": 1,
-                "orderType": 1, "arrivalSlippageBps": 1,
-                "fillScore": 1, "executedAt": 1, "side": 1,
-                "executionPrice": 1, "vwap5m": 1,
-                "whaleAdverse": 1,
-            }
+            TRADE_PROJECTION,
         ).sort("executedAt", 1)
         trades = []
         async for doc in cursor:
-            doc["id"] = str(doc.get("_id", ""))
-            doc["feePaid"] = doc.get("fee", 0.0)
-            doc["notionalValue"] = doc.get("notional", 0.0)
-            trades.append(doc)
+            trades.append(normalise_trade_doc(doc))
     finally:
         client.close()
 
