@@ -1,104 +1,100 @@
+"""Low-level LLM call helpers: the retry policy, JSON extraction and token roll-up.
+
+Model names and providers live only in config/llm_routes.yaml (see agents/llm_router.py).
+
+Retry policy (Phase 1b.3): retry only rate limits (429), server errors (5xx) and timeouts, at most
+MAX_ATTEMPTS times, waiting what the provider asks for (retry-after, then x-ratelimit-reset-*).
+Every other error, 404 and 401 included, is raised at once so the router can fall back to the
+next model. A provider wait longer than MAX_RETRY_WAIT_S is not slept through either.
+"""
 import asyncio
-import os
 import random
 import re
-from typing import Callable, Coroutine, Any
-from openai import AsyncOpenAI
-from groq import AsyncGroq
+from typing import Any, Callable, Coroutine
 
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-
-# Groq retired the Llama models on 2026-08-16; openai/gpt-oss-120b is the free-tier replacement.
-# Both can be changed from the environment when Groq changes its lineup again.
-DEFAULT_MODEL = "openai/gpt-oss-120b"
-
-
-def _model_from_env(name: str) -> str:
-    return os.getenv(name, "").strip() or DEFAULT_MODEL
-
-
-SPECIALIST_MODEL = _model_from_env("GROQ_SPECIALIST_MODEL")
-SYNTHESIS_MODEL = _model_from_env("GROQ_SYNTHESIS_MODEL")
-SYNTHESIS_PROVIDER = "groq"
-
-MAX_RETRIES = 4
+MAX_ATTEMPTS = 3
 MAX_RETRY_WAIT_S = 30
 
-
-def model_extra(model: str) -> dict:
-    """Extra request fields per model. gpt-oss models think before answering and the thinking
-    counts against max_tokens, so ask for the lowest effort to leave room for the JSON answer."""
-    if model.startswith("openai/gpt-oss"):
-        return {"reasoning_effort": "low"}
-    return {}
-
-
 _RETRY_HINT = re.compile(r"try again in (?:(\d+)m(?=\d))?(?:(\d+(?:\.\d+)?)(ms|s))?", re.IGNORECASE)
+_STATUS_IN_TEXT = re.compile(r"Error code: (\d{3})")
+_DURATION_PART = re.compile(r"(\d+(?:\.\d+)?)(ms|h|m|s)")
+
+
+def parse_duration_s(value: str) -> float | None:
+    """Parse a provider duration header: "2", "7.66s", "850ms", "2m59.56s", "1h2m3s"."""
+    text = str(value).strip().lower()
+    try:
+        return float(text)
+    except ValueError:
+        pass
+    parts = _DURATION_PART.findall(text)
+    if not parts or "".join(a + u for a, u in parts) != text:
+        return None
+    scale = {"h": 3600.0, "m": 60.0, "s": 1.0, "ms": 0.001}
+    return sum(float(amount) * scale[unit] for amount, unit in parts)
+
+
+def status_of(exc: BaseException) -> int | None:
+    status = getattr(exc, "status_code", None)
+    if isinstance(status, int):
+        return status
+    text = str(exc)
+    match = _STATUS_IN_TEXT.search(text)
+    if match:
+        return int(match.group(1))
+    if "429" in text or "too many requests" in text.lower():
+        return 429
+    return None
+
+
+def is_timeout(exc: BaseException) -> bool:
+    return isinstance(exc, (asyncio.TimeoutError, TimeoutError)) or "Timeout" in type(exc).__name__
+
+
+def is_retryable(exc: BaseException) -> bool:
+    if is_timeout(exc):
+        return True
+    status = status_of(exc)
+    return status == 429 or (status is not None and 500 <= status < 600)
+
+
+def _headers_of(exc: BaseException) -> dict:
+    response = getattr(exc, "response", None)
+    headers = getattr(response, "headers", None) or getattr(exc, "headers", None) or {}
+    try:
+        return {str(k).lower(): v for k, v in dict(headers).items()}
+    except Exception:
+        return {}
+
+
+def server_wait_seconds(exc: BaseException) -> float | None:
+    """The wait the provider asked for in its headers, uncapped, or None if it sent none."""
+    headers = _headers_of(exc)
+    if "retry-after" in headers:
+        wait = parse_duration_s(headers["retry-after"])
+        if wait is not None:
+            return wait
+    resets = [parse_duration_s(v) for k, v in headers.items() if k.startswith("x-ratelimit-reset")]
+    resets = [w for w in resets if w is not None]
+    # Groq sends reset-requests for the daily window and reset-tokens for the minute window; the
+    # shorter one is the wait worth trying (a longer daily wait goes over the cap and falls back).
+    return min(resets) if resets else None
 
 
 def retry_delay_seconds(exc: BaseException, attempt: int) -> float:
-    """How long to wait before retrying a rate-limited call: the wait Groq asks for (plus a
-    little), capped, else exponential backoff."""
+    """Seconds to wait before the next attempt: the provider's header, else the "try again in"
+    hint in the error text (plus a little), else exponential backoff; capped."""
+    header_wait = server_wait_seconds(exc)
+    if header_wait is not None:
+        return min(header_wait, MAX_RETRY_WAIT_S)
     match = _RETRY_HINT.search(str(exc))
     if match and (match.group(1) or match.group(2)):
         minutes = int(match.group(1) or 0)
         amount = float(match.group(2) or 0)
         seconds = amount / 1000 if (match.group(3) or "").lower() == "ms" else amount
         return min(minutes * 60 + seconds + 0.5, MAX_RETRY_WAIT_S)
-    return (2 ** attempt) + random.uniform(0, 1)
+    return min((2 ** attempt) + random.uniform(0, 1), MAX_RETRY_WAIT_S)
 
-# Model names Groq has shut down. Any call that still asks for one is sent to the current model
-# instead of failing with a 404.
-RETIRED_MODELS = {
-    "llama-3.3-70b-versatile",
-    "llama-3.1-8b-instant",
-    "llama-4-scout",
-    "qwen3-32b",
-}
-
-# gpt-oss models spend part of max_tokens on thinking, so callers' answer budgets are scaled up.
-REASONING_TOKEN_FACTOR = 1.8
-
-
-def adapt_client_for_models(client):
-    """Wrap client.chat.completions.create so every call uses a live model and the right
-    request options, without each agent having to know about Groq's model lineup."""
-    completions = client.chat.completions
-    original = completions.create
-
-    async def create(*args, **kwargs):
-        model = kwargs.get("model", "")
-        if model in RETIRED_MODELS:
-            model = kwargs["model"] = SPECIALIST_MODEL
-        extra = model_extra(model)
-        if extra:
-            kwargs["extra_body"] = {**extra, **(kwargs.get("extra_body") or {})}
-            if kwargs.get("max_tokens"):
-                kwargs["max_tokens"] = int(kwargs["max_tokens"] * REASONING_TOKEN_FACTOR)
-        return await original(*args, **kwargs)
-
-    completions.create = create
-    return client
-
-
-def get_groq_client() -> AsyncGroq:
-    api_key = os.getenv("GROQ_API_KEY")
-    if not api_key:
-        raise ValueError("GROQ_API_KEY not set in environment")
-    return adapt_client_for_models(AsyncGroq(api_key=api_key))
-
-def get_openrouter_client() -> AsyncOpenAI:
-    api_key = os.getenv("OPENROUTER_API_KEY")
-    if not api_key:
-        raise ValueError("OPENROUTER_API_KEY not set in environment")
-    return AsyncOpenAI(
-        base_url=OPENROUTER_BASE_URL,
-        api_key=api_key,
-        default_headers={
-            "HTTP-Referer": "https://fillscore.io",
-            "X-Title": "FillScore Agent Council"
-        }
-    )
 
 def rollup_token_usage(usages: list[dict]) -> dict:
     return {
@@ -108,25 +104,47 @@ def rollup_token_usage(usages: list[dict]) -> dict:
         "n_calls": len(usages)
     }
 
-async def call_with_retry(coro_fn: Callable[[], Coroutine[Any, Any, Any]], max_retries: int = MAX_RETRIES, usage_sink: list | None = None) -> Any:
-    for attempt in range(max_retries):
+
+def usage_of(resp: Any) -> dict:
+    usage = getattr(resp, "usage", None)
+    if not usage:
+        return {"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0}
+    prompt = getattr(usage, "prompt_tokens", 0) or 0
+    completion = getattr(usage, "completion_tokens", 0) or 0
+    total = getattr(usage, "total_tokens", 0) or (prompt + completion)
+    return {"prompt_tokens": int(prompt), "completion_tokens": int(completion), "total_tokens": int(total)}
+
+
+async def call_with_retry(
+    coro_fn: Callable[[], Coroutine[Any, Any, Any]],
+    max_attempts: int = MAX_ATTEMPTS,
+    usage_sink: list | None = None,
+    sleep: Callable[[float], Coroutine[Any, Any, Any]] | None = None,
+    on_error: Callable[[BaseException, int, bool], None] | None = None,
+) -> Any:
+    """Run coro_fn under the retry policy. on_error(exc, attempt, will_retry) sees each failure."""
+    for attempt in range(max_attempts):
         try:
             resp = await coro_fn()
-            if usage_sink is not None and hasattr(resp, "usage") and resp.usage:
-                usage_sink.append({
-                    "prompt_tokens": getattr(resp.usage, "prompt_tokens", 0) or 0,
-                    "completion_tokens": getattr(resp.usage, "completion_tokens", 0) or 0,
-                    "total_tokens": getattr(resp.usage, "total_tokens", 0) or 0,
-                })
-            return resp
-        except Exception as e:
-            if "429" in str(e) or "Too Many Requests" in str(e):
-                wait = retry_delay_seconds(e, attempt)
-                print(f"[retry] 429 received, waiting {wait:.1f}s before retry {attempt+1}/{max_retries}")
-                await asyncio.sleep(wait)
-            else:
+        except Exception as exc:
+            will_retry = is_retryable(exc) and attempt < max_attempts - 1
+            if will_retry:
+                asked = server_wait_seconds(exc)
+                if asked is not None and asked > MAX_RETRY_WAIT_S:
+                    will_retry = False
+            if on_error is not None:
+                on_error(exc, attempt + 1, will_retry)
+            if not will_retry:
                 raise
-    raise Exception(f"Max retries exceeded after {max_retries} attempts")
+            wait = retry_delay_seconds(exc, attempt)
+            print(f"[retry] {type(exc).__name__} status={status_of(exc)}, waiting {wait:.1f}s before attempt {attempt + 2}/{max_attempts}")
+            await (sleep or asyncio.sleep)(wait)
+            continue
+        if usage_sink is not None and getattr(resp, "usage", None):
+            usage_sink.append(usage_of(resp))
+        return resp
+    raise RuntimeError("unreachable")  # pragma: no cover
+
 
 def extract_json_from_response(content) -> dict | None:
     """4-stage JSON extractor — handles fenced, bare, raw, and reasoning-model block responses.

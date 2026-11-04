@@ -7,7 +7,9 @@ from config.versions import METRICS_VERSION, PROMPT_VERSION
 
 def build_repro_config(git_commit_hash: str, packet_content_hashes: dict | None = None) -> dict:
     from eval.harness import CUTOFF_DATE, EVAL_USERS, EVAL_SYMBOL
-    from agents.llm_client import SPECIALIST_MODEL, SYNTHESIS_MODEL, SYNTHESIS_PROVIDER
+    from agents.llm_router import load_routes
+
+    routes = load_routes()
     
     # We found metrics_version="1.0.0" across packet builders
     # We found prompt_version="1.0.0" in persistence.py
@@ -19,9 +21,10 @@ def build_repro_config(git_commit_hash: str, packet_content_hashes: dict | None 
         "cutoff_date": CUTOFF_DATE,
         "eval_users": EVAL_USERS,
         "eval_symbol": EVAL_SYMBOL,
-        "specialist_model": SPECIALIST_MODEL,
-        "synthesis_model": SYNTHESIS_MODEL,
-        "synthesis_provider": SYNTHESIS_PROVIDER,
+        # Models are routed per role from config/llm_routes.yaml (Phase 1b.4); record the ordered
+        # candidates and the hash of the whole route file.
+        "llm_routes": {role: [routes.models[i].label for i in ids] for role, ids in routes.roles.items()},
+        "route_config_hash": routes.hash,
         "metrics_version": metrics_version,
         "prompt_version": prompt_version,
         "packet_content_hashes": packet_content_hashes if packet_content_hashes is not None else {}

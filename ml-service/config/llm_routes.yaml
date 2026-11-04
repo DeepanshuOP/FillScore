@@ -1,0 +1,109 @@
+# FillScore Agent Council: free-model routes (Phase 1b.4).
+#
+# The ONLY place model names live. No secrets: each provider names the environment variable
+# that holds its key, and a provider whose key variable is missing or empty is skipped silently.
+# Budgets are per (provider, model) per UTC day and are persisted in Mongo `llm_usage`.
+# A candidate whose requests or tokens for today have reached its limit is skipped.
+# The LLM budget is $0: free tiers only. Never add a paid model here.
+
+version: 1
+
+# Used for any model that does not set its own limits.
+defaults:
+  daily_requests: 100
+  daily_tokens: 100000
+  max_tokens_factor: 1.0
+
+providers:
+  groq:
+    # OpenAI-compatible endpoint. Limits: https://console.groq.com/docs/rate-limits (read
+    # 2026-11-04): gpt-oss-120b, gpt-oss-20b and qwen3.8-27b each list 30 RPM, 1K RPD, 8K TPM,
+    # 200K TPD. The page labels that table the Developer-plan base limits and the Free-plan tab
+    # did not render, so the budgets below stay at about 90% of it and may need lowering.
+    base_url: https://api.groq.com/openai/v1
+    key_env: GROQ_API_KEY
+    timeout_s: 60
+  gemini:
+    # Gemini API OpenAI compatibility: https://ai.google.dev/gemini-api/docs/openai (read
+    # 2026-11-04): base_url "https://generativelanguage.googleapis.com/v1beta/openai/", key sent
+    # as the bearer token, reasoning_effort accepted (minimal/low/medium/high).
+    # Free-tier models ("Free of charge"): https://ai.google.dev/gemini-api/docs/pricing (read
+    # 2026-11-04): gemini-3.8-flash, gemini-3.6-flash, gemini-3.5-flash-lite, gemini-3.1-flash-lite.
+    # Per-model free RPM/RPD are only shown in AI Studio (https://aistudio.google.com/rate-limit),
+    # so the budgets below are conservative guesses. RPD resets at midnight Pacific, not UTC.
+    # Free-tier content IS used to improve Google's products: only aggregate packets are sent.
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai/
+    key_env: GEMINI_API_KEY
+    timeout_s: 60
+  openrouter:
+    # :free variants: https://openrouter.ai/docs/api-reference/limits (read 2026-11-04):
+    # 20 requests/minute and 50 requests/day in total across all :free models (1000/day after
+    # buying 10 credits). No current :free model ID could be confirmed from the docs on
+    # 2026-11-04, so no OpenRouter model is routed yet. Add one under `models` after checking
+    # https://openrouter.ai/models?q=free, keeping the 50/day account-wide limit in mind.
+    base_url: https://openrouter.ai/api/v1
+    key_env: OPENROUTER_API_KEY
+    timeout_s: 60
+    headers:
+      HTTP-Referer: https://fillscore.io
+      X-Title: FillScore Agent Council
+
+models:
+  groq-gpt-oss-120b:
+    provider: groq
+    model: openai/gpt-oss-120b
+    daily_requests: 900
+    daily_tokens: 180000
+    # gpt-oss thinks before answering and the thinking counts against max_tokens.
+    extra_body: {reasoning_effort: low}
+    max_tokens_factor: 1.8
+  groq-gpt-oss-20b:
+    provider: groq
+    model: openai/gpt-oss-20b
+    daily_requests: 900
+    daily_tokens: 180000
+    extra_body: {reasoning_effort: low}
+    max_tokens_factor: 1.8
+  groq-qwen3.8-27b:
+    provider: groq
+    model: qwen/qwen3.8-27b
+    daily_requests: 900
+    daily_tokens: 180000
+    max_tokens_factor: 1.8
+  gemini-3.8-flash:
+    provider: gemini
+    model: gemini-3.8-flash
+    daily_requests: 200
+    daily_tokens: 400000
+    extra_body: {reasoning_effort: low}
+    max_tokens_factor: 1.8
+  gemini-3.5-flash-lite:
+    provider: gemini
+    model: gemini-3.5-flash-lite
+    daily_requests: 400
+    daily_tokens: 400000
+    extra_body: {reasoning_effort: low}
+    max_tokens_factor: 1.8
+
+# Ordered candidates per role, set from the 1b.7 probe (.work/probe_results.md, 2026-11-04,
+# one specialist + one synthesis call per Groq model; Gemini had no key so it is unprobed).
+# Rule: valid JSON first, then grounding (no numerals outside the packet), then latency.
+#   specialist: qwen3.8-27b 808 ms, gpt-oss-20b 1116 ms, gpt-oss-120b 1404 ms (all valid, all grounded)
+#   synthesis:  qwen3.8-27b 851 ms, gpt-oss-120b 1811 ms (valid, grounded);
+#               gpt-oss-20b failed Pydantic validation and wrote an ungrounded numeral, so it goes last.
+# Unprobed Gemini models sit after the probed passes and before any probed failure.
+# Debate was not probed; its JSON shape is closest to the specialists', so it uses their order.
+roles:
+  specialist: [groq-qwen3.8-27b, groq-gpt-oss-20b, groq-gpt-oss-120b, gemini-3.5-flash-lite, gemini-3.8-flash]
+  debate: [groq-qwen3.8-27b, groq-gpt-oss-20b, groq-gpt-oss-120b, gemini-3.5-flash-lite, gemini-3.8-flash]
+  synthesis: [groq-qwen3.8-27b, groq-gpt-oss-120b, gemini-3.8-flash, groq-gpt-oss-20b]
+
+# Pre-run capacity check: a run is refused up front ("daily AI budget reached") unless every
+# role has a candidate with room for this many calls and tokens. From the 1b.7 probe: specialist
+# calls used 787-874 tokens, synthesis 2565-2736. Debate was not probed: its prompts are 4468 and
+# 5166 characters against synthesis's 6158, which scales to about 1900-2200 tokens per turn.
+# Each is rounded up.
+run_estimate:
+  specialist: {calls: 4, tokens_per_call: 1000}
+  debate: {calls: 4, tokens_per_call: 2500}
+  synthesis: {calls: 1, tokens_per_call: 3000}

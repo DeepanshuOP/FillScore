@@ -12,8 +12,10 @@ python-dotenv
 httpx
 pytest
 pytest-asyncio
+mongomock-motor
 openai
 certifi
 groq
 motor
 pyjwt
+pyyaml
