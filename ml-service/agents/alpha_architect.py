@@ -1,30 +1,29 @@
-"""Alpha Architect — specialist agent for execution alpha analysis.
+"""Alpha Architect — specialist agent for benchmark-relative execution quality.
 
-Uses claude-haiku-4-5 for fast structured JSON extraction.
-Focuses on metrics from AlphaMetricsPacket.
+Audits past executions from the deterministic AlphaMetricsPacket. The model is chosen by the router
+(config/llm_routes.yaml, role "specialist").
 """
 
 from __future__ import annotations
 
-import asyncio
 import json
 
-from groq import AsyncGroq
-
-from agents.schemas import AlphaVerdict, TradeContext
 from agents.metrics.alpha_packet import AlphaMetricsPacket
-from agents.llm_client import SPECIALIST_MODEL, call_with_retry
-TIMEOUT_S = 60
+from agents.prompts import system_prompt
+from agents.schemas import TradeContext, AlphaVerdict
 
-SYSTEM_PROMPT = (
-    "You are FillScore's Alpha Architect agent. You evaluate whether a trader's "
-    "execution captures or leaks alpha relative to benchmarks.\n\n"
+ROLE = "specialist"
+MAX_TOKENS = 500
+
+SYSTEM_PROMPT = system_prompt(
+    "You are FillScore's Alpha Architect agent. You audit whether a trader's past "
+    "executions captured or leaked value relative to the packet's benchmarks.\n\n"
     "Return ONLY valid JSON matching this schema — no prose, no markdown fences, "
     "no preamble:\n"
     "{\n"
     '  "agent": "alpha_architect",\n'
     '  "alphaRating": "POSITIVE" | "NEUTRAL" | "NEGATIVE" | "SEVERELY_NEGATIVE",\n'
-    '  "bestAlternative": string (recommended execution alternative),\n'
+    '  "bestAlternative": string (past tense: which benchmark in the packet these executions compared best or worst against, citing packet keys),\n'
     '  "cited_evidence": [string] (keys from the packet that support this verdict),\n'
     '  "severity": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",\n'
     '  "confidence": float (0-1),\n'
@@ -33,9 +32,8 @@ SYSTEM_PROMPT = (
 )
 
 
-async def run(context: TradeContext, client: AsyncGroq, packet: AlphaMetricsPacket = None, usage_sink: list | None = None) -> AlphaVerdict:
-    """Execute the Alpha Architect agent against the given trade context."""
-    user_content = f"""AlphaMetricsPacket:
+def build_user_prompt(context: TradeContext, packet: AlphaMetricsPacket) -> str:
+    return f"""AlphaMetricsPacket:
 {json.dumps(packet.to_prompt_dict(), indent=2)}
 
 Regime: {context.regime}
@@ -43,31 +41,15 @@ Regime: {context.regime}
 Assign alphaRating, write bestAlternative, list cited_evidence keys.
 Schema: alphaRating (POSITIVE/NEUTRAL/NEGATIVE/SEVERELY_NEGATIVE), bestAlternative (str), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""
 
-    async def _call():
-        return await client.chat.completions.create(
-            model=SPECIALIST_MODEL,
-            max_tokens=500,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_content}
-            ],
-            temperature=0.1
-        )
-    
-    response = await asyncio.wait_for(
-        call_with_retry(_call, usage_sink=usage_sink),
-        timeout=TIMEOUT_S,
+
+async def run(context: TradeContext, llm, packet: AlphaMetricsPacket, telemetry: list | None = None) -> AlphaVerdict:
+    """Run the agent through the router; raises if no model produced a valid verdict."""
+    return await llm.complete(
+        ROLE,
+        SYSTEM_PROMPT,
+        build_user_prompt(context, packet),
+        AlphaVerdict,
+        max_tokens=MAX_TOKENS,
+        temperature=0.1,
+        telemetry=telemetry,
     )
-
-    raw_text = response.choices[0].message.content
-    import re
-    cleaned = re.sub(r'^```(?:json)?\s*', '', raw_text.strip(), flags=re.MULTILINE)
-    cleaned = re.sub(r'```\s*$', '', cleaned.strip(), flags=re.MULTILINE)
-    raw_text = cleaned.strip()
-
-    from agents.llm_client import extract_json_from_response
-    parsed = extract_json_from_response(raw_text)
-    if parsed is None:
-        raise ValueError(f"Could not extract JSON from response: {raw_text[:200]}")
-    verdict = AlphaVerdict.model_validate(parsed)
-    return verdict

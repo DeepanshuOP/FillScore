@@ -1,30 +1,29 @@
-"""Fee Optimizer — specialist agent for fee efficiency analysis.
+"""Fee Optimizer — specialist agent for fee efficiency.
 
-Uses claude-haiku-4-5 for fast structured JSON extraction.
-Focuses on metrics from FeeMetricsPacket.
+Audits past executions from the deterministic FeeMetricsPacket. The model is chosen by the router
+(config/llm_routes.yaml, role "specialist").
 """
 
 from __future__ import annotations
 
-import asyncio
 import json
 
-from groq import AsyncGroq
-
-from agents.schemas import FeeVerdict, TradeContext
 from agents.metrics.fee_packet import FeeMetricsPacket
-from agents.llm_client import SPECIALIST_MODEL, call_with_retry
-TIMEOUT_S = 60
+from agents.prompts import system_prompt
+from agents.schemas import TradeContext, FeeVerdict
 
-SYSTEM_PROMPT = (
-    "You are FillScore's Fee Optimizer agent. You evaluate fee efficiency for "
-    "a crypto spot trader.\n\n"
+ROLE = "specialist"
+MAX_TOKENS = 500
+
+SYSTEM_PROMPT = system_prompt(
+    "You are FillScore's Fee Optimizer agent. You audit the fee efficiency of a "
+    "crypto spot trader's past executions.\n\n"
     "Return ONLY valid JSON matching this schema — no prose, no markdown fences, "
     "no preamble:\n"
     "{\n"
     '  "agent": "fee_optimizer",\n'
     '  "feeRating": "OPTIMAL" | "MODERATE" | "WASTEFUL" | "SEVERELY_WASTEFUL",\n'
-    '  "recommendedAction": string (Specific action, e.g. "Switch to limit orders on BTC"),\n'
+    '  "recommendedAction": string (one past-tense finding about where the fee cost came from, citing packet keys, e.g. "Most fills were taker orders (maker_ratio)"),\n'
     '  "cited_evidence": [string] (keys from the packet that support this verdict),\n'
     '  "severity": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",\n'
     '  "confidence": float (0-1),\n'
@@ -33,9 +32,8 @@ SYSTEM_PROMPT = (
 )
 
 
-async def run(context: TradeContext, client: AsyncGroq, packet: FeeMetricsPacket = None, usage_sink: list | None = None) -> FeeVerdict:
-    """Execute the Fee Optimizer agent against the given trade context."""
-    user_content = f"""FeeMetricsPacket:
+def build_user_prompt(context: TradeContext, packet: FeeMetricsPacket) -> str:
+    return f"""FeeMetricsPacket:
 {json.dumps(packet.to_prompt_dict(), indent=2)}
 
 Regime: {context.regime}
@@ -43,31 +41,15 @@ Regime: {context.regime}
 Assign feeRating, write recommendedAction, list cited_evidence keys.
 Schema: feeRating (OPTIMAL/MODERATE/WASTEFUL/SEVERELY_WASTEFUL), recommendedAction (str), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""
 
-    async def _call():
-        return await client.chat.completions.create(
-            model=SPECIALIST_MODEL,
-            max_tokens=500,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_content}
-            ],
-            temperature=0.1
-        )
 
-    response = await asyncio.wait_for(
-        call_with_retry(_call, usage_sink=usage_sink),
-        timeout=TIMEOUT_S,
+async def run(context: TradeContext, llm, packet: FeeMetricsPacket, telemetry: list | None = None) -> FeeVerdict:
+    """Run the agent through the router; raises if no model produced a valid verdict."""
+    return await llm.complete(
+        ROLE,
+        SYSTEM_PROMPT,
+        build_user_prompt(context, packet),
+        FeeVerdict,
+        max_tokens=MAX_TOKENS,
+        temperature=0.1,
+        telemetry=telemetry,
     )
-
-    raw_text = response.choices[0].message.content
-    import re
-    cleaned = re.sub(r'^```(?:json)?\s*', '', raw_text.strip(), flags=re.MULTILINE)
-    cleaned = re.sub(r'```\s*$', '', cleaned.strip(), flags=re.MULTILINE)
-    raw_text = cleaned.strip()
-
-    from agents.llm_client import extract_json_from_response
-    parsed = extract_json_from_response(raw_text)
-    if parsed is None:
-        raise ValueError(f"Could not extract JSON from response: {raw_text[:200]}")
-    verdict = FeeVerdict.model_validate(parsed)
-    return verdict

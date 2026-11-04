@@ -10,7 +10,7 @@ Collections:
 """
 from __future__ import annotations
 import os, uuid
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
 from motor.motor_asyncio import AsyncIOMotorClient
 import sys
@@ -20,9 +20,17 @@ from config.versions import PROMPT_VERSION
 from config.demo_users import VALID_DEMO_USERS
 
 
+CACHE_MAX_AGE_DAYS = 7
+
+
 def _get_db():
     uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017")
-    client = AsyncIOMotorClient(uri)
+    kwargs = {}
+    if uri.startswith("mongodb+srv") or "tls=true" in uri.lower() or "ssl=true" in uri.lower():
+        import certifi  # Atlas needs the certifi CA bundle in slim images (F-23)
+
+        kwargs["tlsCAFile"] = certifi.where()
+    client = AsyncIOMotorClient(uri, **kwargs)
     db_name = os.getenv("MONGO_DB_NAME", "fillscore")
     return client, client[db_name]
 
@@ -37,6 +45,7 @@ async def save_council_run(
     model_usage: dict,
     total_latency_ms: float,
     prompt_version: str = PROMPT_VERSION,
+    extra: Optional[dict] = None,
 ) -> str:
     """
     Persist a completed council run. Returns the run_id.
@@ -67,11 +76,16 @@ async def save_council_run(
         # full council result (verdicts + synthesis)
         "council_result": council_result_dict,
         # extracted for easy querying without deserialising full result
-        "overall_rating": council_result_dict.get("synthesis", {}).get("overallRating", "UNKNOWN"),
+        # None for a degraded run: it is never graded
+        "overall_rating": council_result_dict.get("synthesis", {}).get("overallRating"),
         "avg_faithfulness_score": grounding_summary.get("avg_faithfulness_score", 0.0),
         "total_violations": grounding_summary.get("total_violations", 0),
         "token_usage": council_result_dict.get("tokenUsage", {}),
+        # Phase 1b: degraded flag, call counts, versions, route hash and per-call telemetry
+        "degraded": bool(council_result_dict.get("degraded", False)),
     }
+    if extra:
+        doc.update(extra)
 
     client, db = _get_db()
     try:
@@ -158,6 +172,8 @@ async def list_council_runs(
         "model_usage": 1,
         "packet_hashes": 1,
         "prompt_version": 1,
+        "degraded": 1,
+        "degraded_reasons": 1,
     }
 
     client, db = _get_db()
@@ -168,15 +184,17 @@ async def list_council_runs(
         client.close()
 
 
-async def get_telemetry_summary(account_id: Optional[str] = None) -> dict:
+async def get_telemetry_summary(account_id: Optional[str] = None, include_degraded: bool = False) -> dict:
     """
     Aggregate telemetry for paper Table: avg latency, avg faithfulness,
     total runs, total violations, per-model stats.
     Used by AC-11 eval harness and AC-14 cost report.
     """
-    query = {}
+    query: dict[str, Any] = {}
     if account_id:
         query["accountId"] = account_id
+    if not include_degraded:
+        query["degraded"] = {"$ne": True}
 
     client, db = _get_db()
     try:
@@ -200,5 +218,64 @@ async def get_telemetry_summary(account_id: Optional[str] = None) -> dict:
         from collections import Counter
         r["rating_distribution"] = dict(Counter(r.pop("rating_counts", [])))
         return r
+    finally:
+        client.close()
+
+
+def _strip_id(doc: Optional[dict]) -> Optional[dict]:
+    if doc:
+        doc.pop("_id", None)
+    return doc
+
+
+async def find_cached_run(
+    account_id: str,
+    symbol: str,
+    packet_hashes: dict[str, str],
+    prompt_version: str,
+    metrics_version: str,
+    route_config_hash: str,
+    now: Optional[datetime] = None,
+    max_age_days: int = CACHE_MAX_AGE_DAYS,
+) -> Optional[dict]:
+    """
+    Content-hash cache (Phase 1b.5): the newest NON-degraded run for this account and symbol with
+    the same 4 packet hashes, prompt version, metrics version and route config hash, created less
+    than max_age_days ago. created_at is an ISO-8601 UTC string, so string order is time order.
+    """
+    now = now or datetime.now(timezone.utc)
+    cutoff = (now - timedelta(days=max_age_days)).isoformat()
+    query: dict[str, Any] = {
+        "accountId": account_id,
+        "symbol": symbol,
+        "degraded": False,
+        "prompt_version": prompt_version,
+        "metrics_version": metrics_version,
+        "route_config_hash": route_config_hash,
+        "created_at": {"$gt": cutoff},
+    }
+    for key in ("fee", "risk", "liquidity", "alpha"):
+        query[f"packet_hashes.{key}"] = packet_hashes[key]
+    client, db = _get_db()
+    try:
+        doc = await db["council_runs"].find_one(query, sort=[("created_at", -1)])
+        return _strip_id(doc)
+    finally:
+        client.close()
+
+
+async def latest_demo_run(account_id: str, symbol: str) -> Optional[dict]:
+    """Newest non-degraded run stored for a demo account (served to visitors, never re-run),
+    from the current prompt and metrics versions only."""
+    from config.versions import METRICS_VERSION
+
+    client, db = _get_db()
+    try:
+        doc = await db["council_runs"].find_one(
+            {"accountId": account_id, "symbol": symbol, "degraded": False,
+             "prompt_version": PROMPT_VERSION, "metrics_version": METRICS_VERSION},
+            sort=[("created_at", -1)],
+        )
+        return _strip_id(doc)
     finally:
         client.close()

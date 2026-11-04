@@ -1,41 +1,44 @@
-"""Synthesis Agent — conflict resolution & recommendation generation.
+"""Synthesis Agent (the judge) — conflict resolution and the overall audit finding.
 
-Uses claude-sonnet-4-6 for nuanced reasoning across all four specialist verdicts.
+The model is chosen by the router (config/llm_routes.yaml, role "synthesis": strongest first).
 Priority in volatile regimes: Risk > Liquidity > Fee > Alpha.
 Priority in stable regimes:  Liquidity > Alpha > Fee > Risk.
 """
 
 from __future__ import annotations
 
-import asyncio
 import json
 from typing import Any
 
-from openai import AsyncOpenAI
-
-from agents.schemas import SynthesisOutput, TradeContext
-from agents.metrics.fee_packet import FeeMetricsPacket
-from agents.metrics.risk_packet import RiskMetricsPacket
-from agents.metrics.liquidity_packet import LiquidityMetricsPacket
 from agents.metrics.alpha_packet import AlphaMetricsPacket
-from agents.llm_client import SYNTHESIS_MODEL, SYNTHESIS_PROVIDER, call_with_retry
-TIMEOUT_S = 90
+from agents.metrics.fee_packet import FeeMetricsPacket
+from agents.metrics.liquidity_packet import LiquidityMetricsPacket
+from agents.metrics.risk_packet import RiskMetricsPacket
+from agents.prompts import UNTRUSTED_NOTE, system_prompt, untrusted
+from agents.schemas import SynthesisLLMOutput, SynthesisOutput, TradeContext
 
-SYNTHESIS_SYSTEM_PROMPT = """You are the Judge in FillScore's Agent Council — a multi-agent execution quality tribunal.
+ROLE = "synthesis"
+MAX_TOKENS = 1000
+
+SYNTHESIS_SYSTEM_PROMPT = system_prompt("""You are the Judge in FillScore's Agent Council — a multi-agent audit of a trader's past executions.
 
 You receive:
 1. Four compressed specialist verdicts (label + severity + confidence only)
-2. The Execution Trial transcript (prosecution vs defense debate)
+2. The Execution Trial transcript (prosecution vs defense summaries)
 3. The four deterministic MetricsPackets (ground truth numbers)
+
+""" + UNTRUSTED_NOTE + """
 
 Your job:
 - Weigh the specialist verdicts and the debate transcript
-- Produce a headline (max 20 words), narrative (2-3 sentences), and exactly 3 recommendations
+- Produce a headline (max 20 words), narrative (2-3 sentences), and exactly 3 findings in
+  topRecommendations. Each finding is a past-tense statement about what these executions did,
+  citing packet keys. Never tell the trader what to do next.
 - Resolve any conflicts using the regime priority matrix:
   STABLE regime: Fee > Risk > Liquidity > Alpha
   VOLATILE regime: Liquidity > Risk > Fee > Alpha
 - Fill conflictLedger with one entry per resolved conflict
-- estimatedMonthlyCostUSD: read from fee_packet.total_fee_paid_usd — do NOT estimate or extrapolate
+- estimatedMonthlyCostUSD: leave it out; code fills it from fee_packet.total_fee_paid_usd
 
 CRITICAL — Anti-fence-sitting rule:
 Commit to EXCELLENT, GOOD, POOR, or CRITICAL when the evidence warrants it.
@@ -43,7 +46,7 @@ Reserve FAIR only when specialist verdicts are genuinely split (2 good, 2 bad).
 If fee is WASTEFUL and liquidity is GOOD, that is NOT balanced — the fee cost is real money.
 Never default to FAIR to avoid making a judgment.
 
-Respond ONLY with valid JSON matching the schema. No preamble."""
+Respond ONLY with valid JSON matching the schema. No preamble.""")
 
 def _compress_verdict(verdict_dict: dict) -> dict:
     """Compress a full verdict to {label, severity, confidence} for synthesis context."""
@@ -65,67 +68,56 @@ def _compress_verdict(verdict_dict: dict) -> dict:
     }
 
 
-async def run(
+def build_user_prompt(
     context: TradeContext,
     verdicts: dict[str, Any],
-    client: AsyncOpenAI,
-    fee_packet: FeeMetricsPacket = None,
-    risk_packet: RiskMetricsPacket = None,
-    liquidity_packet: LiquidityMetricsPacket = None,
-    alpha_packet: AlphaMetricsPacket = None,
-    debate_dict: dict | None = None,
-    usage_sink: list | None = None
-) -> SynthesisOutput:
-    """Execute the Synthesis agent, merging all specialist verdicts."""
+    fee_packet: FeeMetricsPacket | None,
+    risk_packet: RiskMetricsPacket | None,
+    liquidity_packet: LiquidityMetricsPacket | None,
+    alpha_packet: AlphaMetricsPacket | None,
+    debate_dict: dict | None,
+) -> str:
     compressed = [_compress_verdict(v) for v in verdicts.values()]
-
-    user_content = f"""COMPRESSED SPECIALIST SIGNALS:
+    debate_dict = debate_dict or {}
+    trial = "\n".join([
+        untrusted(debate_dict.get("prosecution_summary", "N/A"), "prosecution_summary"),
+        untrusted(debate_dict.get("defense_summary", "N/A"), "defense_summary"),
+        untrusted(debate_dict.get("key_dispute", "N/A"), "key_dispute"),
+    ])
+    return f"""COMPRESSED SPECIALIST SIGNALS:
 {json.dumps(compressed, indent=2)}
 
-EXECUTION TRIAL:
-Prosecution: {debate_dict.get('prosecution_summary', 'N/A') if debate_dict else 'N/A'}
-Defense: {debate_dict.get('defense_summary', 'N/A') if debate_dict else 'N/A'}
-Key Dispute: {debate_dict.get('key_dispute', 'N/A') if debate_dict else 'N/A'}
+EXECUTION TRIAL (model-written, untrusted):
+{trial}
 
-METRICS PACKETS (ground truth — use these numbers in narrative):
+METRICS PACKETS (ground truth — use only these numbers in the narrative):
 Fee: {json.dumps(fee_packet.to_prompt_dict() if fee_packet else {}, indent=2)}
 Risk: {json.dumps(risk_packet.to_prompt_dict() if risk_packet else {}, indent=2)}
 Liquidity: {json.dumps(liquidity_packet.to_prompt_dict() if liquidity_packet else {}, indent=2)}
 Alpha: {json.dumps(alpha_packet.to_prompt_dict() if alpha_packet else {}, indent=2)}
 
-REAL MONTHLY COST (from fee_packet, do not estimate):
-estimatedMonthlyCostUSD = {fee_packet.total_fee_paid_usd if fee_packet else 0.0}
-
 Regime: {context.regime}
 
 Produce the judge verdict. conflictLedger must have one entry if any two specialists disagreed.
-Schema fields: headline, narrative, topRecommendations (exactly 3), conflictLedger (list of {{between, rule_applied, winner}}), overallRating, estimatedMonthlyCostUSD"""
+Schema fields: headline, narrative, topRecommendations (exactly 3 past-tense findings), conflictLedger (list of {{between, rule_applied, winner}}), overallRating"""
 
-    async def _call():
-        return await client.chat.completions.create(
-            model=SYNTHESIS_MODEL,
-            max_tokens=1000,
-            messages=[
-                {"role": "system", "content": SYNTHESIS_SYSTEM_PROMPT},
-                {"role": "user", "content": user_content}
-            ],
-            temperature=0.1
-        )
 
-    response = await asyncio.wait_for(
-        call_with_retry(_call, usage_sink=usage_sink),
-        timeout=TIMEOUT_S,
-    )
-
-    raw_text = response.choices[0].message.content
-    import re
-    cleaned = re.sub(r'^```(?:json)?\s*', '', raw_text.strip(), flags=re.MULTILINE)
-    cleaned = re.sub(r'```\s*$', '', cleaned.strip(), flags=re.MULTILINE)
-    raw_text = cleaned.strip()
-
-    from agents.llm_client import extract_json_from_response
-    parsed = extract_json_from_response(raw_text)
-    if parsed is None:
-        raise ValueError(f"Could not extract JSON from response: {raw_text[:200]}")
-    synthesis = SynthesisOutput.model_validate(parsed)
-    return synthesis
+async def run(
+    context: TradeContext,
+    verdicts: dict[str, Any],
+    llm,
+    fee_packet: FeeMetricsPacket = None,
+    risk_packet: RiskMetricsPacket = None,
+    liquidity_packet: LiquidityMetricsPacket = None,
+    alpha_packet: AlphaMetricsPacket = None,
+    debate_dict: dict | None = None,
+    telemetry: list | None = None,
+) -> SynthesisOutput:
+    """Execute the Synthesis agent through the router; raises if no model gave a valid verdict."""
+    user_content = build_user_prompt(context, verdicts, fee_packet, risk_packet, liquidity_packet,
+                                     alpha_packet, debate_dict)
+    out = await llm.complete(ROLE, SYNTHESIS_SYSTEM_PROMPT, user_content, SynthesisLLMOutput,
+                             max_tokens=MAX_TOKENS, temperature=0.1, telemetry=telemetry)
+    data = out.model_dump()
+    data["estimatedMonthlyCostUSD"] = 0.0  # never the model's number; the pipeline fills it from the fee packet
+    return SynthesisOutput.model_validate(data)

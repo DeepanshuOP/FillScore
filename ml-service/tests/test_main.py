@@ -156,8 +156,22 @@ def _sse_events(text):
     return events
 
 
-def _stream(user="demo-disciplined"):
-    return client.post("/ml/agents/council/stream", json={"userId": user, "symbol": "BTCUSDT"})
+def _token(user="acct-main-1"):
+    import time
+    import jwt
+    return jwt.encode({"exp": int(time.time()) + 300, "userId": user, "typ": "access"},
+                      main.JWT_ACCESS_SECRET, algorithm="HS256")
+
+
+def _stream():
+    # Phase 1b.5: demo accounts never run live, so these tests use a signed-in account.
+    return client.post("/ml/agents/council/stream", json={"symbol": "BTCUSDT"},
+                       headers={"Authorization": f"Bearer {_token()}"})
+
+
+def _fake_router():
+    from tests.council_fakes import make_router
+    return make_router()
 
 
 def _reset_budget(monkeypatch):
@@ -217,40 +231,54 @@ def test_stream_reports_empty_accounts_as_no_data(monkeypatch):
     assert events[0][1]["code"] == "NO_DATA"
 
 
+def _no_cache_and_packets():
+    from tests.council_fakes import make_packets
+    packets = make_packets()
+
+    async def load(*a, **k):
+        return packets
+
+    async def no_cache(*a, **k):
+        return None
+
+    return load, no_cache
+
+
 def test_stream_refuses_when_the_daily_budget_is_spent_without_calling_the_model(monkeypatch):
     _reset_budget(monkeypatch)
     monkeypatch.setenv("COUNCIL_DAILY_RUN_CAP", "1")
     council_budget.try_acquire("someone-else")  # uses the only run of the day
-    packets = MagicMock()
-    packets.trade_count = 10
-    groq_calls = []
-
-    async def load(*a, **k):
-        return packets, packets, packets, packets
+    router, provider = _fake_router()
+    load, no_cache = _no_cache_and_packets()
 
     with patch("agents.metrics.loader.load_all_packets", load), \
-         patch("agents.llm_client.get_groq_client", side_effect=lambda: groq_calls.append(1)):
+         patch("agents.persistence.find_cached_run", no_cache), \
+         patch("agents.council_service._router", return_value=router):
         res = _stream()
 
     events = _sse_events(res.text)
     assert events[-1][0] == "error"
-    assert events[-1][1]["code"] == "RATE_LIMIT_EXHAUSTED"
-    assert groq_calls == []
+    assert events[-1][1]["code"] == "DAILY_BUDGET_EXHAUSTED"   # a daily cap: "try again tomorrow"
+    assert provider.calls == []
 
 
 def test_non_stream_endpoint_returns_429_with_a_code_when_budget_is_spent(monkeypatch):
     _reset_budget(monkeypatch)
     monkeypatch.setenv("COUNCIL_DAILY_RUN_CAP", "1")
     council_budget.try_acquire("someone-else")
-    fake_db = MagicMock()
-    fake_db.audits.find_one.return_value = {"accountId": "demo-disciplined"}
+    router, provider = _fake_router()
+    load, no_cache = _no_cache_and_packets()
 
-    with patch("main._get_db", return_value=fake_db):
-        res = client.post("/ml/agents/council", json={"userId": "demo-disciplined", "symbol": "BTCUSDT"})
+    with patch("agents.metrics.loader.load_all_packets", load), \
+         patch("agents.persistence.find_cached_run", no_cache), \
+         patch("agents.council_service._router", return_value=router):
+        res = client.post("/ml/agents/council", json={"symbol": "BTCUSDT"},
+                          headers={"Authorization": f"Bearer {_token()}"})
 
     assert res.status_code == 429
-    assert res.json()["detail"]["code"] == "RATE_LIMIT_EXHAUSTED"
+    assert res.json()["detail"]["code"] == "DAILY_BUDGET_EXHAUSTED"
     assert int(res.headers["Retry-After"]) > 0
+    assert provider.calls == []
 
 
 def test_cors_only_allows_the_methods_and_headers_the_frontend_uses():

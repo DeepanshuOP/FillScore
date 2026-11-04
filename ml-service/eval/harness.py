@@ -104,6 +104,7 @@ async def run_single_eval(
     user_id: str,
     symbol: str,
     cutoff: str = CUTOFF_DATE,
+    include_degraded: bool = False,
 ) -> dict:
     """
     Run one council evaluation on pre-cutoff data only.
@@ -132,6 +133,10 @@ async def run_single_eval(
 
     # Run council
     result = await run_council_with_packets(user_id, symbol, fee_pkt, risk_pkt, liq_pkt, alpha_pkt)
+
+    # A degraded run (Phase 1b.2) fell back to defaults: keep it out of E1-E4 unless asked for.
+    if result.degraded and not include_degraded:
+        return {"error": "degraded run", "user_id": user_id, "degraded_reasons": result.degraded_reasons}
 
     # E1: faithfulness
     grounding = result.grounding_report

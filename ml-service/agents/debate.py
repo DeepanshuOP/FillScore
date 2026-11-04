@@ -15,12 +15,17 @@ Bounded at MAX_ROUNDS=2. Each side emits structured claims with
 evidence keys — no free-form essays.
 """
 from __future__ import annotations
-import asyncio, json, time
+import json, time
 from dataclasses import dataclass, field
-from typing import Any, Literal
+from typing import Any, Literal, Optional
+
+from pydantic import BaseModel, Field
+
+from agents.prompts import UNTRUSTED_NOTE, system_prompt, untrusted
 
 
 MAX_ROUNDS = 2   # each side speaks at most MAX_ROUNDS times
+_clock = time.perf_counter
 
 
 @dataclass
@@ -53,6 +58,40 @@ class DebateTranscript:
     defense_summary: str               # 1-2 sentence summary of defense case
     key_dispute: str                   # the core disagreement in one sentence
     debate_latency_ms: float
+    turns_expected: int = 2 * MAX_ROUNDS
+    turns_ok: int = 0
+    failed_turns: list[str] = field(default_factory=list)   # e.g. ["prosecution round 1"]
+
+
+class _ClaimOut(BaseModel):
+    claim_id: str = ""
+    claim_text: str
+    evidence_keys: list[str] = Field(default_factory=list)
+    rebuts: Optional[str] = None
+
+
+class ProsecutionTurn(BaseModel):
+    claims: list[_ClaimOut] = Field(min_length=1)
+    prosecution_summary: str
+
+
+class DefenseTurn(BaseModel):
+    claims: list[_ClaimOut] = Field(min_length=1)
+    defense_summary: str
+
+
+PROSECUTION_SYSTEM = system_prompt("You are the prosecution in an execution quality audit. " + UNTRUSTED_NOTE + " Respond only with valid JSON.")
+DEFENSE_SYSTEM = system_prompt("You are the defense in an execution quality audit. " + UNTRUSTED_NOTE + " Respond only with valid JSON.")
+ROLE = "debate"
+MAX_TOKENS = 600
+
+
+def _claims_block(claims: list["DebateClaim"], source: str) -> str:
+    """Claims from the other side, wrapped as untrusted data (F-28)."""
+    return untrusted(
+        "\n".join(f"[{c.claim_id}] {c.claim_text} (evidence: {c.evidence_keys})" for c in claims),
+        source,
+    )
 
 
 def _prosecution_prompt(
@@ -65,13 +104,10 @@ def _prosecution_prompt(
 ) -> str:
     defense_text = ""
     if defense_claims:
-        defense_text = "\n\nDefense claims to rebut:\n" + "\n".join(
-            f"[{c.claim_id}] {c.claim_text} (evidence: {c.evidence_keys})"
-            for c in defense_claims
-        )
+        defense_text = "\n\nDefense claims to rebut:\n" + _claims_block(defense_claims, "defense")
 
-    return f"""You are the PROSECUTION in an execution quality trial.
-Question: Was this trader's execution NEGLIGENT — i.e., were the costs avoidable?
+    return f"""You are the PROSECUTION in an audit of past executions.
+Question: Were this trader's past execution costs avoidable, given the packets below?
 
 Your job: Build the strongest case that costs were avoidable, citing specific packet values.
 
@@ -111,13 +147,10 @@ def _defense_prompt(
     prosecution_claims: list[DebateClaim],
     round_num: int,
 ) -> str:
-    prosecution_text = "\n\nProsecution claims to rebut:\n" + "\n".join(
-        f"[{c.claim_id}] {c.claim_text} (evidence: {c.evidence_keys})"
-        for c in prosecution_claims
-    )
+    prosecution_text = "\n\nProsecution claims to rebut:\n" + _claims_block(prosecution_claims, "prosecution")
 
-    return f"""You are the DEFENSE in an execution quality trial.
-Question: Was this trader's execution REASONABLE given the market they actually faced?
+    return f"""You are the DEFENSE in an audit of past executions.
+Question: Were this trader's past executions reasonable given the market they actually faced?
 
 Your job: Build the strongest mitigating case. Key defense arguments:
 1. Whale adversity was exogenous (Cont-Kukanov-Stoikov: large order flow causes unavoidable adverse selection)
@@ -174,85 +207,59 @@ async def run_debate(
     risk_packet: dict,
     fee_packet: dict,
     alpha_packet: dict,
-    groq_client,
-    model: str = "llama-3.3-70b-versatile",
-    usage_sink: list | None = None,
+    llm,
+    telemetry: list | None = None,
 ) -> DebateTranscript:
     """
-    Run the Execution Trial debate.
-    Returns a DebateTranscript for the synthesis judge to read.
-    Gracefully degrades to empty transcript on any failure.
+    Run the Execution Trial debate through the router (role "debate").
+    Never raises. Stops at the first failed turn, because a run with a failed turn is degraded
+    and further calls would be wasted. round_count counts only rounds where both sides answered.
     """
-    from agents.llm_client import extract_json_from_response, call_with_retry
-
-    start = time.time()
+    start = _clock()
     state = DebateState()
     prosecution_summary = "Prosecution unavailable"
     defense_summary = "Defense unavailable"
+    turns_ok = 0
+    failed: list[str] = []
 
     for round_num in range(1, MAX_ROUNDS + 1):
-        # ── Prosecution turn ───────────────────────────────────────────────
         try:
             p_prompt = _prosecution_prompt(
                 liquidity_packet, risk_packet, fee_packet, alpha_packet,
                 state.defense_claims, round_num
             )
-
-            async def _call_prosecution():
-                return await groq_client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": "You are the prosecution. Respond only with valid JSON."},
-                        {"role": "user", "content": p_prompt},
-                    ],
-                    max_tokens=600,
-                    temperature=0.3,
-                )
-
-            p_response = await call_with_retry(_call_prosecution, usage_sink=usage_sink)
-            p_raw = extract_json_from_response(p_response.choices[0].message.content)
-            if p_raw:
-                new_claims = _parse_claims(p_raw, "prosecution")
-                state.prosecution_claims.extend(new_claims)
-                state.all_claims.extend(new_claims)
-                prosecution_summary = p_raw.get("prosecution_summary", prosecution_summary)
-                state.latest_speaker = "prosecution"
+            p_out = await llm.complete(ROLE, PROSECUTION_SYSTEM, p_prompt, ProsecutionTurn,
+                                       max_tokens=MAX_TOKENS, temperature=0.3, telemetry=telemetry)
+            new_claims = _parse_claims(p_out.model_dump(), "prosecution")
+            state.prosecution_claims.extend(new_claims)
+            state.all_claims.extend(new_claims)
+            prosecution_summary = p_out.prosecution_summary
+            state.latest_speaker = "prosecution"
+            turns_ok += 1
         except Exception as e:
-            print(f"[debate] Prosecution round {round_num} failed: {e}")
+            print(f"[debate] Prosecution round {round_num} failed: {type(e).__name__}")
+            failed.append(f"prosecution round {round_num}")
+            break
 
-        await asyncio.sleep(1)  # brief pause between turns
-
-        # ── Defense turn ───────────────────────────────────────────────────
         try:
             d_prompt = _defense_prompt(
                 liquidity_packet, risk_packet, fee_packet, alpha_packet,
                 state.prosecution_claims, round_num
             )
-
-            async def _call_defense():
-                return await groq_client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {"role": "system", "content": "You are the defense. Respond only with valid JSON."},
-                        {"role": "user", "content": d_prompt},
-                    ],
-                    max_tokens=600,
-                    temperature=0.3,
-                )
-
-            d_response = await call_with_retry(_call_defense, usage_sink=usage_sink)
-            d_raw = extract_json_from_response(d_response.choices[0].message.content)
-            if d_raw:
-                new_claims = _parse_claims(d_raw, "defense")
-                state.defense_claims.extend(new_claims)
-                state.all_claims.extend(new_claims)
-                defense_summary = d_raw.get("defense_summary", defense_summary)
-                state.latest_speaker = "defense"
+            d_out = await llm.complete(ROLE, DEFENSE_SYSTEM, d_prompt, DefenseTurn,
+                                       max_tokens=MAX_TOKENS, temperature=0.3, telemetry=telemetry)
+            new_claims = _parse_claims(d_out.model_dump(), "defense")
+            state.defense_claims.extend(new_claims)
+            state.all_claims.extend(new_claims)
+            defense_summary = d_out.defense_summary
+            state.latest_speaker = "defense"
+            turns_ok += 1
         except Exception as e:
-            print(f"[debate] Defense round {round_num} failed: {e}")
+            print(f"[debate] Defense round {round_num} failed: {type(e).__name__}")
+            failed.append(f"defense round {round_num}")
+            break
 
         state.round_count = round_num
-        await asyncio.sleep(1)
 
     # ── Derive key dispute ─────────────────────────────────────────────────
     if state.prosecution_claims and state.defense_claims:
@@ -263,7 +270,7 @@ async def run_debate(
     else:
         key_dispute = "Debate inconclusive — insufficient evidence from both sides"
 
-    latency = (time.time() - start) * 1000
+    latency = (_clock() - start) * 1000
     return DebateTranscript(
         claims=state.all_claims,
         round_count=state.round_count,
@@ -271,6 +278,9 @@ async def run_debate(
         defense_summary=defense_summary,
         key_dispute=key_dispute,
         debate_latency_ms=round(latency, 2),
+        turns_expected=2 * MAX_ROUNDS,
+        turns_ok=turns_ok,
+        failed_turns=failed,
     )
 
 
@@ -282,6 +292,9 @@ def transcript_to_dict(transcript: DebateTranscript) -> dict:
         "defense_summary": transcript.defense_summary,
         "key_dispute": transcript.key_dispute,
         "debate_latency_ms": transcript.debate_latency_ms,
+        "turns_expected": transcript.turns_expected,
+        "turns_ok": transcript.turns_ok,
+        "failed_turns": list(transcript.failed_turns),
         "claims": [
             {
                 "side": c.side,

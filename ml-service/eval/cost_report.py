@@ -2,7 +2,8 @@ import os
 import certifi
 from motor.motor_asyncio import AsyncIOMotorClient
 
-def aggregate_costs(runs: list[dict]) -> dict:
+def aggregate_costs(runs: list[dict], include_degraded: bool = False) -> dict:
+    """Per-run token/latency rows. Degraded runs (Phase 1b.2) are left out unless asked for."""
     rows = []
     total_tokens = 0
     prompt_tokens = 0
@@ -10,6 +11,8 @@ def aggregate_costs(runs: list[dict]) -> dict:
     total_latency_ms = 0.0
 
     for r in runs:
+        if r.get("degraded") and not include_degraded:
+            continue
         token_usage = r.get("token_usage")
         if not token_usage:
             continue
@@ -102,7 +105,7 @@ async def generate_cost_report(write: bool = True) -> str:
     client = AsyncIOMotorClient(uri, tlsCAFile=certifi.where())
     db = client["fillscore"]
 
-    all_runs = await db.council_runs.find().to_list(1000)
+    all_runs = await db.council_runs.find({"degraded": {"$ne": True}}).to_list(1000)
     
     agg = aggregate_costs(all_runs)
 

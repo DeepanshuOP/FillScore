@@ -17,8 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pymongo import MongoClient
 
-from agents.council import run_council
-from agents.schemas import CouncilResult, TradeContext
+from agents.schemas import CouncilResult
 
 # ---------------------------------------------------------------------------
 # Auth Guard
@@ -31,7 +30,10 @@ security = HTTPBearer(auto_error=False)
 from config.demo_users import VALID_DEMO_USERS
 from config.flags import council_enabled, council_maintenance_message
 from config.budget import council_budget
-from agents.errors import CouncilError, classify_exception, safe_message, RATE_LIMIT_EXHAUSTED, NO_DATA
+from agents.errors import (
+    CouncilError, classify_exception, safe_message,
+    RATE_LIMIT_EXHAUSTED, DAILY_BUDGET_EXHAUSTED, NO_DATA, DEMO_NOT_GENERATED, DB_UNAVAILABLE, MODEL_UNAVAILABLE,
+)
 
 def get_account_id(requested_user_id: str | None, req: Request) -> str:
     if requested_user_id:
@@ -145,13 +147,15 @@ class HealthResponse(BaseModel):
 
 @app.get("/health", response_model=HealthResponse)
 async def health() -> HealthResponse:
-    """Service health check with model info."""
-    from agents.llm_client import SPECIALIST_MODEL, SYNTHESIS_MODEL, SYNTHESIS_PROVIDER
+    """Service health check: the first routed model per role (no LLM call, no DB call)."""
+    from agents.llm_router import get_default_router
+    routes = get_default_router().describe()
     return HealthResponse(
         status="ok",
         models={
-            "specialists": f"{SPECIALIST_MODEL} (Groq)",
-            "synthesis": f"{SYNTHESIS_MODEL} ({SYNTHESIS_PROVIDER})",
+            "specialists": routes.get("specialist", "none"),
+            "debate": routes.get("debate", "none"),
+            "synthesis": routes.get("synthesis", "none"),
         },
         flags={"council_enabled": council_enabled()},
     )
@@ -193,32 +197,37 @@ async def ready() -> JSONResponse:
     )
 
 
+_HTTP_STATUS_FOR_CODE = {
+    NO_DATA: 404,
+    DEMO_NOT_GENERATED: 404,
+    RATE_LIMIT_EXHAUSTED: 429,
+    DAILY_BUDGET_EXHAUSTED: 429,
+    DB_UNAVAILABLE: 503,
+    MODEL_UNAVAILABLE: 503,
+}
+
+
 @app.post("/ml/agents/council", response_model=CouncilResult)
 async def council_endpoint(req: CouncilRequest, request: Request) -> CouncilResult:
-    """Run the Agent Council for a user's trade data."""
+    """Run the Agent Council (same pipeline as the stream endpoint, without events)."""
     if not council_enabled():
         return _council_maintenance_response()
     account_id = get_account_id(req.userId, request)
-    db = _get_db()
-
-    # Fetch the user's most recent audit
-    audit = db.audits.find_one(
-        {"accountId": account_id},
-        sort=[("period.start", -1)],
-    )
-    if audit is None:
-        raise HTTPException(status_code=404, detail=f"No audit found for accountId={account_id}")
-
-    decision = council_budget.try_acquire(account_id)
-    if not decision.allowed:
+    from agents.council_service import council_flow
+    try:
+        return await council_flow(account_id, req.symbol)
+    except Exception as e:
+        code = classify_exception(e)
+        print(f"[council] failed code={code} type={type(e).__name__}")
+        headers = None
+        retry_after = getattr(e, "retry_after_s", None)
+        if retry_after:
+            headers = {"Retry-After": str(retry_after)}
         raise HTTPException(
-            status_code=429,
-            detail={"code": RATE_LIMIT_EXHAUSTED, "message": safe_message(RATE_LIMIT_EXHAUSTED)},
-            headers={"Retry-After": str(decision.retry_after_s)},
+            status_code=_HTTP_STATUS_FOR_CODE.get(code, 500),
+            detail={"code": code, "message": safe_message(code)},
+            headers=headers,
         )
-
-    result = await run_council(account_id, account_id, req.symbol)
-    return result
 
 
 @app.get("/ml/agents/council/runs")
@@ -247,157 +256,46 @@ async def get_telemetry(request: Request, userId: str = None):
 @app.post("/ml/agents/council/stream")
 async def council_stream(request: CouncilRequest, req: Request):
     """
-    SSE endpoint for streaming council results.
+    SSE view of the same pipeline as POST /ml/agents/council. The events come from hooks inside
+    agents.council.run_council_pipeline; the final `complete` event carries the full result,
+    identical to the non-stream response.
     """
     if not council_enabled():
         return _council_maintenance_response()
     account_id = get_account_id(request.userId, req)
     symbol = request.symbol
+    from agents.council_service import council_flow
+
+    def sse(event: str, data: dict) -> str:
+        return f"event: {event}\ndata: {json.dumps(data)}\n\n"
 
     async def event_generator():
-        import time
-        start = time.time()
+        queue: asyncio.Queue = asyncio.Queue()
 
-        def sse(event: str, data: dict) -> str:
-            return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+        async def sink(event: str, data: dict) -> None:
+            await queue.put((event, data))
 
+        async def runner():
+            try:
+                await council_flow(account_id, symbol, on_event=sink)
+            except Exception as e:
+                code = classify_exception(e)
+                # Class name only: exception text can contain connection strings or credentials
+                print(f"[council] stream failed code={code} type={type(e).__name__}")
+                await queue.put(("error", {"code": code, "message": safe_message(code)}))
+            finally:
+                await queue.put(None)
+
+        task = asyncio.create_task(runner())
         try:
-            # Load packets first
-            from agents.metrics.loader import load_all_packets
-            fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_all_packets(account_id, symbol)
-
-            if fee_pkt.trade_count == 0:
-                raise CouncilError(NO_DATA)
-
-            # Checked after the data load so an empty account or a database outage costs no budget
-            decision = council_budget.try_acquire(account_id)
-            if not decision.allowed:
-                raise CouncilError(RATE_LIMIT_EXHAUSTED)
-
-            from agents.schemas import TradeContext
-            context = TradeContext(
-                userId=account_id, symbol=symbol, regime="STABLE",
-                fee_packet_hash=fee_pkt.content_hash,
-                risk_packet_hash=risk_pkt.content_hash,
-                liquidity_packet_hash=liquidity_pkt.content_hash,
-                alpha_packet_hash=alpha_pkt.content_hash,
-            )
-
-            # Import agents
-            from agents import liquidity_scout, alpha_architect, risk_auditor, fee_optimizer, synthesis
-            from agents.llm_client import get_groq_client, get_openrouter_client, SYNTHESIS_MODEL, SYNTHESIS_PROVIDER
-            groq_client = get_groq_client()
-
-            # Run specialists sequentially for SSE (so we can fire events as each completes)
-            # This is streaming mode — parallel mode is for the non-streaming endpoint
-            agents_config = [
-                ("liquidity_scout", liquidity_scout.run, liquidity_pkt),
-                ("alpha_architect", alpha_architect.run, alpha_pkt),
-                ("risk_auditor",    risk_auditor.run,    risk_pkt),
-                ("fee_optimizer",   fee_optimizer.run,   fee_pkt),
-            ]
-
-            verdicts = {}
-            for agent_name, agent_fn, packet in agents_config:
-                yield sse("agent_start", {"agent": agent_name, "timestamp": time.time()})
-                verdict = await agent_fn(context, groq_client, packet)
-                verdicts[agent_name] = verdict
-
-                # Summarise verdict for the event (no raw packet data)
-                verdict_dict = verdict.model_dump()
-                yield sse("agent_done", {
-                    "agent": agent_name,
-                    "rating": verdict_dict.get(
-                        next((k for k in ["liquidityRating","alphaRating","riskLevel","feeRating"] if k in verdict_dict), ""),
-                        "UNKNOWN"
-                    ),
-                    "confidence": verdict_dict.get("confidence", 0),
-                    "severity": verdict_dict.get("severity", "MEDIUM"),
-                    "cited_evidence_count": len(verdict_dict.get("cited_evidence", [])),
-                    "flags": verdict_dict.get("flags", []),
-                })
-
-            # Execution Trial debate (before synthesis)
-            yield sse("debate_started", {"message": "Execution Trial in progress", "max_rounds": 2})
-            from agents.debate import run_debate, transcript_to_dict as debate_transcript_to_dict
-            debate_transcript = await run_debate(
-                liquidity_packet=liquidity_pkt.to_prompt_dict(),
-                risk_packet=risk_pkt.to_prompt_dict(),
-                fee_packet=fee_pkt.to_prompt_dict(),
-                alpha_packet=alpha_pkt.to_prompt_dict(),
-                groq_client=groq_client,
-            )
-            debate_dict = debate_transcript_to_dict(debate_transcript)
-            yield sse("debate_done", {
-                "round_count": debate_dict["round_count"],
-                "prosecution_summary": debate_dict["prosecution_summary"],
-                "defense_summary": debate_dict["defense_summary"],
-                "key_dispute": debate_dict["key_dispute"],
-                "claim_count": len(debate_dict["claims"]),
-            })
-
-            # Synthesis (judge reads debate transcript)
-            yield sse("agent_start", {"agent": "synthesis", "timestamp": time.time()})
-            if SYNTHESIS_PROVIDER == "openrouter":
-                synth_client = get_openrouter_client()
-            else:
-                synth_client = get_groq_client()
-
-            synth_verdict = await synthesis.run(
-                context,
-                {k: v.model_dump() for k, v in verdicts.items()},
-                synth_client,
-                fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt,
-                debate_dict=debate_dict,
-            )
-            yield sse("synthesis_done", {
-                "headline": synth_verdict.headline,
-                "overallRating": synth_verdict.overallRating,
-                "topRecommendations": synth_verdict.topRecommendations,
-                "estimatedMonthlyCostUSD": synth_verdict.estimatedMonthlyCostUSD,
-            })
-
-            # Verification gate
-            from agents.verification import verify_recommendations, gate_report_to_dict
-            gate_report = verify_recommendations(
-                recommendations=synth_verdict.topRecommendations,
-                fee_packet=fee_pkt.to_prompt_dict(),
-                risk_packet=risk_pkt.to_prompt_dict(),
-                liquidity_packet=liquidity_pkt.to_prompt_dict(),
-                alpha_packet=alpha_pkt.to_prompt_dict(),
-            )
-            gate_dict = gate_report_to_dict(gate_report)
-            yield sse("gate_done", {"gate_report": gate_dict})
-
-            # Grounding check
-            from agents.grounding import check_all_verdicts, summarise_grounding
-            grounding_reports = check_all_verdicts(
-                liquidity_cited=verdicts["liquidity_scout"].cited_evidence,
-                liquidity_reasoning=verdicts["liquidity_scout"].slippageRoot,
-                liquidity_packet=liquidity_pkt.to_prompt_dict(),
-                alpha_cited=verdicts["alpha_architect"].cited_evidence,
-                alpha_reasoning=verdicts["alpha_architect"].bestAlternative,
-                alpha_packet=alpha_pkt.to_prompt_dict(),
-                risk_cited=verdicts["risk_auditor"].cited_evidence,
-                risk_reasoning=" ".join(verdicts["risk_auditor"].flags),
-                risk_packet=risk_pkt.to_prompt_dict(),
-                fee_cited=verdicts["fee_optimizer"].cited_evidence,
-                fee_reasoning=verdicts["fee_optimizer"].recommendedAction,
-                fee_packet=fee_pkt.to_prompt_dict(),
-            )
-            grounding_summary = summarise_grounding(grounding_reports)
-
-            elapsed = (time.time() - start) * 1000
-            yield sse("complete", {
-                "totalLatencyMs": round(elapsed, 2),
-                "grounding_report": grounding_summary,
-            })
-
-        except Exception as e:
-            code = classify_exception(e)
-            # Class name only: exception text can contain connection strings or credentials
-            print(f"[council] stream failed code={code} type={type(e).__name__}")
-            yield sse("error", {"code": code, "message": safe_message(code)})
+            while True:
+                item = await queue.get()
+                if item is None:
+                    break
+                yield sse(*item)
+        finally:
+            if not task.done():
+                task.cancel()
 
     return StreamingResponse(
         event_generator(),

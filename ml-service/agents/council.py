@@ -1,23 +1,35 @@
-"""Agent Council — LangGraph StateGraph wiring for parallel specialist execution.
+"""Agent Council — the one pipeline both endpoints run (Phase 1b.1).
 
-Topology:
-  START → parallel fanout [liquidity, alpha, risk, fee] → synthesis → END
+Topology (LangGraph):
+  START → parallel fanout [liquidity, alpha, risk, fee] → synthesis_node (debate + judge) → END
 
-Each specialist uses claude-haiku-4-5 (fast extraction).
-Synthesis uses claude-sonnet-4-6 (nuanced reasoning).
+`run_council_pipeline` is the only implementation. `/ml/agents/council` returns its result and
+`/ml/agents/council/stream` forwards the events it emits through `on_event`. In order it does:
+specialists (each verdict gets deterministic coverage confidence straight away), the Execution
+Trial debate, synthesis, the deterministic cost override, the degraded rule (a degraded run is
+never graded), grounding (report-only), the verification gate, token telemetry and persistence.
+
+Models are chosen by the router (agents/llm_router.py, config/llm_routes.yaml). Once any step has
+fallen back to a default the run is degraded, so the remaining LLM steps are skipped rather than
+spending calls on a result that will not be graded.
 """
 
 from __future__ import annotations
 
-import asyncio
-import logging
 import time
-from typing import Any, TypedDict
+from dataclasses import dataclass, field
+from typing import Any, Awaitable, Callable, Optional, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
 from agents import alpha_architect, fee_optimizer, liquidity_scout, risk_auditor, synthesis
+from agents.confidence import inject_coverage_confidence
+from agents.debate import MAX_ROUNDS, run_debate, transcript_to_dict
 from agents.grounding import check_all_verdicts, summarise_grounding
+from agents.metrics.alpha_packet import AlphaMetricsPacket
+from agents.metrics.fee_packet import FeeMetricsPacket
+from agents.metrics.liquidity_packet import LiquidityMetricsPacket
+from agents.metrics.risk_packet import RiskMetricsPacket
 from agents.schemas import (
     AlphaVerdict,
     CouncilResult,
@@ -27,17 +39,14 @@ from agents.schemas import (
     SynthesisOutput,
     TradeContext,
 )
-from agents.metrics.fee_packet import FeeMetricsPacket
-from agents.metrics.risk_packet import RiskMetricsPacket
-from agents.metrics.liquidity_packet import LiquidityMetricsPacket
-from agents.metrics.alpha_packet import AlphaMetricsPacket
-from agents.metrics.loader import load_all_packets, load_all_packets_for_user
 
-logger = logging.getLogger(__name__)
+EventSink = Optional[Callable[[str, dict], Awaitable[None]]]
+
+_clock = time.perf_counter
 
 
 # ---------------------------------------------------------------------------
-# Default verdicts for graceful failure handling
+# Default verdicts for graceful failure handling (always flagged; the run is then degraded)
 # ---------------------------------------------------------------------------
 
 def _default_liquidity() -> LiquidityVerdict:
@@ -87,29 +96,107 @@ def _default_fee() -> FeeVerdict:
     )
 
 
-def _default_synthesis(context: TradeContext) -> SynthesisOutput:
+def _default_synthesis(context: TradeContext | None = None) -> SynthesisOutput:
+    """No grade, no findings: an incomplete run is never graded (F-06)."""
     return SynthesisOutput(
-        headline="Synthesis unavailable — using fallback assessment",
-        narrative="One or more agents failed. This is a conservative fallback.",
-        topRecommendations=[
-            "Review execution data manually",
-            "Retry analysis when agents are available",
-            "Check API key and network connectivity",
-        ],
+        headline="Analysis incomplete",
+        narrative="Part of the Council could not finish this run, so no overall grade was given.",
+        topRecommendations=[],
         conflictLedger=[],
-        overallRating="FAIR",
+        overallRating=None,
         estimatedMonthlyCostUSD=0.0,
     )
 
 
+# (agent name, state key, packet key, module, default factory, rating field)
+SPECIALISTS = (
+    ("liquidity_scout", "liquidity", "liquidity_packet", liquidity_scout, _default_liquidity, "liquidityRating"),
+    ("alpha_architect", "alpha", "alpha_packet", alpha_architect, _default_alpha, "alphaRating"),
+    ("risk_auditor", "risk", "risk_packet", risk_auditor, _default_risk, "riskLevel"),
+    ("fee_optimizer", "fee", "fee_packet", fee_optimizer, _default_fee, "feeRating"),
+)
+
+
+def expected_calls() -> int:
+    """LLM calls a complete run makes: 4 specialists + 2 turns per debate round + 1 synthesis = 9."""
+    return len(SPECIALISTS) + 2 * MAX_ROUNDS + 1
+
+
+def _failure_reason(exc: BaseException) -> str:
+    from agents.llm_router import RouterExhausted
+
+    if isinstance(exc, RouterExhausted):
+        return {
+            "budget": "the daily AI budget was used up",
+            "no_provider": "no AI provider is configured",
+        }.get(exc.reason, "no model returned a valid answer")
+    return "an unexpected error"
+
+
 # ---------------------------------------------------------------------------
-# LangGraph state
+# Per-run collector (shared by the parallel nodes) and event helpers
+# ---------------------------------------------------------------------------
+
+@dataclass
+class RunCollector:
+    llm: Any
+    emit: EventSink = None
+    telemetry: list = field(default_factory=list)
+    reasons: list = field(default_factory=list)
+    ok_calls: list = field(default_factory=list)
+
+    async def event(self, name: str, data: dict) -> None:
+        if self.emit is not None:
+            await self.emit(name, data)
+
+
+def agent_summary(agent: str, verdict) -> dict:
+    """The agent_done payload: labels plus the deterministic coverage confidence."""
+    d = verdict.model_dump()
+    rating_field = next(s[5] for s in SPECIALISTS if s[0] == agent)
+    return {
+        "agent": agent,
+        "rating": d.get(rating_field, "UNKNOWN"),
+        "confidence": d.get("confidence", 0.0),
+        "severity": d.get("severity", "MEDIUM"),
+        "cited_evidence_count": len(d.get("cited_evidence", [])),
+        "flags": d.get("flags", []),
+        "failed": "agent_failed" in d.get("flags", []),
+    }
+
+
+def _with_coverage_confidence(verdict, packet_dict: dict):
+    updated = inject_coverage_confidence(
+        verdict.model_dump(), verdict.cited_evidence, packet_dict, llm_self_confidence=verdict.confidence,
+    )
+    return verdict.model_copy(update={
+        "confidence": updated["confidence"],
+        "llm_self_confidence": updated["llm_self_confidence"],
+        "evidence_coverage_detail": updated["evidence_coverage_detail"],
+    })
+
+
+def _skipped_debate_dict(why: str) -> dict:
+    return {
+        "round_count": 0,
+        "prosecution_summary": why,
+        "defense_summary": why,
+        "key_dispute": why,
+        "debate_latency_ms": 0.0,
+        "turns_expected": 2 * MAX_ROUNDS,
+        "turns_ok": 0,
+        "failed_turns": [],
+        "claims": [],
+    }
+
+
+# ---------------------------------------------------------------------------
+# LangGraph state and nodes
 # ---------------------------------------------------------------------------
 
 class CouncilState(TypedDict, total=False):
     context: TradeContext
-    specialist_client: Any
-    synthesis_client: Any
+    run: RunCollector
     fee_packet: FeeMetricsPacket
     risk_packet: RiskMetricsPacket
     liquidity_packet: LiquidityMetricsPacket
@@ -120,161 +207,91 @@ class CouncilState(TypedDict, total=False):
     fee: FeeVerdict
     synthesis: SynthesisOutput
     debate_dict: dict
-    model_usage: dict
-    usages: list
 
 
-# ---------------------------------------------------------------------------
-# Node functions
-# ---------------------------------------------------------------------------
+def _specialist_node(agent: str, state_key: str, packet_key: str, module, default_factory):
+    async def node(state: CouncilState) -> dict:
+        run: RunCollector = state["run"]
+        packet = state[packet_key]
+        await run.event("agent_start", {"agent": agent})
+        try:
+            verdict = await module.run(state["context"], run.llm, packet, telemetry=run.telemetry)
+            run.ok_calls.append(agent)
+        except Exception as exc:
+            print(f"[{agent}] failed: {type(exc).__name__}")
+            verdict = default_factory()
+            run.reasons.append(f"{agent}: fell back to a default verdict because {_failure_reason(exc)}")
+        verdict = _with_coverage_confidence(verdict, packet.to_prompt_dict())
+        await run.event("agent_done", agent_summary(agent, verdict))
+        return {state_key: verdict}
 
-async def liquidity_scout_node(state: CouncilState) -> dict:
-    """Run the Liquidity Scout specialist."""
-    try:
-        verdict = await liquidity_scout.run(state["context"], state["specialist_client"], state["liquidity_packet"], usage_sink=state.get("usages"))
-    except Exception as exc:
-        import traceback
-        print(f"[Liquidity Scout] failed: {type(exc).__name__}: {exc}")
-        traceback.print_exc()
-        verdict = _default_liquidity()
-    return {"liquidity": verdict}
+    node.__name__ = f"{agent}_node"
+    return node
 
-
-async def alpha_architect_node(state: CouncilState) -> dict:
-    """Run the Alpha Architect specialist."""
-    try:
-        verdict = await alpha_architect.run(state["context"], state["specialist_client"], state["alpha_packet"], usage_sink=state.get("usages"))
-    except Exception as exc:
-        import traceback
-        print(f"[Alpha Architect] failed: {type(exc).__name__}: {exc}")
-        traceback.print_exc()
-        verdict = _default_alpha()
-    return {"alpha": verdict}
-
-
-async def risk_auditor_node(state: CouncilState) -> dict:
-    """Run the Risk Auditor specialist."""
-    try:
-        verdict = await risk_auditor.run(state["context"], state["specialist_client"], state["risk_packet"], usage_sink=state.get("usages"))
-    except Exception as exc:
-        import traceback
-        print(f"[Risk Auditor] failed: {type(exc).__name__}: {exc}")
-        traceback.print_exc()
-        verdict = _default_risk()
-    return {"risk": verdict}
-
-
-async def fee_optimizer_node(state: CouncilState) -> dict:
-    """Run the Fee Optimizer specialist."""
-    try:
-        verdict = await fee_optimizer.run(state["context"], state["specialist_client"], state["fee_packet"], usage_sink=state.get("usages"))
-    except Exception as exc:
-        import traceback
-        print(f"[Fee Optimizer] failed: {type(exc).__name__}: {exc}")
-        traceback.print_exc()
-        verdict = _default_fee()
-    return {"fee": verdict}
 
 async def synthesis_node(state: CouncilState) -> dict:
-    """Run the Execution Trial debate, then the Synthesis agent (judge)."""
-    from agents.confidence import inject_coverage_confidence
+    """The Execution Trial debate, then the Synthesis judge. Skipped once the run is degraded."""
+    run: RunCollector = state["run"]
 
-    packets_by_agent = {
-        "liquidity_scout": state["liquidity_packet"].to_prompt_dict(),
-        "alpha_architect": state["alpha_packet"].to_prompt_dict(),
-        "risk_auditor": state["risk_packet"].to_prompt_dict(),
-        "fee_optimizer": state["fee_packet"].to_prompt_dict(),
-    }
+    if run.reasons:
+        run.reasons.append("debate and synthesis: skipped because a specialist failed")
+        return {"synthesis": _default_synthesis(), "debate_dict": _skipped_debate_dict("Not run")}
 
-    for agent_name, verdict in [
-        ("liquidity_scout", state["liquidity"]),
-        ("alpha_architect", state["alpha"]),
-        ("risk_auditor", state["risk"]),
-        ("fee_optimizer", state["fee"]),
-    ]:
-        llm_conf = verdict.confidence
-        updated = inject_coverage_confidence(
-            verdict.model_dump(),
-            verdict.cited_evidence,
-            packets_by_agent[agent_name],
-            llm_self_confidence=llm_conf,
-        )
-        verdict.confidence = updated["confidence"]
-        verdict.llm_self_confidence = updated["llm_self_confidence"]
-        verdict.evidence_coverage_detail = updated["evidence_coverage_detail"]
+    packets = {k: state[k].to_prompt_dict() for k in ("liquidity_packet", "risk_packet", "fee_packet", "alpha_packet")}
 
-    verdicts = {
-        "liquidity_scout": state["liquidity"].model_dump(),
-        "alpha_architect": state["alpha"].model_dump(),
-        "risk_auditor": state["risk"].model_dump(),
-        "fee_optimizer": state["fee"].model_dump(),
-    }
+    await run.event("debate_started", {"message": "Execution Trial in progress", "max_rounds": MAX_ROUNDS})
+    transcript = await run_debate(
+        liquidity_packet=packets["liquidity_packet"],
+        risk_packet=packets["risk_packet"],
+        fee_packet=packets["fee_packet"],
+        alpha_packet=packets["alpha_packet"],
+        llm=run.llm,
+        telemetry=run.telemetry,
+    )
+    debate_dict = transcript_to_dict(transcript)
+    run.ok_calls.extend(["debate"] * transcript.turns_ok)
+    if transcript.failed_turns:
+        run.reasons.append("debate: " + ", ".join(transcript.failed_turns) + " failed, so the debate stopped")
+    await run.event("debate_done", {
+        "round_count": debate_dict["round_count"],
+        "prosecution_summary": debate_dict["prosecution_summary"],
+        "defense_summary": debate_dict["defense_summary"],
+        "key_dispute": debate_dict["key_dispute"],
+        "claim_count": len(debate_dict["claims"]),
+        "turns_ok": debate_dict["turns_ok"],
+        "turns_expected": debate_dict["turns_expected"],
+    })
 
-    # ── Execution Trial debate (before synthesis) ──────────────────────
-    from agents.debate import run_debate, transcript_to_dict
-    debate_dict = {}
-    try:
-        debate_transcript = await run_debate(
-            liquidity_packet=state["liquidity_packet"].to_prompt_dict(),
-            risk_packet=state["risk_packet"].to_prompt_dict(),
-            fee_packet=state["fee_packet"].to_prompt_dict(),
-            alpha_packet=state["alpha_packet"].to_prompt_dict(),
-            groq_client=state["specialist_client"],
-            usage_sink=state.get("usages"),
-        )
-        debate_dict = transcript_to_dict(debate_transcript)
-    except Exception as exc:
-        print(f"[Debate] failed: {type(exc).__name__}: {exc}")
+    if run.reasons:
+        run.reasons.append("synthesis: skipped because the debate failed")
+        return {"synthesis": _default_synthesis(), "debate_dict": debate_dict}
 
-    # ── Synthesis (judge reads debate transcript) ──────────────────────
+    verdicts = {s[0]: state[s[1]].model_dump() for s in SPECIALISTS}
+    await run.event("agent_start", {"agent": "synthesis"})
     try:
         result = await synthesis.run(
-            state["context"],
-            verdicts,
-            state["synthesis_client"],
-            state["fee_packet"],
-            state["risk_packet"],
-            state["liquidity_packet"],
-            state["alpha_packet"],
+            state["context"], verdicts, run.llm,
+            state["fee_packet"], state["risk_packet"], state["liquidity_packet"], state["alpha_packet"],
             debate_dict=debate_dict,
-            usage_sink=state.get("usages"),
+            telemetry=run.telemetry,
         )
+        run.ok_calls.append("synthesis")
     except Exception as exc:
-        import traceback
-        print(f"[Synthesis] failed: {type(exc).__name__}: {exc}")
-        traceback.print_exc()
-        result = _default_synthesis(state["context"])
+        print(f"[synthesis] failed: {type(exc).__name__}")
+        result = _default_synthesis()
+        run.reasons.append(f"synthesis: fell back to a default because {_failure_reason(exc)}")
     return {"synthesis": result, "debate_dict": debate_dict}
 
 
-# ---------------------------------------------------------------------------
-# Build the StateGraph
-# ---------------------------------------------------------------------------
-
 def _build_graph() -> StateGraph:
-    """Construct the Agent Council LangGraph with parallel fanout."""
     graph = StateGraph(CouncilState)
-
-    graph.add_node("liquidity_scout_node", liquidity_scout_node)
-    graph.add_node("alpha_architect_node", alpha_architect_node)
-    graph.add_node("risk_auditor_node", risk_auditor_node)
-    graph.add_node("fee_optimizer_node", fee_optimizer_node)
+    for agent, state_key, packet_key, module, default_factory, _ in SPECIALISTS:
+        name = f"{agent}_node"
+        graph.add_node(name, _specialist_node(agent, state_key, packet_key, module, default_factory))
+        graph.add_edge(START, name)
+        graph.add_edge(name, "synthesis_node")
     graph.add_node("synthesis_node", synthesis_node)
-
-    # Parallel execution
-    graph.add_edge(START, "liquidity_scout_node")
-    graph.add_edge(START, "alpha_architect_node")
-    graph.add_edge(START, "risk_auditor_node")
-    graph.add_edge(START, "fee_optimizer_node")
-
-    graph.add_edge("liquidity_scout_node", "synthesis_node")
-    graph.add_edge("alpha_architect_node", "synthesis_node")
-    graph.add_edge("risk_auditor_node", "synthesis_node")
-    graph.add_edge("fee_optimizer_node", "synthesis_node")
-
-    # Synthesis → END
     graph.add_edge("synthesis_node", END)
-
     return graph
 
 
@@ -282,19 +299,98 @@ _compiled_graph = _build_graph().compile()
 
 
 # ---------------------------------------------------------------------------
-# Public API
+# Deterministic post-processing
 # ---------------------------------------------------------------------------
 
-async def run_council(account_id: str, user_id: str, symbol: str) -> CouncilResult:
-    """Execute the full Agent Council pipeline and return a CouncilResult."""
-    from agents.llm_client import get_groq_client, get_openrouter_client, SYNTHESIS_PROVIDER, SPECIALIST_MODEL, SYNTHESIS_MODEL, rollup_token_usage
-    
-    # Load packets first — this is the ground truth for all agent verdicts
-    if symbol == "ALL":
-        fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_all_packets_for_user(user_id)
-    else:
-        fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_all_packets(user_id, symbol)
+def override_synthesis_cost(synthesis, fee_pkt):
+    """The cost shown to users is always the fee packet's total, never the model's number."""
+    return synthesis.model_copy(update={"estimatedMonthlyCostUSD": fee_pkt.total_fee_paid_usd})
 
+
+def _model_usage(telemetry: list[dict]) -> dict:
+    def used(role: str) -> str:
+        labels = []
+        for t in telemetry:
+            label = f"{t['provider']}/{t['model']}"
+            if t.get("role") == role and t.get("outcome") == "ok" and label not in labels:
+                labels.append(label)
+        return ", ".join(labels) or "none"
+
+    return {"specialists_model": used("specialist"), "debate_model": used("debate"), "synthesis_model": used("synthesis")}
+
+
+def _token_usage(telemetry: list[dict]) -> dict:
+    """Totals over every reply received (a reply that failed validation still used tokens)."""
+    from agents.llm_client import rollup_token_usage
+
+    replies = [t for t in telemetry if t.get("tokens")]
+    return rollup_token_usage([
+        {
+            "prompt_tokens": t.get("prompt_tokens", 0),
+            "completion_tokens": t.get("completion_tokens", 0),
+            "total_tokens": t.get("tokens", 0),
+        }
+        for t in replies
+    ])
+
+
+def result_events(result: CouncilResult) -> list[tuple[str, dict]]:
+    """The events a client needs to render a finished result (used to replay cached runs)."""
+    events: list[tuple[str, dict]] = []
+    for agent, state_key, *_ in SPECIALISTS:
+        events.append(("agent_done", agent_summary(agent, getattr(result, state_key))))
+    d = result.debate_transcript or {}
+    if d:
+        events.append(("debate_done", {
+            "round_count": d.get("round_count", 0),
+            "prosecution_summary": d.get("prosecution_summary", ""),
+            "defense_summary": d.get("defense_summary", ""),
+            "key_dispute": d.get("key_dispute", ""),
+            "claim_count": len(d.get("claims", [])),
+            "turns_ok": d.get("turns_ok", 0),
+            "turns_expected": d.get("turns_expected", 2 * MAX_ROUNDS),
+        }))
+    events.append(("synthesis_done", synthesis_event(result.synthesis, result.degraded, result.degraded_reasons)))
+    events.append(("gate_done", {"gate_report": result.gate_report}))
+    events.append(("complete", result.model_dump(mode="json")))
+    return events
+
+
+def synthesis_event(synth: SynthesisOutput, degraded: bool, reasons: list[str]) -> dict:
+    return {
+        "headline": synth.headline,
+        "overallRating": synth.overallRating,
+        "topRecommendations": synth.topRecommendations,
+        "estimatedMonthlyCostUSD": synth.estimatedMonthlyCostUSD,
+        "degraded": degraded,
+        "degraded_reasons": reasons,
+    }
+
+
+# ---------------------------------------------------------------------------
+# The pipeline
+# ---------------------------------------------------------------------------
+
+async def run_council_pipeline(
+    account_id: str,
+    user_id: str,
+    symbol: str,
+    fee_pkt: FeeMetricsPacket,
+    risk_pkt: RiskMetricsPacket,
+    liquidity_pkt: LiquidityMetricsPacket,
+    alpha_pkt: AlphaMetricsPacket,
+    llm=None,
+    on_event: EventSink = None,
+    persist: bool = True,
+) -> CouncilResult:
+    """Run the whole Council on prepared packets. Both HTTP endpoints, the eval harness and the
+    demo-run generator go through here."""
+    from agents import llm_router
+    from agents.persistence import save_council_run
+    from agents.verification import gate_report_to_dict, verify_recommendations
+    from config.versions import METRICS_VERSION, PROMPT_VERSION
+
+    llm = llm or llm_router.get_default_router()
     context = TradeContext(
         userId=user_id,
         symbol=symbol,
@@ -304,110 +400,138 @@ async def run_council(account_id: str, user_id: str, symbol: str) -> CouncilResu
         liquidity_packet_hash=liquidity_pkt.content_hash,
         alpha_packet_hash=alpha_pkt.content_hash,
     )
+    run = RunCollector(llm=llm, emit=on_event)
+    start = _clock()
 
-    specialist_client = get_groq_client()
-    synthesis_client = get_groq_client() if SYNTHESIS_PROVIDER == "groq" else get_openrouter_client()
-    start = time.time()
-
-    usages = []
-    initial_state: CouncilState = {
+    final_state = await _compiled_graph.ainvoke({
         "context": context,
-        "specialist_client": specialist_client,
-        "synthesis_client": synthesis_client,
+        "run": run,
         "fee_packet": fee_pkt,
         "risk_packet": risk_pkt,
         "liquidity_packet": liquidity_pkt,
         "alpha_packet": alpha_pkt,
-        "usages": usages,
-    }
+    })
 
-    final_state = await _compiled_graph.ainvoke(initial_state)
+    liquidity_v, alpha_v = final_state["liquidity"], final_state["alpha"]
+    risk_v, fee_v = final_state["risk"], final_state["fee"]
 
-    elapsed_ms = (time.time() - start) * 1000
+    # ── degraded rule (F-06) and the deterministic cost override (F-03) ──
+    n_expected = expected_calls()
+    n_ok = len(run.ok_calls)
+    reasons = list(run.reasons)
+    if n_ok < n_expected and not reasons:
+        reasons.append(f"only {n_ok} of {n_expected} model calls succeeded")
+    degraded = bool(reasons) or n_ok < n_expected
 
-    liquidity_verdict = final_state["liquidity"]
-    alpha_verdict = final_state["alpha"]
-    risk_verdict = final_state["risk"]
-    fee_verdict = final_state["fee"]
+    synth = override_synthesis_cost(final_state["synthesis"], fee_pkt)
+    if degraded:
+        synth = synth.model_copy(update={"overallRating": None})
+    await run.event("synthesis_done", synthesis_event(synth, degraded, reasons))
 
-    liquidity_pkt = final_state["liquidity_packet"]
-    alpha_pkt = final_state["alpha_packet"]
-    risk_pkt = final_state["risk_packet"]
-    fee_pkt = final_state["fee_packet"]
-
-    grounding_reports = check_all_verdicts(
-        liquidity_cited=liquidity_verdict.cited_evidence,
-        liquidity_reasoning=liquidity_verdict.slippageRoot,
+    # ── grounding (report-only) ──
+    grounding_summary = summarise_grounding(check_all_verdicts(
+        liquidity_cited=liquidity_v.cited_evidence,
+        liquidity_reasoning=liquidity_v.slippageRoot,
         liquidity_packet=liquidity_pkt.to_prompt_dict(),
-        alpha_cited=alpha_verdict.cited_evidence,
-        alpha_reasoning=alpha_verdict.bestAlternative,
+        alpha_cited=alpha_v.cited_evidence,
+        alpha_reasoning=alpha_v.bestAlternative,
         alpha_packet=alpha_pkt.to_prompt_dict(),
-        risk_cited=risk_verdict.cited_evidence,
-        risk_reasoning=" ".join(risk_verdict.flags),
+        risk_cited=risk_v.cited_evidence,
+        risk_reasoning=" ".join(risk_v.flags),
         risk_packet=risk_pkt.to_prompt_dict(),
-        fee_cited=fee_verdict.cited_evidence,
-        fee_reasoning=fee_verdict.recommendedAction,
+        fee_cited=fee_v.cited_evidence,
+        fee_reasoning=fee_v.recommendedAction,
         fee_packet=fee_pkt.to_prompt_dict(),
-    )
-    grounding_summary = summarise_grounding(grounding_reports)
+    ))
 
-    from agents.verification import verify_recommendations, gate_report_to_dict
-    gate_report = verify_recommendations(
-        recommendations=final_state["synthesis"].topRecommendations,
+    # ── verification gate ──
+    gate_dict = gate_report_to_dict(verify_recommendations(
+        recommendations=synth.topRecommendations,
         fee_packet=fee_pkt.to_prompt_dict(),
         risk_packet=risk_pkt.to_prompt_dict(),
         liquidity_packet=liquidity_pkt.to_prompt_dict(),
         alpha_packet=alpha_pkt.to_prompt_dict(),
-    )
-    gate_dict = gate_report_to_dict(gate_report)
+    ))
+    await run.event("gate_done", {"gate_report": gate_dict})
 
-    from agents.persistence import save_council_run
-
+    elapsed_ms = (_clock() - start) * 1000
     result = CouncilResult(
         tradeContext=context,
-        liquidity=liquidity_verdict,
-        alpha=alpha_verdict,
-        risk=risk_verdict,
-        fee=fee_verdict,
-        synthesis=override_synthesis_cost(final_state["synthesis"], fee_pkt),
+        liquidity=liquidity_v,
+        alpha=alpha_v,
+        risk=risk_v,
+        fee=fee_v,
+        synthesis=synth,
         grounding_report=grounding_summary,
         gate_report=gate_dict,
         debate_transcript=final_state.get("debate_dict", {}),
         totalLatencyMs=round(elapsed_ms, 2),
-        modelUsage={
-            "specialists_model": f"{SPECIALIST_MODEL} (Groq)",
-            "synthesis_model": f"{SYNTHESIS_MODEL} ({SYNTHESIS_PROVIDER})",
-        },
-        tokenUsage=rollup_token_usage(usages),
+        modelUsage=_model_usage(run.telemetry),
+        tokenUsage=_token_usage(run.telemetry),
+        degraded=degraded,
+        degraded_reasons=reasons,
+        n_calls_expected=n_expected,
+        n_calls_ok=n_ok,
+        cached=False,
+        llm_calls=list(run.telemetry),
+        prompt_version=PROMPT_VERSION,
+        metrics_version=METRICS_VERSION,
+        route_config_hash=llm.config.hash,
     )
 
-    try:
-        run_id = await save_council_run(
-            account_id=account_id,
-            user_id=user_id,
-            symbol=symbol,
-            council_result_dict=result.model_dump(),
-            grounding_summary=grounding_summary,
-            packet_hashes={
-                "fee": fee_pkt.content_hash,
-                "risk": risk_pkt.content_hash,
-                "liquidity": liquidity_pkt.content_hash,
-                "alpha": alpha_pkt.content_hash,
-            },
-            model_usage=result.modelUsage,
-            total_latency_ms=result.totalLatencyMs,
-        )
-        result.run_id = run_id
-    except Exception as e:
-        print(f"[persistence] Failed to save run: {e}")
-        result.run_id = None
+    # ── persistence ──
+    if persist:
+        try:
+            result.run_id = await save_council_run(
+                account_id=account_id,
+                user_id=user_id,
+                symbol=symbol,
+                council_result_dict=result.model_dump(mode="json"),
+                grounding_summary=grounding_summary,
+                packet_hashes={
+                    "fee": fee_pkt.content_hash,
+                    "risk": risk_pkt.content_hash,
+                    "liquidity": liquidity_pkt.content_hash,
+                    "alpha": alpha_pkt.content_hash,
+                },
+                model_usage=result.modelUsage,
+                total_latency_ms=result.totalLatencyMs,
+                prompt_version=PROMPT_VERSION,
+                extra={
+                    "degraded": degraded,
+                    "degraded_reasons": reasons,
+                    "n_calls_expected": n_expected,
+                    "n_calls_ok": n_ok,
+                    "metrics_version": METRICS_VERSION,
+                    "route_config_hash": llm.config.hash,
+                    "llm_calls": list(run.telemetry),
+                    # LLM self-reported confidence, kept for calibration analysis only
+                    "llm_self_confidence": {
+                        s[0]: final_state[s[1]].llm_self_confidence for s in SPECIALISTS
+                    },
+                },
+            )
+        except Exception as e:
+            print(f"[persistence] Failed to save run: {type(e).__name__}")
+            result.run_id = None
 
+    await run.event("complete", result.model_dump(mode="json"))
     return result
 
 
+async def load_packets(user_id: str, symbol: str):
+    from agents.metrics import loader
 
-def override_synthesis_cost(synthesis, fee_pkt):
-    return synthesis.model_copy(update={"estimatedMonthlyCostUSD": fee_pkt.total_fee_paid_usd})
+    if symbol == "ALL":
+        return await loader.load_all_packets_for_user(user_id)
+    return await loader.load_all_packets(user_id, symbol)
+
+
+async def run_council(account_id: str, user_id: str, symbol: str, llm=None, on_event: EventSink = None) -> CouncilResult:
+    """Load the packets for an account, then run the pipeline."""
+    fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_packets(user_id, symbol)
+    return await run_council_pipeline(account_id, user_id, symbol, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt,
+                                      llm=llm, on_event=on_event)
 
 
 async def run_council_with_packets(
@@ -418,118 +542,7 @@ async def run_council_with_packets(
     risk_pkt,
     liquidity_pkt,
     alpha_pkt,
+    llm=None,
 ) -> CouncilResult:
-    """
-    Run council with pre-built packets (used by eval harness to bypass MongoDB).
-    Identical to run_council() but skips load_all_packets().
-    """
-    from agents.llm_client import get_groq_client, get_openrouter_client, SYNTHESIS_PROVIDER, SPECIALIST_MODEL, SYNTHESIS_MODEL, rollup_token_usage
-    
-    context = TradeContext(
-        userId=user_id,
-        symbol=symbol,
-        regime="STABLE",  # placeholder until HMM; disclose in paper
-        fee_packet_hash=fee_pkt.content_hash,
-        risk_packet_hash=risk_pkt.content_hash,
-        liquidity_packet_hash=liquidity_pkt.content_hash,
-        alpha_packet_hash=alpha_pkt.content_hash,
-    )
-
-    specialist_client = get_groq_client()
-    synthesis_client = get_groq_client() if SYNTHESIS_PROVIDER == "groq" else get_openrouter_client()
-    start = time.time()
-
-    usages = []
-    initial_state: CouncilState = {
-        "context": context,
-        "specialist_client": specialist_client,
-        "synthesis_client": synthesis_client,
-        "fee_packet": fee_pkt,
-        "risk_packet": risk_pkt,
-        "liquidity_packet": liquidity_pkt,
-        "alpha_packet": alpha_pkt,
-        "usages": usages,
-    }
-
-    final_state = await _compiled_graph.ainvoke(initial_state)
-
-    elapsed_ms = (time.time() - start) * 1000
-
-    liquidity_verdict = final_state["liquidity"]
-    alpha_verdict = final_state["alpha"]
-    risk_verdict = final_state["risk"]
-    fee_verdict = final_state["fee"]
-
-    liquidity_pkt = final_state["liquidity_packet"]
-    alpha_pkt = final_state["alpha_packet"]
-    risk_pkt = final_state["risk_packet"]
-    fee_pkt = final_state["fee_packet"]
-
-    grounding_reports = check_all_verdicts(
-        liquidity_cited=liquidity_verdict.cited_evidence,
-        liquidity_reasoning=liquidity_verdict.slippageRoot,
-        liquidity_packet=liquidity_pkt.to_prompt_dict(),
-        alpha_cited=alpha_verdict.cited_evidence,
-        alpha_reasoning=alpha_verdict.bestAlternative,
-        alpha_packet=alpha_pkt.to_prompt_dict(),
-        risk_cited=risk_verdict.cited_evidence,
-        risk_reasoning=" ".join(risk_verdict.flags),
-        risk_packet=risk_pkt.to_prompt_dict(),
-        fee_cited=fee_verdict.cited_evidence,
-        fee_reasoning=fee_verdict.recommendedAction,
-        fee_packet=fee_pkt.to_prompt_dict(),
-    )
-    grounding_summary = summarise_grounding(grounding_reports)
-
-    from agents.verification import verify_recommendations, gate_report_to_dict
-    gate_report = verify_recommendations(
-        recommendations=final_state["synthesis"].topRecommendations,
-        fee_packet=fee_pkt.to_prompt_dict(),
-        risk_packet=risk_pkt.to_prompt_dict(),
-        liquidity_packet=liquidity_pkt.to_prompt_dict(),
-        alpha_packet=alpha_pkt.to_prompt_dict(),
-    )
-    gate_dict = gate_report_to_dict(gate_report)
-
-    from agents.persistence import save_council_run
-
-    result = CouncilResult(
-        tradeContext=context,
-        liquidity=liquidity_verdict,
-        alpha=alpha_verdict,
-        risk=risk_verdict,
-        fee=fee_verdict,
-        synthesis=override_synthesis_cost(final_state["synthesis"], fee_pkt),
-        grounding_report=grounding_summary,
-        gate_report=gate_dict,
-        debate_transcript=final_state.get("debate_dict", {}),
-        totalLatencyMs=round(elapsed_ms, 2),
-        modelUsage={
-            "specialists_model": f"{SPECIALIST_MODEL} (Groq)",
-            "synthesis_model": f"{SYNTHESIS_MODEL} ({SYNTHESIS_PROVIDER})",
-        },
-        tokenUsage=rollup_token_usage(usages),
-    )
-
-    try:
-        run_id = await save_council_run(
-            account_id=account_id,
-            user_id=user_id,
-            symbol=symbol,
-            council_result_dict=result.model_dump(),
-            grounding_summary=grounding_summary,
-            packet_hashes={
-                "fee": fee_pkt.content_hash,
-                "risk": risk_pkt.content_hash,
-                "liquidity": liquidity_pkt.content_hash,
-                "alpha": alpha_pkt.content_hash,
-            },
-            model_usage=result.modelUsage,
-            total_latency_ms=result.totalLatencyMs,
-        )
-        result.run_id = run_id
-    except Exception as e:
-        print(f"[persistence] Failed to save run: {e}")
-        result.run_id = None
-
-    return result
+    """Run the pipeline on pre-built packets (eval harness, demo-run generator)."""
+    return await run_council_pipeline(account_id, user_id, symbol, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt, llm=llm)

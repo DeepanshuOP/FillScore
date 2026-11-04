@@ -21,7 +21,7 @@ class LiquidityVerdict(BaseModel):
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = "MEDIUM"
     confidence: float = Field(ge=0.0, le=1.0)
     flags: list[str] = Field(default_factory=list)
-    llm_self_confidence: float | None = Field(default=None, description="LLM-reported confidence, stored for calibration analysis")
+    llm_self_confidence: float | None = Field(default=None, exclude=True, description="LLM-reported confidence. Never serialised to API output (an LLM-originated number); persisted separately for calibration")
     evidence_coverage_detail: dict = Field(default_factory=dict)
 
 
@@ -36,7 +36,7 @@ class AlphaVerdict(BaseModel):
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = "MEDIUM"
     confidence: float = Field(ge=0.0, le=1.0)
     flags: list[str] = Field(default_factory=list)
-    llm_self_confidence: float | None = Field(default=None, description="LLM-reported confidence, stored for calibration analysis")
+    llm_self_confidence: float | None = Field(default=None, exclude=True, description="LLM-reported confidence. Never serialised to API output (an LLM-originated number); persisted separately for calibration")
     evidence_coverage_detail: dict = Field(default_factory=dict)
 
 
@@ -50,7 +50,7 @@ class RiskVerdict(BaseModel):
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = "MEDIUM"
     confidence: float = Field(ge=0.0, le=1.0)
     flags: list[str] = Field(default_factory=list)
-    llm_self_confidence: float | None = Field(default=None, description="LLM-reported confidence, stored for calibration analysis")
+    llm_self_confidence: float | None = Field(default=None, exclude=True, description="LLM-reported confidence. Never serialised to API output (an LLM-originated number); persisted separately for calibration")
     evidence_coverage_detail: dict = Field(default_factory=dict)
 
 
@@ -65,7 +65,7 @@ class FeeVerdict(BaseModel):
     severity: Literal["LOW", "MEDIUM", "HIGH", "CRITICAL"] = "MEDIUM"
     confidence: float = Field(ge=0.0, le=1.0)
     flags: list[str] = Field(default_factory=list)
-    llm_self_confidence: float | None = Field(default=None, description="LLM-reported confidence, stored for calibration analysis")
+    llm_self_confidence: float | None = Field(default=None, exclude=True, description="LLM-reported confidence. Never serialised to API output (an LLM-originated number); persisted separately for calibration")
     evidence_coverage_detail: dict = Field(default_factory=dict)
 
 
@@ -77,24 +77,45 @@ class ConflictEntry(BaseModel):
     winner: str = Field(description="Which agent's recommendation was prioritised")
 
 
+OverallRating = Literal["EXCELLENT", "GOOD", "FAIR", "POOR", "CRITICAL"]
+
+
 class SynthesisOutput(BaseModel):
+    """Synthesis as returned to users. overallRating is None when the run is degraded (F-06):
+    an incomplete run is never graded. estimatedMonthlyCostUSD is always overwritten from the fee
+    packet by deterministic code (council.override_synthesis_cost)."""
     headline: str = Field(description="One sentence summary, max 20 words")
     narrative: str = Field(description="2-3 sentence explanation using only numbers from the injected packet data")
     topRecommendations: list[str] = Field(
-        description="Exactly 3 specific, actionable recommendations",
-        min_length=3,
-        max_length=3,
+        default_factory=list,
+        description="Key findings: past-tense statements about the audited executions",
     )
     conflictLedger: list[ConflictEntry] = Field(
         default_factory=list,
         description="Structured conflict resolution log — each entry names the conflict, rule applied, and winner"
     )
-    overallRating: Literal["EXCELLENT", "GOOD", "FAIR", "POOR", "CRITICAL"] = Field(
-        description="Forced verdict — commit to EXCELLENT/GOOD/POOR/CRITICAL when evidence warrants; reserve FAIR only when evidence is genuinely balanced"
+    overallRating: Optional[OverallRating] = Field(
+        default=None,
+        description="Forced verdict; None for a degraded run, which is never graded",
     )
     estimatedMonthlyCostUSD: float = Field(
-        description="Read directly from fee_packet.total_fee_paid_usd scaled to monthly — do not estimate"
+        default=0.0,
+        description="Fees paid in the audited period, copied from fee_packet.total_fee_paid_usd by code",
     )
+
+
+class SynthesisLLMOutput(SynthesisOutput):
+    """The shape the synthesis model must return: a rating and exactly 3 findings are required.
+    Any number it puts in estimatedMonthlyCostUSD is discarded."""
+    topRecommendations: list[str] = Field(
+        description="Exactly 3 findings, each a past-tense statement about the audited executions",
+        min_length=3,
+        max_length=3,
+    )
+    overallRating: OverallRating = Field(
+        description="Forced verdict — commit to EXCELLENT/GOOD/POOR/CRITICAL when evidence warrants; reserve FAIR only when evidence is genuinely balanced"
+    )
+    estimatedMonthlyCostUSD: Optional[float] = None
 
 
 # ── Full council result ───────────────────────────────────────────────────────
@@ -137,3 +158,15 @@ class CouncilResult(BaseModel):
         description="AC-6 execution trial debate — prosecution/defense claims"
     )
     run_id: Optional[str] = None
+    # Phase 1b.2: honest run status. A degraded run is never graded.
+    degraded: bool = False
+    degraded_reasons: list[str] = Field(default_factory=list)
+    n_calls_expected: int = 0
+    n_calls_ok: int = 0
+    # Phase 1b.5: served from an earlier identical run (zero LLM calls).
+    cached: bool = False
+    # Phase 1b.4: one record per HTTP attempt {role, provider, model, attempt, latency_ms, tokens, outcome}
+    llm_calls: list[dict] = Field(default_factory=list)
+    prompt_version: str = ""
+    metrics_version: str = ""
+    route_config_hash: str = ""

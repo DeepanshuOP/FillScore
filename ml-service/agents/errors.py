@@ -13,6 +13,8 @@ DB_UNAVAILABLE = "DB_UNAVAILABLE"
 NO_DATA = "NO_DATA"
 MODEL_UNAVAILABLE = "MODEL_UNAVAILABLE"
 INTERNAL = "INTERNAL"
+DAILY_BUDGET_EXHAUSTED = "DAILY_BUDGET_EXHAUSTED"
+DEMO_NOT_GENERATED = "DEMO_NOT_GENERATED"
 
 _MESSAGES = {
     RATE_LIMIT_EXHAUSTED: "The Council is at capacity right now. Please try again in a few minutes.",
@@ -20,6 +22,8 @@ _MESSAGES = {
     NO_DATA: "There are no scored trades to analyse for this account yet.",
     MODEL_UNAVAILABLE: "The Council's AI model is unavailable right now. This is a configuration problem on our side, not yours.",
     INTERNAL: "The Council hit an unexpected problem. Please try again.",
+    DAILY_BUDGET_EXHAUSTED: "The daily AI budget has been reached. Please try again tomorrow.",
+    DEMO_NOT_GENERATED: "Demo analysis not generated yet.",
 }
 
 _RATE_LIMIT_MARKERS = ("429", "too many requests", "rate limit", "rate_limit", "max retries exceeded")
@@ -29,9 +33,10 @@ _DB_MARKERS = ("bad auth", "atlaserror", "serverselectiontimeout", "authenticati
 class CouncilError(Exception):
     """Raised when the council already knows which typed code applies."""
 
-    def __init__(self, code: str):
+    def __init__(self, code: str, retry_after_s: int | None = None):
         super().__init__(code)
         self.code = code
+        self.retry_after_s = retry_after_s
 
 
 def classify_exception(exc: BaseException) -> str:
@@ -39,6 +44,8 @@ def classify_exception(exc: BaseException) -> str:
         return exc.code
     if isinstance(exc, PyMongoError):
         return DB_UNAVAILABLE
+    if type(exc).__name__ == "RouterExhausted":
+        return DAILY_BUDGET_EXHAUSTED if getattr(exc, "reason", "") == "budget" else MODEL_UNAVAILABLE
 
     if type(exc).__name__ == "NotFoundError":
         return MODEL_UNAVAILABLE
