@@ -34,3 +34,20 @@ __pycache__/
 *.pyc
 PROJECT_TASK_CHECKLIST.md
 PROJECT_STATUS_AUDIT.md
+
+# Local-only Claude Code / tooling state (F-31)
+.claude/settings.local.json
+.claude/settings.json.graphify-bak
+.playwright-mcp/
+.work/
+
+# Scratch export artifacts and one-off scripts (F-31)
+/test-*.pdf
+/test-*.csv
+/test-*.png
+backend/test-mongo.js
+
+# Data / environments
+*.parquet
+ml-service/.venv/
+.venv/
