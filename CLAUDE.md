@@ -26,24 +26,12 @@ microstructure. It never predicts, never signals, never advises.
 - Ports: frontend Next.js 3000 · backend Express 3001 · ml-service FastAPI 8000 · MongoDB Atlas `fillscore`.
 - Run everything: `scripts/dev.sh` (logs in `.work/logs/`, Ctrl-C stops all three). Prefix
   `MONGODB_URI=mongodb://127.0.0.1:<port>/x` to point at a local mongod instead of Atlas.
-- Council LLMs: Groq free tier via `ml-service/agents/llm_client.py` (default `openai/gpt-oss-120b`,
-  override with `GROQ_SPECIALIST_MODEL` / `GROQ_SYNTHESIS_MODEL`). The Llama models are retired.
-  LLM budget is $0. `run_consistency_eval` inter-run sleep stays at 65 s.
+- Council LLMs: free tiers routed by `ml-service/agents/llm_router.py` from `ml-service/config/llm_routes.yaml` (Groq; Gemini when `GEMINI_API_KEY` is set). LLM budget is $0 (details in `.claude/rules/ml-service.md`).
 
-## Test commands (run the whole tier; read the summary line)
+## Test commands
 
-```bash
-export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH"
-# backend (MONGOMS_SYSTEM_BINARY= overrides a Windows mongod path in backend/.env.test)
-cd backend && MONGOMS_SYSTEM_BINARY= JWT_ACCESS_SECRET=test1 JWT_REFRESH_SECRET=test2 \
-  GOOGLE_CLIENT_ID=x GOOGLE_CLIENT_SECRET=x GITHUB_CLIENT_ID=x GITHUB_CLIENT_SECRET=x \
-  npm test -- --no-file-parallelism && npx tsc --noEmit
-# frontend: all three; build and tsc catch bugs the tests cannot
-cd frontend && npx vitest run && npx tsc --noEmit --incremental false && npm run build
-# ml-service (pytest.ini already excludes integration tests)
-cd ml-service && GROQ_API_KEY=bogus OPENROUTER_API_KEY=bogus MONGODB_URI=mongodb://127.0.0.1:1/x \
-  .venv/bin/pytest -p no:cacheprovider
-```
+Per-tier commands live in `.claude/rules/{backend,frontend,ml-service}.md` and load when you work in
+that tier. Run the whole tier and read the summary line. All three must be green before a phase is done.
 
 ## Working rules
 
@@ -61,8 +49,7 @@ cd ml-service && GROQ_API_KEY=bogus OPENROUTER_API_KEY=bogus MONGODB_URI=mongodb
 
 ## Data facts
 
-- Mongo stores camelCase (`whaleAdverse`). `council_runs.created_at` is an ISO-8601 **string**
-  (query by prefix); `trades.executedAt` is a native datetime.
+- Mongo stores camelCase (`whaleAdverse`). `trades.executedAt` is a native datetime.
 - Trades store native `fee` in `feeAsset`; use `feeUsd` for any USD fee math.
 
 ## Pointers
@@ -71,3 +58,15 @@ cd ml-service && GROQ_API_KEY=bogus OPENROUTER_API_KEY=bogus MONGODB_URI=mongodb
 - `ROADMAP.md`: the only roadmap. Read just the section for your task ID (`T*`, `AC-*`, `R5-*`, `R6-*`).
   Older roadmap files are superseded; don't read or cite them.
 - `.work/`: local-only (gitignored) briefs, audit, reports and logs. Never commit it.
+
+## Working model
+
+- The main session orchestrates: plans, writes specs, computes expected values, verifies, reports.
+- `implementer` (Sonnet) does code changes from a full spec; `test-runner` (Haiku) runs suites.
+- `reviewer` (Sonnet) reviews diffs; `Explore` (Haiku) searches; `docs-researcher` looks up docs.
+- Escalate a worker to Opus only after two failed attempts or for algorithmically subtle items.
+- Phases run with the `run-brief` skill; `handoff` writes `.work/HANDOFF.md` before a clear.
+
+## Compact instructions
+
+When compacting, preserve: the current brief path, the checklist file path and its status, files changed so far, test commands and their latest summary lines, and open questions.

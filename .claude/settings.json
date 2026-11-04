@@ -21,7 +21,15 @@
       "Bash(pytest:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(cd backend && MONGOMS_SYSTEM_BINARY= JWT_ACCESS_SECRET=test1 JWT_REFRESH_SECRET=test2 GOOGLE_CLIENT_ID=x GOOGLE_CLIENT_SECRET=x GITHUB_CLIENT_ID=x GITHUB_CLIENT_SECRET=x npm test -- --no-file-parallelism:*)",
+      "Bash(cd backend && npx tsc --noEmit)",
+      "Bash(cd frontend && npx vitest run:*)",
+      "Bash(cd frontend && npx tsc --noEmit --incremental false:*)",
+      "Bash(cd frontend && npm run build:*)",
+      "Bash(cd ml-service && GROQ_API_KEY=bogus OPENROUTER_API_KEY=bogus MONGODB_URI=mongodb://127.0.0.1:1/x .venv/bin/pytest -p no:cacheprovider:*)",
+      "Bash(.venv/bin/pytest:*)",
+      "Bash(python3 .work/check_harness.py:*)"
     ]
   },
   "hooks": {
@@ -41,5 +49,8 @@
     "commit": "",
     "pr": "",
     "sessionUrl": false
-  }
+  },
+  "fallbackModel": [
+    "sonnet"
+  ]
 }

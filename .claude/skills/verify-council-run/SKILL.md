@@ -18,10 +18,16 @@ Grep the run's stdout/stderr and the persisted document for: `failed:`, `Max ret
 `429`, `rate limit`. Report the match count for each string, including zeros. Zero matches across all
 five is the only passing result.
 
-## 2. Call count
+## 2. Run status and call count
 
-Load the persisted `council_runs` document and assert `n_calls == 9`. Print the actual value. A run
-with fewer calls short-circuited somewhere.
+Load the persisted `council_runs` document and print `degraded`, `degraded_reasons`,
+`n_calls_expected`, `n_calls_ok`, `cached` and `len(llm_calls)`. Passing means `degraded` is false,
+`degraded_reasons` is empty and `n_calls_ok == n_calls_expected` (read the expected count from the
+document; do not assume a fixed number). Each `llm_calls` record is one HTTP attempt
+`{role, provider, model, attempt, latency_ms, tokens, outcome}`; report the outcomes and which
+models actually served the run. A degraded run is never graded: if `degraded` is true the run is void.
+If `cached` is true the run was replayed from an earlier identical run with zero LLM calls: it proves
+nothing about the pipeline, so say so and don't count it as a fresh run.
 
 ## 3. Freshness
 
