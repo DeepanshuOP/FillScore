@@ -105,7 +105,7 @@ async def generate_cost_report(write: bool = True) -> str:
     client = AsyncIOMotorClient(uri, tlsCAFile=certifi.where())
     db = client["fillscore"]
 
-    all_runs = await db.council_runs.find({"degraded": {"$ne": True}}).to_list(1000)
+    all_runs = await db.council_runs.find({"degraded": {"$ne": True}, "legacy": {"$ne": True}}).to_list(1000)
     
     agg = aggregate_costs(all_runs)
 

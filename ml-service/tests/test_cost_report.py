@@ -71,3 +71,11 @@ def test_aggregate_costs():
     assert t["n_runs"] == 2
     assert t["avg_total_tokens"] == 16500.0
     assert t["avg_latency_ms"] == 12000.0
+
+
+def test_generate_cost_report_query_excludes_legacy():
+    """1c.7: the council_runs query skips degraded and legacy runs."""
+    import inspect
+    from eval import cost_report
+    src = inspect.getsource(cost_report.generate_cost_report)
+    assert '{"degraded": {"$ne": True}, "legacy": {"$ne": True}}' in src
