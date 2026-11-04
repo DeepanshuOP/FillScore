@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Reject commit messages carrying AI attribution. Enabled with: git config core.hooksPath .githooks
+msg_file="$1"
+pattern='co-authored-by|generated with|claude|noreply@anthropic\.com'
+if grep -qiE "$pattern" "$msg_file"; then
+  echo "commit-msg: rejected — message contains AI attribution (Co-Authored-By / Generated with / Claude / noreply@anthropic.com)." >&2
+  grep -niE "$pattern" "$msg_file" | sed 's/^/  line /' >&2
+  exit 1
+fi
+exit 0
