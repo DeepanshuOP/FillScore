@@ -82,3 +82,79 @@ describe('councilOfflineMessage', () => {
         expect(message).toMatch(/offline|unavailable/i);
     });
 });
+
+// ── Phase 1b: degraded runs are never graded; new refusal codes; disclaimer ──────────
+import {
+    councilVerdictView,
+    overallToGrade,
+    COUNCIL_DISCLAIMER,
+    verdictCardsFromResult,
+} from './councilStatus';
+
+describe('councilVerdictView', () => {
+    it('grades a complete run', () => {
+        expect(councilVerdictView({ overallRating: 'GOOD', degraded: false })).toEqual({
+            kind: 'graded', grade: 'B', rating: 'GOOD',
+        });
+    });
+
+    it('never shows a grade letter for a degraded run, even if a rating slipped through', () => {
+        const view = councilVerdictView({
+            overallRating: 'FAIR',
+            degraded: true,
+            degraded_reasons: ['liquidity_scout: fell back to a default verdict because the daily AI budget was used up'],
+        });
+        expect(view.kind).toBe('incomplete');
+        expect(view).not.toHaveProperty('grade');
+        expect(view).toEqual({
+            kind: 'incomplete',
+            title: 'Analysis incomplete',
+            reasons: ['liquidity_scout: fell back to a default verdict because the daily AI budget was used up'],
+        });
+    });
+
+    it('treats a missing rating as incomplete rather than a "?" grade', () => {
+        expect(councilVerdictView({ overallRating: null }).kind).toBe('incomplete');
+    });
+
+    it('maps ratings to letters', () => {
+        expect(['EXCELLENT', 'GOOD', 'FAIR', 'POOR', 'CRITICAL'].map(overallToGrade)).toEqual(['A', 'B', 'C', 'D', 'F']);
+    });
+});
+
+describe('Phase 1b error codes', () => {
+    it('explains the daily budget refusal', () => {
+        expect(councilErrorMessage('DAILY_BUDGET_EXHAUSTED')).toBe(
+            'The daily AI budget has been reached. Please try again tomorrow.'
+        );
+    });
+
+    it('explains a demo analysis that has not been generated', () => {
+        expect(councilErrorMessage('DEMO_NOT_GENERATED')).toBe('Demo analysis not generated yet.');
+    });
+});
+
+describe('COUNCIL_DISCLAIMER', () => {
+    it('frames the panel as a past-trade audit, not advice', () => {
+        expect(COUNCIL_DISCLAIMER).toBe('Post-trade analysis of past executions, not financial advice.');
+    });
+});
+
+describe('verdictCardsFromResult', () => {
+    it('builds the four cards from the final result, using its deterministic confidence', () => {
+        const result = {
+            liquidity: { liquidityRating: 'GOOD', confidence: 0.0556, severity: 'LOW', cited_evidence: ['avg_slippage_bps'], flags: [] },
+            alpha: { alphaRating: 'NEUTRAL', confidence: 0.1, severity: 'LOW', cited_evidence: [], flags: [] },
+            risk: { riskLevel: 'LOW', confidence: 0, severity: 'LOW', cited_evidence: ['x', 'y'], flags: [] },
+            fee: { feeRating: 'MODERATE', confidence: 0, severity: 'MEDIUM', cited_evidence: [], flags: ['agent_failed'] },
+        };
+        const cards = verdictCardsFromResult(result);
+        expect(Object.keys(cards)).toEqual(['liquidity_scout', 'alpha_architect', 'risk_auditor', 'fee_optimizer']);
+        expect(cards.liquidity_scout).toEqual({
+            agent: 'liquidity_scout', rating: 'GOOD', confidence: 0.0556, severity: 'LOW',
+            cited_evidence_count: 1, flags: [], status: 'done', failed: false,
+        });
+        expect(cards.risk_auditor.cited_evidence_count).toBe(2);
+        expect(cards.fee_optimizer.failed).toBe(true);
+    });
+});

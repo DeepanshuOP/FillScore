@@ -1,24 +1,24 @@
 "use client";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { waitForHealthy } from "../utils/serviceWarmup";
-import { councilMaintenanceMessage, councilErrorMessage, councilOfflineMessage } from "../utils/councilStatus";
+import {
+  councilMaintenanceMessage,
+  councilErrorMessage,
+  councilOfflineMessage,
+  councilVerdictView,
+  verdictCardsFromResult,
+  COUNCIL_DISCLAIMER,
+  type CouncilAgentCard as AgentCard,
+} from "../utils/councilStatus";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-interface AgentCard {
-  agent: string;
-  rating: string;
-  confidence: number;
-  severity: string;
-  cited_evidence_count: number;
-  flags: string[];
-  status: "waiting" | "running" | "done";
-}
-
 interface SynthesisResult {
   headline: string;
-  overallRating: string;
+  overallRating: string | null;
   topRecommendations: string[];
   estimatedMonthlyCostUSD: number;
+  degraded?: boolean;
+  degraded_reasons?: string[];
 }
 
 interface GroundingReport {
@@ -62,13 +62,6 @@ function ratingColor(rating: string): string {
   return "text-slate-400 border-slate-400/40 bg-slate-400/10";
 }
 
-function overallToGrade(rating: string): string {
-  const map: Record<string, string> = {
-    EXCELLENT: "A", GOOD: "B", FAIR: "C", POOR: "D", CRITICAL: "F",
-  };
-  return map[rating?.toUpperCase()] ?? "?";
-}
-
 const AGENT_ORDER = ["liquidity_scout", "alpha_architect", "risk_auditor", "fee_optimizer"];
 
 // ── Component ────────────────────────────────────────────────────────────────────
@@ -93,6 +86,7 @@ export default function AgentCouncil({
   const [totalLatencyMs, setTotalLatencyMs] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
   const [waking, setWaking] = useState(false);
+  const [cached, setCached] = useState(false);
 
   // Free hosting puts the service to sleep; ping it as soon as the panel mounts so it is
   // already waking while the user reads the dashboard.
@@ -111,6 +105,7 @@ export default function AgentCouncil({
     setDebate(null);
     setDebateRunning(false);
     setTotalLatencyMs(null);
+    setCached(false);
     setError(null);
   };
 
@@ -214,6 +209,7 @@ export default function AgentCouncil({
             cited_evidence_count: 0,
             flags: [],
             status: "running",
+            failed: false,
           },
         }));
       }
@@ -230,6 +226,7 @@ export default function AgentCouncil({
           cited_evidence_count: payload.cited_evidence_count,
           flags: payload.flags ?? [],
           status: "done",
+          failed: Boolean(payload.failed),
         },
       }));
     } else if (eventType === "debate_started") {
@@ -242,8 +239,19 @@ export default function AgentCouncil({
     } else if (eventType === "gate_done") {
       setGateReport(payload.gate_report);
     } else if (eventType === "complete") {
-      setTotalLatencyMs(payload.totalLatencyMs);
+      // The final event carries the whole result, identical to the non-stream endpoint. It is
+      // the source of truth: every number on the panel is re-read from it.
+      setCards(verdictCardsFromResult(payload));
+      setSynthesis({
+        ...payload.synthesis,
+        degraded: payload.degraded,
+        degraded_reasons: payload.degraded_reasons ?? [],
+      });
+      setGateReport(payload.gate_report);
       setGrounding(payload.grounding_report);
+      setTotalLatencyMs(payload.totalLatencyMs);
+      setCached(Boolean(payload.cached));
+      setActiveAgent(null);
     } else if (eventType === "error") {
       setError(councilErrorMessage(payload.code));
     }
@@ -263,6 +271,7 @@ export default function AgentCouncil({
           <p className="text-[#888078] text-xs font-mono tracking-wide mt-0.5">
             Multi-agent execution audit · {symbol}
           </p>
+          <p className="text-[#888078] text-[11px] mt-1">{COUNCIL_DISCLAIMER}</p>
         </div>
         <button
           onClick={runAnalysis}
@@ -293,7 +302,7 @@ export default function AgentCouncil({
       <div className="grid grid-cols-2 gap-3">
         {AGENT_ORDER.map((agent) => {
           const card = cards[agent];
-          const isRunning = activeAgent === agent;
+          const isRunning = card?.status === "running" || activeAgent === agent;
           const isEmpty = !card;
 
           return (
@@ -321,7 +330,12 @@ export default function AgentCouncil({
                     thinking…
                   </span>
                 )}
-                {card?.status === "done" && card.rating && (
+                {card?.status === "done" && card.failed && (
+                  <span className="text-xs px-2 py-0.5 rounded-full border font-medium text-slate-400 border-slate-400/40 bg-slate-400/10">
+                    UNAVAILABLE
+                  </span>
+                )}
+                {card?.status === "done" && !card.failed && card.rating && (
                   <span
                     className={`text-xs px-2 py-0.5 rounded-full border font-medium ${ratingColor(card.rating)}`}
                   >
@@ -413,55 +427,71 @@ export default function AgentCouncil({
       )}
 
       {/* Synthesis panel */}
-      {synthesis && (
+      {synthesis && (() => {
+        const view = councilVerdictView(synthesis);
+        return (
         <div className="border border-slate-700 bg-slate-900/40 rounded-xl p-5 space-y-4 transition-all duration-500">
           <div className="flex items-center justify-between">
             <h3 className="text-white font-semibold">Council Verdict</h3>
-            <div className="flex items-center gap-3">
-              <span
-                className={`text-4xl font-bold ${ratingColor(synthesis.overallRating).split(" ")[0]}`}
-              >
-                {overallToGrade(synthesis.overallRating)}
-              </span>
-              <span
-                className={`text-sm px-3 py-1 rounded-full border font-medium ${ratingColor(synthesis.overallRating)}`}
-              >
-                {synthesis.overallRating}
-              </span>
-            </div>
-          </div>
-
-          <p className="text-slate-300 text-sm leading-relaxed">
-            {synthesis.headline}
-          </p>
-
-          <div className="space-y-2">
-            <p className="text-slate-500 text-xs uppercase tracking-wider">
-              Top Recommendations
-            </p>
-            {synthesis.topRecommendations.map((rec, i) => (
-              <div key={i} className="flex gap-3 text-sm text-slate-300">
-                <span className="text-violet-400 font-bold shrink-0">
-                  {i + 1}.
+            {view.kind === "graded" ? (
+              <div className="flex items-center gap-3">
+                <span className={`text-4xl font-bold ${ratingColor(view.rating).split(" ")[0]}`}>
+                  {view.grade}
                 </span>
-                <span>{rec}</span>
+                <span className={`text-sm px-3 py-1 rounded-full border font-medium ${ratingColor(view.rating)}`}>
+                  {view.rating}
+                </span>
               </div>
-            ))}
+            ) : (
+              <span className="text-sm px-3 py-1 rounded-full border font-medium text-amber-400 border-amber-400/40 bg-amber-400/10">
+                {view.title}
+              </span>
+            )}
           </div>
+
+          {view.kind === "incomplete" ? (
+            <div role="status" className="space-y-2">
+              <p className="text-slate-300 text-sm leading-relaxed">
+                Part of the Council could not finish, so this run has no grade.
+              </p>
+              {view.reasons.length > 0 && (
+                <ul className="list-disc pl-5 text-xs text-slate-400 space-y-1">
+                  {view.reasons.map((r, i) => (
+                    <li key={i}>{r}</li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : (
+            <p className="text-slate-300 text-sm leading-relaxed">{synthesis.headline}</p>
+          )}
+
+          {synthesis.topRecommendations.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-slate-500 text-xs uppercase tracking-wider">Key findings</p>
+              {synthesis.topRecommendations.map((rec, i) => (
+                <div key={i} className="flex gap-3 text-sm text-slate-300">
+                  <span className="text-violet-400 font-bold shrink-0">{i + 1}.</span>
+                  <span>{rec}</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {synthesis.estimatedMonthlyCostUSD > 0 && (
             <p className="text-slate-500 text-xs">
-              Est. monthly fee cost:{" "}
+              Fees paid in the audited period:{" "}
               <span className="text-slate-300 font-medium">
                 ${synthesis.estimatedMonthlyCostUSD.toFixed(2)}
               </span>
             </p>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* Grounding score */}
-      {grounding && (
+      {grounding && !synthesis?.degraded && (
         <div className="border border-slate-800 bg-slate-900/20 rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-slate-400 text-sm">
@@ -501,7 +531,7 @@ export default function AgentCouncil({
       )}
 
       {/* Verification Gate */}
-      {gateReport && (
+      {gateReport && !synthesis?.degraded && (
         <div className="border border-slate-800 bg-slate-900/20 rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-slate-400 text-sm">Verification Gate</span>
@@ -509,7 +539,7 @@ export default function AgentCouncil({
               {gateReport.passed_count}/{gateReport.total_recommendations} passed
             </span>
           </div>
-          {gateReport.contradiction_flags.length > 0 && (
+          {gateReport.contradiction_flags?.length > 0 && (
             <p className="text-amber-400 text-xs mt-1">⚠ {gateReport.contradiction_flags[0]}</p>
           )}
         </div>
@@ -518,7 +548,9 @@ export default function AgentCouncil({
       {/* Latency footer */}
       {totalLatencyMs !== null && (
         <p className="text-slate-600 text-xs text-right">
-          Analysis completed in {(totalLatencyMs / 1000).toFixed(2)}s
+          {cached
+            ? "Saved analysis of the same trades (no new AI calls)"
+            : `Analysis completed in ${(totalLatencyMs / 1000).toFixed(2)}s`}
         </p>
       )}
     </div>
