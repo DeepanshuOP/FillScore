@@ -85,6 +85,8 @@ Generated from the app (`npm run docs:routes`).
 
 | Method | Path |
 |---|---|
+| DELETE | `/api/account/` |
+| GET | `/api/account/export` |
 | GET | `/api/attribution/` |
 | GET | `/api/audit/` |
 | GET | `/api/audit/analytics` |
@@ -117,6 +119,7 @@ Generated from the app (`npm run docs:routes`).
 | POST | `/api/connect/` |
 | GET | `/api/health` |
 | POST | `/api/onboarding/connect` |
+| DELETE | `/api/onboarding/connections/:exchange` |
 | POST | `/api/onboarding/sync` |
 | GET | `/api/preflight/exchanges` |
 | GET | `/api/ready` |

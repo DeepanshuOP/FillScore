@@ -9,8 +9,23 @@ import { parseOrReject, connectBodySchema } from '../validation/schemas';
 import { MarketDataService } from '../services/MarketDataService';
 import { executeAuditPipeline } from './audit';
 import { INGEST_DAYS_BACK } from '../config/ingestion';
+import { User } from '../models/User';
+import mongoose from 'mongoose';
 
 export const onboardingRouter = Router();
+
+/**
+ * Writes for an account need the account to still exist: an access token issued before the
+ * account was deleted stays valid for up to 15 minutes and must not recreate keys or trades (F-13).
+ */
+async function accountExists(req: Request, res: Response, next: () => void) {
+    const id = req.userId;
+    if (!id || !mongoose.isValidObjectId(id) || !(await User.exists({ _id: id }))) {
+        res.status(401).json({ error: 'account_not_found' });
+        return;
+    }
+    next();
+}
 
 export const connectLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -18,7 +33,7 @@ export const connectLimiter = rateLimit({
     message: { error: 'Too many connection attempts from this IP, please try again after 15 minutes.' },
 });
 
-onboardingRouter.post('/connect', requireAuth, connectLimiter, async (req: Request, res: Response) => {
+onboardingRouter.post('/connect', requireAuth, accountExists, connectLimiter, async (req: Request, res: Response) => {
     try {
         const body = parseOrReject(connectBodySchema, req.body, res);
         if (!body) return;
@@ -77,7 +92,26 @@ onboardingRouter.post('/connect', requireAuth, connectLimiter, async (req: Reque
     }
 });
 
-onboardingRouter.post('/sync', requireAuth, async (req: Request, res: Response) => {
+// F-13: disconnect an exchange. Deletes the stored (encrypted) key; already-ingested trades stay
+// until the user deletes their account.
+onboardingRouter.delete('/connections/:exchange', requireAuth, async (req: Request, res: Response) => {
+    try {
+        const exchange = req.params.exchange;
+        if (!['binance', 'bybit', 'okx'].includes(exchange)) {
+            return res.status(400).json({ error: 'invalid_request' });
+        }
+        const result = await ExchangeConnection.deleteOne({ accountId: req.userId!, exchange });
+        if (result.deletedCount === 0) {
+            return res.status(404).json({ error: 'not_connected' });
+        }
+        return res.status(200).json({ success: true, exchange });
+    } catch (error) {
+        console.error('Error disconnecting exchange:', (error as Error)?.name);
+        return res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+onboardingRouter.post('/sync', requireAuth, accountExists, async (req: Request, res: Response) => {
     try {
         const accountId = req.userId!;
 

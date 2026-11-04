@@ -7,8 +7,11 @@ import crypto from 'crypto';
 
 export async function issueTokenPair(userId: mongoose.Types.ObjectId | string) {
     const userIdStr = userId.toString();
-    const accessToken = signAccessToken({ userId: userIdStr });
-    const refreshToken = signRefreshToken({ userId: userIdStr, jti: crypto.randomUUID() });
+    // auth_time = when the user actually logged in; refresh rotation carries it forward unchanged,
+    // so sensitive actions (account deletion) can require a recent login (F-13).
+    const authTime = Math.floor(Date.now() / 1000);
+    const accessToken = signAccessToken({ userId: userIdStr, auth_time: authTime });
+    const refreshToken = signRefreshToken({ userId: userIdStr, jti: crypto.randomUUID(), auth_time: authTime });
 
     const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex');
     const family = crypto.randomUUID();
@@ -120,8 +123,8 @@ export async function rotateRefresh(rawRefreshToken: string) {
     await tokenDoc.save();
 
     // 5. Issue new pair
-    const accessToken = signAccessToken({ userId: payload.userId });
-    const newRefreshToken = signRefreshToken({ userId: payload.userId, jti: crypto.randomUUID() });
+    const accessToken = signAccessToken({ userId: payload.userId, auth_time: payload.auth_time });
+    const newRefreshToken = signRefreshToken({ userId: payload.userId, jti: crypto.randomUUID(), auth_time: payload.auth_time });
 
     const newHash = crypto.createHash('sha256').update(newRefreshToken).digest('hex');
     const newDoc = new RefreshToken({

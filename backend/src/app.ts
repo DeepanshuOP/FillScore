@@ -11,6 +11,7 @@ import { authRouter } from './routes/auth';
 import { onboardingRouter } from './routes/onboarding';
 import { preflightRouter } from './routes/preflight';
 import { healthRouter } from './routes/health';
+import { accountRouter } from './routes/account';
 import { resolveTrustProxyHops } from './utils/trustProxy';
 
 export function createApp(): Application {
@@ -48,6 +49,7 @@ export function createApp(): Application {
     app.use('/api/attribution', attributionRouter);
     app.use('/api/auth', authRouter);
     app.use('/api/onboarding', onboardingRouter);
+    app.use('/api/account', accountRouter);
     app.use('/api/preflight', availabilityLimiter, preflightRouter);
 
     app.use(errorHandler);

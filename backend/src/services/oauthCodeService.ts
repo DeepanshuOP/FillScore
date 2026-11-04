@@ -29,5 +29,6 @@ export async function redeemOAuthCode(code: string): Promise<{ accessToken: stri
     if (!doc) {
         throw new Error('invalid_or_expired_code');
     }
-    return { accessToken: signAccessToken({ userId: doc.userId }), userId: doc.userId };
+    // The code is single-use and lives 30 s after the provider login, so this is a fresh login.
+    return { accessToken: signAccessToken({ userId: doc.userId, auth_time: Math.floor(Date.now() / 1000) }), userId: doc.userId };
 }
