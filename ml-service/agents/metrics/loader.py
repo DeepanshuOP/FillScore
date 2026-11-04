@@ -20,7 +20,7 @@ TRADE_PROJECTION = {
     "isMaker": 1, "fee": 1, "feeUsd": 1, "notional": 1,
     "orderType": 1, "arrivalSlippageBps": 1,
     "fillScore": 1, "executedAt": 1, "side": 1,
-    "executionPrice": 1, "vwap5m": 1,
+    "executionPrice": 1, "vwap5min": 1,
     "whaleAdverse": 1,
 }
 
@@ -32,6 +32,8 @@ def normalise_trade_doc(doc: dict) -> dict:
     fee_usd = doc.get("feeUsd")
     doc["feePaid"] = fee_usd if fee_usd is not None else doc.get("fee", 0.0)
     doc["notionalValue"] = doc.get("notional", 0.0)
+    if doc.get("vwap5min") is not None:  # DB stores vwap5min; builders read vwap5m
+        doc["vwap5m"] = doc["vwap5min"]
     return doc
 
 
@@ -40,39 +42,49 @@ def _get_mongo_client() -> AsyncIOMotorClient:
     return AsyncIOMotorClient(uri)
 
 
+async def load_trades(
+    user_id: str,
+    symbol: str,
+    db_name: str = "fillscore",
+    collection_name: str = "trades",
+) -> list[dict]:
+    """One read: the user's trades for `symbol` ("ALL" = every symbol), normalised, oldest first."""
+    query = {"userId": user_id} if symbol == "ALL" else {"userId": user_id, "symbol": symbol}
+    client = _get_mongo_client()
+    try:
+        cursor = client[db_name][collection_name].find(query, TRADE_PROJECTION).sort("executedAt", 1)
+        return [normalise_trade_doc(doc) async for doc in cursor]
+    finally:
+        client.close()
+
+
+def build_all_packets(
+    trades: list[dict], user_id: str, symbol: str,
+) -> tuple[FeeMetricsPacket, RiskMetricsPacket, LiquidityMetricsPacket, AlphaMetricsPacket]:
+    """The four packets (fee, risk, liquidity, alpha) from one list of normalised trades."""
+    return (
+        build_fee_packet(trades, user_id, symbol),
+        build_risk_packet(trades, user_id, symbol),
+        build_liquidity_packet(trades, user_id, symbol),
+        build_alpha_packet(trades, user_id, symbol),
+    )
+
+
+async def load_run_inputs(user_id: str, symbol: str):
+    """Packets and the trades they were built from, from a single DB read (the Council verifier
+    replays these same trades)."""
+    trades = await load_trades(user_id, symbol)
+    return build_all_packets(trades, user_id, symbol), trades
+
+
 async def load_all_packets(
     user_id: str,
     symbol: str,
     db_name: str = "fillscore",
     collection_name: str = "trades",
 ) -> tuple[FeeMetricsPacket, RiskMetricsPacket, LiquidityMetricsPacket, AlphaMetricsPacket]:
-    """
-    Fetch all trades for (user_id, symbol) from MongoDB and build the
-    four MetricsPackets. Returns a tuple (fee, risk, liquidity, alpha).
-    """
-    client = _get_mongo_client()
-    try:
-        db = client[db_name]
-        collection = db[collection_name]
-
-        cursor = collection.find(
-            {"userId": user_id, "symbol": symbol},
-            TRADE_PROJECTION,
-        ).sort("executedAt", 1)
-
-        trades = []
-        async for doc in cursor:
-            trades.append(normalise_trade_doc(doc))
-
-    finally:
-        client.close()
-
-    fee_pkt = build_fee_packet(trades, user_id, symbol)
-    risk_pkt = build_risk_packet(trades, user_id, symbol)
-    liquidity_pkt = build_liquidity_packet(trades, user_id, symbol)
-    alpha_pkt = build_alpha_packet(trades, user_id, symbol)
-
-    return fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt
+    """Packets only (fee, risk, liquidity, alpha) for (user_id, symbol)."""
+    return build_all_packets(await load_trades(user_id, symbol, db_name, collection_name), user_id, symbol)
 
 
 async def load_all_packets_for_user(
@@ -80,28 +92,5 @@ async def load_all_packets_for_user(
     db_name: str = "fillscore",
     collection_name: str = "trades",
 ) -> tuple[FeeMetricsPacket, RiskMetricsPacket, LiquidityMetricsPacket, AlphaMetricsPacket]:
-    """
-    Same as load_all_packets but across ALL symbols for a user.
-    Used when symbol="ALL" is requested.
-    """
-    client = _get_mongo_client()
-    try:
-        db = client[db_name]
-        collection = db[collection_name]
-        cursor = collection.find(
-            {"userId": user_id},
-            TRADE_PROJECTION,
-        ).sort("executedAt", 1)
-        trades = []
-        async for doc in cursor:
-            trades.append(normalise_trade_doc(doc))
-    finally:
-        client.close()
-
-    symbol_label = "ALL"
-    return (
-        build_fee_packet(trades, user_id, symbol_label),
-        build_risk_packet(trades, user_id, symbol_label),
-        build_liquidity_packet(trades, user_id, symbol_label),
-        build_alpha_packet(trades, user_id, symbol_label),
-    )
+    """Same as load_all_packets across ALL symbols for a user (symbol="ALL")."""
+    return await load_all_packets(user_id, "ALL", db_name, collection_name)

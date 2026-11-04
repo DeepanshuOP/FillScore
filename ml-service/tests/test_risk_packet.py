@@ -134,3 +134,39 @@ class TestIntegrity:
         pkt = build_risk_packet(FIXTURE_TRADES, "u1", "BTCUSDT")
         assert "adverse_trades" in pkt.evidence_index
         assert set(pkt.evidence_index["adverse_trades"]) == {"t3", "t6"}
+
+
+class TestDatetimeHours:
+    """1c.1: naive datetimes (what pymongo returns).
+    08:10, 08:40, 14:00, 21:00 -> counts {08:2, 14:1, 21:1}; shares .5,.25,.25
+    hhi = .25 + .0625 + .0625 = 0.375 ; top hour 8 ; top fraction 0.5"""
+
+    def _four(self):
+        from datetime import datetime
+        return [
+            {"id": f"d{i}", "symbol": "BTCUSDT", "notionalValue": 1000.0,
+             "executedAt": datetime(2024, 1, 15, h, m), "whaleAdverse": False}
+            for i, (h, m) in enumerate([(8, 10), (8, 40), (14, 0), (21, 0)])
+        ]
+
+    def test_datetime_hours(self):
+        pkt = build_risk_packet(self._four(), "u1", "BTCUSDT")
+        assert pkt.hour_trade_counts == {"08": 2, "14": 1, "21": 1}
+        assert abs(pkt.hour_hhi - 0.375) < 1e-9
+        assert pkt.top_hour_utc == 8
+        assert abs(pkt.top_hour_trade_fraction - 0.5) < 1e-9
+
+    def test_unparsed_trade_skipped_from_hours_only(self):
+        trades = self._four() + [{"id": "d9", "symbol": "BTCUSDT", "notionalValue": 1000.0,
+                                  "executedAt": None, "whaleAdverse": False}]
+        pkt = build_risk_packet(trades, "u1", "BTCUSDT")
+        assert pkt.hour_trade_counts == {"08": 2, "14": 1, "21": 1}
+        assert abs(pkt.hour_hhi - 0.375) < 1e-9
+        assert abs(pkt.top_hour_trade_fraction - 0.5) < 1e-9  # 2 / 4 parsed
+        assert pkt.total_trades == 5
+
+    def test_no_parsed_hours(self):
+        pkt = build_risk_packet([{"id": "z", "symbol": "BTCUSDT", "notionalValue": 5.0}], "u1", "BTCUSDT")
+        assert pkt.hour_trade_counts == {}
+        assert pkt.hour_hhi == 0.0
+        assert pkt.top_hour_trade_fraction == 0.0

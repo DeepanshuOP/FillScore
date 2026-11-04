@@ -191,3 +191,21 @@ class TestIntegrity:
         pkt = build_liquidity_packet(FIXTURE_TRADES, "u1", "BTCUSDT")
         assert "worst5_trades" in pkt.evidence_index
         assert pkt.evidence_index["worst5_trades"][0] == "t4"
+
+
+class TestDatetimeHourlySlippage:
+    """1c.1: same fixture with naive datetimes -> same hand-computed hourly values
+    (08 -> [5,-3] avg 1.0 ; 14 -> [12,20] avg 16.0)."""
+
+    def test_hours_from_datetimes(self):
+        from datetime import datetime
+        trades = []
+        for t in FIXTURE_TRADES:
+            d = dict(t)
+            d["executedAt"] = datetime.fromisoformat(d["executedAt"].replace("Z", ""))
+            trades.append(d)
+        pkt = build_liquidity_packet(trades, "u1", "BTCUSDT")
+        assert pkt.worst_hour_utc == 14
+        assert pkt.best_hour_utc == 8
+        assert abs(pkt.avg_slippage_by_hour.get("08", -99) - 1.0) < 1e-4
+        assert abs(pkt.avg_slippage_by_hour.get("14", -99) - 16.0) < 1e-4

@@ -12,6 +12,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from config.versions import METRICS_VERSION
+from agents.metrics.time_utils import utc_hour_key
 
 
 @dataclass
@@ -177,11 +178,9 @@ def build_liquidity_packet(trades: list[dict], user_id: str, symbol: str) -> Liq
     # ── per-hour slippage ─────────────────────────────────────────────────────
     hour_slip: dict[str, list[float]] = {}
     for t, s in zip(market_trades, slippages):
-        try:
-            ts = t.get("executedAt", "")
-            hour = str(datetime.fromisoformat(ts.replace("Z", "+00:00")).hour).zfill(2)
-        except Exception:
-            hour = "00"
+        hour = utc_hour_key(t.get("executedAt"))
+        if hour is None:
+            continue
         hour_slip.setdefault(hour, []).append(s)
     avg_slip_by_hour = {h: round(_avg(vals), 4) for h, vals in hour_slip.items()}
     worst_hour = int(max(avg_slip_by_hour, key=avg_slip_by_hour.get)) if avg_slip_by_hour else -1

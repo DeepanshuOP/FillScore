@@ -12,6 +12,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from config.versions import METRICS_VERSION
+from agents.metrics.time_utils import utc_hour_key
 
 
 @dataclass
@@ -180,17 +181,15 @@ def build_alpha_packet(trades: list[dict], user_id: str, symbol: str) -> AlphaMe
     # ── hour ranking by fill score ────────────────────────────────────────────
     hour_scores: dict[str, list[float]] = {}
     for t in trades:
-        try:
-            ts = t.get("executedAt", "")
-            hour = str(datetime.fromisoformat(ts.replace("Z", "+00:00")).hour).zfill(2)
-        except Exception:
-            hour = "00"
+        hour = utc_hour_key(t.get("executedAt"))
+        if hour is None:
+            continue
         score = float(t.get("fillScore", 0.0))
         hour_scores.setdefault(hour, []).append(score)
 
     hour_avg = {h: round(_avg(scores), 4) for h, scores in hour_scores.items()}
-    best_hour_str = max(hour_avg, key=hour_avg.get) if hour_avg else "00"
-    worst_hour_str = min(hour_avg, key=hour_avg.get) if hour_avg else "00"
+    best_hour_str = max(hour_avg, key=hour_avg.get) if hour_avg else None
+    worst_hour_str = min(hour_avg, key=hour_avg.get) if hour_avg else None
 
     evidence = {
         "all_trades": all_ids,
@@ -220,10 +219,10 @@ def build_alpha_packet(trades: list[dict], user_id: str, symbol: str) -> AlphaMe
         best_symbol_avg_score=sym_avg.get(best_sym, 0.0),
         worst_symbol_avg_score=sym_avg.get(worst_sym, 0.0),
         hour_avg_fill_score=hour_avg,
-        best_hour_utc=int(best_hour_str),
-        worst_hour_utc=int(worst_hour_str),
-        best_hour_avg_score=hour_avg.get(best_hour_str, 0.0),
-        worst_hour_avg_score=hour_avg.get(worst_hour_str, 0.0),
+        best_hour_utc=int(best_hour_str) if best_hour_str is not None else -1,
+        worst_hour_utc=int(worst_hour_str) if worst_hour_str is not None else -1,
+        best_hour_avg_score=hour_avg.get(best_hour_str, 0.0) if best_hour_str is not None else 0.0,
+        worst_hour_avg_score=hour_avg.get(worst_hour_str, 0.0) if worst_hour_str is not None else 0.0,
         evidence_index=evidence,
     )
     pkt.content_hash = pkt.compute_hash()

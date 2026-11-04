@@ -6,7 +6,7 @@
       "best_hour_utc": 8,
       "best_symbol": "BTCUSDT",
       "best_symbol_avg_score": 81.67,
-      "content_hash": "c89183fd452e4408",
+      "content_hash": "cfdad74a013cd0f0",
       "evidence_counts": {
         "all_trades": 6,
         "limit_trades": 2,
@@ -18,7 +18,7 @@
       },
       "market_order_count": 4,
       "median_vwap_deviation_bps": 50.0,
-      "metrics_version": "1.0.0",
+      "metrics_version": "1.1.0",
       "pct_beating_vwap": 0.3333,
       "symbol_avg_fill_score": {
         "BTCUSDT": 81.67,
@@ -37,7 +37,7 @@
     },
     "fee": {
       "avg_fee_per_trade_usd": 0.2,
-      "content_hash": "d286b6d5d8720f99",
+      "content_hash": "3ccbeede005ffcd5",
       "evidence_counts": {
         "all_trades": 5,
         "maker_trades": 2,
@@ -47,7 +47,7 @@
       "fee_drag_bps": 10.0,
       "longest_taker_streak": 2,
       "maker_ratio": 0.4,
-      "metrics_version": "1.0.0",
+      "metrics_version": "1.1.0",
       "savings_at_050_bps": 0.0,
       "savings_at_050_usd": 0.0,
       "savings_at_080_bps": 0.0,
@@ -63,7 +63,7 @@
       "best_hour_utc": 8,
       "clean_market_count": 2,
       "clean_slippage_avg_bps": 1.0,
-      "content_hash": "40095a5276dd031f",
+      "content_hash": "9e85828f287c8d71",
       "evidence_counts": {
         "adverse_market_trades": 2,
         "all_trades": 7,
@@ -77,7 +77,7 @@
       "limit_order_count": 3,
       "market_order_count": 4,
       "median_slippage_bps": 8.5,
-      "metrics_version": "1.0.0",
+      "metrics_version": "1.1.0",
       "p90_slippage_bps": 17.6,
       "pct_negative_slippage": 0.25,
       "reversion_30s_avg_bps": 6.0,
@@ -98,7 +98,7 @@
         "ETHUSDT": 0.5
       },
       "avg_trade_usd": 166.67,
-      "content_hash": "dd64f06660f44132",
+      "content_hash": "00057e2375cb259b",
       "evidence_counts": {
         "adverse_trades": 2,
         "all_trades": 6,
@@ -109,7 +109,7 @@
       "hour_hhi": 0.5,
       "large_trade_count": 0,
       "median_trade_usd": 175.0,
-      "metrics_version": "1.0.0",
+      "metrics_version": "1.1.0",
       "p90_trade_usd": 250.0,
       "symbol_hhi": 0.625,
       "symbol_notional_shares": {

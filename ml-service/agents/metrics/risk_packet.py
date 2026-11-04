@@ -12,6 +12,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from config.versions import METRICS_VERSION
+from agents.metrics.time_utils import utc_hour_key
 
 
 @dataclass
@@ -146,12 +147,9 @@ def build_risk_packet(trades: list[dict], user_id: str, symbol: str) -> RiskMetr
         symbol_trade_ids[sym].append(tid)
 
         # hour aggregation
-        try:
-            ts = t.get("executedAt", "")
-            hour = str(datetime.fromisoformat(ts.replace("Z", "+00:00")).hour).zfill(2)
-        except Exception:
-            hour = "00"
-        hour_counts[hour] = hour_counts.get(hour, 0) + 1
+        hour = utc_hour_key(t.get("executedAt"))
+        if hour is not None:
+            hour_counts[hour] = hour_counts.get(hour, 0) + 1
 
         # whale adverse
         if t.get("whaleAdverse", False):
@@ -172,10 +170,11 @@ def build_risk_packet(trades: list[dict], user_id: str, symbol: str) -> RiskMetr
     top_sym_frac = sym_shares.get(top_sym, 0.0)
 
     # ── hour HHI ─────────────────────────────────────────────────────────────
-    hour_shares = [c / n for c in hour_counts.values()] if n > 0 else []
+    n_hours = sum(hour_counts.values())  # trades with a parsed hour
+    hour_shares = [c / n_hours for c in hour_counts.values()] if n_hours > 0 else []
     hhi_hour = _hhi(hour_shares)
-    top_hour_str = max(hour_counts, key=hour_counts.get) if hour_counts else "00"
-    top_hour_frac = hour_counts.get(top_hour_str, 0) / n if n > 0 else 0.0
+    top_hour_str = max(hour_counts, key=hour_counts.get) if hour_counts else None
+    top_hour_frac = hour_counts[top_hour_str] / n_hours if top_hour_str is not None else 0.0
 
     # ── size distribution ─────────────────────────────────────────────────────
     sorted_notionals = sorted(notionals)
@@ -213,7 +212,7 @@ def build_risk_packet(trades: list[dict], user_id: str, symbol: str) -> RiskMetr
         top_symbol_by_notional=top_sym,
         top_symbol_notional_fraction=round(top_sym_frac, 6),
         hour_hhi=hhi_hour,
-        top_hour_utc=int(top_hour_str),
+        top_hour_utc=int(top_hour_str) if top_hour_str is not None else -1,
         top_hour_trade_fraction=round(top_hour_frac, 6),
         hour_trade_counts=hour_counts,
         avg_trade_usd=round(avg_n, 4),

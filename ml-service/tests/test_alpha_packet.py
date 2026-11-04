@@ -153,3 +153,41 @@ class TestIntegrity:
     def test_worst5_in_evidence_matches_field(self):
         pkt = build_alpha_packet(FIXTURE_TRADES, "u1", "BTCUSDT")
         assert pkt.evidence_index["worst5_vwap_trades"] == pkt.worst5_vwap_trade_ids
+
+
+class TestDatetimeAndVwap5minDocs:
+    """1c.1: native datetimes + stored `vwap5min` field, through the loader's normaliser.
+    Before the fix: every hour collapsed to "00" ({"00": 410/6 = 68.3333}, best = worst = 0) and
+    vwap_trades_count was 0 because the loader never projected/mapped vwap5min.
+    After: same values as the string fixture."""
+
+    def _docs(self):
+        from datetime import datetime
+        from agents.metrics.loader import normalise_trade_doc
+        out = []
+        for t in FIXTURE_TRADES:
+            d = dict(t)
+            d["_id"] = d.pop("id")
+            d["executedAt"] = datetime.fromisoformat(d["executedAt"].replace("Z", ""))
+            if "vwap5m" in d:
+                d["vwap5min"] = d.pop("vwap5m")
+            out.append(normalise_trade_doc(d))
+        return out
+
+    def test_vwap_and_hours(self):
+        pkt = build_alpha_packet(self._docs(), "u1", "ALL")
+        assert pkt.vwap_trades_count == 3
+        assert abs(pkt.avg_vwap_deviation_bps - 50.0) < 1e-4
+        assert abs(pkt.median_vwap_deviation_bps - 50.0) < 1e-4
+        assert abs(pkt.pct_beating_vwap - 1 / 3) < 1e-4
+        # 08: (70+50+90)/3 = 70 ; 14: (85+60+55)/3 = 66.6667
+        assert pkt.hour_avg_fill_score == {"08": 70.0, "14": 66.6667}
+        assert pkt.best_hour_utc == 8
+        assert pkt.worst_hour_utc == 14
+
+    def test_unparsed_hours_skipped_from_hours_only(self):
+        trades = [{"id": "a", "orderType": "MARKET", "fillScore": 60.0, "symbol": "X", "executedAt": None}]
+        pkt = build_alpha_packet(trades, "u1", "X")
+        assert pkt.hour_avg_fill_score == {}
+        assert pkt.best_hour_utc == -1 and pkt.worst_hour_utc == -1
+        assert pkt.best_hour_avg_score == 0.0 and pkt.worst_hour_avg_score == 0.0
