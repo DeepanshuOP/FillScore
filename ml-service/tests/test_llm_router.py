@@ -288,8 +288,11 @@ def test_committed_yaml_follows_the_probe_order():
     models = lambda role: [cfg.models[i].model for i in cfg.roles[role]]
     # specialist: all valid and grounded; latency 808 < 1116 < 1404 ms
     assert models("specialist")[:3] == ["qwen/qwen3.8-27b", "openai/gpt-oss-20b", "openai/gpt-oss-120b"]
-    # synthesis: qwen 851 ms and 120b 1811 ms valid; 20b failed validation -> last
-    assert models("synthesis")[:2] == ["qwen/qwen3.8-27b", "openai/gpt-oss-120b"]
+    # synthesis (1c.6): the larger gpt-oss-120b first for the highest-stakes call, then qwen;
+    # 20b failed validation in the probe -> last
+    assert models("synthesis")[:2] == ["openai/gpt-oss-120b", "qwen/qwen3.8-27b"]
+    # specialist and debate order unchanged from the probe
+    assert models("debate")[:3] == ["qwen/qwen3.8-27b", "openai/gpt-oss-20b", "openai/gpt-oss-120b"]
     assert models("synthesis")[-1] == "openai/gpt-oss-20b"
     for role in cfg.roles.values():
         for model_id in role:
@@ -348,3 +351,35 @@ def test_a_usage_write_failure_does_not_throw_away_a_valid_reply():
     router, fake, db, _ = make_router({"model-a": [reply(GOOD)]})
     router.usage_store = FlakyStore(db)
     assert run(router.complete("specialist", "s", "u", Verdict, max_tokens=10)).rating == "GOOD"
+
+
+# ── 1c.9 hard cap on HTTP attempts (live-run budget) ─────────────────────────
+
+def test_attempt_cap_stops_further_calls_with_budget_reason():
+    # cap 2: two successful completes use 2 HTTP attempts; the third complete makes no call.
+    router, fake, _, _ = make_router({"model-a": [reply(GOOD), reply(GOOD), reply(GOOD)]})
+    router.http_attempt_cap = 2
+    run(router.complete("specialist", "s", "u", Verdict, max_tokens=10))
+    run(router.complete("specialist", "s", "u", Verdict, max_tokens=10))
+    with pytest.raises(RouterExhausted) as e:
+        run(router.complete("specialist", "s", "u", Verdict, max_tokens=10))
+    assert e.value.reason == "budget"
+    assert len(fake.calls) == 2 and router.http_attempts == 2
+
+
+def test_attempt_cap_counts_retries_and_is_never_overshot():
+    # 429, 429, 429 would be 3 attempts on model-a; with cap 2 only 2 HTTP calls happen in total.
+    errs = [HTTPError(429, {"retry-after": "1"})] * 3
+    router, fake, _, _ = make_router({"model-a": errs, "model-b": [reply(GOOD)]})
+    router.http_attempt_cap = 2
+    with pytest.raises(RouterExhausted) as e:
+        run(router.complete("specialist", "s", "u", Verdict, max_tokens=10))
+    assert e.value.reason == "budget"
+    assert len(fake.calls) == 2 and router.http_attempts == 2
+
+
+def test_no_cap_by_default():
+    router, _, _, _ = make_router({"model-a": [reply(GOOD)]})
+    assert router.http_attempt_cap is None
+    run(router.complete("specialist", "s", "u", Verdict, max_tokens=10))
+    assert router.http_attempts == 1

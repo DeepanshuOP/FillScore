@@ -28,7 +28,7 @@ The flagship feature of FillScore is the Execution Council, a multi-agent system
             └────────┬──────────┘
                      ▼
             [Verification Gate]
-          (Counterfactual Checks)
+          (Counterfactual Replay)
                      │
                      ▼
             [Synthesis Agent]
@@ -36,11 +36,12 @@ The flagship feature of FillScore is the Execution Council, a multi-agent system
 ```
 
 **Key Properties:**
-- **Compute-then-judge:** LLMs never originate numbers, only reason over deterministic packet data.
+- **Compute-then-judge:** LLMs never write numbers. They write `{{namespace.key}}` placeholders naming deterministic packet keys, and a deterministic renderer inserts the formatted values.
+- **Blocking grounding:** Any numeral in LLM text that the renderer did not insert is a violation: one regeneration with feedback, then the offending sentences are deleted and recorded.
 - **Adversarial debate:** Prosecution and defense argue over each verdict before synthesis.
-- **Verification gate:** Recommendations must pass counterfactual checks before surfacing.
-- **Walk-forward eval:** Leakage-free temporal split at 2024-01-15; E1 faithfulness = 1.0 across all runs.
-- **Zero cost:** Runs entirely on Groq free tier ($0/run, llama-3.3-70b-versatile).
+- **Verification gate:** The synthesis proposes structured recommendations from a closed set of action types. Code replays the user's own past trades for the audited period to recompute the effect, and a finding passes only if it is material and consistent with its siblings. Rejected items get one forced re-reason, then are dropped. The dollar figure shown is the recomputed one.
+- **Eval:** Single temporal cutoff at 2024-01-15 (not true walk-forward). The harness call was fixed in Phase 1c, but its trade projection still reads outdated field names (F-11), so the eval has not been re-run; the tables below predate Phase 1c.
+- **Zero cost:** Free tiers only ($0/run): Groq and, when `GEMINI_API_KEY` is set, Google Gemini. Models are routed by `ml-service/agents/llm_router.py` from `ml-service/config/llm_routes.yaml`.
 
 ## FillScore Grading
 
@@ -119,7 +120,7 @@ npm run verify-seed   # confirms 6 demo users, all grades locked
 
 ## Research
 
-FillScore is the subject of an ongoing research paper examining verifiable LLM-based execution auditing. Key results from the leakage-free walk-forward evaluation (temporal split 2024-01-15, n=3 consistency runs per profile):
+FillScore is the subject of an ongoing research paper examining verifiable LLM-based execution auditing. Results from an older commit, using a single temporal cutoff (2024-01-15) with n=3 consistency runs per profile. These tables predate Phase 1c and will be re-run. The E1 value of 1.0 was inflated: number-free and failed outputs scored 1.0.
 
 | User Profile | Score (Grade) | E1 Faithfulness | E2 Consistency | E3 Utility (Pass Rate) | % Vacuous | Actionable Recs |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |

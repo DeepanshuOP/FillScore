@@ -3,8 +3,9 @@
 For every model in config/llm_routes.yaml whose provider key env var is present, sends the REAL
 specialist (Fee Optimizer) and synthesis prompts built from tests/fixtures/probe_packet.json
 (no database), one attempt each (no retries, no fallback), and records per call:
-HTTP status, JSON extraction, Pydantic validation, latency, tokens, and numerals in the output
-that are not in the packet (agents.grounding's extractor).
+HTTP status, JSON extraction, Pydantic validation, latency, tokens, and grounding violations after
+rendering (agents.grounding.check over the same text fields the pipeline grounds: stray numerals and
+unknown placeholders).
 
 Hard budget: at most CALLS_PER_MODEL (2, limit 3) calls per model and MAX_TOTAL_CALLS (15) overall.
 Keys are read from the environment by name only and never printed.
@@ -27,7 +28,9 @@ sys.path.insert(0, str(ROOT))
 from pydantic import ValidationError  # noqa: E402
 
 from agents import fee_optimizer, synthesis  # noqa: E402
-from agents.grounding import _extract_numeric_tokens, _packet_numeric_values  # noqa: E402
+from agents.grounded_call import collect  # noqa: E402
+from agents.grounding import check  # noqa: E402
+from agents.render import CF_DUMMY  # noqa: E402
 from agents.llm_client import extract_json_from_response, status_of, usage_of  # noqa: E402
 from agents.llm_router import load_routes  # noqa: E402
 from agents.schemas import FeeVerdict, SynthesisLLMOutput, TradeContext  # noqa: E402
@@ -64,22 +67,36 @@ class _Packet:
         return self._d
 
 
+SPECIALIST_PATTERNS = [fee_optimizer.TEXT_FIELD, "flags.*"]
+SYNTHESIS_PATTERNS = synthesis.TEXT_PATTERNS + [synthesis.RATIONALE_PATTERN]
+
+
 def _prompts(fixture: dict):
+    """(role, system, user, schema, max_tokens, text-field patterns): the pipeline's real prompts.
+    No trades in the fixture: the synthesis action list says so (observations only)."""
     p = {k: _Packet(v) for k, v in fixture["packets"].items()}
-    ctx = TradeContext(userId="probe", symbol=fixture["symbol"])
+    tctx = TradeContext(userId="probe", symbol=fixture["symbol"])
     return [
-        ("specialist", fee_optimizer.SYSTEM_PROMPT, fee_optimizer.build_user_prompt(ctx, p["fee"]), FeeVerdict,
-         fee_optimizer.MAX_TOKENS),
+        ("specialist", fee_optimizer.SYSTEM_PROMPT,
+         fee_optimizer.build_user_prompt(tctx, p["fee"], {"fee": fixture["packets"]["fee"]}), FeeVerdict,
+         fee_optimizer.MAX_TOKENS, SPECIALIST_PATTERNS),
         ("synthesis", synthesis.SYNTHESIS_SYSTEM_PROMPT,
-         synthesis.build_user_prompt(ctx, VERDICTS, p["fee"], p["risk"], p["liquidity"], p["alpha"], DEBATE),
-         SynthesisLLMOutput, synthesis.MAX_TOKENS),
+         synthesis.build_user_prompt(tctx, VERDICTS, p["fee"], p["risk"], p["liquidity"], p["alpha"], DEBATE),
+         SynthesisLLMOutput, synthesis.MAX_TOKENS, SYNTHESIS_PATTERNS),
     ]
 
 
-def _output_text(parsed: dict | None, raw: str) -> str:
-    if not parsed:
-        return raw or ""
-    return " ".join(str(v) for k, v in parsed.items() if isinstance(v, (str, list)) and k != "cited_evidence")
+def violations(parsed: dict | None, patterns: list[str], ctx: dict) -> list[str]:
+    """Grounding violations after rendering, over the fields the pipeline grounds (rationales may
+    also use {{cf.*}}), as "kind:token" strings."""
+    if not isinstance(parsed, dict):
+        return []
+    with_cf = {**ctx, "cf": CF_DUMMY}
+    found: list[str] = []
+    for path, text in collect(parsed, patterns).items():
+        c = check(text, with_cf if path.endswith(".rationale_text") else ctx)
+        found.extend(f"{v.kind}:{v.token}" for v in c.violations)
+    return found
 
 
 async def probe(out_path: pathlib.Path) -> list[dict]:
@@ -88,9 +105,7 @@ async def probe(out_path: pathlib.Path) -> list[dict]:
     load_service_env(str(ROOT / ".env"), str(ROOT.parent / "backend" / ".env"))
     routes = load_routes()
     fixture = json.loads(FIXTURE.read_text())
-    packet_numbers = set()
-    for d in fixture["packets"].values():
-        packet_numbers |= _packet_numeric_values(d)
+    ctx = {ns: d for ns, d in fixture["packets"].items()}
     prompts = _prompts(fixture)
     assert len(prompts) <= 3, "never more than 3 calls per model"
 
@@ -105,7 +120,7 @@ async def probe(out_path: pathlib.Path) -> list[dict]:
             continue
         client = AsyncOpenAI(base_url=provider.base_url, api_key=key, max_retries=0,
                              timeout=provider.timeout_s, default_headers=provider.headers or None)
-        for role, system, user, schema, max_tokens in prompts[:CALLS_PER_MODEL]:
+        for role, system, user, schema, max_tokens, patterns in prompts[:CALLS_PER_MODEL]:
             if total >= MAX_TOTAL_CALLS:
                 break
             total += 1
@@ -131,8 +146,7 @@ async def probe(out_path: pathlib.Path) -> list[dict]:
                         row["error"] = f"validation: {ve.error_count()} error(s)"
                 elif not raw.strip():
                     row["error"] = "empty completion"
-                tokens = _extract_numeric_tokens(_output_text(parsed, raw))
-                row["ungrounded"] = sorted({t for t in tokens if t not in packet_numbers})
+                row["ungrounded"] = sorted(set(violations(parsed, patterns, ctx)))
             except Exception as exc:  # status and class only: never the message (could echo headers)
                 row["status"] = status_of(exc)
                 row["error"] = type(exc).__name__
@@ -156,7 +170,7 @@ def _write(path: pathlib.Path, rows: list[dict], providers_seen: dict, total: in
         "Provider keys present (name check only): "
         + ", ".join(f"{p}={'yes' if ok else 'no'}" for p, ok in providers_seen.items()),
         "",
-        "| provider/model | role | HTTP | JSON extracted | Pydantic valid | latency ms | tokens | numerals not in packet | note |",
+        "| provider/model | role | HTTP | JSON extracted | Pydantic valid | latency ms | tokens | grounding violations after rendering | note |",
         "|---|---|---|---|---|---|---|---|---|",
     ]
     for r in rows:

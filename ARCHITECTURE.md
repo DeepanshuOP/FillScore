@@ -16,7 +16,7 @@ this file changing. Regenerate the backend table with `npm run docs:routes` in `
               ▼                                              ▼
         Express API (:3001) ───── MongoDB Atlas ◄───── FastAPI ml-service (:8000)
               │                    (db: fillscore)            │
-              ├─► Binance / Bybit / OKX (read-only keys)      └─► Groq (llama-3.3-70b-versatile)
+              ├─► Binance / Bybit / OKX (read-only keys)      └─► Groq / Gemini free tiers (llm_routes.yaml)
               └─► Binance public klines (arrival price, VWAP, spread proxy)
 ```
 
@@ -142,8 +142,11 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/ml/agents/council/telemetry` | Token and latency summary |
 
 Pipeline: deterministic metric packets (`agents/metrics`) → four specialists (liquidity, fee, alpha,
-risk) → bounded two-round prosecution/defense debate → synthesis → verification gate that recomputes
-every claimed saving → grounding check that every cited number exists in a packet. Errors reach the
+risk) → bounded two-round prosecution/defense debate → synthesis (structured recommendations) →
+placeholder rendering (`agents/render.py`) + blocking grounding (`agents/grounding.py`: regenerate once,
+then redact stray numerals) → counterfactual verifier (`agents/verification.py`, `agents/counterfactual.py`:
+replay the user's trades, one forced re-reason, then drop) → persistence. Models come from
+`agents/llm_router.py` and `config/llm_routes.yaml`. Errors reach the
 browser only as typed codes (`RATE_LIMIT_EXHAUSTED`, `DB_UNAVAILABLE`, `NO_DATA`, `INTERNAL`) with
 fixed messages. A run budget (`config/budget.py`) refuses runs past the free-tier allowance instead
 of letting a mid-run 429 degrade the result into default verdicts. `config/env_loader.py` fixes env

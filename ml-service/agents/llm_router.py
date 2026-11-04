@@ -46,6 +46,10 @@ class RouterExhausted(Exception):
         self.reason = reason
 
 
+class AttemptCapReached(Exception):
+    """The router's HTTP-attempt cap was hit before a request was sent (never retried)."""
+
+
 @dataclass(frozen=True)
 class Provider:
     name: str
@@ -208,6 +212,11 @@ class LLMRouter:
         self._sleep = sleep
         self._day_fn = day_fn
         self._clients: dict[str, Any] = {}
+        # Optional process-wide hard cap on HTTP attempts (retries included), used by live scripts
+        # with a fixed call budget. Once reached, complete() raises RouterExhausted(reason="budget")
+        # and no further request is sent. None = no cap.
+        self.http_attempt_cap: int | None = None
+        self.http_attempts = 0
 
     # -- lookups --
     def _key(self, provider: Provider) -> str:
@@ -271,6 +280,9 @@ class LLMRouter:
             out[role] = cands[0].label if cands else "none"
         return out
 
+    def _cap_reached(self) -> bool:
+        return self.http_attempt_cap is not None and self.http_attempts >= self.http_attempt_cap
+
     # -- the call --
     async def complete(
         self,
@@ -292,6 +304,8 @@ class LLMRouter:
             invalid = 0
             attempt = 0
             while True:
+                if self._cap_reached():
+                    raise RouterExhausted(role, "budget")
                 if not await self._under_budget(c):
                     break
                 any_called = True
@@ -330,6 +344,9 @@ class LLMRouter:
             state["t0"] = _clock()
 
         async def _call():
+            if self._cap_reached():
+                raise AttemptCapReached()
+            self.http_attempts += 1
             state["attempt"] += 1
             kwargs = dict(
                 model=c.model,

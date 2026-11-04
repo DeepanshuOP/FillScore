@@ -2,10 +2,10 @@ import os
 
 CLAIM_EVIDENCE_MAP = [
     {
-        "contribution": "Compute-then-judge grounding contract with a measured faithfulness metric (E1). No reference repo can compute this.",
-        "implementation": "agents/grounding.py:check_grounding",
+        "contribution": "Compute-then-judge grounding contract: LLMs reference values only through {{namespace.key}} placeholders filled by a deterministic renderer; any other numeral blocks the output (one regeneration with feedback, then sentence redaction). Faithfulness (E1) is null for number-free or degraded runs.",
+        "implementation": "agents/grounding.py:grounded_complete",
         "metric_or_table": "Table 1 (Faithfulness)",
-        "status": "measured_pilot"
+        "status": "pending_full_eval"
     },
     {
         "contribution": "Adversarial execution-attribution debate (prosecution/defense/judge) — audits skill vs luck vs market.",
@@ -14,13 +14,13 @@ CLAIM_EVIDENCE_MAP = [
         "status": "measured_pilot"
     },
     {
-        "contribution": "Deterministic counterfactual verification of LLM recommendations with forced self-correction.",
-        "implementation": "agents/verification.py:verify_recommendations",
+        "contribution": "Deterministic counterfactual verification: structured recommendations are replayed on the user's own past trades; a finding passes only if valid, material and non-contradictory; rejected items get one forced re-reason, then are dropped.",
+        "implementation": "agents/verification.py:run_gate",
         "metric_or_table": "Table 3 (Utility)",
-        "status": "measured_pilot"
+        "status": "pending_full_eval"
     },
     {
-        "contribution": "Leakage-free walk-forward evaluation of an auditing (not trading) agent system on real microstructure.",
+        "contribution": "Leakage-guarded temporal evaluation (single 2024-01-15 cutoff, not yet walk-forward) of an auditing (not trading) agent system on real microstructure.",
         "implementation": "eval/harness.py:assert_no_future_leakage",
         "metric_or_table": "E1/E2/E3 leakage bounds",
         "status": "measured_pilot"

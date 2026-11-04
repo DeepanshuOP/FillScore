@@ -4,7 +4,8 @@ Anonymous visitors never trigger a live Council run on a demo account; they are 
 run or the fixture this script writes to ml-service/demo_runs/<demo-id>.json.
 
 For each of the 3 eval demo users it loads that account's packets from MongoDB (read-only), runs
-one live Council through the free-model router (9 calls, counted in the `llm_usage` collection),
+one live Council through the free-model router (9 base calls, plus any grounding regenerations and
+one forced re-reason; all counted in the `llm_usage` collection),
 and writes the fixture only if the run is NOT degraded. A degraded run is reported and skipped.
 
 Needs: working MONGODB_URI credentials and at least one provider key (GROQ_API_KEY today).
@@ -34,7 +35,11 @@ SYMBOL = "BTCUSDT"                                                      # what t
 OUT_DIR = ROOT / "demo_runs"
 
 
-async def generate(persist: bool, users: list[str]) -> int:
+GAP_SECONDS = 65   # Groq counts tokens per minute; space the users so one run never spills into the next
+
+
+async def generate(persist: bool, users: list[str], max_calls: int | None = None,
+                   gap_s: float = GAP_SECONDS, sleep=asyncio.sleep) -> int:
     from agents.council import load_packets, run_council_pipeline
     from agents.llm_router import get_default_router
 
@@ -43,15 +48,24 @@ async def generate(persist: bool, users: list[str]) -> int:
         print("Refused: the daily AI budget in llm_usage has no room for a full run today.")
         return 1
 
+    router.http_attempt_cap = max_calls  # hard cap on HTTP attempts for the whole script (retries included)
     failures = 0
-    for account in users:
-        fee, risk, liq, alpha = await load_packets(account, SYMBOL)
+    for i, account in enumerate(users):
+        if i > 0 and gap_s:
+            await sleep(gap_s)
+        if max_calls is not None and router.http_attempts >= max_calls:
+            print(f"{account}: skipped, the call budget of {max_calls} is used up")
+            failures += 1
+            continue
+        before = router.http_attempts
+        (fee, risk, liq, alpha), trades = await load_packets(account, SYMBOL)
         if fee.trade_count == 0:
             print(f"{account}: no trades for {SYMBOL}, skipped")
             failures += 1
             continue
         result = await run_council_pipeline(account, account, SYMBOL, fee, risk, liq, alpha,
-                                            llm=router, persist=persist)
+                                            llm=router, persist=persist, trades=trades)
+        print(f"{account}: {router.http_attempts - before} HTTP attempts (total {router.http_attempts})")
         if result.degraded:
             print(f"{account}: DEGRADED, not written. Reasons: {result.degraded_reasons}")
             failures += 1
@@ -72,12 +86,14 @@ def main() -> int:
     ap.add_argument("--yes", action="store_true", help="confirm live LLM calls and DB reads/writes")
     ap.add_argument("--persist", action="store_true", help="also insert the runs into council_runs")
     ap.add_argument("--user", action="append", choices=DEMO_USERS, help="only these demo users")
+    ap.add_argument("--max-calls", type=int, default=None,
+                    help="hard cap on HTTP attempts across all users (retries included)")
     args = ap.parse_args()
     if not args.yes:
-        print("This makes live LLM calls (9 per demo user) and writes llm_usage. Re-run with --yes.")
+        print("This makes live LLM calls (9+ per demo user) and writes llm_usage. Re-run with --yes.")
         return 2
     load_service_env(str(ROOT / ".env"), str(ROOT.parent / "backend" / ".env"))
-    return asyncio.run(generate(args.persist, args.user or DEMO_USERS))
+    return asyncio.run(generate(args.persist, args.user or DEMO_USERS, max_calls=args.max_calls))
 
 
 if __name__ == "__main__":

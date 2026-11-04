@@ -93,10 +93,13 @@ models:
 #               gpt-oss-20b failed Pydantic validation and wrote an ungrounded numeral, so it goes last.
 # Unprobed Gemini models sit after the probed passes and before any probed failure.
 # Debate was not probed; its JSON shape is closest to the specialists', so it uses their order.
+# Phase 1c.6: synthesis puts gpt-oss-120b first. Specialists and debate start on qwen, so this
+# spreads daily tokens across model pools and puts the larger model on the single
+# highest-stakes call (the judge and its counterfactual proposals). Specialist/debate order stays as probed.
 roles:
   specialist: [groq-qwen3.8-27b, groq-gpt-oss-20b, groq-gpt-oss-120b, gemini-3.5-flash-lite, gemini-3.8-flash]
   debate: [groq-qwen3.8-27b, groq-gpt-oss-20b, groq-gpt-oss-120b, gemini-3.5-flash-lite, gemini-3.8-flash]
-  synthesis: [groq-qwen3.8-27b, groq-gpt-oss-120b, gemini-3.8-flash, groq-gpt-oss-20b]
+  synthesis: [groq-gpt-oss-120b, groq-qwen3.8-27b, gemini-3.8-flash, groq-gpt-oss-20b]
 
 # Pre-run capacity check: a run is refused up front ("daily AI budget reached") unless every
 # role has a candidate with room for this many calls and tokens. From the 1b.7 probe: specialist
