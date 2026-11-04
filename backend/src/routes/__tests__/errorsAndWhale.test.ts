@@ -39,7 +39,8 @@ describe('500 responses do not echo internal error text', () => {
         ['GET', '/api/audit/coach?userId=demo-okx'],
         ['GET', '/api/audit/analytics/whale-correlation?userId=demo-okx'],
         ['GET', '/api/attribution?userId=demo-okx'],
-        ['POST', '/api/audit/run?userId=demo-okx'],
+        // POST /api/audit/run?userId=demo-okx was here; since F-08 (item 1.4) a demo run is refused
+        // with 403 before any database access, so it can no longer reach the failing query.
     ])('%s %s answers 500 with a generic body', async (method, url) => {
         failing();
         const res = await (request(app) as any)[method.toLowerCase()](url);

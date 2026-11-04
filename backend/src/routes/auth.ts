@@ -23,7 +23,7 @@ const setRefreshCookie = (res: Response, token: string, isOAuthCallback: boolean
     res.cookie('refreshToken', token, options);
 };
 
-const clearRefreshCookie = (res: Response) => {
+export const clearRefreshCookie = (res: Response) => {
     const options = getRefreshCookieOptions({
         isProduction: process.env.NODE_ENV === 'production'
     });
@@ -234,11 +234,15 @@ router.post('/oauth/exchange', authLimiter, requireTrustedOrigin(), async (req: 
     }
 });
 
+const OAUTH_ERROR_CODES = new Set(['invalid_state', 'email_required', 'unverified_email_rejected']);
+
 const oauthErrorHandler = (provider: string) => {
     return (req: Request, res: Response, next: any) => {
-        passport.authenticate(provider, { session: false }, (err: any, user: any) => {
+        passport.authenticate(provider, { session: false }, (err: any, user: any, info: any) => {
             if (err || !user) {
-                const errorCode = err?.message || 'auth_failed';
+                // Only fixed codes reach the URL: provider/library error text never does.
+                const candidate = err?.message || info?.message;
+                const errorCode = OAUTH_ERROR_CODES.has(candidate) ? candidate : 'auth_failed';
                 return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(errorCode)}`);
             }
             req.user = user;

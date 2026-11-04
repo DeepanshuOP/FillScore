@@ -3,12 +3,20 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import mongoose from 'mongoose';
 import { createApp } from '../../app';
 import { Trade } from '../../models/Trade';
+import { User } from '../../models/User';
+import { issueTokenPair } from '../../services/authService';
 
 const app = createApp();
 
 describe('audit route input validation', () => {
+    // Mutating routes are refused for demo accounts since F-08 (item 1.4), so the POST/PATCH
+    // validation cases below run as a signed-in user instead of ?userId=demo-disciplined.
+    let token: string;
+
     beforeAll(async () => {
         await mongoose.connect(process.env.MONGODB_URI!);
+        const user = await User.create({ email: 'validation@example.com', emailVerified: true });
+        token = (await issueTokenPair(user._id.toString())).accessToken;
         await Trade.create({
             userId: 'demo-disciplined', accountId: 'demo-disciplined', dataSource: 'synthetic-demo',
             exchange: 'binance', tradeId: 'v1', orderId: 'o1', symbol: 'BTCUSDT', side: 'BUY',
@@ -22,7 +30,7 @@ describe('audit route input validation', () => {
     });
 
     it.each(['-1', '999999', '0', 'abc'])('POST /run rejects daysBack=%s with 400', async (v) => {
-        const res = await request(app).post(`/api/audit/run?userId=demo-disciplined&daysBack=${v}`);
+        const res = await request(app).post(`/api/audit/run?daysBack=${v}`).set('Authorization', `Bearer ${token}`);
         expect(res.status).toBe(400);
         expect(res.body.error).toBe('invalid_request');
         expect(JSON.stringify(res.body.details)).toContain('daysBack');
@@ -62,7 +70,8 @@ describe('audit route input validation', () => {
 
     it('PATCH /trades/:id/note rejects a non-string note', async () => {
         const res = await request(app)
-            .patch('/api/audit/trades/v1/note?userId=demo-disciplined')
+            .patch('/api/audit/trades/v1/note')
+            .set('Authorization', `Bearer ${token}`)
             .send({ note: { $ne: 1 } });
         expect(res.status).toBe(400);
     });

@@ -107,25 +107,20 @@ describe('Audit Route Read-Only and POST /run Tests', () => {
         expect(finalCount).toBe(initialCount);
     });
 
-    it('4. POST /api/audit/run?userId=demo-disciplined computes, upserts SINGLE canonical audit, returns summary', async () => {
+    // F-08 (phase 1a, item 1.4): this test used to assert that an anonymous demo run rewrote the
+    // canonical demo audit. Demo accounts are now read-only, so the run is refused and the
+    // seeded audit is left exactly as it was.
+    it('4. POST /api/audit/run?userId=demo-disciplined is refused (403) and leaves the canonical audit untouched', async () => {
         const initialCount = await Audit.countDocuments({ accountId: 'demo-disciplined' });
-        
+        const before = await Audit.findOne({ accountId: 'demo-disciplined' }).lean();
+
         const res1 = await request(app).post('/api/audit/run?userId=demo-disciplined');
-        expect(res1.status).toBe(200);
-        
-        const countAfterOne = await Audit.countDocuments({ accountId: 'demo-disciplined' });
-        expect(countAfterOne).toBe(initialCount); // UPSERT means it replaced the 1 existing doc, count shouldn't increase
-        
-        const res2 = await request(app).post('/api/audit/run?userId=demo-disciplined');
-        expect(res2.status).toBe(200);
-        
-        const countAfterTwo = await Audit.countDocuments({ accountId: 'demo-disciplined' });
-        expect(countAfterTwo).toBe(initialCount); // Still exactly 1 doc
-        
-        // Assert it updated the score from the static seed to a computed value
-        // Note: the computed value will be different from 88.88 because it runs the real scoring engine.
-        expect(res1.body.avgFillScore).not.toBe(88.88);
-        expect(res2.body.avgFillScore).toBe(res1.body.avgFillScore);
+        expect(res1.status).toBe(403);
+        expect(res1.body.error).toBe('demo_read_only');
+
+        expect(await Audit.countDocuments({ accountId: 'demo-disciplined' })).toBe(initialCount);
+        const after = await Audit.findOne({ accountId: 'demo-disciplined' }).lean();
+        expect(after!.avgFillScore).toBe(before!.avgFillScore);
     });
 
     it('5. Real-user isolation still holds: As token on GET /api/audit returns As saved audit only', async () => {

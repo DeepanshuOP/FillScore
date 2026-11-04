@@ -31,6 +31,8 @@ export function parseAllowedOrigins(originsStr?: string): string[] {
     return Array.from(new Set(origins));
 }
 
+const DEPLOY_MARKERS = ['RENDER', 'RENDER_SERVICE_ID', 'FILLSCORE_DEPLOY'];
+
 export function loadEnv(): Readonly<Env> {
     const requiredVars = [
         'MONGODB_URI', 
@@ -59,6 +61,18 @@ export function loadEnv(): Readonly<Env> {
 
     if (missingVars.length > 0) {
         throw new Error(`Missing or empty required environment variables: ${missingVars.join(', ')}`);
+    }
+
+    // F-27: AES-256-GCM needs a 32-byte key, supplied as 64 hex characters. Never echo the value.
+    if (!/^[0-9a-fA-F]{64}$/.test(process.env.ENCRYPTION_KEY as string)) {
+        throw new Error('ENCRYPTION_KEY must be 64 hex characters (32 bytes)');
+    }
+
+    // F-17: a deployed process must run with NODE_ENV=production (secure cookies, no debug output).
+    // Render sets RENDER / RENDER_SERVICE_ID; the backend Docker image sets FILLSCORE_DEPLOY=1.
+    const deployMarker = DEPLOY_MARKERS.find(name => (process.env[name] || '').trim() !== '');
+    if (deployMarker && process.env.NODE_ENV !== 'production') {
+        throw new Error(`NODE_ENV must be "production" in a deployed environment (${deployMarker} is set)`);
     }
 
     const config: Env = {

@@ -104,8 +104,9 @@ describe('Onboarding Routes', () => {
         await user.save();
         userId = user._id.toString();
 
+        // typ:'access' is required since access/refresh token types are checked on use (F-27, item 1.6)
         accessToken = jwt.sign(
-            { userId },
+            { userId, typ: 'access' },
             process.env.JWT_ACCESS_SECRET || 'test1',
             { expiresIn: '15m' }
         );

@@ -18,9 +18,7 @@ export function errorHandler(err: any, req: Request, res: Response, next: NextFu
         return res.status(401).json({ error: 'Failed to decrypt API keys', code: err.code, requestId });
     }
 
-    if (process.env.NODE_ENV === 'production') {
-        return res.status(500).json({ error: 'Internal server error', code: err.code || 'INTERNAL', requestId });
-    } else {
-        return res.status(500).json({ error: err.message, code: err.code || 'INTERNAL', stack: err.stack, requestId });
-    }
+    // F-17: never return a stack trace or raw error text, in any environment. The requestId ties
+    // the response to the server-side log line above.
+    return res.status(500).json({ error: 'Internal server error', code: 'INTERNAL', requestId });
 }

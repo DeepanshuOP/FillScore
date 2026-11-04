@@ -23,6 +23,9 @@ COPY --from=builder /app/dist ./dist
 # Run as non-root user (node user is built into official node images)
 USER node
 
+# F-17: marks this image as a deployment; the app refuses to boot unless NODE_ENV=production.
+ENV FILLSCORE_DEPLOY=1
+
 EXPOSE 3001
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \

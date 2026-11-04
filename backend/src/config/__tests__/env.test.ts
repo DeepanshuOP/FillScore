@@ -1,6 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { loadEnv, parseAllowedOrigins } from '../env';
 
+// 64 hex chars: loadEnv validates the key format at boot since F-27 (phase 1a item 1.6); this
+// placeholder used to be 'test_enc_key'.
+const TEST_ENC_KEY = 'ab'.repeat(32);
+
 describe('Environment Validation', () => {
     let originalEnv: NodeJS.ProcessEnv;
 
@@ -19,7 +23,7 @@ describe('Environment Validation', () => {
         process.env.PORT = '3001';
         process.env.BINANCE_API_KEY = 'test_key';
         process.env.BINANCE_API_SECRET = 'test_secret';
-        process.env.ENCRYPTION_KEY = 'test_enc_key';
+        process.env.ENCRYPTION_KEY = TEST_ENC_KEY;
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
         process.env.GOOGLE_CLIENT_ID = 'test_google_id';
@@ -37,7 +41,7 @@ describe('Environment Validation', () => {
         process.env.PORT = '3001';
         process.env.BINANCE_API_KEY = 'test_key';
         process.env.BINANCE_API_SECRET = 'test_secret';
-        process.env.ENCRYPTION_KEY = 'test_enc_key';
+        process.env.ENCRYPTION_KEY = TEST_ENC_KEY;
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
         process.env.GOOGLE_CLIENT_ID = 'test_google_id';
@@ -53,7 +57,7 @@ describe('Environment Validation', () => {
         process.env.PORT = ''; // empty string
         process.env.BINANCE_API_KEY = 'test_key';
         process.env.BINANCE_API_SECRET = 'test_secret';
-        process.env.ENCRYPTION_KEY = 'test_enc_key';
+        process.env.ENCRYPTION_KEY = TEST_ENC_KEY;
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
         process.env.GOOGLE_CLIENT_ID = 'test_google_id';
@@ -69,7 +73,7 @@ describe('Environment Validation', () => {
         process.env.PORT = '3001';
         process.env.BINANCE_API_KEY = 'test_key';
         process.env.BINANCE_API_SECRET = 'test_secret';
-        process.env.ENCRYPTION_KEY = 'test_enc_key';
+        process.env.ENCRYPTION_KEY = TEST_ENC_KEY;
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
         process.env.GOOGLE_CLIENT_ID = 'test_google_id';
@@ -87,7 +91,7 @@ describe('Environment Validation', () => {
         delete process.env.PORT;
         process.env.BINANCE_API_KEY = 'test_key';
         process.env.BINANCE_API_SECRET = 'test_secret';
-        process.env.ENCRYPTION_KEY = 'test_enc_key';
+        process.env.ENCRYPTION_KEY = TEST_ENC_KEY;
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
         process.env.GOOGLE_CLIENT_ID = 'test_google_id';
@@ -124,7 +128,7 @@ describe('Environment Validation', () => {
         process.env.PORT = '3001';
         process.env.BINANCE_API_KEY = 'test_key';
         process.env.BINANCE_API_SECRET = 'test_secret';
-        process.env.ENCRYPTION_KEY = 'test_enc_key';
+        process.env.ENCRYPTION_KEY = TEST_ENC_KEY;
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
         process.env.GOOGLE_CLIENT_ID = 'test_google_id';
@@ -147,7 +151,7 @@ describe('Environment Validation', () => {
         process.env.PORT = '3001';
         process.env.BINANCE_API_KEY = 'test_key';
         process.env.BINANCE_API_SECRET = 'test_secret';
-        process.env.ENCRYPTION_KEY = 'test_enc_key';
+        process.env.ENCRYPTION_KEY = TEST_ENC_KEY;
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
         process.env.GOOGLE_CLIENT_ID = 'test_google_id';
@@ -167,7 +171,7 @@ describe('Environment Validation', () => {
         process.env.PORT = '3001';
         process.env.BINANCE_API_KEY = 'test_key';
         process.env.BINANCE_API_SECRET = 'test_secret';
-        process.env.ENCRYPTION_KEY = 'test_enc_key';
+        process.env.ENCRYPTION_KEY = TEST_ENC_KEY;
         process.env.JWT_ACCESS_SECRET = 'test_access';
         process.env.JWT_REFRESH_SECRET = 'test_refresh';
         process.env.GOOGLE_CLIENT_ID = 'test_google_id';

@@ -23,12 +23,19 @@ export const VALID_DEMO_USERS = new Set([
     'demo-multi'
 ]);
 
+const READ_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
 export const resolveAccount = (req: Request, res: Response, next: NextFunction): void => {
     // Extract requested user from query, params, or body
     const requestedUserId = req.query.userId || req.params.userId || req.body?.userId;
 
     if (requestedUserId) {
         if (typeof requestedUserId === 'string' && VALID_DEMO_USERS.has(requestedUserId)) {
+            // F-08: demo accounts are read-only. Any mutating request on one is refused.
+            if (!READ_METHODS.has(req.method)) {
+                res.status(403).json({ error: 'demo_read_only' });
+                return;
+            }
             // Rule 1 & 2: Valid demo slug requested - resolves accountId to slug and isDemo to true
             req.accountId = requestedUserId;
             req.isDemo = true;

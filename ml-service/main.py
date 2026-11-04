@@ -47,6 +47,9 @@ def get_account_id(requested_user_id: str | None, req: Request) -> str:
     token = auth_header.split(" ")[1]
     try:
         payload = jwt.decode(token, JWT_ACCESS_SECRET, algorithms=["HS256"])
+        # Only backend access tokens (typ "access", F-27): never refresh or other tokens on this secret
+        if payload.get("typ") != "access":
+            raise ValueError("wrong token type")
         return payload["userId"]
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired access token")
