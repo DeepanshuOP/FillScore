@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useRouter } from 'next/navigation';
+import { apiBase } from '../lib/apiBase';
 
 export function extractOAuthCode(searchString: string, pathname: string): { code: string | null; cleanUrl: string } {
   const params = new URLSearchParams(searchString);
@@ -34,7 +35,7 @@ export default function OAuthRedirectHandler() {
     // The code is single-use and expires in 30s, but there is still no reason to leave it in history.
     window.history.replaceState({}, document.title, cleanUrl);
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    const baseUrl = apiBase();
     fetch(`${baseUrl}/auth/oauth/exchange`, {
       method: 'POST',
       credentials: 'include',

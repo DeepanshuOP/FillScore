@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useAuth } from "../context/AuthContext";
 import { authFetch } from "../lib/authFetch";
 import { buildQuery } from "../utils/queryBuilder";
+import { apiBase } from '../lib/apiBase';
 
 // Add Types
 interface WhaleTopEvent {
@@ -56,7 +57,7 @@ export default function WhaleCorrelation({ userId, dashboardMode }: { userId: st
     const fetchFn = dashboardMode === 'real' ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken }) : fetch;
     const query = buildQuery(dashboardMode, userId);
 
-    fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/audit/analytics/whale-correlation${query}`)
+    fetchFn(`${apiBase()}/audit/analytics/whale-correlation${query}`)
       .then((res) => {
         if (!res.ok) {
           if (dashboardMode === 'real') return null;

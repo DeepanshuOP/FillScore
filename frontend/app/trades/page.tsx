@@ -10,6 +10,8 @@ import { useAuth } from '../context/AuthContext'
 import { authFetch } from '../lib/authFetch'
 import { resolveIdentityState } from '../utils/identityResolver'
 import { buildQuery } from '../utils/queryBuilder'
+import { apiBase } from '../lib/apiBase';
+import { showCsvExport } from '../utils/csvExport';
 
 interface Trade {
   _id: string
@@ -86,7 +88,7 @@ function TradesContent() {
     try {
       const fetchFn = dashboardMode === 'real' ? (url: string, opts?: any) => authFetch(url, opts, { accessToken, refreshAccessToken }) : fetch;
       const query = buildQuery(dashboardMode, userId);
-      const url = `${process.env.NEXT_PUBLIC_API_URL}/audit/trades/${selectedTrade.tradeId}/note${query}`;
+      const url = `${apiBase()}/audit/trades/${selectedTrade.tradeId}/note${query}`;
       
       const payload: any = { note: noteText };
       if (dashboardMode === 'demo') {
@@ -128,7 +130,7 @@ function TradesContent() {
       const query = buildQuery(mode, uid, { limit: '1000' });
       
       const res = await fetchFn(
-        `${process.env.NEXT_PUBLIC_API_URL}/audit/trades${query}`
+        `${apiBase()}/audit/trades${query}`
       )
       const data = await res.json()
       const all = data.trades as Trade[]
@@ -179,7 +181,7 @@ function TradesContent() {
       if (gradeFilter) paramsObj.grade = gradeFilter;
       
       const query = buildQuery(dashboardMode, userId, paramsObj);
-      const res = await fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/audit/trades${query}`)
+      const res = await fetchFn(`${apiBase()}/audit/trades${query}`)
       
       if (dashboardMode === 'real' && res.status === 404) {
         setTrades([])
@@ -349,7 +351,7 @@ function TradesContent() {
         await openAuthenticatedDownload('export', '/audit/trades/export', filters, { accessToken, refreshAccessToken });
       } else {
         const query = buildQuery(dashboardMode, userId, Object.keys(filters).length ? filters : undefined);
-        window.open(`${process.env.NEXT_PUBLIC_API_URL}/audit/trades/export${query}`, '_blank');
+        window.open(`${apiBase()}/audit/trades/export${query}`, '_blank');
       }
     } finally {
       setTimeout(() => setExporting(false), 300);
@@ -389,7 +391,7 @@ function TradesContent() {
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.12em', color: '#888078' }}>MAKER FILLS</span>
             </div>
             
-            {dashboardMode === 'demo' && (
+            {showCsvExport(dashboardMode) && (
               <button
                 onClick={handleExport}
                 disabled={exporting}

@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import AuthCard from '../components/AuthCard';
+import { apiBase } from '../lib/apiBase';
 
 type Status = 'verifying' | 'success' | 'invalid';
 
@@ -22,7 +23,7 @@ function VerifyEmailContent() {
     if (!token || started.current) return;
     started.current = true;
 
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+    const baseUrl = apiBase();
     fetch(`${baseUrl}/auth/verify-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

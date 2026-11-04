@@ -1,4 +1,5 @@
 import { authFetch } from './authFetch';
+import { apiBase } from './apiBase';
 
 type Auth = { accessToken: string | null; refreshAccessToken: () => Promise<string | null> };
 
@@ -22,7 +23,7 @@ export async function openAuthenticatedDownload(
   extraParams: Record<string, string>,
   auth: Auth
 ): Promise<boolean> {
-  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+  const baseUrl = apiBase();
 
   // Open the tab inside the click handler, before any await: browsers block window.open once
   // the user gesture has passed. It is pointed at the file when the token arrives.

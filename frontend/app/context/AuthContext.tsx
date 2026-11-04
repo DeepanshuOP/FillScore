@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authFetch } from '../lib/authFetch';
+import { apiBase } from '../lib/apiBase';
 
 type User = {
   userId: string;
@@ -28,7 +29,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const fetchMe = async (token: string) => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const baseUrl = apiBase();
       const res = await authFetch(`${baseUrl}/auth/me`, {}, {
         accessToken: token,
         refreshAccessToken: async () => null // don't try to refresh during /me
@@ -44,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshAccessToken = async (): Promise<string | null> => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const baseUrl = apiBase();
       const res = await fetch(`${baseUrl}/auth/refresh`, {
         method: 'POST',
         credentials: 'include',
@@ -75,7 +76,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const baseUrl = apiBase();
       await fetch(`${baseUrl}/auth/logout`, {
         method: 'POST',
         credentials: 'include',

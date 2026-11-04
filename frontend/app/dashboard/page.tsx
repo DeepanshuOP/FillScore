@@ -16,6 +16,7 @@ import { buildQuery } from '../utils/queryBuilder';
 import { buildTrend, HistoryPoint } from '../utils/trend';
 import { openAuthenticatedDownload } from '../lib/downloads';
 import ConnectPrompt from '../components/ConnectPrompt';
+import { apiBase } from '../lib/apiBase';
 
 interface CostAttribution {
   slippageCost: number;
@@ -205,7 +206,7 @@ function DashboardContent() {
         const ok = await openAuthenticatedDownload('report', '/audit/report', {}, { accessToken, refreshAccessToken });
         if (!ok) setDownloadError('Could not prepare the report. Please try again.');
       } else if (resolvedUserId) {
-        window.open(`${process.env.NEXT_PUBLIC_API_URL}/audit/report?userId=${resolvedUserId}`, '_blank');
+        window.open(`${apiBase()}/audit/report?userId=${resolvedUserId}`, '_blank');
       }
     } finally {
       setTimeout(() => setDownloading(false), 500);
@@ -230,7 +231,7 @@ function DashboardContent() {
         : (url: string) => fetch(url);
         
       const query = buildQuery(mode, effectiveUserId);
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const baseUrl = apiBase();
       
       const [res, attrRes, analyticsRes, comparisonRes, coachRes, historyRes] = await Promise.all([
         fetchFn(`${baseUrl}/audit/score${query}`),

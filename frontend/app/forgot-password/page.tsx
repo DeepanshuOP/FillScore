@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { apiBase } from '../lib/apiBase';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -13,7 +14,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const baseUrl = apiBase();
       await fetch(`${baseUrl}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

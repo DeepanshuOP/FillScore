@@ -4,6 +4,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import WaveBackground from '../components/ui/wave-background';
 import Navbar from './components/Navbar';
 import { DEMO_PROFILES, gradeFromScore } from './utils/demoProfiles';
+import { apiBase } from './lib/apiBase';
 
 export default function Home() {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -22,7 +23,7 @@ export default function Home() {
   const [liveStats, setLiveStats] = useState<Record<string, { score: number; makerRatio: number }>>({});
 
   useEffect(() => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const baseUrl = apiBase();
     if (!baseUrl) return;
     let cancelled = false;
 

@@ -3,6 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { mapOnboardingError } from '../utils/errorMapping';
+import { apiBase } from '../lib/apiBase';
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -50,7 +51,7 @@ function ResetPasswordContent() {
     setError(null);
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const baseUrl = apiBase();
       const res = await fetch(`${baseUrl}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -7,6 +7,7 @@ import { authFetch } from '../lib/authFetch';
 import { mapOnboardingError } from '../utils/errorMapping';
 import { getGradeColor } from '../utils/gradeColor';
 import { EXCHANGES, getExchange, ExchangeId } from '../utils/exchanges';
+import { apiBase } from '../lib/apiBase';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -64,7 +65,7 @@ export default function OnboardingPage() {
     setErrorMsg(null);
     
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const baseUrl = apiBase();
       const res = await authFetch(`${baseUrl}/onboarding/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -109,7 +110,7 @@ export default function OnboardingPage() {
     ];
 
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+      const baseUrl = apiBase();
       const res = await authFetch(`${baseUrl}/onboarding/sync`, {
         method: 'POST'
       }, { accessToken, refreshAccessToken });

@@ -21,6 +21,7 @@ import {
   PieChart,
   Pie,
 } from "recharts";
+import { apiBase } from '../lib/apiBase';
 
 // TYPES
 interface HeatmapCell {
@@ -157,14 +158,14 @@ function AnalyticsContent() {
     const tradesQuery = buildQuery(identity.mode, identity.effectiveUserId, { limit: '10000' });
 
     Promise.all([
-      fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/audit/analytics${analyticsQuery}`).then((res) => {
+      fetchFn(`${apiBase()}/audit/analytics${analyticsQuery}`).then((res) => {
         if (!res.ok) {
           if (identity.mode === "real") return null;
           throw new Error("Failed to load analytics");
         }
         return res.json();
       }),
-      fetchFn(`${process.env.NEXT_PUBLIC_API_URL}/audit/trades${tradesQuery}`).then((res) => {
+      fetchFn(`${apiBase()}/audit/trades${tradesQuery}`).then((res) => {
         if (!res.ok) return { trades: [] };
         return res.json();
       })
