@@ -51,3 +51,5 @@ backend/test-mongo.js
 *.parquet
 ml-service/.venv/
 .venv/
+**/.claude/agent-memory/
+**/.claude/agent-memory-local/
