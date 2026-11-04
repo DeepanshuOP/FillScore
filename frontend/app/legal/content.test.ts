@@ -40,13 +40,23 @@ describe('legal content', () => {
 
   it('privacy policy says what is and is not sent to the language model', () => {
     const text = allText(PRIVACY_SECTIONS).toLowerCase();
-    expect(text).toMatch(/aggregated/);
-    expect(text).toMatch(/never (sent|include)|not sent|no api keys/);
+    expect(text).toMatch(/aggregate/);
+    expect(text).toMatch(/never (sent|include)|not sent|no api keys|no identifiers, api keys/);
   });
 
   it('contactLine uses the configured address, else points at the issue tracker', () => {
     expect(contactLine('help@example.org')).toContain('help@example.org');
     expect(contactLine(undefined)).toMatch(/issue/i);
     expect(contactLine('')).toMatch(/issue/i);
+  });
+  it('discloses the LLM providers, de-identification and free-tier training use (1c.8)', () => {
+    const ai = PRIVACY_SECTIONS.find(s => s.id === 'ai-processing');
+    expect(ai).toBeDefined();
+    const text = ai!.body.join(' ');
+    expect(text).toContain('aggregate, de-identified execution statistics');
+    expect(text).toContain('Groq');
+    expect(text).toContain('Google Gemini');
+    expect(text).toMatch(/No identifiers, API keys, .*notes are sent/);
+    expect(text).toContain('free tiers that may use submitted content to improve their models');
   });
 });

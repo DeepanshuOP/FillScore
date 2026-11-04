@@ -108,8 +108,9 @@ export const PRIVACY_SECTIONS: LegalSection[] = [
     id: 'ai-processing',
     heading: 'AI processing',
     body: [
-      'When you run the Agent Council, aggregated execution metrics computed from your trades, such as average slippage, fee drag, and per-symbol statistics, are sent to a third-party language model provider (currently Groq) to produce written analysis.',
-      'API keys, secrets, passphrases, your email address, and raw trade identifiers are never sent. The provider returns text only; every number you see comes from our own calculations.',
+      'When you run the Agent Council, aggregate, de-identified execution statistics computed from your trades, such as average slippage, fee drag, and per-symbol statistics, are sent to third-party language model providers (Groq, and Google Gemini) to produce written analysis.',
+      'No identifiers, API keys, secrets, passphrases, email addresses, trade identifiers, or notes are sent. The provider returns text only; every number you see comes from our own calculations.',
+      'Some of these providers offer free tiers that may use submitted content to improve their models.',
     ],
   },
   {

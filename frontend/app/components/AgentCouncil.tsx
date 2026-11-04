@@ -10,21 +10,27 @@ import {
   COUNCIL_DISCLAIMER,
   type CouncilAgentCard as AgentCard,
 } from "../utils/councilStatus";
+import {
+  formatEffectUsd,
+  formatEffectBps,
+  groundingLine,
+  verificationLine,
+  splitFindings,
+  type CouncilFinding,
+  type CouncilObservation,
+  type CouncilGrounding,
+  type CouncilVerification,
+} from "../utils/councilFindings";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface SynthesisResult {
   headline: string;
   overallRating: string | null;
-  topRecommendations: string[];
+  findings?: CouncilFinding[];
+  observations?: CouncilObservation[];
   estimatedMonthlyCostUSD: number;
   degraded?: boolean;
   degraded_reasons?: string[];
-}
-
-interface GroundingReport {
-  avg_faithfulness_score: number;
-  total_violations: number;
-  any_violations: boolean;
 }
 
 interface DebateResult {
@@ -79,8 +85,8 @@ export default function AgentCouncil({
   const [cards, setCards] = useState<Record<string, AgentCard>>({});
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
-  const [grounding, setGrounding] = useState<GroundingReport | null>(null);
-  const [gateReport, setGateReport] = useState<any>(null);
+  const [grounding, setGrounding] = useState<CouncilGrounding | null>(null);
+  const [verification, setVerification] = useState<CouncilVerification | null>(null);
   const [debate, setDebate] = useState<DebateResult | null>(null);
   const [debateRunning, setDebateRunning] = useState(false);
   const [totalLatencyMs, setTotalLatencyMs] = useState<number | null>(null);
@@ -101,7 +107,7 @@ export default function AgentCouncil({
     setActiveAgent(null);
     setSynthesis(null);
     setGrounding(null);
-    setGateReport(null);
+    setVerification(null);
     setDebate(null);
     setDebateRunning(false);
     setTotalLatencyMs(null);
@@ -237,7 +243,8 @@ export default function AgentCouncil({
     } else if (eventType === "synthesis_done") {
       setSynthesis(payload);
     } else if (eventType === "gate_done") {
-      setGateReport(payload.gate_report);
+      setVerification(payload.verification ?? null);
+      setGrounding(payload.grounding ?? null);
     } else if (eventType === "complete") {
       // The final event carries the whole result, identical to the non-stream endpoint. It is
       // the source of truth: every number on the panel is re-read from it.
@@ -247,8 +254,8 @@ export default function AgentCouncil({
         degraded: payload.degraded,
         degraded_reasons: payload.degraded_reasons ?? [],
       });
-      setGateReport(payload.gate_report);
-      setGrounding(payload.grounding_report);
+      setVerification(payload.verification ?? null);
+      setGrounding(payload.grounding ?? null);
       setTotalLatencyMs(payload.totalLatencyMs);
       setCached(Boolean(payload.cached));
       setActiveAgent(null);
@@ -429,6 +436,7 @@ export default function AgentCouncil({
       {/* Synthesis panel */}
       {synthesis && (() => {
         const view = councilVerdictView(synthesis);
+        const { findings, observations } = splitFindings(synthesis);
         return (
         <div className="border border-slate-700 bg-slate-900/40 rounded-xl p-5 space-y-4 transition-all duration-500">
           <div className="flex items-center justify-between">
@@ -466,15 +474,41 @@ export default function AgentCouncil({
             <p className="text-slate-300 text-sm leading-relaxed">{synthesis.headline}</p>
           )}
 
-          {synthesis.topRecommendations.length > 0 && (
+          {!synthesis.degraded && findings.length > 0 && (
             <div className="space-y-2">
               <p className="text-slate-500 text-xs uppercase tracking-wider">Key findings</p>
-              {synthesis.topRecommendations.map((rec, i) => (
+              {findings.map((f, i) => (
                 <div key={i} className="flex gap-3 text-sm text-slate-300">
                   <span className="text-violet-400 font-bold shrink-0">{i + 1}.</span>
-                  <span>{rec}</span>
+                  <div className="space-y-1">
+                    <p>{f.text}</p>
+                    <p className="text-xs text-slate-400">
+                      <span className="text-slate-200 font-medium">{formatEffectUsd(f.effect_usd)}</span>
+                      {Number.isFinite(f.effect_bps) && <> ({formatEffectBps(f.effect_bps)})</>}
+                      <span className="ml-2 text-emerald-400 border border-emerald-400/40 rounded px-1.5 py-0.5">
+                        verified
+                      </span>
+                    </p>
+                    <details className="text-xs text-slate-500">
+                      <summary className="cursor-pointer">How this was computed</summary>
+                      <p className="mt-1">
+                        {f.method} · {f.n_trades_affected} trades affected
+                      </p>
+                    </details>
+                  </div>
                 </div>
               ))}
+            </div>
+          )}
+
+          {!synthesis.degraded && observations.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-slate-600 text-xs uppercase tracking-wider">Observations</p>
+              <ul className="list-disc pl-5 text-xs text-slate-500 space-y-1">
+                {observations.map((o, i) => (
+                  <li key={i}>{o.text}</li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -490,59 +524,9 @@ export default function AgentCouncil({
         );
       })()}
 
-      {/* Grounding score */}
-      {grounding && !synthesis?.degraded && (
-        <div className="border border-slate-800 bg-slate-900/20 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-slate-400 text-sm">
-              Grounding Score (E1)
-            </span>
-            <span
-              className={`text-sm font-semibold ${
-                grounding.avg_faithfulness_score >= 0.9
-                  ? "text-emerald-400"
-                  : grounding.avg_faithfulness_score >= 0.7
-                  ? "text-amber-400"
-                  : "text-red-400"
-              }`}
-            >
-              {Math.round(grounding.avg_faithfulness_score * 100)}%
-            </span>
-          </div>
-          <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
-            <div
-              className={`h-full rounded-full transition-all duration-1000 ${
-                grounding.avg_faithfulness_score >= 0.9
-                  ? "bg-emerald-500"
-                  : grounding.avg_faithfulness_score >= 0.7
-                  ? "bg-amber-500"
-                  : "bg-red-500"
-              }`}
-              style={{ width: `${grounding.avg_faithfulness_score * 100}%` }}
-            />
-          </div>
-          <div className="flex justify-between text-xs text-slate-600 mt-1">
-            <span>{grounding.total_violations} violations detected</span>
-            <span>
-              {grounding.any_violations ? "⚠ review citations" : "✓ all grounded"}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Verification Gate */}
-      {gateReport && !synthesis?.degraded && (
-        <div className="border border-slate-800 bg-slate-900/20 rounded-xl p-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-slate-400 text-sm">Verification Gate</span>
-            <span className={`text-sm font-semibold ${gateReport.gate_passed ? "text-emerald-400" : "text-red-400"}`}>
-              {gateReport.passed_count}/{gateReport.total_recommendations} passed
-            </span>
-          </div>
-          {gateReport.contradiction_flags?.length > 0 && (
-            <p className="text-amber-400 text-xs mt-1">⚠ {gateReport.contradiction_flags[0]}</p>
-          )}
-        </div>
+      {/* Verification line */}
+      {verification && !synthesis?.degraded && verificationLine(verification) && (
+        <p className="text-slate-500 text-xs">{verificationLine(verification)}</p>
       )}
 
       {/* Latency footer */}
@@ -552,6 +536,11 @@ export default function AgentCouncil({
             ? "Saved analysis of the same trades (no new AI calls)"
             : `Analysis completed in ${(totalLatencyMs / 1000).toFixed(2)}s`}
         </p>
+      )}
+
+      {/* Grounding stats */}
+      {grounding && !synthesis?.degraded && groundingLine(grounding) && (
+        <p className="text-slate-600 text-[11px] text-right">{groundingLine(grounding)}</p>
       )}
     </div>
   );
