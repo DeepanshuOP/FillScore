@@ -6,14 +6,15 @@ Audits past executions from the deterministic AlphaMetricsPacket. The model is c
 
 from __future__ import annotations
 
-import json
-
 from agents.metrics.alpha_packet import AlphaMetricsPacket
-from agents.prompts import system_prompt
+from agents.grounded_call import grounded_verdict
+from agents.prompts import packet_values, system_prompt
 from agents.schemas import TradeContext, AlphaVerdict
 
 ROLE = "specialist"
 MAX_TOKENS = 500
+NAMESPACE = "alpha"
+TEXT_FIELD = "bestAlternative"   # the explanation; emptied by redaction -> the agent failed
 
 SYSTEM_PROMPT = system_prompt(
     "You are FillScore's Alpha Architect agent. You audit whether a trader's past "
@@ -23,7 +24,7 @@ SYSTEM_PROMPT = system_prompt(
     "{\n"
     '  "agent": "alpha_architect",\n'
     '  "alphaRating": "POSITIVE" | "NEUTRAL" | "NEGATIVE" | "SEVERELY_NEGATIVE",\n'
-    '  "bestAlternative": string (past tense: which benchmark in the packet these executions compared best or worst against, citing packet keys),\n'
+    '  "bestAlternative": string (past tense: which benchmark in the packet these executions compared best or worst against; any value only as a placeholder),\n'
     '  "cited_evidence": [string] (keys from the packet that support this verdict),\n'
     '  "severity": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",\n'
     '  "confidence": float (0-1),\n'
@@ -32,9 +33,10 @@ SYSTEM_PROMPT = system_prompt(
 )
 
 
-def build_user_prompt(context: TradeContext, packet: AlphaMetricsPacket) -> str:
+def build_user_prompt(context: TradeContext, packet: AlphaMetricsPacket, ctx: dict | None = None) -> str:
+    ctx = ctx if ctx is not None else {NAMESPACE: packet.to_prompt_dict()}
     return f"""AlphaMetricsPacket:
-{json.dumps(packet.to_prompt_dict(), indent=2)}
+{packet_values(ctx, [NAMESPACE])}
 
 Regime: {context.regime}
 
@@ -42,14 +44,13 @@ Assign alphaRating, write bestAlternative, list cited_evidence keys.
 Schema: alphaRating (POSITIVE/NEUTRAL/NEGATIVE/SEVERELY_NEGATIVE), bestAlternative (str), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""
 
 
-async def run(context: TradeContext, llm, packet: AlphaMetricsPacket, telemetry: list | None = None) -> AlphaVerdict:
-    """Run the agent through the router; raises if no model produced a valid verdict."""
-    return await llm.complete(
-        ROLE,
-        SYSTEM_PROMPT,
-        build_user_prompt(context, packet),
-        AlphaVerdict,
-        max_tokens=MAX_TOKENS,
-        temperature=0.1,
-        telemetry=telemetry,
+async def run(context: TradeContext, llm, packet: AlphaMetricsPacket, telemetry: list | None = None, *,
+              ctx: dict | None = None, ledger=None) -> AlphaVerdict:
+    """Run the agent through the router with blocking grounding (agents.grounded_call). Raises if no
+    model produced a valid verdict, or GroundingFailed if its explanation had to be removed."""
+    ctx = ctx if ctx is not None else {NAMESPACE: packet.to_prompt_dict()}
+    return await grounded_verdict(
+        llm, ROLE, SYSTEM_PROMPT, build_user_prompt(context, packet, ctx), AlphaVerdict,
+        agent="alpha_architect", text_field=TEXT_FIELD, ctx=ctx, ledger=ledger, telemetry=telemetry, max_tokens=MAX_TOKENS,
+        namespace=NAMESPACE,
     )

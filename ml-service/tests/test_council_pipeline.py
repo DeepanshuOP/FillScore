@@ -55,11 +55,11 @@ def _patched(router, db=None, packets=None, fixed_clock=False, run_id=None):
     packets = packets or make_packets()
 
     async def load(*_a, **_k):
-        return packets
+        return packets, []          # (packets, trades): load_run_inputs reads both at once
 
     stack = ExitStack()
     stack.enter_context(patch("agents.council_service._router", return_value=router))
-    stack.enter_context(patch("agents.metrics.loader.load_all_packets", load))
+    stack.enter_context(patch("agents.metrics.loader.load_run_inputs", load))
     stack.enter_context(patch("agents.persistence._get_db", return_value=(MagicMock(), db)))
     if fixed_clock:
         for target in ("agents.council._clock", "agents.llm_router._clock", "agents.debate._clock"):
@@ -152,7 +152,7 @@ def test_main_has_no_second_council_implementation():
     import inspect
 
     src = inspect.getsource(main)
-    for needle in ("liquidity_scout", "run_debate", "synthesis.run", "verify_recommendations", "check_all_verdicts"):
+    for needle in ("liquidity_scout", "run_debate", "synthesis.run", "run_gate", "grounded_complete", "verify_draft"):
         assert needle not in src
 
 
@@ -205,7 +205,7 @@ def test_invalid_synthesis_output_degrades_the_run():
     assert body["degraded"] is True
     assert body["n_calls_ok"] == 8
     assert body["synthesis"]["overallRating"] is None
-    assert body["synthesis"]["topRecommendations"] == []
+    assert body["synthesis"]["findings"] == [] and body["synthesis"]["observations"] == []
     assert any(r.startswith("synthesis:") for r in body["degraded_reasons"])
 
 

@@ -2,7 +2,7 @@
 
 The fake provider answers by reading the system prompt (which agent is asking), so the whole
 pipeline runs for real: router, retry policy, JSON extraction, Pydantic validation, coverage
-confidence, debate, synthesis, overrides, grounding, gate. Usage goes to mongomock-motor.
+confidence, grounding, debate, synthesis, verifier, overrides. Usage goes to mongomock-motor.
 No network, no Atlas.
 """
 from __future__ import annotations
@@ -31,10 +31,12 @@ PROSECUTION = {"claims": [{"claim_id": "P1a", "claim_text": "maker_ratio was low
                            "rebuts": None}], "prosecution_summary": "Fees were avoidable."}
 DEFENSE = {"claims": [{"claim_id": "D1a", "claim_text": "slippage was small", "evidence_keys": ["avg_slippage_bps"],
                        "rebuts": "P1a"}], "defense_summary": "Costs reflected the market."}
+# Observations only (no effect to replay), so a default run makes exactly 9 calls and no re-reason.
 SYNTHESIS = {"headline": "Execution quality was solid", "narrative": "Fills were mostly maker orders.",
-             "topRecommendations": ["Most fills were maker orders (maker_ratio)",
-                                    "Slippage stayed small (avg_slippage_bps)",
-                                    "Fills tracked VWAP (avg_vwap_deviation_bps)"],
+             "recommendations": [
+                 {"action_type": "general", "params": {}, "rationale_text": "Most fills were maker orders."},
+                 {"action_type": "none", "params": {}, "rationale_text": "Slippage stayed small."},
+                 {"action_type": "general", "params": {}, "rationale_text": "Fills tracked VWAP."}],
              "conflictLedger": [], "overallRating": "GOOD", "estimatedMonthlyCostUSD": 33.0}
 
 

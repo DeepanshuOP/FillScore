@@ -82,7 +82,7 @@ async def test_save_council_run_persists_account_id():
         user_id="user_A",
         symbol="BTCUSDT",
         council_result_dict={"synthesis": {"overallRating": "GOOD"}},
-        grounding_summary={},
+        grounding={},
         packet_hashes={},
         model_usage={},
         total_latency_ms=100.0
@@ -98,11 +98,11 @@ async def test_list_council_runs_scoped_by_account_id():
     """2. list_council_runs filtered by accountId returns ONLY that account's runs."""
     await save_council_run(
         account_id="account_A", user_id="user_A", symbol="BTCUSDT",
-        council_result_dict={}, grounding_summary={}, packet_hashes={}, model_usage={}, total_latency_ms=100.0
+        council_result_dict={}, grounding={}, packet_hashes={}, model_usage={}, total_latency_ms=100.0
     )
     await save_council_run(
         account_id="account_B", user_id="user_B", symbol="BTCUSDT",
-        council_result_dict={}, grounding_summary={}, packet_hashes={}, model_usage={}, total_latency_ms=100.0
+        council_result_dict={}, grounding={}, packet_hashes={}, model_usage={}, total_latency_ms=100.0
     )
     
     runs = await list_council_runs(account_id="account_A")
@@ -114,7 +114,7 @@ async def test_load_council_run_scoped_by_account_id():
     """3. load_council_run must NOT return B's runs even if given B's run_id."""
     run_id_B = await save_council_run(
         account_id="account_B", user_id="user_B", symbol="BTCUSDT",
-        council_result_dict={}, grounding_summary={}, packet_hashes={}, model_usage={}, total_latency_ms=100.0
+        council_result_dict={}, grounding={}, packet_hashes={}, model_usage={}, total_latency_ms=100.0
     )
     
     # Query B's run under A's account
@@ -130,7 +130,7 @@ async def test_persistence_fire_and_forget():
             user_id="user_C",
             symbol="BTCUSDT",
             council_result_dict={},
-            grounding_summary={},
+            grounding={},
             packet_hashes={},
             model_usage={},
             total_latency_ms=100.0

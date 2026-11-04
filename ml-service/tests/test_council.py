@@ -33,7 +33,8 @@ def test_council_returns_valid_result() -> None:
     assert result.fee.feeRating == "OPTIMAL"
     assert result.synthesis.overallRating == "GOOD"
     assert result.totalLatencyMs >= 0
-    assert len(result.synthesis.topRecommendations) == 3
+    # the default fake proposes 3 observations (general/none): no effect, nothing to replay
+    assert len(result.synthesis.observations) == 3 and result.synthesis.findings == []
     # 4 specialists + 2 rounds x 2 debate turns + 1 synthesis = 9 calls, all answered
     assert (result.n_calls_expected, result.n_calls_ok, result.degraded) == (9, 9, False)
     assert len(provider.calls) == 9

@@ -189,7 +189,7 @@ def test_stream_error_never_leaks_connection_details(monkeypatch):
     async def boom(*a, **k):
         raise Exception(leak)
 
-    with patch("agents.metrics.loader.load_all_packets", boom):
+    with patch("agents.metrics.loader.load_run_inputs", boom):
         res = _stream()
 
     assert "hunter2" not in res.text
@@ -207,7 +207,7 @@ def test_stream_reports_rate_limit_as_a_code(monkeypatch):
     async def boom(*a, **k):
         raise Exception("Max retries exceeded after 3 attempts")
 
-    with patch("agents.metrics.loader.load_all_packets", boom):
+    with patch("agents.metrics.loader.load_run_inputs", boom):
         res = _stream()
 
     events = _sse_events(res.text)
@@ -221,9 +221,9 @@ def test_stream_reports_empty_accounts_as_no_data(monkeypatch):
     empty.trade_count = 0
 
     async def no_trades(*a, **k):
-        return empty, empty, empty, empty
+        return (empty, empty, empty, empty), []
 
-    with patch("agents.metrics.loader.load_all_packets", no_trades):
+    with patch("agents.metrics.loader.load_run_inputs", no_trades):
         res = _stream()
 
     events = _sse_events(res.text)
@@ -236,7 +236,7 @@ def _no_cache_and_packets():
     packets = make_packets()
 
     async def load(*a, **k):
-        return packets
+        return packets, []
 
     async def no_cache(*a, **k):
         return None
@@ -251,7 +251,7 @@ def test_stream_refuses_when_the_daily_budget_is_spent_without_calling_the_model
     router, provider = _fake_router()
     load, no_cache = _no_cache_and_packets()
 
-    with patch("agents.metrics.loader.load_all_packets", load), \
+    with patch("agents.metrics.loader.load_run_inputs", load), \
          patch("agents.persistence.find_cached_run", no_cache), \
          patch("agents.council_service._router", return_value=router):
         res = _stream()
@@ -269,7 +269,7 @@ def test_non_stream_endpoint_returns_429_with_a_code_when_budget_is_spent(monkey
     router, provider = _fake_router()
     load, no_cache = _no_cache_and_packets()
 
-    with patch("agents.metrics.loader.load_all_packets", load), \
+    with patch("agents.metrics.loader.load_run_inputs", load), \
          patch("agents.persistence.find_cached_run", no_cache), \
          patch("agents.council_service._router", return_value=router):
         res = client.post("/ml/agents/council", json={"symbol": "BTCUSDT"},

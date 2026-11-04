@@ -6,8 +6,13 @@ Topology (LangGraph):
 `run_council_pipeline` is the only implementation. `/ml/agents/council` returns its result and
 `/ml/agents/council/stream` forwards the events it emits through `on_event`. In order it does:
 specialists (each verdict gets deterministic coverage confidence straight away), the Execution
-Trial debate, synthesis, the deterministic cost override, the degraded rule (a degraded run is
-never graded), grounding (report-only), the verification gate, token telemetry and persistence.
+Trial debate, synthesis, the degraded rule (a degraded run is never graded), the counterfactual
+verifier with one forced re-reason (1c.4), the deterministic cost override, token telemetry and
+persistence.
+
+Every LLM text field is grounded as it arrives (1c.3, agents.grounded_call): values only as
+{{ns.key}} placeholders, one regeneration on a stray numeral, then sentence redaction. An
+explanation emptied by redaction fails its agent, which degrades the run.
 
 Models are chosen by the router (agents/llm_router.py, config/llm_routes.yaml). Once any step has
 fallen back to a default the run is degraded, so the remaining LLM steps are skipped rather than
@@ -25,7 +30,7 @@ from langgraph.graph import END, START, StateGraph
 from agents import alpha_architect, fee_optimizer, liquidity_scout, risk_auditor, synthesis
 from agents.confidence import inject_coverage_confidence
 from agents.debate import MAX_ROUNDS, run_debate, transcript_to_dict
-from agents.grounding import check_all_verdicts, summarise_grounding
+from agents.grounding import GroundingFailed, GroundingLedger, finalize
 from agents.metrics.alpha_packet import AlphaMetricsPacket
 from agents.metrics.fee_packet import FeeMetricsPacket
 from agents.metrics.liquidity_packet import LiquidityMetricsPacket
@@ -36,9 +41,13 @@ from agents.schemas import (
     FeeVerdict,
     LiquidityVerdict,
     RiskVerdict,
+    Finding,
+    Observation,
     SynthesisOutput,
     TradeContext,
 )
+from agents.render import packet_ctx, prompt_view
+from agents.verification import GateItem, evaluate, mark_contradictions, run_gate, summarise
 
 EventSink = Optional[Callable[[str, dict], Awaitable[None]]]
 
@@ -101,7 +110,8 @@ def _default_synthesis(context: TradeContext | None = None) -> SynthesisOutput:
     return SynthesisOutput(
         headline="Analysis incomplete",
         narrative="Part of the Council could not finish this run, so no overall grade was given.",
-        topRecommendations=[],
+        findings=[],
+        observations=[],
         conflictLedger=[],
         overallRating=None,
         estimatedMonthlyCostUSD=0.0,
@@ -125,6 +135,8 @@ def expected_calls() -> int:
 def _failure_reason(exc: BaseException) -> str:
     from agents.llm_router import RouterExhausted
 
+    if isinstance(exc, GroundingFailed):
+        return "its explanation had to be removed by the number check"
     if isinstance(exc, RouterExhausted):
         return {
             "budget": "the daily AI budget was used up",
@@ -144,6 +156,8 @@ class RunCollector:
     telemetry: list = field(default_factory=list)
     reasons: list = field(default_factory=list)
     ok_calls: list = field(default_factory=list)
+    ledger: GroundingLedger = field(default_factory=GroundingLedger)
+    ctx: dict = field(default_factory=dict)          # packet values for rendering (agents.render)
 
     async def event(self, name: str, data: dict) -> None:
         if self.emit is not None:
@@ -205,7 +219,8 @@ class CouncilState(TypedDict, total=False):
     alpha: AlphaVerdict
     risk: RiskVerdict
     fee: FeeVerdict
-    synthesis: SynthesisOutput
+    trades: Optional[list]
+    draft: Optional[synthesis.SynthesisDraft]
     debate_dict: dict
 
 
@@ -215,8 +230,13 @@ def _specialist_node(agent: str, state_key: str, packet_key: str, module, defaul
         packet = state[packet_key]
         await run.event("agent_start", {"agent": agent})
         try:
-            verdict = await module.run(state["context"], run.llm, packet, telemetry=run.telemetry)
+            verdict = await module.run(state["context"], run.llm, packet, telemetry=run.telemetry,
+                                       ctx=run.ctx, ledger=run.ledger)
             run.ok_calls.append(agent)
+        except GroundingFailed as exc:
+            print(f"[{agent}] failed: {type(exc).__name__}")
+            verdict = default_factory()
+            run.reasons.append(f"{agent}: {_failure_reason(exc)}")
         except Exception as exc:
             print(f"[{agent}] failed: {type(exc).__name__}")
             verdict = default_factory()
@@ -235,9 +255,9 @@ async def synthesis_node(state: CouncilState) -> dict:
 
     if run.reasons:
         run.reasons.append("debate and synthesis: skipped because a specialist failed")
-        return {"synthesis": _default_synthesis(), "debate_dict": _skipped_debate_dict("Not run")}
+        return {"draft": None, "debate_dict": _skipped_debate_dict("Not run")}
 
-    packets = {k: state[k].to_prompt_dict() for k in ("liquidity_packet", "risk_packet", "fee_packet", "alpha_packet")}
+    packets = {k: prompt_view(state[k].to_prompt_dict()) for k in ("liquidity_packet", "risk_packet", "fee_packet", "alpha_packet")}
 
     await run.event("debate_started", {"message": "Execution Trial in progress", "max_rounds": MAX_ROUNDS})
     transcript = await run_debate(
@@ -247,6 +267,7 @@ async def synthesis_node(state: CouncilState) -> dict:
         alpha_packet=packets["alpha_packet"],
         llm=run.llm,
         telemetry=run.telemetry,
+        ledger=run.ledger,
     )
     debate_dict = transcript_to_dict(transcript)
     run.ok_calls.extend(["debate"] * transcript.turns_ok)
@@ -264,23 +285,29 @@ async def synthesis_node(state: CouncilState) -> dict:
 
     if run.reasons:
         run.reasons.append("synthesis: skipped because the debate failed")
-        return {"synthesis": _default_synthesis(), "debate_dict": debate_dict}
+        return {"draft": None, "debate_dict": debate_dict}
 
     verdicts = {s[0]: state[s[1]].model_dump() for s in SPECIALISTS}
     await run.event("agent_start", {"agent": "synthesis"})
     try:
-        result = await synthesis.run(
+        draft = await synthesis.run(
             state["context"], verdicts, run.llm,
             state["fee_packet"], state["risk_packet"], state["liquidity_packet"], state["alpha_packet"],
             debate_dict=debate_dict,
             telemetry=run.telemetry,
+            trades=state.get("trades"),
+            ledger=run.ledger,
         )
         run.ok_calls.append("synthesis")
+    except GroundingFailed as exc:
+        print(f"[synthesis] failed: {type(exc).__name__}")
+        draft = None
+        run.reasons.append(f"synthesis: {_failure_reason(exc)}")
     except Exception as exc:
         print(f"[synthesis] failed: {type(exc).__name__}")
-        result = _default_synthesis()
+        draft = None
         run.reasons.append(f"synthesis: fell back to a default because {_failure_reason(exc)}")
-    return {"synthesis": result, "debate_dict": debate_dict}
+    return {"draft": draft, "debate_dict": debate_dict}
 
 
 def _build_graph() -> StateGraph:
@@ -305,6 +332,64 @@ _compiled_graph = _build_graph().compile()
 def override_synthesis_cost(synthesis, fee_pkt):
     """The cost shown to users is always the fee packet's total, never the model's number."""
     return synthesis.model_copy(update={"estimatedMonthlyCostUSD": fee_pkt.total_fee_paid_usd})
+
+
+def _gate(recs, trades: list[dict] | None, symbol: str) -> list[GateItem]:
+    """run_gate, except that without a trade list no effect can be replayed: every non-observation
+    is rejected as not computable."""
+    if trades is not None:
+        return run_gate(recs, trades, symbol)
+    items = [evaluate(r, [], symbol) for r in recs]
+    for it in items:
+        if it.status != "observation":
+            it.status, it.reason, it.cf = "rejected", "not_computable:no_trades", None
+    return items
+
+
+def _finding(item: GateItem, ctx: dict, ledger: GroundingLedger) -> Finding:
+    """A passed item: the rationale rendered with the recomputed effect (a text emptied by the
+    number check falls back to the deterministic method string)."""
+    cf = item.cf
+    cf_ctx = {"effect_usd": cf.effect_usd, "effect_bps": cf.effect_bps,
+              "n_trades_affected": cf.n_trades_affected, **cf.details}
+    text = finalize(item.rationale_text, {**ctx, "cf": cf_ctx}, "synthesis", "finding", ledger)
+    return Finding(action_type=item.action_type, params=item.params, text=text or cf.method,
+                   effect_usd=cf.effect_usd, effect_bps=cf.effect_bps,
+                   n_trades_affected=cf.n_trades_affected, method=cf.method, verified=True)
+
+
+async def verify_draft(run: RunCollector, draft, trades: list[dict] | None, symbol: str):
+    """1c.4: gate the draft's recommendations on the user's own trades, give rejected ones ONE forced
+    re-reason, gate the replacements, drop what fails again. Returns (findings, observations,
+    verification). A failed re-reason call drops the rejected items; it never degrades the run."""
+    round1 = _gate(draft.recommendations, trades, symbol)
+    rejected = [it for it in round1 if it.status == "rejected"]
+    round2 = None
+    re_reason_failed = False
+    if rejected:
+        try:
+            replacements = await synthesis.re_reason(run.llm, draft, rejected, ledger=run.ledger,
+                                                     telemetry=run.telemetry)
+            round2 = _gate(replacements, trades, symbol)
+            mark_contradictions(round1 + round2)
+        except Exception as exc:
+            print(f"[re-reason] failed: {type(exc).__name__}")
+            re_reason_failed = True
+    items = round1 + (round2 or [])
+    for it in items:   # unvalidated params are model-written: never shown or stored
+        if it.reason == "invalid_params":
+            it.params = {}
+    verification = summarise(round1, round2)
+    if re_reason_failed:
+        verification["re_reason_failed"] = True
+    findings = [_finding(it, run.ctx, run.ledger) for it in items if it.status == "passed"]
+    observations = []
+    for it in items:
+        if it.status == "observation":
+            text = finalize(it.rationale_text, run.ctx, "synthesis", "observation", run.ledger)
+            if text:
+                observations.append(Observation(action_type=it.action_type, text=text))
+    return findings, observations, verification
 
 
 def _model_usage(telemetry: list[dict]) -> dict:
@@ -351,7 +436,7 @@ def result_events(result: CouncilResult) -> list[tuple[str, dict]]:
             "turns_expected": d.get("turns_expected", 2 * MAX_ROUNDS),
         }))
     events.append(("synthesis_done", synthesis_event(result.synthesis, result.degraded, result.degraded_reasons)))
-    events.append(("gate_done", {"gate_report": result.gate_report}))
+    events.append(("gate_done", {"verification": result.verification, "grounding": result.grounding}))
     events.append(("complete", result.model_dump(mode="json")))
     return events
 
@@ -360,7 +445,8 @@ def synthesis_event(synth: SynthesisOutput, degraded: bool, reasons: list[str]) 
     return {
         "headline": synth.headline,
         "overallRating": synth.overallRating,
-        "topRecommendations": synth.topRecommendations,
+        "findings": [f.model_dump(mode="json") for f in synth.findings],
+        "observations": [o.model_dump(mode="json") for o in synth.observations],
         "estimatedMonthlyCostUSD": synth.estimatedMonthlyCostUSD,
         "degraded": degraded,
         "degraded_reasons": reasons,
@@ -382,12 +468,13 @@ async def run_council_pipeline(
     llm=None,
     on_event: EventSink = None,
     persist: bool = True,
+    trades: list[dict] | None = None,
 ) -> CouncilResult:
     """Run the whole Council on prepared packets. Both HTTP endpoints, the eval harness and the
-    demo-run generator go through here."""
+    demo-run generator go through here. `trades` are the normalised trades the packets were built
+    from; the verifier replays them (None: every effect is rejected as not computable)."""
     from agents import llm_router
     from agents.persistence import save_council_run
-    from agents.verification import gate_report_to_dict, verify_recommendations
     from config.versions import METRICS_VERSION, PROMPT_VERSION
 
     llm = llm or llm_router.get_default_router()
@@ -400,7 +487,7 @@ async def run_council_pipeline(
         liquidity_packet_hash=liquidity_pkt.content_hash,
         alpha_packet_hash=alpha_pkt.content_hash,
     )
-    run = RunCollector(llm=llm, emit=on_event)
+    run = RunCollector(llm=llm, emit=on_event, ctx=packet_ctx(fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt))
     start = _clock()
 
     final_state = await _compiled_graph.ainvoke({
@@ -410,12 +497,13 @@ async def run_council_pipeline(
         "risk_packet": risk_pkt,
         "liquidity_packet": liquidity_pkt,
         "alpha_packet": alpha_pkt,
+        "trades": trades,
     })
 
     liquidity_v, alpha_v = final_state["liquidity"], final_state["alpha"]
     risk_v, fee_v = final_state["risk"], final_state["fee"]
 
-    # ── degraded rule (F-06) and the deterministic cost override (F-03) ──
+    # ── degraded rule (F-06) ──
     n_expected = expected_calls()
     n_ok = len(run.ok_calls)
     reasons = list(run.reasons)
@@ -423,36 +511,21 @@ async def run_council_pipeline(
         reasons.append(f"only {n_ok} of {n_expected} model calls succeeded")
     degraded = bool(reasons) or n_ok < n_expected
 
-    synth = override_synthesis_cost(final_state["synthesis"], fee_pkt)
+    # ── verification (1c.4), then the deterministic cost override (F-03) ──
+    draft = final_state.get("draft")
+    if draft is not None and not degraded:
+        findings, observations, verification = await verify_draft(run, draft, trades, symbol)
+        synth = SynthesisOutput(headline=draft.headline, narrative=draft.narrative, findings=findings,
+                                observations=observations, conflictLedger=draft.conflictLedger,
+                                overallRating=draft.overallRating)
+    else:
+        synth, verification = _default_synthesis(), summarise([], None)
+    synth = override_synthesis_cost(synth, fee_pkt)
     if degraded:
         synth = synth.model_copy(update={"overallRating": None})
+    grounding = run.ledger.to_dict(degraded)
     await run.event("synthesis_done", synthesis_event(synth, degraded, reasons))
-
-    # ── grounding (report-only) ──
-    grounding_summary = summarise_grounding(check_all_verdicts(
-        liquidity_cited=liquidity_v.cited_evidence,
-        liquidity_reasoning=liquidity_v.slippageRoot,
-        liquidity_packet=liquidity_pkt.to_prompt_dict(),
-        alpha_cited=alpha_v.cited_evidence,
-        alpha_reasoning=alpha_v.bestAlternative,
-        alpha_packet=alpha_pkt.to_prompt_dict(),
-        risk_cited=risk_v.cited_evidence,
-        risk_reasoning=" ".join(risk_v.flags),
-        risk_packet=risk_pkt.to_prompt_dict(),
-        fee_cited=fee_v.cited_evidence,
-        fee_reasoning=fee_v.recommendedAction,
-        fee_packet=fee_pkt.to_prompt_dict(),
-    ))
-
-    # ── verification gate ──
-    gate_dict = gate_report_to_dict(verify_recommendations(
-        recommendations=synth.topRecommendations,
-        fee_packet=fee_pkt.to_prompt_dict(),
-        risk_packet=risk_pkt.to_prompt_dict(),
-        liquidity_packet=liquidity_pkt.to_prompt_dict(),
-        alpha_packet=alpha_pkt.to_prompt_dict(),
-    ))
-    await run.event("gate_done", {"gate_report": gate_dict})
+    await run.event("gate_done", {"verification": verification, "grounding": grounding})
 
     elapsed_ms = (_clock() - start) * 1000
     result = CouncilResult(
@@ -462,8 +535,8 @@ async def run_council_pipeline(
         risk=risk_v,
         fee=fee_v,
         synthesis=synth,
-        grounding_report=grounding_summary,
-        gate_report=gate_dict,
+        grounding=grounding,
+        verification=verification,
         debate_transcript=final_state.get("debate_dict", {}),
         totalLatencyMs=round(elapsed_ms, 2),
         modelUsage=_model_usage(run.telemetry),
@@ -487,7 +560,8 @@ async def run_council_pipeline(
                 user_id=user_id,
                 symbol=symbol,
                 council_result_dict=result.model_dump(mode="json"),
-                grounding_summary=grounding_summary,
+                grounding=grounding,
+                verification=verification,
                 packet_hashes={
                     "fee": fee_pkt.content_hash,
                     "risk": risk_pkt.content_hash,
@@ -520,18 +594,17 @@ async def run_council_pipeline(
 
 
 async def load_packets(user_id: str, symbol: str):
+    """((fee, risk, liquidity, alpha), trades) from one DB read; symbol "ALL" = every symbol."""
     from agents.metrics import loader
 
-    if symbol == "ALL":
-        return await loader.load_all_packets_for_user(user_id)
-    return await loader.load_all_packets(user_id, symbol)
+    return await loader.load_run_inputs(user_id, symbol)
 
 
 async def run_council(account_id: str, user_id: str, symbol: str, llm=None, on_event: EventSink = None) -> CouncilResult:
-    """Load the packets for an account, then run the pipeline."""
-    fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_packets(user_id, symbol)
+    """Load the packets and trades for an account, then run the pipeline."""
+    (fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt), trades = await load_packets(user_id, symbol)
     return await run_council_pipeline(account_id, user_id, symbol, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt,
-                                      llm=llm, on_event=on_event)
+                                      llm=llm, on_event=on_event, trades=trades)
 
 
 async def run_council_with_packets(
@@ -543,6 +616,8 @@ async def run_council_with_packets(
     liquidity_pkt,
     alpha_pkt,
     llm=None,
+    trades: list[dict] | None = None,
 ) -> CouncilResult:
-    """Run the pipeline on pre-built packets (eval harness, demo-run generator)."""
-    return await run_council_pipeline(account_id, user_id, symbol, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt, llm=llm)
+    """Run the pipeline on pre-built packets and the trades they came from (eval harness)."""
+    return await run_council_pipeline(account_id, user_id, symbol, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt,
+                                      llm=llm, trades=trades)

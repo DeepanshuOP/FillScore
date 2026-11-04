@@ -16,7 +16,7 @@ def test_synthesis_cost_override():
     synthesis = SynthesisOutput(
         headline="Summary",
         narrative="Test narrative",
-        topRecommendations=["Rec 1", "Rec 2", "Rec 3"],
+        observations=[{"action_type": "general", "text": "Rec 1"}],
         overallRating="GOOD",
         estimatedMonthlyCostUSD=2464.59
     )

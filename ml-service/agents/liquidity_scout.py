@@ -6,14 +6,15 @@ Audits past executions from the deterministic LiquidityMetricsPacket. The model 
 
 from __future__ import annotations
 
-import json
-
 from agents.metrics.liquidity_packet import LiquidityMetricsPacket
-from agents.prompts import system_prompt
+from agents.grounded_call import grounded_verdict
+from agents.prompts import packet_values, system_prompt
 from agents.schemas import TradeContext, LiquidityVerdict
 
 ROLE = "specialist"
 MAX_TOKENS = 500
+NAMESPACE = "liquidity"
+TEXT_FIELD = "slippageRoot"   # the explanation; emptied by redaction -> the agent failed
 
 SYSTEM_PROMPT = system_prompt(
     "You are FillScore's Liquidity Scout agent. You audit the liquidity conditions of a "
@@ -23,7 +24,7 @@ SYSTEM_PROMPT = system_prompt(
     "{\n"
     '  "agent": "liquidity_scout",\n'
     '  "liquidityRating": "GOOD" | "MODERATE" | "POOR" | "CRITICAL",\n'
-    '  "slippageRoot": string (max 100 chars, past-tense root cause citing packet keys, no invented numbers),\n'
+    '  "slippageRoot": string (one past-tense sentence on the root cause; any value only as a placeholder),\n'
     '  "cited_evidence": [string] (keys from the packet that support this verdict),\n'
     '  "severity": "LOW" | "MEDIUM" | "HIGH" | "CRITICAL",\n'
     '  "confidence": float (0-1),\n'
@@ -36,9 +37,10 @@ SYSTEM_PROMPT = system_prompt(
 )
 
 
-def build_user_prompt(context: TradeContext, packet: LiquidityMetricsPacket) -> str:
+def build_user_prompt(context: TradeContext, packet: LiquidityMetricsPacket, ctx: dict | None = None) -> str:
+    ctx = ctx if ctx is not None else {NAMESPACE: packet.to_prompt_dict()}
     return f"""LiquidityMetricsPacket:
-{json.dumps(packet.to_prompt_dict(), indent=2)}
+{packet_values(ctx, [NAMESPACE])}
 
 Regime: {context.regime}
 
@@ -46,14 +48,13 @@ Assign liquidityRating, write slippageRoot citing packet keys, list cited_eviden
 Schema: liquidityRating (GOOD/MODERATE/POOR/CRITICAL), slippageRoot (str), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""
 
 
-async def run(context: TradeContext, llm, packet: LiquidityMetricsPacket, telemetry: list | None = None) -> LiquidityVerdict:
-    """Run the agent through the router; raises if no model produced a valid verdict."""
-    return await llm.complete(
-        ROLE,
-        SYSTEM_PROMPT,
-        build_user_prompt(context, packet),
-        LiquidityVerdict,
-        max_tokens=MAX_TOKENS,
-        temperature=0.1,
-        telemetry=telemetry,
+async def run(context: TradeContext, llm, packet: LiquidityMetricsPacket, telemetry: list | None = None, *,
+              ctx: dict | None = None, ledger=None) -> LiquidityVerdict:
+    """Run the agent through the router with blocking grounding (agents.grounded_call). Raises if no
+    model produced a valid verdict, or GroundingFailed if its explanation had to be removed."""
+    ctx = ctx if ctx is not None else {NAMESPACE: packet.to_prompt_dict()}
+    return await grounded_verdict(
+        llm, ROLE, SYSTEM_PROMPT, build_user_prompt(context, packet, ctx), LiquidityVerdict,
+        agent="liquidity_scout", text_field=TEXT_FIELD, ctx=ctx, ledger=ledger, telemetry=telemetry, max_tokens=MAX_TOKENS,
+        namespace=NAMESPACE,
     )

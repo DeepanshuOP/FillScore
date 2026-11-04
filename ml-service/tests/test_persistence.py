@@ -53,7 +53,7 @@ class TestSaveCouncilRun:
                 account_id="a1", user_id="u1",
                 symbol="BTCUSDT",
                 council_result_dict={"synthesis": {"overallRating": "FAIR"}},
-                grounding_summary={"avg_faithfulness_score": 0.9, "total_violations": 1},
+                grounding={"faithfulness_after": 0.9, "violations_first_pass": 1},
                 packet_hashes={"fee": "abc", "risk": "def", "liquidity": "ghi", "alpha": "jkl"},
                 model_usage={"specialists": "llama", "synthesis": "llama"},
                 total_latency_ms=2500.0,
@@ -74,7 +74,7 @@ class TestSaveCouncilRun:
             asyncio.run(save_council_run(
                 account_id="a1", user_id="u1", symbol="BTCUSDT",
                 council_result_dict={"synthesis": {"overallRating": "GOOD"}},
-                grounding_summary={"avg_faithfulness_score": 1.0, "total_violations": 0},
+                grounding={"faithfulness_after": 1.0, "violations_first_pass": 0},
                 packet_hashes={}, model_usage={}, total_latency_ms=1000.0,
             ))
             mock_collection.insert_one.assert_called_once()
@@ -98,18 +98,21 @@ class TestSaveCouncilRun:
             asyncio.run(save_council_run(
                 account_id="a1", user_id="u1", symbol="BTCUSDT",
                 council_result_dict={"synthesis": {"overallRating": "POOR"}},
-                grounding_summary={"avg_faithfulness_score": 0.8, "total_violations": 2},
+                grounding={"faithfulness_after": 0.8, "violations_first_pass": 2},
+                verification={"proposed": 1},
                 packet_hashes={"fee": "hash1"}, model_usage={}, total_latency_ms=3000.0,
             ))
 
         required_fields = [
             "run_id", "user_id", "symbol", "created_at", "prompt_version",
-            "total_latency_ms", "packet_hashes", "grounding_summary",
+            "total_latency_ms", "packet_hashes", "grounding", "verification",
             "council_result", "overall_rating", "avg_faithfulness_score",
             "total_violations", "data_source",
         ]
         for f in required_fields:
             assert f in inserted_doc, f"Missing field: {f}"
+        assert inserted_doc["avg_faithfulness_score"] == 0.8 and inserted_doc["total_violations"] == 2
+        assert inserted_doc["verification"] == {"proposed": 1}
 
     def test_overall_rating_extracted(self):
         """overall_rating should be extracted from council_result for easy querying."""
@@ -130,7 +133,7 @@ class TestSaveCouncilRun:
             asyncio.run(save_council_run(
                 account_id="a1", user_id="u1", symbol="BTCUSDT",
                 council_result_dict={"synthesis": {"overallRating": "CRITICAL"}},
-                grounding_summary={}, packet_hashes={}, model_usage={},
+                grounding={}, packet_hashes={}, model_usage={},
                 total_latency_ms=1000.0,
             ))
         assert inserted_doc["overall_rating"] == "CRITICAL"
@@ -149,7 +152,7 @@ class TestSaveCouncilRun:
             from agents.persistence import save_council_run
             asyncio.run(save_council_run(
                 account_id="demo-disciplined", user_id="demo-disciplined", symbol="BTCUSDT",
-                council_result_dict={}, grounding_summary={}, packet_hashes={}, model_usage={}, total_latency_ms=10.0,
+                council_result_dict={}, grounding={}, packet_hashes={}, model_usage={}, total_latency_ms=10.0,
             ))
         assert inserted_doc["data_source"] == "synthetic-demo"
 
@@ -167,7 +170,7 @@ class TestSaveCouncilRun:
             from agents.persistence import save_council_run
             asyncio.run(save_council_run(
                 account_id="some-real-uid", user_id="some-real-uid", symbol="BTCUSDT",
-                council_result_dict={}, grounding_summary={}, packet_hashes={}, model_usage={}, total_latency_ms=10.0,
+                council_result_dict={}, grounding={}, packet_hashes={}, model_usage={}, total_latency_ms=10.0,
             ))
         assert inserted_doc["data_source"] == "real-user"
 
@@ -228,3 +231,51 @@ class TestSaveAgentTrace:
             call_args = mock_collection.insert_one.call_args[0][0]
             assert call_args["total_tokens"] == 600
             assert call_args["agent_name"] == "fee_optimizer"
+
+
+def test_telemetry_excludes_legacy_runs():
+    """1c.7: legacy runs never enter telemetry, even with include_degraded=True."""
+    from mongomock_motor import AsyncMongoMockClient
+    from agents import persistence
+
+    client = AsyncMongoMockClient()
+    db = client["x"]
+
+    async def go():
+        await db.council_runs.insert_many([
+            {"run_id": "a", "total_latency_ms": 100.0, "avg_faithfulness_score": 1.0, "total_violations": 0, "overall_rating": "A"},
+            {"run_id": "b", "legacy": True, "degraded": False, "total_latency_ms": 900.0, "avg_faithfulness_score": 0.0, "total_violations": 5, "overall_rating": "F"},
+        ])
+        with patch.object(persistence, "_get_db", return_value=(MagicMock(), db)):
+            return (await persistence.get_telemetry_summary(),
+                    await persistence.get_telemetry_summary(include_degraded=True))
+
+    plain, inc = asyncio.run(go())
+    assert plain["total_runs"] == 1 and plain["avg_latency_ms"] == 100.0
+    assert inc["total_runs"] == 1
+
+
+def test_telemetry_faithfulness_reads_grounding_and_skips_null():
+    """1c.3: avg faithfulness = $avg of grounding.faithfulness_after; null (number-free run) is skipped.
+    Runs: 0.8, 1.0, null -> (0.8 + 1.0) / 2 = 0.9 ; violations 3 + 0 + 0 = 3."""
+    from mongomock_motor import AsyncMongoMockClient
+    from agents import persistence
+
+    db = AsyncMongoMockClient()["x"]
+
+    async def go():
+        await db.council_runs.insert_many([
+            {"run_id": "a", "degraded": False, "total_latency_ms": 1.0,
+             "grounding": {"faithfulness_after": 0.8, "violations_first_pass": 3}},
+            {"run_id": "b", "degraded": False, "total_latency_ms": 1.0,
+             "grounding": {"faithfulness_after": 1.0, "violations_first_pass": 0}},
+            {"run_id": "c", "degraded": False, "total_latency_ms": 1.0,
+             "grounding": {"faithfulness_after": None, "violations_first_pass": 0}},
+        ])
+        with patch.object(persistence, "_get_db", return_value=(MagicMock(), db)):
+            return await persistence.get_telemetry_summary()
+
+    r = asyncio.run(go())
+    assert r["total_runs"] == 3
+    assert r["avg_faithfulness"] == pytest.approx(0.9)
+    assert r["total_violations"] == 3

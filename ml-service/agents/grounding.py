@@ -1,198 +1,289 @@
 """
-Grounding contract enforcement for FillScore Agent Council.
-Implements paper metric E1: faithfulness of LLM verdicts to MetricsPackets.
+Blocking grounding for the Agent Council.
 
-Two checks:
-  A) Evidence-key validation: every key in cited_evidence must exist in the packet
-  B) Faithfulness check: numeric tokens in reasoning text must appear in the packet
-
-These are the measurements that make the paper's "verified numbers" claim defensible.
+LLM text may only carry numbers through ``{{ns.key}}`` placeholders (agents.render). Any numeral
+the renderer did not produce is a violation: one regeneration with feedback, then sentence
+redaction. No raw LLM numeral is ever persisted (Redaction carries no text).
 """
 from __future__ import annotations
+
 import re
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import asdict, dataclass, field
+from typing import Any, Callable
+
+from agents.render import (
+    Violation, catalog_entries, render,
+)
+
+__all__ = [
+    "Numeral", "Violation", "Check", "Redaction", "GroundingFailed", "GroundingLedger",
+    "extract_numerals", "check", "split_sentences", "redact", "suggest_placeholder",
+    "feedback", "finalize", "grounded_complete",
+]
 
 
 @dataclass
-class GroundingReport:
-    """Result of grounding checks on one specialist verdict."""
+class Numeral:
+    text: str
+    start: int
+    end: int
+
+
+@dataclass
+class Check:
+    rendered: str
+    violations: list[Violation]
+    n_rendered: int
+
+
+@dataclass
+class Redaction:
     agent: str
-    # Evidence key validation
-    cited_keys: list[str]
-    valid_keys: list[str]       # cited keys that exist in packet
-    invalid_keys: list[str]     # cited keys that do NOT exist in packet — violations
-    key_validity_score: float   # len(valid) / len(cited) if cited else 1.0
-
-    # Faithfulness check (numeric tokens)
-    numeric_tokens_found: list[str]    # all numbers extracted from reasoning text
-    grounded_tokens: list[str]         # numbers that appear in packet values
-    ungrounded_tokens: list[str]       # numbers NOT in packet — potential hallucinations
-    faithfulness_score: float          # len(grounded) / len(found) if found else 1.0
-
-    # Combined
-    overall_grounding_score: float     # mean of key_validity_score and faithfulness_score
-    has_violations: bool               # True if any invalid key or ungrounded numeral
+    field: str
+    sentence_index: int
+    n_tokens: int
+    kinds: list[str]
 
 
-def _extract_numeric_tokens(text: str) -> list[str]:
-    """
-    Extract numeric tokens from text (integers and decimals).
-    Returns them as strings to preserve exact formatting for matching.
-    Filters out single-digit integers (0-9) to reduce noise from ordinals.
-    """
-    pattern = r'\b\d+\.?\d*\b'
-    tokens = re.findall(pattern, text)
-    # Filter single digits and years (4-digit numbers > 2000) to reduce noise
-    filtered = []
-    for t in tokens:
+class GroundingFailed(Exception):
+    def __init__(self, agent: str, field: str):
+        super().__init__(f"grounding failed for {agent}.{field}")
+        self.agent = agent
+        self.field = field
+
+
+# ── numeral extraction ──
+_NUM = r"(?:\d{1,3}(?:,\d{3})+(?:\.\d+)?|\d+(?:\.\d+)?|\.\d+)"
+_SIGNED = rf"[-−+]?\$?{_NUM}"
+_SUFFIX = r"(?:%|\s?bps|bn|mins?|hrs?|st|nd|rd|th|x|k|m|h|s)"
+# A letter before the digits does not hide them (`p95`, `top5`, `v2`); `_` and `.` still do
+# (`savings_at_050_usd`, decimals). Letters glued after the digits belong to the token (`30d`, `3days`).
+_NUMERAL_RE = re.compile(
+    r"(?<![0-9_.])(?:"
+    r"(?P<allow>24h|24-hour)(?![A-Za-z0-9_])"
+    r"|(?P<num>"
+    rf"[-−+]?\$?(?:\d{{1,2}}:\d{{2}}|{_NUM}(?:\s*(?:-|–|—|to)\s*{_SIGNED})?{_SUFFIX}?[A-Za-z]*)"
+    r")(?![A-Za-z0-9_])"
+    r")",
+    re.I,
+)
+_WORDS = ("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen "
+          "fifteen sixteen seventeen eighteen nineteen twenty").split()
+_BIG_WORDS = "thirty forty fifty sixty seventy eighty ninety hundred thousand million billion dozen".split()
+_WORD_RE = re.compile(r"\b(?:" + "|".join(_WORDS + _BIG_WORDS) + r")\b", re.I)
+
+
+def extract_numerals(text: str) -> list[Numeral]:
+    found: list[Numeral] = []
+    for m in _NUMERAL_RE.finditer(text):
+        if m.group("num") is not None:
+            found.append(Numeral(m.group("num"), m.start("num"), m.end("num")))
+    for m in _WORD_RE.finditer(text):
+        found.append(Numeral(m.group(0), m.start(), m.end()))
+    found.sort(key=lambda n: n.start)
+    return found
+
+
+# ── check / sentences / redaction ──
+def _digits_covered(text: str, n: Numeral, spans: list[tuple[int, int]]) -> bool:
+    digit_pos = [i for i in range(n.start, n.end) if text[i].isdigit()]
+    return bool(digit_pos) and all(any(s <= i < e for s, e in spans) for i in digit_pos)
+
+
+def check(template: str, ctx: dict[str, dict]) -> Check:
+    r = render(template, ctx)
+    violations = list(r.problems)
+    for _s, e in r.spans:   # a letter or digit glued to a rendered value changes what the reader sees
+        glued = re.match(r"[A-Za-z0-9]+", r.text[e:])
+        if glued:
+            violations.append(Violation("numeral", r.text[_s:e] + glued.group(0)))
+    for n in extract_numerals(r.text):
+        if any(s <= n.start and n.end <= e for s, e in r.spans) or _digits_covered(r.text, n, r.spans):
+            continue
+        violations.append(Violation("numeral", n.text))
+    return Check(r.text, violations, r.n_rendered)
+
+
+def split_sentences(text: str) -> list[str]:
+    text = text.strip()
+    if not text:
+        return []
+    return re.split(r"(?<=[.!?])\s+", text)
+
+
+def redact(template: str, ctx: dict[str, dict], agent: str, field_name: str) -> tuple[str, list[Redaction]]:
+    kept: list[str] = []
+    reds: list[Redaction] = []
+    for i, sentence in enumerate(split_sentences(template)):
+        c = check(sentence, ctx)
+        if c.violations:
+            reds.append(Redaction(agent, field_name, i, len(c.violations),
+                                  sorted({v.kind for v in c.violations})))
+        else:
+            kept.append(sentence)
+    return " ".join(kept), reds
+
+
+# ── suggestions / feedback ──
+_WORD_VALUES = {w: i for i, w in enumerate(_WORDS)}
+_VALUE_RE = re.compile(r"-?\d+(?:\.\d+)?|-?\.\d+")
+
+
+def _parse_number(s: str) -> tuple[float, int] | None:
+    low = s.strip().lower()
+    if low in _WORD_VALUES:
+        return float(_WORD_VALUES[low]), 0
+    cleaned = low.replace("$", "").replace(",", "").replace("−", "-")
+    m = _VALUE_RE.search(cleaned)
+    if not m:
+        return None
+    txt = m.group(0)
+    dec = len(txt.split(".")[1]) if "." in txt else 0
+    return float(txt), dec
+
+
+def suggest_placeholder(token: str, ctx: dict[str, dict]) -> str | None:
+    want = _parse_number(token)
+    if want is None:
+        return None
+    for path, formatted in catalog_entries(ctx, list(ctx)):
+        got = _parse_number(formatted)
+        if got is None:
+            continue
+        value, dec = got
+        if abs(round(want[0], dec) - value) < 1e-9:
+            return "{{" + path + "}}"
+    return None
+
+
+def feedback(violations: list[Violation], ctx: dict[str, dict]) -> str:
+    parts: list[str] = []
+    seen: set[str] = set()
+    items: list[str] = []
+    for v in violations:
+        if v.kind != "numeral" or v.token in seen:
+            continue
+        seen.add(v.token)
+        sug = suggest_placeholder(v.token, ctx)
+        items.append(f'"{v.token}" (use {sug})' if sug else f'"{v.token}" (no packet value matches; remove it)')
+    if items:
+        parts.append("Your previous answer contained numbers that were not written as placeholders: "
+                     + ", ".join(items) + ".")
+    bad: list[str] = []
+    for v in violations:
+        if v.kind != "numeral" and v.token not in bad:
+            bad.append(v.token)
+    if bad:
+        parts.append("Unknown placeholders: " + ", ".join(bad) + ".")
+    parts.append("Rewrite the answer: never write digits or number words; refer to values only with "
+                 "placeholders from the list.")
+    return " ".join(parts)
+
+
+def finalize(template: str, ctx: dict[str, dict], agent: str, field_name: str,
+             ledger: "GroundingLedger | None" = None) -> str:
+    c = check(template, ctx)
+    if not c.violations:
+        return c.rendered
+    cleaned, reds = redact(template, ctx, agent, field_name)
+    if ledger is not None:
+        ledger.add_redactions(reds)
+    c2 = check(cleaned, ctx)
+    if c2.violations:  # defensive: never return unverified text
+        return ""
+    return c2.rendered
+
+
+# ── ledger ──
+def _faith(n_rendered: int, n_viol: int) -> float | None:
+    den = n_rendered + n_viol
+    return round(n_rendered / den, 4) if den else None
+
+
+@dataclass
+class GroundingLedger:
+    regenerations: int = 0
+    redactions: list[Redaction] = field(default_factory=list)
+    _first: list[Check] = field(default_factory=list)
+    _final: list[Check] = field(default_factory=list)
+    _agents: dict[str, dict[str, Any]] = field(default_factory=dict)
+
+    def record(self, agent: str, field_count: int, first: list[Check], final: list[Check],
+               regenerated: bool) -> None:
+        self._first.extend(first)
+        self._final.extend(final)
+        a = self._agents.setdefault(agent, {"viol": 0, "regen": False, "n": 0, "v": 0})
+        a["viol"] += sum(len(c.violations) for c in first)
+        a["regen"] = a["regen"] or regenerated
+        a["n"] += sum(c.n_rendered for c in final)
+        a["v"] += sum(len(c.violations) for c in final)
+
+    def add_redactions(self, reds: list[Redaction]) -> None:
+        self.redactions.extend(reds)
+
+    def to_dict(self, degraded: bool) -> dict:
+        """Run-level grounding report. `faithfulness_first_pass` and `faithfulness_after` are measured
+        on the model's text: first answers, and the final candidate after regeneration but BEFORE
+        redaction (so they measure the model, not the redaction). A degraded run is never graded, so
+        every `faithfulness_after` (top level and per agent) is None for it."""
+        fn = sum(c.n_rendered for c in self._first)
+        fv = sum(len(c.violations) for c in self._first)
+        ln = sum(c.n_rendered for c in self._final)
+        lv = sum(len(c.violations) for c in self._final)
+        return {
+            "violations_first_pass": fv,
+            "regenerations": self.regenerations,
+            "redactions": [asdict(r) for r in self.redactions],
+            "numbers_checked": ln + lv,
+            "faithfulness_first_pass": _faith(fn, fv),
+            "faithfulness_after": None if degraded else _faith(ln, lv),
+            "per_agent": {
+                name: {"violations_first_pass": a["viol"], "regenerated": a["regen"],
+                       "faithfulness_after": None if degraded else _faith(a["n"], a["v"])}
+                for name, a in self._agents.items()
+            },
+        }
+
+
+# ── blocking LLM wrapper ──
+async def grounded_complete(
+    llm, role: str, system: str, user: str, schema, *, agent: str,
+    fields: Callable[[Any], dict[str, str]],
+    apply: Callable[[Any, dict[str, str]], Any],
+    ctx_for: Callable[[str], dict[str, dict]],
+    ledger: GroundingLedger, telemetry=None, max_tokens: int, temperature: float = 0.1,
+    allow_regen: bool = True,
+):
+    """Returns the model with cleaned *templates* applied; the caller renders via finalize()."""
+    out = await llm.complete(role, system, user, schema, max_tokens=max_tokens,
+                             temperature=temperature, telemetry=telemetry)
+    tpl = fields(out)
+    first = {p: check(t, ctx_for(p)) for p, t in tpl.items()}
+    viols = [v for c in first.values() for v in c.violations]
+    if not viols:
+        ledger.record(agent, len(tpl), list(first.values()), list(first.values()), False)
+        return apply(out, tpl)
+
+    chosen, chosen_tpl, final = out, tpl, first
+    regenerated = False
+    if allow_regen:
+        ledger.regenerations += 1
+        regenerated = True
+        first_bad = next(p for p, c in first.items() if c.violations)
+        msg = feedback(viols, ctx_for(first_bad))
         try:
-            val = float(t)
-            is_single_digit_int = t.isdigit() and len(t) == 1
-            is_year = 1900 <= val <= 2100 and t.isdigit() and len(t) == 4
-            if not is_single_digit_int and not is_year:
-                filtered.append(t)
-        except ValueError:
-            pass
-    return filtered
+            out2 = await llm.complete(role, system, user + "\n\n" + msg, schema, max_tokens=max_tokens,
+                                      temperature=temperature, telemetry=telemetry)
+        except Exception:
+            out2 = None
+        if out2 is not None:
+            chosen, chosen_tpl = out2, fields(out2)
+            final = {p: check(t, ctx_for(p)) for p, t in chosen_tpl.items()}
 
-
-def _packet_numeric_values(packet_dict: dict[str, Any]) -> set[str]:
-    """
-    Extract all numeric values from a packet dict as strings.
-    Handles nested dicts and lists.
-    """
-    values = set()
-
-    def _recurse(obj):
-        if isinstance(obj, (int, float)):
-            # Add both the raw value and rounded versions
-            values.add(str(obj))
-            values.add(str(round(obj, 1)))
-            values.add(str(round(obj, 2)))
-            values.add(str(round(obj, 4)))
-            values.add(str(int(obj)) if obj == int(obj) else str(obj))
-        elif isinstance(obj, dict):
-            for v in obj.values():
-                _recurse(v)
-        elif isinstance(obj, list):
-            for item in obj:
-                _recurse(item)
-
-    _recurse(packet_dict)
-    return values
-
-
-def check_grounding(
-    agent_name: str,
-    cited_evidence: list[str],
-    reasoning_text: str,
-    packet_dict: dict[str, Any],
-) -> GroundingReport:
-    """
-    Check whether a specialist verdict is grounded in its MetricsPacket.
-
-    Args:
-        agent_name: name of the specialist (for reporting)
-        cited_evidence: list of packet keys the agent cited
-        reasoning_text: the agent's reasoning string (slippageRoot, recommendedAction, etc.)
-        packet_dict: the to_prompt_dict() output for this agent's packet
-
-    Returns:
-        GroundingReport with validity and faithfulness scores
-    """
-    packet_keys = set(packet_dict.keys())
-
-    # ── A: evidence key validation ────────────────────────────────────────────
-    valid_keys = [k for k in cited_evidence if k in packet_keys]
-    invalid_keys = [k for k in cited_evidence if k not in packet_keys]
-    key_score = len(valid_keys) / len(cited_evidence) if cited_evidence else 1.0
-
-    # ── B: faithfulness check ────────────────────────────────────────────────
-    numeric_tokens = _extract_numeric_tokens(reasoning_text)
-    packet_values = _packet_numeric_values(packet_dict)
-
-    grounded = [t for t in numeric_tokens if t in packet_values]
-    ungrounded = [t for t in numeric_tokens if t not in packet_values]
-    faith_score = len(grounded) / len(numeric_tokens) if numeric_tokens else 1.0
-
-    overall = (key_score + faith_score) / 2.0
-    has_violations = len(invalid_keys) > 0 or len(ungrounded) > 0
-
-    return GroundingReport(
-        agent=agent_name,
-        cited_keys=cited_evidence,
-        valid_keys=valid_keys,
-        invalid_keys=invalid_keys,
-        key_validity_score=round(key_score, 4),
-        numeric_tokens_found=numeric_tokens,
-        grounded_tokens=grounded,
-        ungrounded_tokens=ungrounded,
-        faithfulness_score=round(faith_score, 4),
-        overall_grounding_score=round(overall, 4),
-        has_violations=has_violations,
-    )
-
-
-def check_all_verdicts(
-    liquidity_cited: list[str],
-    liquidity_reasoning: str,
-    liquidity_packet: dict,
-    alpha_cited: list[str],
-    alpha_reasoning: str,
-    alpha_packet: dict,
-    risk_cited: list[str],
-    risk_reasoning: str,
-    risk_packet: dict,
-    fee_cited: list[str],
-    fee_reasoning: str,
-    fee_packet: dict,
-) -> dict[str, GroundingReport]:
-    """Run grounding checks on all four specialist verdicts. Returns dict keyed by agent name."""
-    return {
-        "liquidity_scout": check_grounding(
-            "liquidity_scout", liquidity_cited, liquidity_reasoning, liquidity_packet
-        ),
-        "alpha_architect": check_grounding(
-            "alpha_architect", alpha_cited, alpha_reasoning, alpha_packet
-        ),
-        "risk_auditor": check_grounding(
-            "risk_auditor", risk_cited, risk_reasoning, risk_packet
-        ),
-        "fee_optimizer": check_grounding(
-            "fee_optimizer", fee_cited, fee_reasoning, fee_packet
-        ),
-    }
-
-
-def summarise_grounding(reports: dict[str, GroundingReport]) -> dict:
-    """
-    Aggregate grounding reports into a summary suitable for logging
-    and for the paper's E1 table.
-    """
-    if not reports:
-        return {}
-
-    avg_faith = sum(r.faithfulness_score for r in reports.values()) / len(reports)
-    avg_key = sum(r.key_validity_score for r in reports.values()) / len(reports)
-    total_violations = sum(
-        len(r.invalid_keys) + len(r.ungrounded_tokens) for r in reports.values()
-    )
-    any_violations = any(r.has_violations for r in reports.values())
-
-    return {
-        "avg_faithfulness_score": round(avg_faith, 4),
-        "avg_key_validity_score": round(avg_key, 4),
-        "total_violations": total_violations,
-        "any_violations": any_violations,
-        "per_agent": {
-            name: {
-                "faithfulness_score": r.faithfulness_score,
-                "key_validity_score": r.key_validity_score,
-                "invalid_keys": r.invalid_keys,
-                "ungrounded_tokens": r.ungrounded_tokens,
-                "overall_grounding_score": r.overall_grounding_score,
-            }
-            for name, r in reports.items()
-        },
-    }
+    cleaned = dict(chosen_tpl)
+    for p, c in final.items():
+        if c.violations:
+            cleaned[p], reds = redact(chosen_tpl[p], ctx_for(p), agent, p)
+            ledger.add_redactions(reds)
+    ledger.record(agent, len(tpl), list(first.values()), list(final.values()), regenerated)
+    return apply(chosen, cleaned)

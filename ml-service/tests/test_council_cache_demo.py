@@ -45,10 +45,10 @@ def _flow(router, db, account=USER, packets=None, loads=None):
     async def load(*_a, **_k):
         if loads is not None:
             loads.append(1)
-        return packets
+        return packets, []          # (packets, trades)
 
     with patch("agents.council_service._router", return_value=router), \
-         patch("agents.metrics.loader.load_all_packets", load), \
+         patch("agents.metrics.loader.load_run_inputs", load), \
          patch("agents.persistence._get_db", return_value=(MagicMock(), db)):
         return asyncio.run(council_flow(account, "BTCUSDT"))
 
@@ -225,11 +225,11 @@ def test_an_exhausted_router_budget_refuses_with_try_tomorrow_and_no_calls():
                        main.JWT_ACCESS_SECRET, algorithm="HS256")
 
     async def load(*_a, **_k):
-        return make_packets()
+        return make_packets(), []
 
     db = AsyncMongoMockClient()["fillscore"]
     with patch("agents.council_service._router", return_value=router), \
-         patch("agents.metrics.loader.load_all_packets", load), \
+         patch("agents.metrics.loader.load_run_inputs", load), \
          patch("agents.persistence._get_db", return_value=(MagicMock(), db)):
         res = client.post("/ml/agents/council/stream", json={"symbol": "BTCUSDT"},
                           headers={"Authorization": f"Bearer {token}"})

@@ -16,12 +16,12 @@ EMAIL = "trader.private@example.com"
 NOTE = "journal: panic sold after the CPI print"
 
 
-def _run(router, packets=None, account=ACCOUNT, user=USER_ID):
+def _run(router, packets=None, account=ACCOUNT, user=USER_ID, trades=None):
     from agents.council import run_council_pipeline
 
     fee, risk, liq, alpha = packets or make_packets()
     return asyncio.run(run_council_pipeline(account, user, "BTCUSDT", fee, risk, liq, alpha,
-                                            llm=router, persist=False))
+                                            llm=router, persist=False, trades=trades))
 
 
 def test_every_system_prompt_frames_a_past_audit_without_advice_or_new_numbers():
@@ -32,7 +32,8 @@ def test_every_system_prompt_frames_a_past_audit_without_advice_or_new_numbers()
     for s in systems:
         assert "post-trade audit" in s and "PAST executions" in s
         assert "not financial advice" in s
-        assert "Do not state any number that is not present in the provided packet" in s
+        assert "Never write digits or number words (zero–twenty) in any text field" in s
+        assert "{{fee.maker_ratio}}" in s
 
 
 def test_debate_text_between_agents_is_wrapped_as_untrusted_data():
@@ -66,7 +67,7 @@ def test_prompts_never_carry_identifiers_or_journal_notes():
     trades = []
     for i in range(6):
         trades.append({
-            "_id": f"t{i}", "userId": USER_ID, "accountId": ACCOUNT, "email": EMAIL, "notes": NOTE,
+            "_id": f"t{i}", "id": f"tradeid-{i}-private", "exchange": "okx", "userId": USER_ID, "accountId": ACCOUNT, "email": EMAIL, "notes": NOTE,
             "note": NOTE, "symbol": "BTCUSDT", "isMaker": i % 2 == 0, "feePaid": 1.0 + i, "feeUsd": 1.0 + i,
             "notionalValue": 1000.0 * (i + 1), "orderType": "MARKET" if i % 2 else "LIMIT",
             "arrivalSlippageBps": 2.0 * i, "executedAt": f"2026-10-0{i + 1}T1{i}:00:00Z", "fillScore": 70 + i,
@@ -75,9 +76,35 @@ def test_prompts_never_carry_identifiers_or_journal_notes():
     packets = (build_fee_packet(trades, USER_ID, "BTCUSDT"), build_risk_packet(trades, USER_ID, "BTCUSDT"),
                build_liquidity_packet(trades, USER_ID, "BTCUSDT"), build_alpha_packet(trades, USER_ID, "BTCUSDT"))
     router, provider = make_router()
-    _run(router, packets=packets)
+    _run(router, packets=packets, trades=trades)   # the synthesis action list is built from these trades
 
     sent = "\n".join(provider.prompts())
     assert len(provider.calls) == 9
-    for secret in (ACCOUNT, USER_ID, EMAIL, NOTE, "panic sold", "@example.com"):
+    assert "exclude_hours" in sent and "BTCUSDT" in sent
+    for secret in (ACCOUNT, USER_ID, EMAIL, NOTE, "panic sold", "@example.com", "tradeid-"):
         assert secret not in sent, secret
+
+
+def test_prompts_show_packet_values_as_placeholders_not_json():
+    """1c.2: specialists see their own namespace; debate and synthesis see all four.
+    make_packets(): fee.total_fee_paid_usd 328.0 -> "$328.00", liquidity.avg_slippage_bps 0.0 -> "0.0 bps"."""
+    router, provider = make_router()
+    _run(router)
+    user = {c["agent"]: c["messages"][1]["content"] for c in provider.calls}
+    assert "{{fee.total_fee_paid_usd}} = $328.00" in user["fee_optimizer"]
+    assert "{{liquidity." not in user["fee_optimizer"]
+    assert "{{liquidity.avg_slippage_bps}} = 0.0 bps" in user["liquidity_scout"]
+    for agent in ("prosecution", "defense", "synthesis"):
+        for ns in ("fee", "risk", "liquidity", "alpha"):
+            assert "{{" + ns + "." in user[agent], (agent, ns)
+    for text in user.values():
+        assert '"maker_ratio":' not in text and "content_hash" not in text and "metrics_version" not in text
+    assert "maker_ratio of 0.22" not in "\n".join(provider.prompts())
+
+
+def test_synthesis_prompt_keeps_actions_out_of_the_narrative():
+    # 1c.10 F5: dropped actions must not leak into the headline or narrative
+    from agents.synthesis import SYNTHESIS_SYSTEM_PROMPT
+    assert ("The headline and narrative describe what happened in these executions; they must not describe "
+            "or name any proposed action") in " ".join(SYNTHESIS_SYSTEM_PROMPT.split())
+    assert "judge" in SYNTHESIS_SYSTEM_PROMPT.lower()

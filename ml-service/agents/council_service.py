@@ -1,6 +1,7 @@
 """The request flow both Council endpoints share (Phase 1b.1 / 1b.5).
 
-Order: demo accounts are served a stored run and never run live (F-09) → load packets → NO_DATA →
+Order: demo accounts are served a stored run and never run live (F-09) → load packets and trades
+(one read) → NO_DATA →
 content-hash cache (zero LLM calls) → router capacity (daily AI budget) → per-account quota →
 the one pipeline in agents.council.
 
@@ -86,7 +87,7 @@ async def council_flow(account_id: str, symbol: str, on_event: EventSink = None,
         await _replay(result, on_event)
         return result
 
-    fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = await load_packets(account_id, symbol)
+    (fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt), trades = await load_packets(account_id, symbol)
     if fee_pkt.trade_count == 0:
         raise CouncilError(NO_DATA)
 
@@ -119,5 +120,5 @@ async def council_flow(account_id: str, symbol: str, on_event: EventSink = None,
 
     return await run_council_pipeline(
         account_id, account_id, symbol, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt,
-        llm=llm, on_event=on_event,
+        llm=llm, on_event=on_event, trades=trades,
     )

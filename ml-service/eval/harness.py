@@ -131,15 +131,16 @@ async def run_single_eval(
     liq_pkt = build_liquidity_packet(trades, user_id, symbol)
     alpha_pkt = build_alpha_packet(trades, user_id, symbol)
 
-    # Run council
-    result = await run_council_with_packets(user_id, symbol, fee_pkt, risk_pkt, liq_pkt, alpha_pkt)
+    # Run council (account = user for the demo eval users; the verifier replays these same trades)
+    result = await run_council_with_packets(user_id, user_id, symbol, fee_pkt, risk_pkt, liq_pkt, alpha_pkt,
+                                            trades=trades)
 
     # A degraded run (Phase 1b.2) fell back to defaults: keep it out of E1-E4 unless asked for.
     if result.degraded and not include_degraded:
         return {"error": "degraded run", "user_id": user_id, "degraded_reasons": result.degraded_reasons}
 
-    # E1: faithfulness
-    grounding = result.grounding_report
+    # E1: faithfulness after blocking grounding (None for a number-free or degraded run)
+    grounding = result.grounding
 
     # E2: verdict labels (for consistency analysis across repeated runs)
     verdict_labels = {
@@ -150,17 +151,16 @@ async def run_single_eval(
         "overall": result.synthesis.overallRating,
     }
 
-    # E3: recommendation utility
-    gate = result.gate_report
+    # E3: recommendation utility (verified findings carry the replayed effect; observations none)
+    verification = result.verification
     recs_with_values = [
-        {
-            "text": v["text"],
-            "action_type": v["action_type"],
-            "passed": v["passed"],
-            "counterfactual_value": v["counterfactual_value"],
-            "counterfactual_key": v["counterfactual_key"],
-        }
-        for v in gate.get("verdicts", [])
+        {"text": f.text, "action_type": f.action_type, "passed": True,
+         "counterfactual_value": f.effect_usd, "counterfactual_key": "effect_usd"}
+        for f in result.synthesis.findings
+    ] + [
+        {"text": o.text, "action_type": "general_improvement", "passed": False,
+         "counterfactual_value": None, "counterfactual_key": None}
+        for o in result.synthesis.observations
     ]
 
     return {
@@ -169,13 +169,15 @@ async def run_single_eval(
         "cutoff": cutoff,
         "pre_cutoff_trade_count": len(trades),
         "leakage_free": True,
-        "E1_faithfulness": grounding.get("avg_faithfulness_score", 0.0),
-        "E1_key_validity": grounding.get("avg_key_validity_score", 0.0),
-        "E1_violations": grounding.get("total_violations", 0),
+        "E1_faithfulness": grounding.get("faithfulness_after"),
+        "E1_faithfulness_first_pass": grounding.get("faithfulness_first_pass"),
+        "E1_violations": grounding.get("violations_first_pass", 0),
+        "E1_regenerations": grounding.get("regenerations", 0),
+        "E1_redactions": len(grounding.get("redactions", [])),
         "E2_verdict_labels": verdict_labels,
-        "E3_gate_passed": gate.get("gate_passed", False),
-        "E3_passed_count": gate.get("passed_count", 0),
-        "E3_total_recs": gate.get("total_recommendations", 0),
+        "E3_verification": verification,
+        "E3_passed_count": verification.get("passed", 0),
+        "E3_total_recs": verification.get("proposed", 0) + verification.get("re_reasoned", 0),
         "E3_recommendations": recs_with_values,
         "debate_rounds": result.debate_transcript.get("round_count", 0) if isinstance(result.debate_transcript, dict) else 0,
         "total_latency_ms": result.totalLatencyMs,
@@ -249,14 +251,16 @@ async def run_consistency_eval(
             "all_labels": labels,
         }
 
-    avg_faithfulness = sum(r["E1_faithfulness"] for r in results) / len(results)
+    # runs with no checked number score None (1c.3): average only over runs that have a score
+    scored = [r["E1_faithfulness"] for r in results if r.get("E1_faithfulness") is not None]
+    avg_faithfulness = sum(scored) / len(scored) if scored else None
     avg_latency = sum(r["total_latency_ms"] for r in results) / len(results)
     e3_agg = aggregate_e3(results)
 
     return {
         "user_id": user_id,
         "n_runs": len(results),
-        "E1_avg_faithfulness": round(avg_faithfulness, 4),
+        "E1_avg_faithfulness": round(avg_faithfulness, 4) if avg_faithfulness is not None else None,
         "E2_agreement": agreement,
         "E2_avg_agreement_rate": round(
             sum(v["agreement_rate"] for v in agreement.values()) / len(agreement), 4
@@ -283,7 +287,8 @@ async def run_full_eval(n_consistency_runs: int = 3) -> dict:
         consistency = await run_consistency_eval(user_id, EVAL_SYMBOL, n_consistency_runs)
         results[user_id] = consistency
         print(f"  E2 avg agreement: {consistency.get('E2_avg_agreement_rate', 0):.2%}")
-        print(f"  E1 avg faithfulness: {consistency.get('E1_avg_faithfulness', 0):.2%}")
+        e1 = consistency.get('E1_avg_faithfulness')
+        print(f"  E1 avg faithfulness: {e1:.2%}" if e1 is not None else "  E1 avg faithfulness: n/a")
         print()
 
         await asyncio.sleep(5)  # pause between users
@@ -299,7 +304,8 @@ def print_eval_table(results: dict) -> None:
     print(f"{'User':<25} {'E1 Faithfulness':>15} {'E1 Key Validity':>15}")
     print("-"*55)
     for uid, r in results.items():
-        print(f"{uid:<25} {r.get('E1_avg_faithfulness', 0):>15.4f} {'N/A':>15}")
+        e1 = r.get('E1_avg_faithfulness')
+        print(f"{uid:<25} {(f'{e1:.4f}' if e1 is not None else 'n/a'):>15} {'N/A':>15}")
 
     print("\n" + "="*60)
     print("TABLE 2: Consistency (E2) — verdict agreement rates")

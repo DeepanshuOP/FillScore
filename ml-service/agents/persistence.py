@@ -40,12 +40,13 @@ async def save_council_run(
     user_id: str,
     symbol: str,
     council_result_dict: dict,
-    grounding_summary: dict,
+    grounding: dict,
     packet_hashes: dict[str, str],
     model_usage: dict,
     total_latency_ms: float,
     prompt_version: str = PROMPT_VERSION,
     extra: Optional[dict] = None,
+    verification: Optional[dict] = None,
 ) -> str:
     """
     Persist a completed council run. Returns the run_id.
@@ -71,15 +72,17 @@ async def save_council_run(
         "total_latency_ms": total_latency_ms,
         # packet hashes — used to verify replay determinism
         "packet_hashes": packet_hashes,
-        # grounding metrics (E1)
-        "grounding_summary": grounding_summary,
+        # 1c.3 blocking grounding (E1) and 1c.4 counterfactual verification
+        "grounding": grounding,
+        "verification": verification or {},
         # full council result (verdicts + synthesis)
         "council_result": council_result_dict,
         # extracted for easy querying without deserialising full result
         # None for a degraded run: it is never graded
         "overall_rating": council_result_dict.get("synthesis", {}).get("overallRating"),
-        "avg_faithfulness_score": grounding_summary.get("avg_faithfulness_score", 0.0),
-        "total_violations": grounding_summary.get("total_violations", 0),
+        # copies for the run list; None for a degraded or number-free run (never counted as 1.0)
+        "avg_faithfulness_score": grounding.get("faithfulness_after"),
+        "total_violations": grounding.get("violations_first_pass", 0),
         "token_usage": council_result_dict.get("tokenUsage", {}),
         # Phase 1b: degraded flag, call counts, versions, route hash and per-call telemetry
         "degraded": bool(council_result_dict.get("degraded", False)),
@@ -190,7 +193,7 @@ async def get_telemetry_summary(account_id: Optional[str] = None, include_degrad
     total runs, total violations, per-model stats.
     Used by AC-11 eval harness and AC-14 cost report.
     """
-    query: dict[str, Any] = {}
+    query: dict[str, Any] = {"legacy": {"$ne": True}}  # legacy runs are never in telemetry
     if account_id:
         query["accountId"] = account_id
     if not include_degraded:
@@ -204,8 +207,9 @@ async def get_telemetry_summary(account_id: Optional[str] = None, include_degrad
                 "_id": None,
                 "total_runs": {"$sum": 1},
                 "avg_latency_ms": {"$avg": "$total_latency_ms"},
-                "avg_faithfulness": {"$avg": "$avg_faithfulness_score"},
-                "total_violations": {"$sum": "$total_violations"},
+                # $avg skips nulls: degraded and number-free runs do not count (1c.3)
+                "avg_faithfulness": {"$avg": "$grounding.faithfulness_after"},
+                "total_violations": {"$sum": "$grounding.violations_first_pass"},
                 "rating_counts": {"$push": "$overall_rating"},
             }}
         ]

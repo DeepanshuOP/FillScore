@@ -12,16 +12,19 @@ Defense: argues mitigation (whale adversity was exogenous per
   regime constraints, market conditions).
 
 Bounded at MAX_ROUNDS=2. Each side emits structured claims with
-evidence keys — no free-form essays.
+evidence keys — no free-form essays. Values appear only as {{ns.key}} placeholders; every claim and
+summary is grounded (agents.grounded_call) and the other side sees the rendered text (Phase 1c.3).
 """
 from __future__ import annotations
-import json, time
+import time
 from dataclasses import dataclass, field
 from typing import Any, Literal, Optional
 
 from pydantic import BaseModel, Field
 
-from agents.prompts import UNTRUSTED_NOTE, system_prompt, untrusted
+from agents.grounded_call import finalized, grounded_model
+from agents.grounding import GroundingFailed, GroundingLedger
+from agents.prompts import UNTRUSTED_NOTE, packet_values, system_prompt, untrusted
 
 
 MAX_ROUNDS = 2   # each side speaks at most MAX_ROUNDS times
@@ -94,6 +97,13 @@ def _claims_block(claims: list["DebateClaim"], source: str) -> str:
     )
 
 
+NAMESPACES = ["fee", "risk", "liquidity", "alpha"]
+
+
+def _ctx(liquidity_packet: dict, risk_packet: dict, fee_packet: dict, alpha_packet: dict) -> dict:
+    return {"fee": fee_packet, "risk": risk_packet, "liquidity": liquidity_packet, "alpha": alpha_packet}
+
+
 def _prosecution_prompt(
     liquidity_packet: dict,
     risk_packet: dict,
@@ -109,13 +119,10 @@ def _prosecution_prompt(
     return f"""You are the PROSECUTION in an audit of past executions.
 Question: Were this trader's past execution costs avoidable, given the packets below?
 
-Your job: Build the strongest case that costs were avoidable, citing specific packet values.
+Your job: Build the strongest case that costs were avoidable, citing packet values by placeholder.
 
 Evidence available:
-FEE PACKET: {json.dumps(fee_packet, indent=2)}
-RISK PACKET: {json.dumps(risk_packet, indent=2)}
-LIQUIDITY PACKET: {json.dumps(liquidity_packet, indent=2)}
-ALPHA PACKET: {json.dumps(alpha_packet, indent=2)}
+{packet_values(_ctx(liquidity_packet, risk_packet, fee_packet, alpha_packet), NAMESPACES)}
 {defense_text}
 
 Round {round_num} of {MAX_ROUNDS}. You must respond with EXACTLY this JSON structure and nothing else:
@@ -123,7 +130,7 @@ Round {round_num} of {MAX_ROUNDS}. You must respond with EXACTLY this JSON struc
   "claims": [
     {{
       "claim_id": "P{round_num}a",
-      "claim_text": "One sentence, max 40 words, citing a specific packet value",
+      "claim_text": "One sentence, max 40 words, citing a packet value by its placeholder",
       "evidence_keys": ["packet_key_1", "packet_key_2"],
       "rebuts": null
     }}
@@ -133,7 +140,7 @@ Round {round_num} of {MAX_ROUNDS}. You must respond with EXACTLY this JSON struc
 
 Rules:
 - Each claim must cite at least one evidence_key from the packets above
-- claim_text must reference specific numbers from the packets (e.g. "maker_ratio of 0.22")
+- claim_text must cite packet values by placeholder (e.g. "a maker ratio of {{{{fee.maker_ratio}}}}"), never as digits
 - Maximum 2 claims per round
 - rebuts should be a Defense claim_id (e.g. "D1") if you are rebutting, else null
 - Respond ONLY with valid JSON. No preamble."""
@@ -159,10 +166,7 @@ Your job: Build the strongest mitigating case. Key defense arguments:
 4. Some costs are market-structure costs, not execution errors
 
 Evidence available:
-FEE PACKET: {json.dumps(fee_packet, indent=2)}
-RISK PACKET: {json.dumps(risk_packet, indent=2)}
-LIQUIDITY PACKET: {json.dumps(liquidity_packet, indent=2)}
-ALPHA PACKET: {json.dumps(alpha_packet, indent=2)}
+{packet_values(_ctx(liquidity_packet, risk_packet, fee_packet, alpha_packet), NAMESPACES)}
 {prosecution_text}
 
 Round {round_num} of {MAX_ROUNDS}. You must respond with EXACTLY this JSON structure and nothing else:
@@ -170,7 +174,7 @@ Round {round_num} of {MAX_ROUNDS}. You must respond with EXACTLY this JSON struc
   "claims": [
     {{
       "claim_id": "D{round_num}a",
-      "claim_text": "One sentence, max 40 words, citing a specific packet value",
+      "claim_text": "One sentence, max 40 words, citing a packet value by its placeholder",
       "evidence_keys": ["packet_key_1", "packet_key_2"],
       "rebuts": "P1a"
     }}
@@ -180,26 +184,65 @@ Round {round_num} of {MAX_ROUNDS}. You must respond with EXACTLY this JSON struc
 
 Rules:
 - Each claim must cite at least one evidence_key from the packets
+- claim_text must cite packet values by placeholder (e.g. "an adverse rate of {{{{risk.adverse_rate}}}}"), never as digits
 - rebuts must be a valid prosecution claim_id (e.g. "P1a") whenever you are directly countering
 - Maximum 2 claims per round
 - Respond ONLY with valid JSON. No preamble."""
 
 
-def _parse_claims(raw: dict, side: Literal["prosecution", "defense"]) -> list[DebateClaim]:
-    """Parse LLM output into DebateClaims. Gracefully handles missing fields."""
+def _parse_claims(raw: dict, side: Literal["prosecution", "defense"], max_len: int | None = 200) -> list[DebateClaim]:
+    """Parse LLM output into DebateClaims. Gracefully handles missing fields. Rendered text is parsed
+    with max_len=None: cutting it could cut a rendered number in half."""
     claims = []
     for item in raw.get("claims", []):
         try:
             claims.append(DebateClaim(
                 side=side,
                 claim_id=str(item.get("claim_id", f"{side[0].upper()}?")),
-                claim_text=str(item.get("claim_text", ""))[:200],
+                claim_text=str(item.get("claim_text", ""))[:max_len],
                 evidence_keys=[str(k) for k in item.get("evidence_keys", [])],
                 rebuts=item.get("rebuts"),
             ))
         except Exception:
             continue
     return claims
+
+
+def _letters(i: int) -> str:
+    """0 -> a, 1 -> b, ... 25 -> z, 26 -> aa."""
+    out = ""
+    i += 1
+    while i:
+        i, r = divmod(i - 1, 26)
+        out = chr(97 + r) + out
+    return out
+
+
+async def _grounded_turn(llm, side: Literal["prosecution", "defense"], system: str, prompt: str, schema,
+                         ctx: dict, ledger: GroundingLedger, telemetry, round_num: int = 1,
+                         other_ids: frozenset[str] = frozenset()) -> tuple[list[DebateClaim], str]:
+    """One debate turn: grounded, rendered, emptied claims dropped. Raises (a failed turn) if the
+    call failed or if redaction left no claim or no summary. The model's claim_id is discarded: code
+    assigns P{round}a, P{round}b... / D{round}a... by position (after empty claims are dropped).
+    evidence_keys keep only keys found in a packet; rebuts only an id that exists on the other side."""
+    summary_key = f"{side}_summary"
+    patterns = ["claims.*.claim_text", summary_key]
+    out = await grounded_model(llm, ROLE, system, prompt, schema, agent=side, patterns=patterns,
+                               ctx_for=lambda _p: ctx, ledger=ledger, telemetry=telemetry,
+                               max_tokens=MAX_TOKENS, temperature=0.3)
+    data = finalized(out, patterns, lambda _p: ctx, side, ledger)
+    data["claims"] = [c for c in data["claims"] if c["claim_text"].strip()]
+    if not data["claims"]:
+        raise GroundingFailed(side, "claims")
+    if not data[summary_key].strip():
+        raise GroundingFailed(side, summary_key)
+    known = {k for packet in ctx.values() for k in packet}
+    prefix = side[0].upper()
+    for i, c in enumerate(data["claims"]):
+        c["claim_id"] = f"{prefix}{round_num}{_letters(i)}"
+        c["evidence_keys"] = list(dict.fromkeys(k for k in c.get("evidence_keys", []) if k in known))
+        c["rebuts"] = c.get("rebuts") if c.get("rebuts") in other_ids else None
+    return _parse_claims(data, side, max_len=None), data[summary_key]
 
 
 async def run_debate(
@@ -209,13 +252,17 @@ async def run_debate(
     alpha_packet: dict,
     llm,
     telemetry: list | None = None,
+    ledger: GroundingLedger | None = None,
 ) -> DebateTranscript:
     """
     Run the Execution Trial debate through the router (role "debate").
-    Never raises. Stops at the first failed turn, because a run with a failed turn is degraded
-    and further calls would be wasted. round_count counts only rounds where both sides answered.
+    Never raises. Stops at the first failed turn (a failed call, or a turn whose claims or summary
+    were emptied by the number check), because a run with a failed turn is degraded and further
+    calls would be wasted. round_count counts only rounds where both sides answered.
     """
     start = _clock()
+    ctx = _ctx(liquidity_packet, risk_packet, fee_packet, alpha_packet)
+    ledger = ledger if ledger is not None else GroundingLedger()
     state = DebateState()
     prosecution_summary = "Prosecution unavailable"
     defense_summary = "Defense unavailable"
@@ -228,12 +275,11 @@ async def run_debate(
                 liquidity_packet, risk_packet, fee_packet, alpha_packet,
                 state.defense_claims, round_num
             )
-            p_out = await llm.complete(ROLE, PROSECUTION_SYSTEM, p_prompt, ProsecutionTurn,
-                                       max_tokens=MAX_TOKENS, temperature=0.3, telemetry=telemetry)
-            new_claims = _parse_claims(p_out.model_dump(), "prosecution")
+            new_claims, prosecution_summary = await _grounded_turn(
+                llm, "prosecution", PROSECUTION_SYSTEM, p_prompt, ProsecutionTurn, ctx, ledger, telemetry,
+                round_num, frozenset(c.claim_id for c in state.defense_claims))
             state.prosecution_claims.extend(new_claims)
             state.all_claims.extend(new_claims)
-            prosecution_summary = p_out.prosecution_summary
             state.latest_speaker = "prosecution"
             turns_ok += 1
         except Exception as e:
@@ -246,12 +292,11 @@ async def run_debate(
                 liquidity_packet, risk_packet, fee_packet, alpha_packet,
                 state.prosecution_claims, round_num
             )
-            d_out = await llm.complete(ROLE, DEFENSE_SYSTEM, d_prompt, DefenseTurn,
-                                       max_tokens=MAX_TOKENS, temperature=0.3, telemetry=telemetry)
-            new_claims = _parse_claims(d_out.model_dump(), "defense")
+            new_claims, defense_summary = await _grounded_turn(
+                llm, "defense", DEFENSE_SYSTEM, d_prompt, DefenseTurn, ctx, ledger, telemetry,
+                round_num, frozenset(c.claim_id for c in state.prosecution_claims))
             state.defense_claims.extend(new_claims)
             state.all_claims.extend(new_claims)
-            defense_summary = d_out.defense_summary
             state.latest_speaker = "defense"
             turns_ok += 1
         except Exception as e:
@@ -261,11 +306,11 @@ async def run_debate(
 
         state.round_count = round_num
 
-    # ── Derive key dispute ─────────────────────────────────────────────────
+    # ── Derive key dispute (whole rendered claims: truncating could cut a number in half) ──
     if state.prosecution_claims and state.defense_claims:
         key_dispute = (
-            f"Prosecution argues {state.prosecution_claims[0].claim_text[:60]}… "
-            f"Defense counters {state.defense_claims[0].claim_text[:60]}…"
+            f"Prosecution argues: {state.prosecution_claims[0].claim_text} "
+            f"Defense counters: {state.defense_claims[0].claim_text}"
         )
     else:
         key_dispute = "Debate inconclusive — insufficient evidence from both sides"
