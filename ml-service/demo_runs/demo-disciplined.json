@@ -1,12 +1,13 @@
 {
   "account_id": "demo-disciplined",
   "symbol": "BTCUSDT",
-  "generated_at": "2026-11-05T07:20:40.558784+00:00",
+  "generated_at": "2026-11-05T19:39:26.769753+00:00",
   "council_result": {
     "tradeContext": {
       "userId": "demo-disciplined",
       "symbol": "BTCUSDT",
       "regime": "STABLE",
+      "trade_count": 82,
       "fee_packet_hash": "79f9f493f5f1cfd6",
       "risk_packet_hash": "dffc724559cd09f4",
       "liquidity_packet_hash": "1da7649b879b4f69",
@@ -15,11 +16,14 @@
     "liquidity": {
       "agent": "liquidity_scout",
       "liquidityRating": "GOOD",
-      "slippageRoot": "All executions were limit orders with 0.0 bps average slippage and no adverse market events.",
+      "slippageRoot": "All executions were limit orders with 0.0 bps average slippage and no adverse selection events.",
       "cited_evidence": [],
       "severity": "LOW",
       "confidence": 0.0,
-      "flags": [],
+      "flags": [
+        "no_market_orders",
+        "no_adverse_selection"
+      ],
       "evidence_coverage_detail": {
         "cited_count": 0,
         "available_count": 18,
@@ -29,14 +33,14 @@
     "alpha": {
       "agent": "alpha_architect",
       "alphaRating": "POSITIVE",
-      "bestAlternative": "Executions aligned perfectly with the VWAP benchmark, showing a median deviation of 0.0 bps and an average deviation of 0.0 bps.",
+      "bestAlternative": "Executions matched the VWAP benchmark exactly, with a median deviation of 0.0 bps and an average deviation of 0.0 bps.",
       "cited_evidence": [],
       "severity": "LOW",
       "confidence": 0.0,
       "flags": [
-        "zero_market_orders",
-        "single_symbol_concentration",
-        "stable_regime"
+        "perfect_vwap_alignment",
+        "limit_order_dominance",
+        "single_symbol_concentration"
       ],
       "evidence_coverage_detail": {
         "cited_count": 0,
@@ -52,12 +56,12 @@
       "confidence": 0.0,
       "flags": [
         "Notional was fully concentrated, with the top symbol at 100.0% of the total.",
-        "Adverse selection occurred in 13 of 82 trades, resulting in an adverse rate of 15.8%.",
-        "Hourly concentration was low, with the top hour accounting for 20.7% of trades."
+        "Adverse selection occurred in 13 of 82 trades, an adverse rate of 15.8%.",
+        "Hourly activity was moderately concentrated, with the top hour accounting for 20.7% of trades."
       ],
       "evidence_coverage_detail": {
         "cited_count": 0,
-        "available_count": 15,
+        "available_count": 16,
         "coverage_score": 0.0
       }
     },
@@ -71,22 +75,18 @@
       "flags": [],
       "evidence_coverage_detail": {
         "cited_count": 0,
-        "available_count": 10,
+        "available_count": 12,
         "coverage_score": 0.0
       }
     },
     "synthesis": {
-      "headline": "Overall verdict: GOOD.",
-      "narrative": "All executions were maker limit orders on a single symbol, producing no adverse slippage and a median VWAP deviation of 0.0 bps. The fee optimizer rated the cost structure optimal, while the risk auditor flagged full notional concentration and adverse selection in a subset of fills.",
+      "headline": "Executions were fully maker-based with no slippage, but notional was concentrated in a single symbol.",
+      "narrative": "The risk auditor flagged that the top symbol represented 100.0% of total notional, while the fee optimizer rated the cost structure as optimal.",
       "findings": [],
       "observations": [
         {
           "action_type": "none",
-          "text": "These executions maintained a maker ratio of 100.0% with no taker streaks, confirming the fee structure was optimal for this stable regime."
-        },
-        {
-          "action_type": "none",
-          "text": "The risk auditor observed that notional was fully concentrated in the top symbol, with an adverse selection rate of 15.8% across the book."
+          "text": "The executions demonstrated perfect alignment with VWAP and no adverse slippage, confirming that the limit order strategy was effective in this stable regime."
         }
       ],
       "conflictLedger": [
@@ -99,25 +99,25 @@
       "overallRating": "GOOD",
       "estimatedMonthlyCostUSD": 13.971628
     },
-    "totalLatencyMs": 60179.79,
+    "totalLatencyMs": 60224.95,
     "modelUsage": {
       "specialists_model": "groq/qwen/qwen3.8-27b",
       "debate_model": "groq/openai/gpt-oss-20b",
       "synthesis_model": "groq/qwen/qwen3.8-27b"
     },
     "tokenUsage": {
-      "prompt_tokens": 18916,
-      "completion_tokens": 3097,
-      "total_tokens": 22013,
-      "n_calls": 13
+      "prompt_tokens": 17824,
+      "completion_tokens": 2512,
+      "total_tokens": 20336,
+      "n_calls": 12
     },
     "grounding": {
-      "violations_first_pass": 8,
-      "regenerations": 4,
+      "violations_first_pass": 10,
+      "regenerations": 3,
       "redactions": [
         {
           "agent": "synthesis",
-          "field": "headline",
+          "field": "narrative",
           "sentence_index": 0,
           "n_tokens": 1,
           "kinds": [
@@ -125,139 +125,206 @@
           ]
         }
       ],
-      "fallbacks": [
-        {
-          "agent": "synthesis",
-          "field": "headline",
-          "fallback_text": true
-        }
-      ],
+      "fallbacks": [],
+      "duplicates_stripped": 0,
       "numbers_checked": 25,
-      "faithfulness_first_pass": 0.7576,
+      "faithfulness_first_pass": 0.6429,
       "faithfulness_after": 0.96,
       "per_agent": {
-        "risk_auditor": {
-          "violations_first_pass": 0,
-          "regenerated": false,
-          "faithfulness_after": 1.0,
-          "fallback_text": false
-        },
         "fee_optimizer": {
           "violations_first_pass": 0,
           "regenerated": false,
           "faithfulness_after": 1.0,
+          "values_cited": 2,
           "fallback_text": false
         },
         "alpha_architect": {
           "violations_first_pass": 0,
           "regenerated": false,
           "faithfulness_after": 1.0,
+          "values_cited": 2,
+          "fallback_text": false
+        },
+        "risk_auditor": {
+          "violations_first_pass": 0,
+          "regenerated": false,
+          "faithfulness_after": 1.0,
+          "values_cited": 5,
           "fallback_text": false
         },
         "liquidity_scout": {
           "violations_first_pass": 1,
           "regenerated": true,
           "faithfulness_after": 1.0,
+          "values_cited": 1,
           "fallback_text": false
         },
         "prosecution": {
-          "violations_first_pass": 3,
-          "regenerated": true,
+          "violations_first_pass": 0,
+          "regenerated": false,
           "faithfulness_after": 1.0,
+          "values_cited": 4,
           "fallback_text": false
         },
         "defense": {
           "violations_first_pass": 1,
           "regenerated": true,
           "faithfulness_after": 1.0,
+          "values_cited": 8,
           "fallback_text": false
         },
         "synthesis": {
-          "violations_first_pass": 3,
+          "violations_first_pass": 8,
           "regenerated": true,
-          "faithfulness_after": 0.75,
-          "fallback_text": true
+          "faithfulness_after": 0.6667,
+          "values_cited": 2,
+          "fallback_text": false
         }
       }
     },
     "claims": {
       "flagged_first_pass": 0,
       "regenerated": false,
-      "redactions": []
+      "redactions": [],
+      "debate_flagged": 10,
+      "debate_redactions": [
+        {
+          "field": "prosecution_summary",
+          "sentence_index": 0,
+          "terms": [
+            "unnecessary"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
+        {
+          "field": "defense_summary",
+          "sentence_index": 0,
+          "terms": [
+            "execution errors",
+            "exogenous",
+            "whale"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
+        {
+          "field": "debate.claims.0",
+          "sentence_index": 0,
+          "terms": [
+            "avoidable"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
+        {
+          "field": "debate.claims.1",
+          "sentence_index": 0,
+          "terms": [
+            "could have"
+          ],
+          "action_types": []
+        },
+        {
+          "field": "debate.claims.2",
+          "sentence_index": 0,
+          "terms": [
+            "avoidable",
+            "execution errors"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
+        {
+          "field": "debate.claims.4",
+          "sentence_index": 0,
+          "terms": [
+            "avoidable"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
+        {
+          "field": "debate.claims.5",
+          "sentence_index": 0,
+          "terms": [
+            "unavoidable"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
+        {
+          "field": "debate.claims.6",
+          "sentence_index": 0,
+          "terms": [
+            "exogenous",
+            "whale"
+          ],
+          "action_types": []
+        },
+        {
+          "field": "key_dispute",
+          "sentence_index": 0,
+          "terms": [
+            "avoidable"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
+        {
+          "field": "key_dispute",
+          "sentence_index": 1,
+          "terms": [
+            "avoidable",
+            "execution errors"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        }
+      ]
     },
     "verification": {
-      "proposed": 2,
+      "proposed": 1,
       "passed": 0,
-      "observations": 2,
+      "observations": 1,
       "rejected": [],
       "re_reasoned": 0,
       "dropped": []
     },
     "debate_transcript": {
       "round_count": 2,
-      "prosecution_summary": "The evidence shows that all trades were maker limit orders with a significant fee drag, and that no adverse slippage occurred, indicating that execution costs were avoidable.",
-      "defense_summary": "Execution quality metrics show strong performance, with all trades executed as makers in a stable regime, and no adverse slippage, indicating that fee drag reflects market\u2011structure costs rather than execution errors.",
-      "key_dispute": "Prosecution argues: All trades were maker, incurring a fee drag of 10.0 bps. Defense counters: The trader faced exogenous whale adversity, as shown by 13 adverse trades, which is unavoidable under Cont\u2011Kukanov\u2011Stoikov theory.",
-      "debate_latency_ms": 48750.39,
+      "prosecution_summary": "Taker orders were 0 of 82 trades.",
+      "defense_summary": "Maker orders were 82 of 82 trades.",
+      "key_dispute": "The two sides disagreed on the cause of the costs; the audited figures are in the findings.",
+      "debate_latency_ms": 31737.19,
       "turns_expected": 4,
       "turns_ok": 4,
       "failed_turns": [],
       "claims": [
         {
-          "side": "prosecution",
-          "claim_id": "P1a",
-          "claim_text": "All trades were maker, incurring a fee drag of 10.0 bps.",
-          "evidence_keys": [],
-          "rebuts": null
-        },
-        {
-          "side": "prosecution",
-          "claim_id": "P1b",
-          "claim_text": "Despite no adverse slippage, an adverse rate of 15.8% shows execution inefficiency.",
-          "evidence_keys": [],
-          "rebuts": null
-        },
-        {
-          "side": "defense",
-          "claim_id": "D1a",
-          "claim_text": "The trader faced exogenous whale adversity, as shown by 13 adverse trades, which is unavoidable under Cont\u2011Kukanov\u2011Stoikov theory.",
-          "evidence_keys": [],
-          "rebuts": "P1b"
-        },
-        {
           "side": "defense",
           "claim_id": "D1b",
-          "claim_text": "All executions were maker orders, yielding a fee drag of 10.0 bps and a maker ratio of 100.0%, which is standard market\u2011structure cost, not execution error.",
-          "evidence_keys": [],
-          "rebuts": "P1a"
-        },
-        {
-          "side": "prosecution",
-          "claim_id": "P2a",
-          "claim_text": "All 82 were maker orders, yet a fee drag of 10.0 bps indicates avoidable cost.",
-          "evidence_keys": [],
-          "rebuts": "D1b"
-        },
-        {
-          "side": "prosecution",
-          "claim_id": "P2b",
-          "claim_text": "The trader executed only limit orders, yet no adverse slippage was recorded, showing that execution costs could have been reduced.",
-          "evidence_keys": [],
-          "rebuts": "D1a"
-        },
-        {
-          "side": "defense",
-          "claim_id": "D2a",
-          "claim_text": "All 82 trades were limit orders, yielding a $0.17 fee drag, which is standard for maker execution in a stable regime.",
-          "evidence_keys": [],
-          "rebuts": "P1a"
-        },
-        {
-          "side": "defense",
-          "claim_id": "D2b",
-          "claim_text": "The trader achieved a 96.5 best\u2011hour score of 96.5, demonstrating execution quality that aligns with market\u2011structure costs rather than inefficiency.",
+          "claim_text": "The trader\u2019s 15.8% adverse rate coincides with a stable regime where 96.5 best\u2011hour score indicates optimal timing, mitigating claims of poor execution.",
           "evidence_keys": [],
           "rebuts": "P1b"
+        },
+        {
+          "side": "prosecution",
+          "claim_id": "P0",
+          "claim_text": "Taker orders were 0 of 82 trades.",
+          "evidence_keys": [
+            "taker_count",
+            "trade_count"
+          ],
+          "rebuts": null
         }
       ]
     },
@@ -273,10 +340,10 @@
         "provider": "groq",
         "model": "qwen/qwen3.8-27b",
         "attempt": 1,
-        "latency_ms": 1143.69,
-        "tokens": 922,
-        "prompt_tokens": 716,
-        "completion_tokens": 206,
+        "latency_ms": 1015.56,
+        "tokens": 798,
+        "prompt_tokens": 670,
+        "completion_tokens": 128,
         "outcome": "ok"
       },
       {
@@ -284,32 +351,10 @@
         "provider": "groq",
         "model": "qwen/qwen3.8-27b",
         "attempt": 1,
-        "latency_ms": 1263.61,
-        "tokens": 964,
-        "prompt_tokens": 813,
-        "completion_tokens": 151,
-        "outcome": "ok"
-      },
-      {
-        "role": "specialist",
-        "provider": "groq",
-        "model": "qwen/qwen3.8-27b",
-        "attempt": 1,
-        "latency_ms": 1154.04,
-        "tokens": 785,
-        "prompt_tokens": 649,
-        "completion_tokens": 136,
-        "outcome": "ok"
-      },
-      {
-        "role": "specialist",
-        "provider": "groq",
-        "model": "qwen/qwen3.8-27b",
-        "attempt": 1,
-        "latency_ms": 1207.13,
-        "tokens": 975,
+        "latency_ms": 1241.73,
+        "tokens": 977,
         "prompt_tokens": 785,
-        "completion_tokens": 190,
+        "completion_tokens": 192,
         "outcome": "ok"
       },
       {
@@ -317,103 +362,114 @@
         "provider": "groq",
         "model": "qwen/qwen3.8-27b",
         "attempt": 1,
-        "latency_ms": 853.97,
-        "tokens": 1012,
-        "prompt_tokens": 863,
-        "completion_tokens": 149,
+        "latency_ms": 1516.5,
+        "tokens": 973,
+        "prompt_tokens": 813,
+        "completion_tokens": 160,
         "outcome": "ok"
       },
       {
-        "role": "debate",
-        "provider": "groq",
-        "model": "openai/gpt-oss-20b",
-        "attempt": 1,
-        "latency_ms": 1442.87,
-        "tokens": 1887,
-        "prompt_tokens": 1469,
-        "completion_tokens": 418,
-        "outcome": "ok"
-      },
-      {
-        "role": "debate",
-        "provider": "groq",
-        "model": "openai/gpt-oss-20b",
-        "attempt": 1,
-        "latency_ms": 1020.18,
-        "tokens": 1895,
-        "prompt_tokens": 1611,
-        "completion_tokens": 284,
-        "outcome": "ok"
-      },
-      {
-        "role": "debate",
-        "provider": "groq",
-        "model": "openai/gpt-oss-20b",
-        "attempt": 1,
-        "latency_ms": 1502.56,
-        "tokens": 1825,
-        "prompt_tokens": 1577,
-        "completion_tokens": 248,
-        "outcome": "ok"
-      },
-      {
-        "role": "debate",
-        "provider": "groq",
-        "model": "openai/gpt-oss-20b",
-        "attempt": 1,
-        "latency_ms": 5788.84,
-        "tokens": 1888,
-        "prompt_tokens": 1641,
-        "completion_tokens": 247,
-        "outcome": "ok"
-      },
-      {
-        "role": "debate",
-        "provider": "groq",
-        "model": "openai/gpt-oss-20b",
-        "attempt": 1,
-        "latency_ms": 18024.67,
-        "tokens": 1946,
-        "prompt_tokens": 1676,
-        "completion_tokens": 270,
-        "outcome": "ok"
-      },
-      {
-        "role": "debate",
-        "provider": "groq",
-        "model": "openai/gpt-oss-20b",
-        "attempt": 1,
-        "latency_ms": 20269.02,
-        "tokens": 1982,
-        "prompt_tokens": 1725,
-        "completion_tokens": 257,
-        "outcome": "ok"
-      },
-      {
-        "role": "synthesis",
+        "role": "specialist",
         "provider": "groq",
         "model": "qwen/qwen3.8-27b",
         "attempt": 1,
-        "latency_ms": 1085.69,
-        "tokens": 2898,
-        "prompt_tokens": 2658,
+        "latency_ms": 1032.19,
+        "tokens": 932,
+        "prompt_tokens": 728,
+        "completion_tokens": 204,
+        "outcome": "ok"
+      },
+      {
+        "role": "specialist",
+        "provider": "groq",
+        "model": "qwen/qwen3.8-27b",
+        "attempt": 1,
+        "latency_ms": 718.52,
+        "tokens": 1030,
+        "prompt_tokens": 863,
+        "completion_tokens": 167,
+        "outcome": "ok"
+      },
+      {
+        "role": "debate",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "attempt": 1,
+        "latency_ms": 1005.86,
+        "tokens": 1780,
+        "prompt_tokens": 1554,
+        "completion_tokens": 226,
+        "outcome": "ok"
+      },
+      {
+        "role": "debate",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "attempt": 1,
+        "latency_ms": 1057.55,
+        "tokens": 1981,
+        "prompt_tokens": 1708,
+        "completion_tokens": 273,
+        "outcome": "ok"
+      },
+      {
+        "role": "debate",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "attempt": 1,
+        "latency_ms": 844.49,
+        "tokens": 1789,
+        "prompt_tokens": 1659,
+        "completion_tokens": 130,
+        "outcome": "ok"
+      },
+      {
+        "role": "debate",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "attempt": 1,
+        "latency_ms": 9766.86,
+        "tokens": 1973,
+        "prompt_tokens": 1733,
         "completion_tokens": 240,
         "outcome": "ok"
       },
       {
+        "role": "debate",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "attempt": 1,
+        "latency_ms": 18444.53,
+        "tokens": 2046,
+        "prompt_tokens": 1781,
+        "completion_tokens": 265,
+        "outcome": "ok"
+      },
+      {
         "role": "synthesis",
         "provider": "groq",
         "model": "qwen/qwen3.8-27b",
         "attempt": 1,
-        "latency_ms": 7933.75,
-        "tokens": 3034,
-        "prompt_tokens": 2733,
-        "completion_tokens": 301,
+        "latency_ms": 960.39,
+        "tokens": 3005,
+        "prompt_tokens": 2715,
+        "completion_tokens": 290,
+        "outcome": "ok"
+      },
+      {
+        "role": "synthesis",
+        "provider": "groq",
+        "model": "qwen/qwen3.8-27b",
+        "attempt": 1,
+        "latency_ms": 24851.9,
+        "tokens": 3052,
+        "prompt_tokens": 2815,
+        "completion_tokens": 237,
         "outcome": "ok"
       }
     ],
-    "prompt_version": "1.4.0",
+    "prompt_version": "1.5.0",
     "metrics_version": "1.1.0",
-    "route_config_hash": "39a322a1eda9c76d"
+    "route_config_hash": "9c3af0624a402f81"
   }
 }
