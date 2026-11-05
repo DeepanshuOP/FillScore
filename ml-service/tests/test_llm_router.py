@@ -288,11 +288,12 @@ def test_committed_yaml_follows_the_probe_order():
     models = lambda role: [cfg.models[i].model for i in cfg.roles[role]]
     # specialist: all valid and grounded; latency 808 < 1116 < 1404 ms
     assert models("specialist")[:3] == ["qwen/qwen3.8-27b", "openai/gpt-oss-20b", "openai/gpt-oss-120b"]
-    # synthesis (1c.6): the larger gpt-oss-120b first for the highest-stakes call, then qwen;
-    # 20b failed validation in the probe -> last
-    assert models("synthesis")[:2] == ["openai/gpt-oss-120b", "qwen/qwen3.8-27b"]
-    # specialist and debate order unchanged from the probe
-    assert models("debate")[:3] == ["qwen/qwen3.8-27b", "openai/gpt-oss-20b", "openai/gpt-oss-120b"]
+    # synthesis (1d.3): qwen first, then gpt-oss-120b, Gemini, and 20b last (probed failure)
+    assert models("synthesis") == ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "gemini-3.8-flash",
+                                   "gemini-3.5-flash-lite", "openai/gpt-oss-20b"]
+    # Phase 2a.1: debate starts on gpt-oss-20b so qwen keeps headroom for synthesis
+    assert models("debate") == ["openai/gpt-oss-20b", "openai/gpt-oss-120b", "gemini-3.5-flash-lite",
+                                "qwen/qwen3.8-27b"]
     assert models("synthesis")[-1] == "openai/gpt-oss-20b"
     for role in cfg.roles.values():
         for model_id in role:
@@ -355,7 +356,7 @@ def test_a_usage_write_failure_does_not_throw_away_a_valid_reply():
 
 # ── 1c.9 hard cap on HTTP attempts (live-run budget) ─────────────────────────
 
-def test_attempt_cap_stops_further_calls_with_budget_reason():
+def test_attempt_cap_stops_further_calls_with_attempt_cap_reason():
     # cap 2: two successful completes use 2 HTTP attempts; the third complete makes no call.
     router, fake, _, _ = make_router({"model-a": [reply(GOOD), reply(GOOD), reply(GOOD)]})
     router.http_attempt_cap = 2
@@ -363,7 +364,7 @@ def test_attempt_cap_stops_further_calls_with_budget_reason():
     run(router.complete("specialist", "s", "u", Verdict, max_tokens=10))
     with pytest.raises(RouterExhausted) as e:
         run(router.complete("specialist", "s", "u", Verdict, max_tokens=10))
-    assert e.value.reason == "budget"
+    assert e.value.reason == "attempt_cap"
     assert len(fake.calls) == 2 and router.http_attempts == 2
 
 
@@ -374,7 +375,7 @@ def test_attempt_cap_counts_retries_and_is_never_overshot():
     router.http_attempt_cap = 2
     with pytest.raises(RouterExhausted) as e:
         run(router.complete("specialist", "s", "u", Verdict, max_tokens=10))
-    assert e.value.reason == "budget"
+    assert e.value.reason == "attempt_cap"
     assert len(fake.calls) == 2 and router.http_attempts == 2
 
 
@@ -383,3 +384,96 @@ def test_no_cap_by_default():
     assert router.http_attempt_cap is None
     run(router.complete("specialist", "s", "u", Verdict, max_tokens=10))
     assert router.http_attempts == 1
+
+
+# ── 1d.3 sanitised validation-error capture ──────────────────────────────────
+
+class Rec(BaseModel):
+    action: str
+    params: dict
+
+
+def test_schema_mismatch_records_loc_and_type_only():
+    bad = json.dumps({"action": "x", "params": "save 42 usd"})   # params must be a dict
+    router, _, _, _ = make_router({"model-a": [reply(bad), reply(bad)], "model-b": [reply(bad), reply(bad)],
+                                   "model-c": [reply(bad), reply(bad)]})
+    telemetry = []
+    with pytest.raises(RouterExhausted):
+        run(router.complete("specialist", "s", "u", Rec, max_tokens=10, telemetry=telemetry))
+    rec = telemetry[0]
+    assert rec["outcome"] == "invalid_json"
+    assert rec["error"] == {"kind": "validation", "errors": [{"loc": "params", "type": "dict_type"}], "n_errors": 1}
+    assert "42" not in json.dumps(rec) and "msg" not in json.dumps(rec) and "input" not in json.dumps(rec)
+
+
+def test_validation_errors_are_capped_at_five():
+    class Many(BaseModel):
+        a: int
+        b: int
+        c: int
+        d: int
+        e: int
+        f: int
+        g: int
+
+    cfg1 = config(roles={"specialist": ["a"]})
+    router, _, _, _ = make_router({"model-a": [reply("{}"), reply("{}")]}, cfg=cfg1)
+    telemetry = []
+    with pytest.raises(RouterExhausted):
+        run(router.complete("specialist", "s", "u", Many, max_tokens=10, telemetry=telemetry))
+    err = telemetry[0]["error"]
+    assert err["kind"] == "validation" and len(err["errors"]) == 5 and err["n_errors"] == 7
+    assert err["errors"][0] == {"loc": "a", "type": "missing"}
+
+
+def test_non_json_reply_records_no_json():
+    cfg1 = config(roles={"specialist": ["a"]})
+    router, _, _, _ = make_router({"model-a": [reply("not json at all"), reply("still no")]}, cfg=cfg1)
+    telemetry = []
+    with pytest.raises(RouterExhausted):
+        run(router.complete("specialist", "s", "u", Verdict, max_tokens=10, telemetry=telemetry))
+    assert telemetry[0]["error"] == {"kind": "no_json"}
+
+
+def test_ok_records_have_no_error_key():
+    router, _, _, _ = make_router({"model-a": [reply(GOOD)]})
+    telemetry = []
+    run(router.complete("specialist", "s", "u", Verdict, max_tokens=10, telemetry=telemetry))
+    assert "error" not in telemetry[0]
+
+
+def test_llm_chosen_loc_segments_are_masked():
+    # Review 1d.9 #6: pydantic puts dict keys / extra field names in `loc`, and those are model text.
+    # A segment is kept only if it is a digit-free identifier (a schema field name) or a list index;
+    # anything else becomes "*". Hand-check: loc ("scores", "save 42") -> "scores.*";
+    # ("saved_42_usd",) -> "*"; ("items", 0, "name") -> "items.0.name".
+    from pydantic import ConfigDict
+
+    class Strict(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+        scores: dict[str, int]
+
+    bad = json.dumps({"scores": {"save 42": "x"}, "saved_42_usd": 1})
+    router, _, _, _ = make_router({"model-a": [reply(bad), reply(bad)]}, cfg=config(roles={"specialist": ["a"]}))
+    telemetry = []
+    with pytest.raises(RouterExhausted):
+        run(router.complete("specialist", "s", "u", Strict, max_tokens=10, telemetry=telemetry))
+    err = telemetry[0]["error"]
+    assert sorted(e["loc"] for e in err["errors"]) == ["*", "scores.*"]
+    assert "42" not in json.dumps(telemetry[0])
+    assert llm_router._safe_loc(("items", 0, "name")) == "items.0.name"
+
+
+def test_role_max_wait_resolution():
+    cfg = llm_router.load_routes()
+    assert cfg.max_wait_for("synthesis") == 45.0
+    assert cfg.max_wait_for("debate") == 20.0
+    assert cfg.max_wait_for("specialist") == 20.0
+    with pytest.raises(ValueError):
+        RouteConfig.from_dict({
+            "defaults": {"pace_max_wait_s": 20},
+            "providers": {"p1": {"base_url": "u", "key_env": "K"}},
+            "models": {"a": {"provider": "p1", "model": "a"}},
+            "roles": {"r": ["a"]}, "run_estimate": {},
+            "pace_max_wait_s_by_role": {"nope": 45},
+        })

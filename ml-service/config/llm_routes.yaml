@@ -13,6 +13,11 @@ defaults:
   daily_requests: 100
   daily_tokens: 100000
   max_tokens_factor: 1.0
+  # Token-bucket pacer (Phase 1d.5), per (provider, model): tokens/minute and requests/minute.
+  # A call that would wait longer than pace_max_wait_s is skipped to the next candidate.
+  tpm: 8000
+  rpm: 10
+  pace_max_wait_s: 20
 
 providers:
   groq:
@@ -23,6 +28,9 @@ providers:
     base_url: https://api.groq.com/openai/v1
     key_env: GROQ_API_KEY
     timeout_s: 60
+    # Groq rate-limits page read 2026-11-04 lists 8K TPM / 30 RPM for these models.
+    tpm: 8000
+    rpm: 30
   gemini:
     # Gemini API OpenAI compatibility: https://ai.google.dev/gemini-api/docs/openai (read
     # 2026-11-04): base_url "https://generativelanguage.googleapis.com/v1beta/openai/", key sent
@@ -35,6 +43,9 @@ providers:
     base_url: https://generativelanguage.googleapis.com/v1beta/openai/
     key_env: GEMINI_API_KEY
     timeout_s: 60
+    # TODO: conservative guesses; per-model free RPM/TPM only shown in AI Studio (https://aistudio.google.com/rate-limit)
+    tpm: 250000
+    rpm: 10
   openrouter:
     # :free variants: https://openrouter.ai/docs/api-reference/limits (read 2026-11-04):
     # 20 requests/minute and 50 requests/day in total across all :free models (1000/day after
@@ -44,6 +55,7 @@ providers:
     base_url: https://openrouter.ai/api/v1
     key_env: OPENROUTER_API_KEY
     timeout_s: 60
+    rpm: 20   # 20 req/min across :free models (see above); tpm from defaults
     headers:
       HTTP-Referer: https://fillscore.io
       X-Title: FillScore Agent Council
@@ -93,13 +105,18 @@ models:
 #               gpt-oss-20b failed Pydantic validation and wrote an ungrounded numeral, so it goes last.
 # Unprobed Gemini models sit after the probed passes and before any probed failure.
 # Debate was not probed; its JSON shape is closest to the specialists', so it uses their order.
-# Phase 1c.6: synthesis puts gpt-oss-120b first. Specialists and debate start on qwen, so this
-# spreads daily tokens across model pools and puts the larger model on the single
-# highest-stakes call (the judge and its counterfactual proposals). Specialist/debate order stays as probed.
+# Phase 1d.3: synthesis starts on qwen. gpt-oss-120b failed the synthesis schema on every 1c
+# attempt (4/4 live, 1/1 probe), so it is second, then Gemini; gpt-oss-20b is last as a probed
+# failure. Specialist order stays as probed.
+# Phase 2a.1: debate starts on gpt-oss-20b so the shared qwen bucket keeps headroom for synthesis (qwen synthesis was paced out in 4/4 1d runs).
 roles:
   specialist: [groq-qwen3.8-27b, groq-gpt-oss-20b, groq-gpt-oss-120b, gemini-3.5-flash-lite, gemini-3.8-flash]
-  debate: [groq-qwen3.8-27b, groq-gpt-oss-20b, groq-gpt-oss-120b, gemini-3.5-flash-lite, gemini-3.8-flash]
-  synthesis: [groq-gpt-oss-120b, groq-qwen3.8-27b, gemini-3.8-flash, groq-gpt-oss-20b]
+  debate: [groq-gpt-oss-20b, groq-gpt-oss-120b, gemini-3.5-flash-lite, groq-qwen3.8-27b]
+  synthesis: [groq-qwen3.8-27b, groq-gpt-oss-120b, gemini-3.8-flash, gemini-3.5-flash-lite, groq-gpt-oss-20b]
+
+# Phase 2a.1: synthesis may wait longer for its preferred model than other roles (backstop).
+pace_max_wait_s_by_role:
+  synthesis: 45
 
 # Pre-run capacity check: a run is refused up front ("daily AI budget reached") unless every
 # role has a candidate with room for this many calls and tokens. From the 1b.7 probe: specialist

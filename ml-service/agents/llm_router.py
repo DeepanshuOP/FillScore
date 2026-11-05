@@ -20,6 +20,7 @@ import hashlib
 import json
 import os
 import pathlib
+import re
 import time
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -38,7 +39,7 @@ _clock = time.perf_counter
 
 
 class RouterExhausted(Exception):
-    """No candidate could answer. reason: "no_provider" | "budget" | "failed"."""
+    """No candidate could answer. reason: "no_provider" | "budget" | "attempt_cap" | "failed"."""
 
     def __init__(self, role: str, reason: str):
         super().__init__(f"no model could answer role={role} ({reason})")
@@ -48,6 +49,43 @@ class RouterExhausted(Exception):
 
 class AttemptCapReached(Exception):
     """The router's HTTP-attempt cap was hit before a request was sent (never retried)."""
+
+
+class PacerSkip(Exception):
+    """The pacer would make this call wait longer than pace_max_wait_s (never retried, not an HTTP attempt)."""
+
+    def __init__(self, wait_s: float | None, max_wait_s: float):
+        super().__init__("paced out")
+        self.wait_s = wait_s
+        self.max_wait_s = max_wait_s
+
+
+# No limit configured anywhere (e.g. a minimal test config) means effectively unpaced.
+_UNLIMITED = 10**9
+
+
+class TokenBucketPacer:
+    """Per-(provider, model) token + request buckets. Buckets start full and refill continuously.
+    reserve() is synchronous (no await), so it is atomic under asyncio and parallel callers queue."""
+
+    def __init__(self, clock: Callable[[], float] = time.monotonic):
+        self._clock = clock
+        self._state: dict[tuple, dict] = {}
+
+    def reserve(self, key: tuple, tpm: int, rpm: int, need_tokens: int, max_wait: float) -> float | None:
+        if need_tokens > tpm:
+            return None
+        now = self._clock()
+        st = self._state.get(key) or {"tok": float(tpm), "req": float(rpm), "last": now}
+        dt = max(0.0, now - st["last"])
+        tok_rate, req_rate = tpm / 60.0, rpm / 60.0
+        tok = min(float(tpm), st["tok"] + tok_rate * dt)
+        req = min(float(rpm), st["req"] + req_rate * dt)
+        wait = max(0.0, (need_tokens - tok) / tok_rate, (1 - req) / req_rate)
+        if wait > max_wait:
+            return None
+        self._state[key] = {"tok": tok - need_tokens, "req": req - 1, "last": now}
+        return wait
 
 
 @dataclass(frozen=True)
@@ -68,6 +106,8 @@ class Candidate:
     daily_tokens: int
     extra_body: dict = field(default_factory=dict)
     max_tokens_factor: float = 1.0
+    tpm: int = _UNLIMITED
+    rpm: int = _UNLIMITED
 
     @property
     def label(self) -> str:
@@ -81,6 +121,11 @@ class RouteConfig:
     roles: dict[str, list[str]]
     run_estimate: dict[str, dict]
     hash: str
+    pace_max_wait_s: float = 20.0
+    pace_max_wait_by_role: dict[str, float] = field(default_factory=dict)
+
+    def max_wait_for(self, role: str) -> float:
+        return self.pace_max_wait_by_role.get(role, self.pace_max_wait_s)
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "RouteConfig":
@@ -95,6 +140,14 @@ class RouteConfig:
             )
             for name, p in (raw.get("providers") or {}).items()
         }
+        raw_providers = raw.get("providers") or {}
+
+        def limit(m, name):
+            for src in (m, raw_providers[m["provider"]], defaults):
+                if src.get(name) is not None:
+                    return int(src[name])
+            return _UNLIMITED
+
         models = {}
         for model_id, m in (raw.get("models") or {}).items():
             if m["provider"] not in providers:
@@ -107,12 +160,18 @@ class RouteConfig:
                 daily_tokens=int(m.get("daily_tokens", defaults.get("daily_tokens", 100000))),
                 extra_body=dict(m.get("extra_body") or {}),
                 max_tokens_factor=float(m.get("max_tokens_factor", defaults.get("max_tokens_factor", 1.0))),
+                tpm=limit(m, "tpm"),
+                rpm=limit(m, "rpm"),
             )
         roles = {role: list(ids) for role, ids in (raw.get("roles") or {}).items()}
         for role, ids in roles.items():
             for model_id in ids:
                 if model_id not in models:
                     raise ValueError(f"llm_routes: role {role} names unknown model {model_id}")
+        by_role = {r: float(v) for r, v in (raw.get("pace_max_wait_s_by_role") or {}).items()}
+        for role in by_role:
+            if role not in roles:
+                raise ValueError(f"llm_routes: pace_max_wait_s_by_role names unknown role {role}")
         canonical = json.dumps(raw, sort_keys=True, default=str)
         return cls(
             providers=providers,
@@ -120,6 +179,8 @@ class RouteConfig:
             roles=roles,
             run_estimate=dict(raw.get("run_estimate") or {}),
             hash=hashlib.sha256(canonical.encode()).hexdigest()[:16],
+            pace_max_wait_s=float(defaults.get("pace_max_wait_s", 20)),
+            pace_max_wait_by_role=by_role,
         )
 
 
@@ -193,6 +254,26 @@ def _outcome_for(exc: BaseException) -> str:
     return f"error_{type(exc).__name__}"
 
 
+_FIELD_SEG = re.compile(r"[A-Za-z_]+")
+
+
+def _safe_loc(loc) -> str:
+    """A loc path with every segment the model could have chosen masked as "*": list indices and
+    digit-free identifiers (schema field names) are kept; dict keys / extra keys such as
+    "save 42" or "saved_42_usd" are model text and may carry numerals, so they are masked."""
+    return ".".join(str(p) if isinstance(p, int) or _FIELD_SEG.fullmatch(str(p)) else "*" for p in loc)
+
+
+def _validation_error(ve: ValidationError) -> dict:
+    """loc + type only: msg/input/ctx can echo LLM text (and numerals), so they are never kept."""
+    errs = ve.errors()
+    return {
+        "kind": "validation",
+        "errors": [{"loc": _safe_loc(e["loc"]), "type": str(e["type"])} for e in errs[:5]],
+        "n_errors": len(errs),
+    }
+
+
 # ── router ─────────────────────────────────────────────────────────────────────
 
 class LLMRouter:
@@ -204,6 +285,7 @@ class LLMRouter:
         env: Mapping[str, str] | None = None,
         sleep: Callable[[float], Any] | None = None,
         day_fn: Callable[[], str] = utc_day,
+        pace_clock: Callable[[], float] = time.monotonic,
     ):
         self.config = config
         self.usage_store = usage_store
@@ -212,8 +294,10 @@ class LLMRouter:
         self._sleep = sleep
         self._day_fn = day_fn
         self._clients: dict[str, Any] = {}
+        self.pacer = TokenBucketPacer(pace_clock)
+        self.paced_wait_s = 0.0
         # Optional process-wide hard cap on HTTP attempts (retries included), used by live scripts
-        # with a fixed call budget. Once reached, complete() raises RouterExhausted(reason="budget")
+        # with a fixed call budget. Once reached, complete() raises RouterExhausted(reason="attempt_cap")
         # and no further request is sent. None = no cap.
         self.http_attempt_cap: int | None = None
         self.http_attempts = 0
@@ -305,7 +389,7 @@ class LLMRouter:
             attempt = 0
             while True:
                 if self._cap_reached():
-                    raise RouterExhausted(role, "budget")
+                    raise RouterExhausted(role, "attempt_cap")
                 if not await self._under_budget(c):
                     break
                 any_called = True
@@ -324,10 +408,10 @@ class LLMRouter:
     async def _attempt(self, role, c, client, system, user, schema, max_tokens, temperature, telemetry, attempt):
         state = {"attempt": attempt, "t0": _clock()}
 
-        def record(outcome: str, usage: dict | None = None):
+        def record(outcome: str, usage: dict | None = None, error: dict | None = None):
             usage = usage or {}
             if telemetry is not None:
-                telemetry.append({
+                entry = {
                     "role": role,
                     "provider": c.provider,
                     "model": c.model,
@@ -337,21 +421,35 @@ class LLMRouter:
                     "prompt_tokens": usage.get("prompt_tokens", 0),
                     "completion_tokens": usage.get("completion_tokens", 0),
                     "outcome": outcome,
-                })
+                }
+                if error is not None:
+                    entry["error"] = error
+                telemetry.append(entry)
 
         def on_error(exc, _n, _will_retry):
+            if isinstance(exc, PacerSkip):
+                return
             record(_outcome_for(exc))
             state["t0"] = _clock()
 
         async def _call():
+            sent_max_tokens = int(max_tokens * c.max_tokens_factor)
+            need = (len(system) + len(user)) // 4 + sent_max_tokens
+            max_wait = self.config.max_wait_for(role)
+            wait = self.pacer.reserve((c.provider, c.model), c.tpm, c.rpm, need, max_wait)
+            if wait is None:
+                raise PacerSkip(None, max_wait)
             if self._cap_reached():
                 raise AttemptCapReached()
+            if wait > 0:
+                self.paced_wait_s += wait
+                await (self._sleep or asyncio.sleep)(wait)
             self.http_attempts += 1
             state["attempt"] += 1
             kwargs = dict(
                 model=c.model,
                 messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-                max_tokens=int(max_tokens * c.max_tokens_factor),
+                max_tokens=sent_max_tokens,
                 temperature=temperature,
             )
             if c.extra_body:
@@ -360,6 +458,15 @@ class LLMRouter:
 
         try:
             resp = await call_with_retry(_call, sleep=self._sleep, on_error=on_error)
+        except PacerSkip as exc:
+            if telemetry is not None:
+                telemetry.append({
+                    "role": role, "provider": c.provider, "model": c.model, "attempt": state["attempt"],
+                    "latency_ms": 0, "tokens": 0, "prompt_tokens": 0, "completion_tokens": 0,
+                    "outcome": "paced_skip",
+                })
+            print(f"[router] {role} {c.label} paced: wait > {exc.max_wait_s:g}s, trying next")
+            return {"attempt": state["attempt"], "parsed": None, "outcome": "paced_skip"}
         except Exception as exc:
             print(f"[router] {role} {c.label} failed: {type(exc).__name__} status={status_of(exc)}")
             return {"attempt": state["attempt"], "parsed": None, "outcome": _outcome_for(exc)}
@@ -379,15 +486,20 @@ class LLMRouter:
             return {"attempt": state["attempt"], "parsed": None, "outcome": "empty"}
 
         parsed = extract_json_from_response(content)
+        error: dict | None = None
         if parsed is not None:
             try:
                 model_obj = schema.model_validate(parsed)
-            except ValidationError:
+            except ValidationError as ve:
                 model_obj = None
+                error = _validation_error(ve)
         else:
             model_obj = None
+            error = {"kind": "no_json"}
         if model_obj is None:
-            record("invalid_json", usage)
+            record("invalid_json", usage, error)
+            detail = ",".join(f"{e['loc']}:{e['type']}" for e in error.get("errors", []))
+            print(f"[router] {role} {c.label} invalid reply: {error['kind']} {detail}".rstrip())
             return {"attempt": state["attempt"], "parsed": None, "outcome": "invalid_json"}
 
         record("ok", usage)
