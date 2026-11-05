@@ -298,13 +298,15 @@ def test_a_specialist_explanation_removed_by_the_number_check_gets_the_fallback_
     assert result.grounding["per_agent"]["liquidity_scout"]["fallback_text"] is True
 
 
-def test_a_debate_turn_emptied_by_the_number_check_stops_the_debate():
+def test_a_debate_turn_emptied_by_the_number_check_gets_the_code_built_fallback():
+    # 2c.A3: was "stops the debate and degrades the run"
     pros = dict(PROSECUTION, prosecution_summary=JUNK)
     result, _, _, provider = _run({"prosecution": pros})
     d = result.debate_transcript
-    assert d["turns_ok"] == 0 and d["failed_turns"] == ["prosecution round 1"]
-    assert result.degraded is True and result.n_calls_ok == 4
-    assert provider.count["prosecution"] == 2 and "synthesis" not in provider.count
+    assert d["turns_ok"] == 4 and d["failed_turns"] == []
+    assert d["prosecution_summary"] == "Taker orders were 0 of 10 trades."   # fee.taker_count 0, trade_count 10
+    assert {"agent": "prosecution", "field": "prosecution_summary", "fallback_text": True} in result.grounding["fallbacks"]
+    assert result.degraded is False and result.n_calls_ok == 9
 
 
 def test_claims_emptied_by_the_number_check_are_dropped():

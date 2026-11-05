@@ -556,6 +556,7 @@ async def run_council_pipeline(
         userId=user_id,
         symbol=symbol,
         regime="STABLE",  # placeholder until HMM; disclose in paper
+        trade_count=fee_pkt.trade_count,
         fee_packet_hash=fee_pkt.content_hash,
         risk_packet_hash=risk_pkt.content_hash,
         liquidity_packet_hash=liquidity_pkt.content_hash,
@@ -594,6 +595,13 @@ async def run_council_pipeline(
         synth = SynthesisOutput(headline=headline, narrative=narrative, findings=findings,
                                 observations=observations, conflictLedger=ledger_entries,
                                 overallRating=draft.overallRating)
+        cl = claims_mod.ClaimsLedger(flagged_first_pass=claims["flagged_first_pass"], regenerated=claims["regenerated"],
+                                     redactions=[], debate_flagged=0)
+        debate_dict, _ = claims_mod.enforce_debate(final_state.get("debate_dict", {}), {f.action_type for f in findings},
+                                                   run.ctx, cl)
+        final_state["debate_dict"] = debate_dict
+        claims = {**claims, "debate_flagged": cl.debate_flagged,
+                  "debate_redactions": [r.to_dict() for r in cl.redactions]}
     else:
         synth, verification = _default_synthesis(), summarise([], None)
         claims = claims_mod.ClaimsLedger().to_dict()

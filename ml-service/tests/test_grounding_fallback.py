@@ -126,7 +126,7 @@ def test_specialist_prompt_examples_render_against_a_real_packet():
 
 def test_prompt_version_bumped():
     from config.versions import PROMPT_VERSION
-    assert PROMPT_VERSION == "1.4.0"
+    assert PROMPT_VERSION == "1.5.0"
 
 
 def test_pipeline_stray_numeral_in_both_scout_answers_does_not_degrade():

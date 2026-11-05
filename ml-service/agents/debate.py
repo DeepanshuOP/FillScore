@@ -23,7 +23,7 @@ from typing import Any, Literal, Optional
 from pydantic import BaseModel, Field
 
 from agents.grounded_call import finalized, grounded_model
-from agents.grounding import GroundingFailed, GroundingLedger
+from agents.grounding import GroundingFailed, GroundingLedger, check
 from agents.prompts import UNTRUSTED_NOTE, packet_values, system_prompt, untrusted
 
 
@@ -141,6 +141,8 @@ Round {round_num} of {MAX_ROUNDS}. You must respond with EXACTLY this JSON struc
 Rules:
 - Each claim must cite at least one evidence_key from the packets above
 - claim_text must cite packet values by placeholder (e.g. "a maker ratio of {{{{fee.maker_ratio}}}}"), never as digits
+- Write counts as "{{{{fee.taker_count}}}} market orders", never "68 market orders"
+- Never write a value next to its placeholder: "{{{{fee.fee_drag_bps}}}}", not "10.0 bps {{{{fee.fee_drag_bps}}}}"
 - Maximum 2 claims per round
 - rebuts should be a Defense claim_id (e.g. "D1") if you are rebutting, else null
 - Respond ONLY with valid JSON. No preamble."""
@@ -185,6 +187,8 @@ Round {round_num} of {MAX_ROUNDS}. You must respond with EXACTLY this JSON struc
 Rules:
 - Each claim must cite at least one evidence_key from the packets
 - claim_text must cite packet values by placeholder (e.g. "an adverse rate of {{{{risk.adverse_rate}}}}"), never as digits
+- Write counts as "{{{{fee.taker_count}}}} market orders", never "68 market orders"
+- Never write a value next to its placeholder: "{{{{fee.fee_drag_bps}}}}", not "10.0 bps {{{{fee.fee_drag_bps}}}}"
 - rebuts must be a valid prosecution claim_id (e.g. "P1a") whenever you are directly countering
 - Maximum 2 claims per round
 - Respond ONLY with valid JSON. No preamble."""
@@ -218,6 +222,35 @@ def _letters(i: int) -> str:
     return out
 
 
+# Code-built neutral sentences for a debate field emptied by redaction (2c.A3). Placeholders only, no digits,
+# no cause, no counterfactual. Tried in order; the first whose placeholders all exist and render is used.
+_FALLBACKS = {
+    "prosecution": [
+        ("Taker orders were {{fee.taker_count}} of {{fee.trade_count}} trades.",
+         ["taker_count", "trade_count"]),
+        ("Fee drag was {{fee.fee_drag_bps}}.", ["fee_drag_bps"]),
+        ("Market orders numbered {{liquidity.market_order_count}}.", ["market_order_count"]),
+    ],
+    "defense": [
+        ("Maker orders were {{fee.maker_count}} of {{fee.trade_count}} trades.",
+         ["maker_count", "trade_count"]),
+        ("Negative slippage appeared in {{liquidity.pct_negative_slippage}} of market orders.",
+         ["pct_negative_slippage"]),
+        ("Average slippage was {{liquidity.avg_slippage_bps}}.", ["avg_slippage_bps"]),
+    ],
+}
+
+
+def fallback_text(side: str, ctx: dict) -> tuple[str, list[str]]:
+    """The first fallback sentence for `side` that renders against ctx, with its evidence keys.
+    GroundingFailed if none does."""
+    for tpl, keys in _FALLBACKS[side]:
+        c = check(tpl, ctx)
+        if not c.violations:
+            return c.rendered, keys
+    raise GroundingFailed(side, "fallback")
+
+
 async def _grounded_turn(llm, side: Literal["prosecution", "defense"], system: str, prompt: str, schema,
                          ctx: dict, ledger: GroundingLedger, telemetry, round_num: int = 1,
                          other_ids: frozenset[str] = frozenset()) -> tuple[list[DebateClaim], str]:
@@ -233,9 +266,12 @@ async def _grounded_turn(llm, side: Literal["prosecution", "defense"], system: s
     data = finalized(out, patterns, lambda _p: ctx, side, ledger)
     data["claims"] = [c for c in data["claims"] if c["claim_text"].strip()]
     if not data["claims"]:
-        raise GroundingFailed(side, "claims")
+        text, keys = fallback_text(side, ctx)   # GroundingFailed only if even the fallback cannot render
+        data["claims"] = [{"claim_id": "", "claim_text": text, "evidence_keys": keys, "rebuts": None}]
+        ledger.add_fallback(side, "claims")
     if not data[summary_key].strip():
-        raise GroundingFailed(side, summary_key)
+        data[summary_key] = fallback_text(side, ctx)[0]
+        ledger.add_fallback(side, summary_key)
     known = {k for packet in ctx.values() for k in packet}
     prefix = side[0].upper()
     for i, c in enumerate(data["claims"]):

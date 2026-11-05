@@ -46,12 +46,14 @@
       },
       "fee_drag_bps": 10.0,
       "longest_taker_streak": 2,
+      "maker_count": 2,
       "maker_ratio": 0.4,
       "metrics_version": "1.1.0",
       "savings_at_050_bps": 0.0,
       "savings_at_050_usd": 0.0,
       "savings_at_080_bps": 0.0,
       "savings_at_080_usd": 0.0,
+      "taker_count": 3,
       "total_fee_paid_usd": 1.0,
       "trade_count": 5
     },
@@ -116,6 +118,7 @@
         "BTCUSDT": 0.75,
         "ETHUSDT": 0.25
       },
+      "top_hour_trade_count": 3,
       "top_hour_trade_fraction": 0.5,
       "top_hour_utc": 8,
       "top_symbol_by_notional": "BTCUSDT",

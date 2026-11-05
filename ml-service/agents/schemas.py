@@ -182,6 +182,7 @@ class TradeContext(BaseModel):
     userId: str
     symbol: str
     regime: str = "STABLE"
+    trade_count: int | None = None   # trades in this Council's packet (code-set; the panel's scope label)
     # packet hashes for integrity verification
     fee_packet_hash: str = ""
     risk_packet_hash: str = ""

@@ -118,9 +118,9 @@ def test_llm_numbers_never_reach_the_stream():
     assert synth["estimatedMonthlyCostUSD"] == 328.0           # fee packet total, set by code
     done = {d["agent"]: d for n, d in events if n == "agent_done"}
     # coverage confidence = valid cited keys / substantive packet keys
-    # liquidity: 1 cited (avg_slippage_bps) / 18 keys = 0.0556 ; fee: 1 (maker_ratio) / 10 keys = 0.1
+    # liquidity: 1 cited (avg_slippage_bps) / 18 keys = 0.0556 ; fee: 1 (maker_ratio) / 12 keys = 0.0833
     assert done["liquidity_scout"]["confidence"] == 0.0556
-    assert done["fee_optimizer"]["confidence"] == 0.1
+    assert done["fee_optimizer"]["confidence"] == 0.0833   # 2c.A2 added fee.maker_count/taker_count: 1 / 12 keys
     complete = events[-1][1]
     assert complete["synthesis"]["estimatedMonthlyCostUSD"] == 328.0
     assert complete["liquidity"]["confidence"] == 0.0556

@@ -57,7 +57,7 @@ def test_enforce_claims_records_flag_and_redaction(monkeypatch, tmp_path):
     path = _env(monkeypatch, tmp_path, debug="1")
     _run(claims_answers(_regen_ok(T_S0 + " " + T_S1)), trades=None)
     recs = [json.loads(l) for l in path.read_text().splitlines()]
-    claim = [r for r in recs if r["kind"].startswith("claim_")]
+    claim = [r for r in recs if r["kind"].startswith("claim_") and r["agent"] == "synthesis"]
     assert [(r["kind"], r["field"], r["tokens"]) for r in claim] == [
         ("claim_flagged", "narrative", ["avoidable"]), ("claim_redacted", "narrative", ["avoidable"])]
     assert all("avoidable taker costs" in r["sentence"] for r in claim)

@@ -71,6 +71,8 @@ class FeeMetricsPacket:
         Excludes raw trade ID lists (too long); keeps summary evidence counts."""
         return {
             "trade_count": self.trade_count,
+            "maker_count": self.maker_count,
+            "taker_count": self.taker_count,
             "maker_ratio": round(self.maker_ratio, 4),
             "total_fee_paid_usd": round(self.total_fee_paid_usd, 4),
             "fee_drag_bps": round(self.fee_drag_bps, 4),

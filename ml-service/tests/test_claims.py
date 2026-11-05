@@ -10,6 +10,11 @@ S = S0 + " " + S1
 MAKER = {"maker_instead_of_taker"}
 
 
+# 2c: the debate-text keys are checked in test_debate_2c.py; these tests are about synthesis text.
+def _core(c):
+    return {k: v for k, v in c.items() if not k.startswith('debate_')}
+
+
 def test_unpassed_counterfactual_sentence_is_flagged_and_redacted():
     # sentence 1: term "avoidable"; cues "fee drag"/"fee"/"taker" -> maker_instead_of_taker, not passed
     assert flag_sentences(S, set(), "narrative") == [
@@ -97,7 +102,7 @@ def _regen_ok(narrative, headline="Costs clustered in a few hours"):
 def test_a_rejected_area_with_avoidable_wording_is_regenerated_neutrally():
     result, events, doc, provider = _run(claims_answers(_regen_ok(NEUTRAL)), trades=None)
     assert result.synthesis.narrative == "The record showed a maker ratio of 0.0%."
-    assert result.claims == {"flagged_first_pass": 1, "regenerated": True, "redactions": []}
+    assert _core(result.claims) == {"flagged_first_pass": 1, "regenerated": True, "redactions": []}
     assert result.degraded is False and result.n_calls_ok == result.n_calls_expected == 9
     assert provider.count["synthesis"] == 3
     assert [e for n, e in events if n == "gate_done"][0]["claims"] == result.claims
@@ -108,7 +113,7 @@ def test_a_rejected_area_with_avoidable_wording_is_regenerated_neutrally():
 def test_a_regeneration_that_repeats_the_claim_is_redacted_by_sentence():
     result, *_ = _run(claims_answers(_regen_ok(T_S0 + " " + T_S1)), trades=None)
     assert result.synthesis.narrative == R_S0
-    assert result.claims == {"flagged_first_pass": 1, "regenerated": True, "redactions": [
+    assert _core(result.claims) == {"flagged_first_pass": 1, "regenerated": True, "redactions": [
         {"field": "narrative", "sentence_index": 1, "terms": ["avoidable"],
          "action_types": ["maker_instead_of_taker"]}]}
     assert result.degraded is False
@@ -131,13 +136,13 @@ def test_an_emptied_headline_gets_the_fallback_sentence():
 
 def test_a_neutral_synthesis_is_untouched_and_not_regenerated():
     result, _, _, provider = _run(trades=None)
-    assert result.claims == {"flagged_first_pass": 0, "regenerated": False, "redactions": []}
+    assert _core(result.claims) == {"flagged_first_pass": 0, "regenerated": False, "redactions": []}
     assert provider.count["synthesis"] == 1
 
 
 def test_a_degraded_run_has_an_empty_claims_ledger():
     result, *_ = _run({"liquidity_scout": HTTPError(404)})
-    assert result.claims == {"flagged_first_pass": 0, "regenerated": False, "redactions": []}
+    assert _core(result.claims) == {"flagged_first_pass": 0, "regenerated": False, "redactions": []}
 
 
 # ── M1: vocabulary gaps ──────────────────────────────────────────────────────
@@ -202,7 +207,7 @@ def test_advice_in_a_passed_finding_is_removed_by_sentence():
     text = "Trades in that hour cost {{cf.effect_usd}} more than the rest. You should place limit orders."
     result, *_ = _run(_okx_answers(text), trades=OKX)
     assert [f.text for f in result.synthesis.findings] == ["Trades in that hour cost $3.10 more than the rest."]
-    assert result.claims == {"flagged_first_pass": 1, "regenerated": False, "redactions": [
+    assert _core(result.claims) == {"flagged_first_pass": 1, "regenerated": False, "redactions": [
         {"field": "findings.0", "sentence_index": 1, "terms": ["should"], "action_types": []}]}
 
 

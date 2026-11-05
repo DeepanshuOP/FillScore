@@ -76,6 +76,7 @@ class RiskMetricsPacket:
             "hour_hhi": round(self.hour_hhi, 4),
             "top_hour_utc": self.top_hour_utc,
             "top_hour_trade_fraction": round(self.top_hour_trade_fraction, 4),
+            "top_hour_trade_count": self.hour_trade_counts.get(f"{self.top_hour_utc:02d}", 0),
             "avg_trade_usd": round(self.avg_trade_usd, 2),
             "median_trade_usd": round(self.median_trade_usd, 2),
             "p90_trade_usd": round(self.p90_trade_usd, 2),
