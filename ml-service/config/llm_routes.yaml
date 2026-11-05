@@ -57,7 +57,7 @@ providers:
     timeout_s: 60
     rpm: 20   # 20 req/min across :free models (see above); tpm from defaults
     headers:
-      HTTP-Referer: https://fillscore.io
+      HTTP-Referer: https://github.com/DeepanshuOP/FillScore
       X-Title: FillScore Agent Council
 
 models:

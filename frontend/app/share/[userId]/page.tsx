@@ -1,4 +1,5 @@
 import { serverApiBase } from '../../lib/serverApiBase';
+import { siteHost } from '../../lib/siteHost';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import ShareButtons from './ShareButtons';
@@ -14,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   
   const data = await res.json();
   const title = `FillScore: Grade ${data.grade} (${data.score}/100)`;
-  const description = `I scored ${data.score}/100 on execution quality across ${data.topStats.tradesAnalysed} trades. How well do you execute? — fillscore.io`;
+  const description = `I scored ${data.score}/100 on execution quality across ${data.topStats.tradesAnalysed} trades. How well do you execute?${siteHost() ? ` — ${siteHost()}` : ''}`;
   
   return {
     title,
@@ -164,7 +165,7 @@ export default async function SharePage({ params }: Props) {
         }}>
           GET YOUR FILLSCORE →
         </Link>
-        <ShareButtons shareUrl={`${process.env.NEXT_PUBLIC_SITE_URL || 'https://fillscore.io'}/share/${userId}`} grade={data.grade} score={data.score} />
+        <ShareButtons shareUrl={`${process.env.NEXT_PUBLIC_SITE_URL || ''}/share/${userId}`} grade={data.grade} score={data.score} />
       </div>
     </div>
   );

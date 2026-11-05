@@ -1,5 +1,12 @@
 import PDFDocument from 'pdfkit';
 
+/** Host of the configured site (FRONTEND_URL); empty when unset, so no domain we do not own is printed. */
+function siteHost(): string {
+  const raw = process.env.FRONTEND_URL;
+  if (!raw) return '';
+  try { return new URL(raw).host; } catch { return ''; }
+}
+
 export class ReportService {
   static generateReport(
     auditData: any,
@@ -174,7 +181,7 @@ export class ReportService {
       doc.fillColor(white).font('Courier').fontSize(9);
       doc.text(dateStr, colX[0], ty);
       doc.text((t.symbol || '').substring(0, 8), colX[1], ty);
-      doc.text((t.exchange || '').substring(0, 5).toUpperCase(), colX[2], ty);
+      doc.text((t.exchange || '').toUpperCase(), colX[2], ty);
       doc.text((t.side || '').toUpperCase(), colX[3], ty);
       doc.text(`$${Math.round(t.notional || t.notionalValue || 0)}`, colX[4], ty);
       doc.text((t.slippageBps || t.arrivalSlippageBps || 0).toFixed(1), colX[5], ty);
@@ -337,7 +344,7 @@ export class ReportService {
 
     // Final footer — positioned absolutely at bottom of the last page
     doc.fillColor(grey).font('Courier').fontSize(8).text(
-      'FillScore v0.9 beta · fillscore.io · Data encrypted at rest · Not financial advice',
+      ['FillScore v0.9 beta', siteHost(), 'Data encrypted at rest', 'Not financial advice'].filter(Boolean).join(' · '),
       50, pageH - 60, { align: 'center', width: pageW - 100 }
     );
 

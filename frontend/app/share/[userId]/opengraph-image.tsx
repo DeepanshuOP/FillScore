@@ -1,7 +1,7 @@
 import { serverApiBase } from '../../lib/serverApiBase';
 import { ImageResponse } from 'next/og';
+import { siteHost } from '../../lib/siteHost';
 
-export const runtime = 'edge';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -26,7 +26,7 @@ export default async function Image({ params }: Props) {
           }}>
             <div style={{ fontSize: 64, color: '#c9b99a', letterSpacing: '0.2em' }}>FILLSCORE</div>
             <div style={{ fontSize: 32, marginTop: 40, color: '#888078' }}>How well do you actually execute?</div>
-            <div style={{ fontSize: 24, marginTop: 20, color: '#4ade80' }}>fillscore.io</div>
+            <div style={{ fontSize: 24, marginTop: 20, color: '#4ade80' }}>{siteHost()}</div>
           </div>
         ),
         { ...size }
@@ -125,7 +125,7 @@ export default async function Image({ params }: Props) {
           {/* Footer Tagline */}
           <div style={{ position: 'absolute', bottom: '30px', left: 0, width: '100%', display: 'flex', justifyContent: 'center' }}>
             <div style={{ display: 'flex', fontSize: 24, color: '#a78b71', fontStyle: 'italic' }}>
-              How well do you actually execute? <span style={{ margin: '0 10px', color: '#888078' }}>·</span> fillscore.io
+              How well do you actually execute? {siteHost() && <span style={{ margin: '0 10px', color: '#888078' }}>·</span>}{siteHost()}
             </div>
           </div>
         </div>
@@ -142,7 +142,7 @@ export default async function Image({ params }: Props) {
           backgroundColor: '#0d0d0b', color: '#ede8e0'
         }}>
           <div style={{ display: 'flex', fontSize: 64, color: '#c9b99a', letterSpacing: '0.2em' }}>FILLSCORE</div>
-          <div style={{ display: 'flex', fontSize: 24, marginTop: 20, color: '#4ade80' }}>fillscore.io</div>
+          <div style={{ display: 'flex', fontSize: 24, marginTop: 20, color: '#4ade80' }}>{siteHost()}</div>
         </div>
       ),
       { ...size }

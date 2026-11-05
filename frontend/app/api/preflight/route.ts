@@ -5,7 +5,6 @@ import { NextResponse } from 'next/server';
 // host is chosen. No shared code with the backend on purpose.
 
 export const runtime = 'nodejs';
-export const preferredRegion = 'fra1';
 export const dynamic = 'force-dynamic';
 
 const TIMEOUT_MS = 5000;
