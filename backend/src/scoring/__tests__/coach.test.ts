@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hourSummary, describePeriod, describeWindow } from '../coach';
+import { hourSummary, describePeriod, describeWindow, buildCoach } from '../coach';
 
 const at = (hourUtc: number, fillScore: number | null) => ({
     executedAt: new Date(Date.UTC(2026, 8, 10, hourUtc, 30)),
@@ -62,5 +62,20 @@ describe('describeWindow', () => {
 
     it('returns null when there is nothing to quote', () => {
         expect(describeWindow(null)).toBeNull();
+    });
+});
+
+describe('buildCoach headline (2c.2 C3)', () => {
+    it('reads "driver, ~$N over period" with no nested parentheses; the badge keeps (modelled)', () => {
+        // timingCost 1.4 -> Math.round = 1 -> "~$1"; periodText "31 days" -> " over 31 days"
+        const out = buildCoach({
+            breakdown: { bestHour: 9, worstHour: 14, makerRatio: null },
+            periodText: '31 days',
+            trades: [at(9, 90), at(14, 50)],
+            attribution: { timingCost: 1.4, feeCost: 0, totalNotional: 1000 },
+            venue: null,
+        });
+        expect(out.headline).toBe('Largest modelled cost driver: timing, ~$1 over 31 days');
+        expect(out.actions[0].estimatedImpact).toBe('~$1 over 31 days (modelled)');
     });
 });

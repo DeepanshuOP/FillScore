@@ -117,7 +117,7 @@ export function buildCoach(input: CoachInput): { headline: string; actions: Coac
     if (actions.length > 0) {
         const top = actions[0];
         const driver = top.category === 'TIMING' ? 'timing' : top.category === 'VENUE' ? 'venue' : 'order type (taker fees)';
-        headline = `Largest modelled cost driver: ${driver} (${top.estimatedImpact})`;
+        headline = `Largest modelled cost driver: ${driver}, ${top.estimatedImpact.replace(/ \(modelled\)$/, '')}`;
     }
     return { headline, actions };
 }
