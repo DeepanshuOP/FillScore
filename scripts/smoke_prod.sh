@@ -97,6 +97,16 @@ else:
 verdict=${verdict:-"FAIL could not parse the response"}
 report "${verdict%% *}" "backend reaches Binance" "${verdict#* }"
 
+# Demo report through the FRONTEND origin (the /api proxy path the browser uses): must be a real PDF.
+pdf_tmp=$(mktemp)
+pdf_head=$(curl -s -L --max-time "$WAKE_TIMEOUT" -o "$pdf_tmp" -w '%{http_code} %{content_type}' "$ORIGIN/api/audit/report?userId=demo-disciplined" 2>/dev/null || true)
+if [ "${pdf_head%% *}" = 200 ] && [ "$(head -c 4 "$pdf_tmp")" = "%PDF" ]; then
+  report PASS "demo report via frontend origin" "$pdf_head, starts with %PDF"
+else
+  report FAIL "demo report via frontend origin" "${pdf_head:-no response}"
+fi
+rm -f "$pdf_tmp"
+
 echo "---"
 echo "$pass passed, $fail failed"
 [ "$fail" -eq 0 ]
