@@ -6,7 +6,8 @@ run or the fixture this script writes to ml-service/demo_runs/<demo-id>.json.
 For each of the 3 eval demo users it loads that account's packets from MongoDB (read-only), runs
 one live Council through the free-model router (9 base calls, plus any grounding regenerations and
 one forced re-reason; all counted in the `llm_usage` collection),
-and writes the fixture only if the run is NOT degraded. A degraded run is reported and skipped.
+and writes the fixture only if agents.acceptance.accept_run accepts it (structured rules, not a
+failure-string sweep). A rejected run is reported and skipped; --retries N re-runs it.
 
 Needs: working MONGODB_URI credentials and at least one provider key (GROQ_API_KEY today).
 Writes to MongoDB: `llm_usage` counters always; `council_runs` only with --persist.
@@ -35,11 +36,12 @@ SYMBOL = "BTCUSDT"                                                      # what t
 OUT_DIR = ROOT / "demo_runs"
 
 
-GAP_SECONDS = 65   # Groq counts tokens per minute; space the users so one run never spills into the next
+GAP_SECONDS = 90   # Groq counts tokens per minute; space the users so one run never spills into the next
 
 
 async def generate(persist: bool, users: list[str], max_calls: int | None = None,
-                   gap_s: float = GAP_SECONDS, sleep=asyncio.sleep) -> int:
+                   gap_s: float = GAP_SECONDS, sleep=asyncio.sleep, retries: int = 0) -> int:
+    from agents.acceptance import accept_run, string_sweep
     from agents.council import load_packets, run_council_pipeline
     from agents.llm_router import get_default_router
 
@@ -49,35 +51,48 @@ async def generate(persist: bool, users: list[str], max_calls: int | None = None
         return 1
 
     router.http_attempt_cap = max_calls  # hard cap on HTTP attempts for the whole script (retries included)
+    router.http_attempts = 0
     failures = 0
-    for i, account in enumerate(users):
-        if i > 0 and gap_s:
-            await sleep(gap_s)
-        if max_calls is not None and router.http_attempts >= max_calls:
-            print(f"{account}: skipped, the call budget of {max_calls} is used up")
+    ran_any = False   # a council has actually run, so the next one must wait out the gap
+    for account in users:
+        done = False
+        for attempt in range(retries + 1):
+            if max_calls is not None and router.http_attempts >= max_calls:   # cap first: no point sleeping
+                print(f"{account}: skipped, the call budget of {max_calls} is used up")
+                break
+            if ran_any and gap_s:
+                await sleep(gap_s)
+            before = router.http_attempts
+            (fee, risk, liq, alpha), trades = await load_packets(account, SYMBOL)
+            if fee.trade_count == 0:
+                print(f"{account}: no trades for {SYMBOL}, skipped")
+                break
+            result = await run_council_pipeline(account, account, SYMBOL, fee, risk, liq, alpha,
+                                                llm=router, persist=persist, trades=trades)
+            ran_any = True
+            print(f"{account}: {router.http_attempts - before} HTTP attempts (total {router.http_attempts})")
+            doc = result.model_dump(mode="json")
+            acc = accept_run(doc)
+            print(f"{account}: string sweep (secondary, not a gate): {string_sweep(json.dumps(doc))}")
+            if not acc.accepted:
+                print(f"{account}: REJECTED, not written. Reasons: {acc.failures}")
+                if attempt < retries:
+                    print(f"{account}: retrying ({attempt + 1}/{retries})")
+                continue
+            for note in acc.notes:
+                print(f"{account}: note: {note}")
+            path = OUT_DIR / f"{account}.json"
+            path.write_text(json.dumps({
+                "account_id": account,
+                "symbol": SYMBOL,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "council_result": doc,
+            }, indent=2) + "\n", encoding="utf-8")
+            print(f"{account}: {result.synthesis.overallRating}, {result.tokenUsage.get('total_tokens')} tokens -> {path}")
+            done = True
+            break
+        if not done:
             failures += 1
-            continue
-        before = router.http_attempts
-        (fee, risk, liq, alpha), trades = await load_packets(account, SYMBOL)
-        if fee.trade_count == 0:
-            print(f"{account}: no trades for {SYMBOL}, skipped")
-            failures += 1
-            continue
-        result = await run_council_pipeline(account, account, SYMBOL, fee, risk, liq, alpha,
-                                            llm=router, persist=persist, trades=trades)
-        print(f"{account}: {router.http_attempts - before} HTTP attempts (total {router.http_attempts})")
-        if result.degraded:
-            print(f"{account}: DEGRADED, not written. Reasons: {result.degraded_reasons}")
-            failures += 1
-            continue
-        path = OUT_DIR / f"{account}.json"
-        path.write_text(json.dumps({
-            "account_id": account,
-            "symbol": SYMBOL,
-            "generated_at": datetime.now(timezone.utc).isoformat(),
-            "council_result": result.model_dump(mode="json"),
-        }, indent=2) + "\n", encoding="utf-8")
-        print(f"{account}: {result.synthesis.overallRating}, {result.tokenUsage.get('total_tokens')} tokens -> {path}")
     return 1 if failures else 0
 
 
@@ -88,12 +103,15 @@ def main() -> int:
     ap.add_argument("--user", action="append", choices=DEMO_USERS, help="only these demo users")
     ap.add_argument("--max-calls", type=int, default=None,
                     help="hard cap on HTTP attempts across all users (retries included)")
+    ap.add_argument("--retries", type=int, default=0,
+                    help="re-run a rejected user up to N more times (after the gap, while the call cap has room)")
     args = ap.parse_args()
     if not args.yes:
         print("This makes live LLM calls (9+ per demo user) and writes llm_usage. Re-run with --yes.")
         return 2
     load_service_env(str(ROOT / ".env"), str(ROOT.parent / "backend" / ".env"))
-    return asyncio.run(generate(args.persist, args.user or DEMO_USERS, max_calls=args.max_calls))
+    return asyncio.run(generate(args.persist, args.user or DEMO_USERS, max_calls=args.max_calls,
+                                  retries=args.retries))
 
 
 if __name__ == "__main__":
