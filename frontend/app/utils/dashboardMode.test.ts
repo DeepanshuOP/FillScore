@@ -6,8 +6,16 @@ describe('resolveDashboardMode', () => {
     expect(resolveDashboardMode({ urlUserId: 'demo-disciplined', storageUserId: null, accessToken: null })).toBe('demo');
   });
 
-  it('urlUserId=demo-disciplined, WITH token -> demo (explicit URL intent wins)', () => {
-    expect(resolveDashboardMode({ urlUserId: 'demo-disciplined', storageUserId: null, accessToken: 'fake-token' })).toBe('demo');
+  it('urlUserId=demo-disciplined, WITH token, no sample flag -> real (a signed-in user never lands on demo by accident)', () => {
+    expect(resolveDashboardMode({ urlUserId: 'demo-disciplined', storageUserId: null, accessToken: 'fake-token' })).toBe('real');
+  });
+
+  it('urlUserId=demo-disciplined, WITH token, sample=true -> demo (explicit opt-in)', () => {
+    expect(resolveDashboardMode({ urlUserId: 'demo-disciplined', storageUserId: null, accessToken: 'fake-token', sample: true })).toBe('demo');
+  });
+
+  it('sample=true without a demo id, WITH token -> real', () => {
+    expect(resolveDashboardMode({ urlUserId: null, storageUserId: null, accessToken: 'fake-token', sample: true })).toBe('real');
   });
 
   it('no urlUserId, WITH token, storageUserId=demo-disciplined -> real (stale storage must not hijack)', () => {

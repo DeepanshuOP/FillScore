@@ -139,7 +139,7 @@ function AnalyticsContent() {
     const urlUserId = searchParams.get("userId");
     const storageUserId = localStorage.getItem("userId");
     
-    const identity = resolveIdentityState(urlUserId, storageUserId, accessToken);
+    const identity = resolveIdentityState(urlUserId, storageUserId, accessToken, searchParams.get('sample') === '1');
     
     if (identity.mode === "redirect") {
       router.push("/");

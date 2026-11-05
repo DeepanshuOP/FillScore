@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import AuthNav from './AuthNav';
+import { useAuth } from '../context/AuthContext';
+import { navHref } from '../utils/navLinks';
 
 interface NavbarProps {
   userId?: string;
@@ -13,6 +15,7 @@ interface NavbarProps {
 
 export default function Navbar({ userId, exchange, currentPage, showLive }: NavbarProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { accessToken } = useAuth();
 
   const navLinks = [
     { id: 'home', label: 'HOME', path: '/' },
@@ -21,10 +24,7 @@ export default function Navbar({ userId, exchange, currentPage, showLive }: Navb
     { id: 'analytics', label: 'ANALYTICS', path: '/analytics' },
   ] as const;
 
-  const buildHref = (path: string) => {
-    if (path === '/') return '/';
-    return userId ? `${path}?userId=${userId}` : path;
-  };
+  const buildHref = (path: string) => navHref(path, userId, !!accessToken);
 
   const getExchangeColor = (ex?: string | null) => {
     const raw = ex?.toLowerCase();

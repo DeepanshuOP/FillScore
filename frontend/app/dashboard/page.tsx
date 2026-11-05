@@ -15,7 +15,9 @@ import { resolveIdentityState } from '../utils/identityResolver';
 import { buildQuery } from '../utils/queryBuilder';
 import { buildTrend, HistoryPoint } from '../utils/trend';
 import { openAuthenticatedDownload } from '../lib/downloads';
+import Link from 'next/link';
 import ConnectPrompt from '../components/ConnectPrompt';
+import { venueComparisonNote } from '../utils/navLinks';
 import { apiBase } from '../lib/apiBase';
 
 interface CostAttribution {
@@ -283,7 +285,7 @@ function DashboardContent() {
     const urlUserId = searchParams.get('userId');
     const storageUserId = localStorage.getItem('userId');
     
-    const identity = resolveIdentityState(urlUserId, storageUserId, accessToken);
+    const identity = resolveIdentityState(urlUserId, storageUserId, accessToken, searchParams.get('sample') === '1');
     
     if (identity.mode === 'redirect') {
       window.location.href = '/';
@@ -1133,7 +1135,8 @@ function DashboardContent() {
                       <div style={{
                         fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#686460', marginBottom: '24px', fontStyle: 'italic'
                       }}>
-                        Connect multiple exchanges to unlock venue comparison — available in the authenticated version.
+                        {venueComparisonNote(!!accessToken, dashboardMode !== 'real')}{' '}
+                        {accessToken && dashboardMode === 'real' && <Link href="/onboarding" style={{ color: '#c4a882' }}>Connect an exchange</Link>}
                       </div>
                     </>
                   )}
@@ -1162,7 +1165,7 @@ function DashboardContent() {
                       EXECUTION COACH
                     </div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#c9b99a', padding: '2px 8px', border: '1px solid rgba(201,185,154,0.3)', borderRadius: '2px', background: 'rgba(201,185,154,0.1)' }}>
-                      ACTION PLAN
+                      EXECUTION PATTERNS
                     </div>
                   </div>
 
@@ -1223,12 +1226,12 @@ function DashboardContent() {
                   {coach.actions.some((a: any) => a.category === 'TIMING') && coach.bestWindow && coach.worstWindow && (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
                       <div style={{ padding: '1rem', background: '#161614', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '3px' }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#4ade80', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>BEST WINDOW</div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#4ade80', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>BEST-SCORING WINDOW</div>
                         <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1rem', color: '#ede8e0', marginBottom: '0.25rem' }}>{coach.bestWindow.hour}</div>
                         <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#888078' }}>{coach.bestWindow.reason ?? ''}</div>
                       </div>
                       <div style={{ padding: '1rem', background: '#161614', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '3px' }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#ef4444', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>WORST WINDOW</div>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#ef4444', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>LOWEST-SCORING WINDOW</div>
                         <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1rem', color: '#ede8e0', marginBottom: '0.25rem' }}>{coach.worstWindow.hour}</div>
                         <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#888078' }}>{coach.worstWindow.reason ?? ''}</div>
                       </div>
@@ -1237,14 +1240,14 @@ function DashboardContent() {
                 </div>
               )}
 
-              {/* RECOMMENDATIONS — Part 5 */}
+              {/* INSIGHTS — Part 5 */}
               <div style={{ marginBottom: '3rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
-                    RECOMMENDATIONS
+                    INSIGHTS
                   </div>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#585450', padding: '2px 8px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                    {audit.recommendations.length} INSIGHTS
+                    {audit.recommendations.length} FINDINGS
                   </div>
                 </div>
 

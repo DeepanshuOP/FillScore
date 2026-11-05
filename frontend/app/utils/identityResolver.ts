@@ -10,9 +10,10 @@ export interface IdentityState {
 export function resolveIdentityState(
   urlUserId: string | null,
   storageUserId: string | null,
-  accessToken: string | null
+  accessToken: string | null,
+  sample = false
 ): IdentityState {
-  const mode = resolveDashboardMode({ urlUserId, storageUserId, accessToken });
+  const mode = resolveDashboardMode({ urlUserId, storageUserId, accessToken, sample });
   
   if (mode === 'redirect') {
     return {
