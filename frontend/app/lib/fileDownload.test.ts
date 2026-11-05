@@ -84,3 +84,17 @@ describe('downloadReport', () => {
     expect(r).toMatchObject({ ok: false, status: 404, message: 'No audit found for this user. (HTTP 404)' });
   });
 });
+
+import { filenameFrom } from './downloads';
+
+describe('filenameFrom', () => {
+  it('prefers filename* and decodes it', () => {
+    expect(filenameFrom(`attachment; filename="a.pdf"; filename*=UTF-8''fill%20score.pdf`, 'x.pdf')).toBe('fill score.pdf');
+  });
+  it('strips path separators and odd characters', () => {
+    expect(filenameFrom('attachment; filename="../../etc/pa<ss>.pdf"', 'x.pdf')).toBe('.._.._etc_pa_ss_.pdf'.replace(/^\.+/, ''));
+  });
+  it('falls back when absent', () => {
+    expect(filenameFrom(null, 'x.pdf')).toBe('x.pdf');
+  });
+});

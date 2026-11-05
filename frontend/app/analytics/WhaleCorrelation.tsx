@@ -276,7 +276,7 @@ export default function WhaleCorrelation({ userId, dashboardMode }: { userId: st
                   }
 
                   return (
-                    <tr key={t.tradeId} className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[#ffffff03] transition-colors group relative cursor-help">
+                    <tr key={`${t.symbol ?? ""}-${t.tradeId}`} className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[#ffffff03] transition-colors group relative cursor-help">
                       <td className="py-2 text-[#888078]">{timeStr}</td>
                       <td className={`py-2 ${t.side === 'BUY' ? 'text-[#4ade80]' : 'text-[#f97316]'}`}>{t.side}</td>
                       <td className="py-2 text-right font-bold text-[#ef4444]">{t.arrivalSlippageBps?.toFixed(1) || '?'} bps

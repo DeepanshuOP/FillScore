@@ -73,7 +73,18 @@ const browserDeps = (): SaveDeps => ({
   setTimeout: (fn, ms) => setTimeout(fn, ms),
 });
 
-const filenameFrom = (cd: string | null, fallback: string) => /filename="?([^";]+)"?/i.exec(cd ?? '')?.[1] ?? fallback;
+/** Filename from Content-Disposition: prefers RFC 5987 filename*, then filename=; stripped to safe characters. */
+export function filenameFrom(cd: string | null, fallback: string): string {
+  const star = /filename\*\s*=\s*(?:UTF-8|utf-8)''([^;]+)/.exec(cd ?? '')?.[1];
+  let raw: string | undefined;
+  if (star) { try { raw = decodeURIComponent(star.trim()); } catch { raw = undefined; } }
+  raw = raw ?? /filename\s*=\s*"?([^";]+)"?/i.exec(cd ?? '')?.[1];
+  const safe = (raw ?? '').replace(/[\\/]/g, '_').replace(/[^\w.\- ]/g, '_').replace(/^\.+/, '').trim();
+  return safe || fallback;
+}
+
+const errorText = (v: unknown): string =>
+  typeof v === 'string' ? v : v && typeof v === 'object' && typeof (v as any).message === 'string' ? (v as any).message : '';
 
 /**
  * Fetches a file as a blob and saves it through an anchor. Never throws and never leaves the caller
@@ -95,7 +106,7 @@ export async function fetchAndSave(
     let text = '';
     try {
       const raw = await res.text();
-      try { const j = JSON.parse(raw); text = String(j.error ?? j.message ?? ''); } catch { text = ''; }
+      try { const j = JSON.parse(raw); text = errorText(j.error) || errorText(j.message); } catch { text = ''; }
     } catch { /* unreadable body */ }
     return { ok: false, status: res.status, message: `${text || 'The server could not prepare the file.'} (HTTP ${res.status})` };
   }
@@ -139,6 +150,8 @@ export async function downloadReport(
     return { ok: false, message: 'Could not reach the server. Check your connection and try again.' };
   }
   if (!tokenRes.ok) return { ok: false, status: tokenRes.status, message: `Could not prepare the report (HTTP ${tokenRes.status}). Sign in again and retry.` };
-  const { token } = await tokenRes.json();
+  let token: string;
+  try { ({ token } = await tokenRes.json()); } catch { return { ok: false, status: tokenRes.status, message: 'The server sent an unreadable response. Try again.' }; }
+  if (!token) return { ok: false, status: tokenRes.status, message: 'The server sent an unreadable response. Try again.' };
   return fetchAndSave(buildDownloadUrl(base, '/audit/report', { dl: token }), opts, deps);
 }
