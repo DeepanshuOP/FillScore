@@ -251,8 +251,8 @@ async def list_runs(request: Request, userId: str = None, symbol: str = None, li
     return {"runs": runs, "count": len(runs)}
 
 @app.get("/ml/agents/council/runs/{run_id}")
-async def get_run(run_id: str, request: Request):
-    account_id = get_account_id(None, request)
+async def get_run(run_id: str, request: Request, userId: str = None):
+    account_id = get_account_id(userId, request)
     from agents.persistence import load_council_run
     run = await load_council_run(run_id, account_id)
     if not run:
