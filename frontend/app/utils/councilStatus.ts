@@ -41,40 +41,55 @@ export function councilOfflineMessage(isDevelopment: boolean): string {
 
 export const COUNCIL_DISCLAIMER = 'Post-trade analysis of past executions, not financial advice.';
 
-const GRADE_FOR_RATING: Record<string, string> = {
-    EXCELLENT: 'A', GOOD: 'B', FAIR: 'C', POOR: 'D', CRITICAL: 'F',
-};
-
-export function overallToGrade(rating: string): string {
-    return GRADE_FOR_RATING[rating?.toUpperCase()] ?? '?';
-}
+const KNOWN_RATINGS = ['EXCELLENT', 'GOOD', 'FAIR', 'POOR', 'CRITICAL'];
 
 export type CouncilVerdictView =
-    | { kind: 'graded'; grade: string; rating: string }
+    | { kind: 'graded'; rating: string }
     | { kind: 'incomplete'; title: string; reasons: string[] };
 
 /**
  * A degraded run (one where any agent, debate turn or the synthesis fell back to a default) is
- * never graded: it shows "Analysis incomplete" and its reasons, with no grade letter (F-06).
+ * never labelled: it shows "Analysis incomplete" and its reasons (F-06). A complete run shows the
+ * Council's label only. The one letter grade on the page is the deterministic FillScore grade (2c.A6).
  */
 export function councilVerdictView(synthesis: {
     overallRating?: string | null;
     degraded?: boolean;
     degraded_reasons?: string[];
 }): CouncilVerdictView {
-    const rating = synthesis.overallRating ?? '';
-    if (synthesis.degraded || !GRADE_FOR_RATING[rating.toUpperCase()]) {
+    const rating = (synthesis.overallRating ?? '').toUpperCase();
+    if (synthesis.degraded || !KNOWN_RATINGS.includes(rating)) {
         return { kind: 'incomplete', title: 'Analysis incomplete', reasons: synthesis.degraded_reasons ?? [] };
     }
-    return { kind: 'graded', grade: overallToGrade(rating), rating: rating.toUpperCase() };
+    return { kind: 'graded', rating };
+}
+
+const TAG_LABELS: Record<string, string> = {
+    zero_market_orders: 'No market orders',
+    single_symbol_concentration: 'Single-symbol concentration',
+    stable_regime: 'Stable regime',
+    agent_failed: 'Agent unavailable',
+};
+
+/** A specialist flag tag as a human label: a fixed map, else the tag title-cased. Sentences pass through. */
+export function flagLabel(tag: string): string {
+    if (TAG_LABELS[tag]) return TAG_LABELS[tag];
+    if (!/^[a-z0-9]+(_[a-z0-9]+)*$/.test(tag)) return tag;
+    const words = tag.split('_').join(' ');
+    return words.replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** "BTCUSDT · 82 trades" (the Council packet's scope; the dashboard covers every symbol). */
+export function councilScopeLabel(symbol: string, tradeCount: number | null | undefined): string {
+    if (typeof tradeCount !== 'number') return symbol;
+    return `${symbol} · ${tradeCount.toLocaleString('en-US')} ${tradeCount === 1 ? 'trade' : 'trades'}`;
 }
 
 export interface CouncilAgentCard {
     agent: string;
     rating: string;
-    confidence: number;
+    valuesCited: number | null;   // placeholders the agent's text rendered (code-counted); null if not recorded
     severity: string;
-    cited_evidence_count: number;
     flags: string[];
     status: 'waiting' | 'running' | 'done';
     failed: boolean;
@@ -96,9 +111,9 @@ export function verdictCardsFromResult(result: Record<string, any>): Record<stri
         cards[agent] = {
             agent,
             rating: v[ratingField] ?? '',
-            confidence: typeof v.confidence === 'number' ? v.confidence : 0,
+            valuesCited: typeof result?.grounding?.per_agent?.[agent]?.values_cited === 'number'
+                ? result.grounding.per_agent[agent].values_cited : null,
             severity: v.severity ?? 'MEDIUM',
-            cited_evidence_count: Array.isArray(v.cited_evidence) ? v.cited_evidence.length : 0,
             flags,
             status: 'done',
             failed: flags.includes('agent_failed'),

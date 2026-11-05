@@ -6,6 +6,8 @@ import {
   councilErrorMessage,
   councilOfflineMessage,
   councilVerdictView,
+  flagLabel,
+  councilScopeLabel,
   verdictCardsFromResult,
   COUNCIL_DISCLAIMER,
   type CouncilAgentCard as AgentCard,
@@ -29,6 +31,7 @@ interface SynthesisResult {
   findings?: CouncilFinding[];
   observations?: CouncilObservation[];
   estimatedMonthlyCostUSD: number;
+  scope?: string;
   degraded?: boolean;
   degraded_reasons?: string[];
 }
@@ -93,6 +96,7 @@ export default function AgentCouncil({
   const [running, setRunning] = useState(false);
   const [waking, setWaking] = useState(false);
   const [cached, setCached] = useState(false);
+  const [tradeCount, setTradeCount] = useState<number | null>(null);
 
   // Free hosting puts the service to sleep; ping it as soon as the panel mounts so it is
   // already waking while the user reads the dashboard.
@@ -210,9 +214,8 @@ export default function AgentCouncil({
           [agent]: {
             agent,
             rating: "",
-            confidence: 0,
+            valuesCited: null,
             severity: "MEDIUM",
-            cited_evidence_count: 0,
             flags: [],
             status: "running",
             failed: false,
@@ -227,9 +230,8 @@ export default function AgentCouncil({
         [agent]: {
           agent,
           rating: payload.rating,
-          confidence: payload.confidence,
+          valuesCited: null,
           severity: payload.severity,
-          cited_evidence_count: payload.cited_evidence_count,
           flags: payload.flags ?? [],
           status: "done",
           failed: Boolean(payload.failed),
@@ -238,8 +240,8 @@ export default function AgentCouncil({
     } else if (eventType === "debate_started") {
       setDebateRunning(true);
     } else if (eventType === "debate_done") {
+      // The live event carries text from before the claim check; the sanitized debate arrives with `complete`.
       setDebateRunning(false);
-      setDebate(payload);
     } else if (eventType === "synthesis_done") {
       setSynthesis(payload);
     } else if (eventType === "gate_done") {
@@ -258,6 +260,11 @@ export default function AgentCouncil({
       setGrounding(payload.grounding ?? null);
       setTotalLatencyMs(payload.totalLatencyMs);
       setCached(Boolean(payload.cached));
+      if (payload.debate_transcript?.claims) {
+        const d = payload.debate_transcript;
+        setDebate({ ...d, claim_count: d.claims.length });
+      }
+      setTradeCount(typeof payload.tradeContext?.trade_count === "number" ? payload.tradeContext.trade_count : null);
       setActiveAgent(null);
     } else if (eventType === "error") {
       setError(councilErrorMessage(payload.code));
@@ -353,22 +360,8 @@ export default function AgentCouncil({
 
               {card?.status === "done" && (
                 <div className="space-y-2">
-                  {/* Confidence bar */}
-                  <div>
-                    <div className="flex justify-between text-xs text-slate-500 mb-1">
-                      <span>Confidence</span>
-                      <span>{Math.round(card.confidence * 100)}%</span>
-                    </div>
-                    <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-violet-500 rounded-full transition-all duration-700"
-                        style={{ width: `${card.confidence * 100}%` }}
-                      />
-                    </div>
-                  </div>
-
                   <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>{card.cited_evidence_count} evidence keys</span>
+                    <span>{card.valuesCited === null ? "" : `${card.valuesCited} values cited`}</span>
                     <span
                       className={`${ratingColor(card.severity)} px-1.5 py-0.5 rounded border text-xs`}
                     >
@@ -383,7 +376,7 @@ export default function AgentCouncil({
                           key={f}
                           className="text-xs text-slate-500 bg-slate-800 rounded px-1.5 py-0.5"
                         >
-                          {f}
+                          {flagLabel(f)}
                         </span>
                       ))}
                     </div>
@@ -440,12 +433,9 @@ export default function AgentCouncil({
         return (
         <div className="border border-slate-700 bg-slate-900/40 rounded-xl p-5 space-y-4 transition-all duration-500">
           <div className="flex items-center justify-between">
-            <h3 className="text-white font-semibold">Council Verdict</h3>
+            <h3 className="text-white font-semibold">Council assessment</h3>
             {view.kind === "graded" ? (
               <div className="flex items-center gap-3">
-                <span className={`text-4xl font-bold ${ratingColor(view.rating).split(" ")[0]}`}>
-                  {view.grade}
-                </span>
                 <span className={`text-sm px-3 py-1 rounded-full border font-medium ${ratingColor(view.rating)}`}>
                   {view.rating}
                 </span>
@@ -514,7 +504,7 @@ export default function AgentCouncil({
 
           {synthesis.estimatedMonthlyCostUSD > 0 && (
             <p className="text-slate-500 text-xs">
-              Fees paid in the audited period:{" "}
+              Fees paid in the audited period ({councilScopeLabel(symbol, tradeCount)}):{" "}
               <span className="text-slate-300 font-medium">
                 ${synthesis.estimatedMonthlyCostUSD.toFixed(2)}
               </span>

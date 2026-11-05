@@ -85,16 +85,15 @@ describe('councilOfflineMessage', () => {
 
 // ── Phase 1b: degraded runs are never graded; new refusal codes; disclaimer ──────────
 import {
-    councilVerdictView,
-    overallToGrade,
+    councilVerdictView, flagLabel, councilScopeLabel,
     COUNCIL_DISCLAIMER,
     verdictCardsFromResult,
 } from './councilStatus';
 
 describe('councilVerdictView', () => {
-    it('grades a complete run', () => {
+    it('labels a complete run', () => {
         expect(councilVerdictView({ overallRating: 'GOOD', degraded: false })).toEqual({
-            kind: 'graded', grade: 'B', rating: 'GOOD',
+            kind: 'graded', rating: 'GOOD',
         });
     });
 
@@ -117,9 +116,6 @@ describe('councilVerdictView', () => {
         expect(councilVerdictView({ overallRating: null }).kind).toBe('incomplete');
     });
 
-    it('maps ratings to letters', () => {
-        expect(['EXCELLENT', 'GOOD', 'FAIR', 'POOR', 'CRITICAL'].map(overallToGrade)).toEqual(['A', 'B', 'C', 'D', 'F']);
-    });
 });
 
 describe('Phase 1b error codes', () => {
@@ -141,20 +137,60 @@ describe('COUNCIL_DISCLAIMER', () => {
 });
 
 describe('verdictCardsFromResult', () => {
-    it('builds the four cards from the final result, using its deterministic confidence', () => {
+    it('builds the four cards from the final result; values cited come from the grounding ledger, not the model', () => {
         const result = {
-            liquidity: { liquidityRating: 'GOOD', confidence: 0.0556, severity: 'LOW', cited_evidence: ['avg_slippage_bps'], flags: [] },
-            alpha: { alphaRating: 'NEUTRAL', confidence: 0.1, severity: 'LOW', cited_evidence: [], flags: [] },
-            risk: { riskLevel: 'LOW', confidence: 0, severity: 'LOW', cited_evidence: ['x', 'y'], flags: [] },
-            fee: { feeRating: 'MODERATE', confidence: 0, severity: 'MEDIUM', cited_evidence: [], flags: ['agent_failed'] },
+            liquidity: { liquidityRating: 'GOOD', confidence: 0.99, severity: 'LOW', flags: [] },
+            alpha: { alphaRating: 'NEUTRAL', severity: 'LOW', flags: [] },
+            risk: { riskLevel: 'LOW', severity: 'LOW', flags: [] },
+            fee: { feeRating: 'MODERATE', severity: 'MEDIUM', flags: ['agent_failed'] },
+            grounding: { per_agent: { liquidity_scout: { values_cited: 3 }, risk_auditor: { values_cited: 0 } } },
         };
         const cards = verdictCardsFromResult(result);
         expect(Object.keys(cards)).toEqual(['liquidity_scout', 'alpha_architect', 'risk_auditor', 'fee_optimizer']);
         expect(cards.liquidity_scout).toEqual({
-            agent: 'liquidity_scout', rating: 'GOOD', confidence: 0.0556, severity: 'LOW',
-            cited_evidence_count: 1, flags: [], status: 'done', failed: false,
+            agent: 'liquidity_scout', rating: 'GOOD', severity: 'LOW',
+            valuesCited: 3, flags: [], status: 'done', failed: false,
         });
-        expect(cards.risk_auditor.cited_evidence_count).toBe(2);
+        expect(cards.liquidity_scout).not.toHaveProperty('confidence');   // an LLM number is never shown
+        expect(cards.risk_auditor.valuesCited).toBe(0);
+        expect(cards.alpha_architect.valuesCited).toBeNull();             // older runs: not recorded, not "0"
         expect(cards.fee_optimizer.failed).toBe(true);
+    });
+});
+
+describe('councilVerdictView has no letter grade (2c.A6)', () => {
+    it('shows the label only for a complete run', () => {
+        const v = councilVerdictView({ overallRating: 'GOOD', degraded: false });
+        expect(v).toEqual({ kind: 'graded', rating: 'GOOD' });
+        expect(JSON.stringify(v)).not.toMatch(/"grade"|"[A-F]"/);
+    });
+});
+
+describe('flagLabel', () => {
+    it('maps known tags and title-cases unknown ones', () => {
+        expect(flagLabel('zero_market_orders')).toBe('No market orders');
+        expect(flagLabel('single_symbol_concentration')).toBe('Single-symbol concentration');
+        expect(flagLabel('high_taker_streak')).toBe('High Taker Streak');
+        expect(flagLabel('Adverse selection occurred.')).toBe('Adverse selection occurred.');
+    });
+});
+
+describe('councilScopeLabel', () => {
+    it('states symbol and trade count', () => {
+        expect(councilScopeLabel('BTCUSDT', 82)).toBe('BTCUSDT · 82 trades');
+        expect(councilScopeLabel('BTCUSDT', 1)).toBe('BTCUSDT · 1 trade');
+        expect(councilScopeLabel('BTCUSDT', null)).toBe('BTCUSDT');
+    });
+});
+
+// The Council panel must not render a letter grade; the only one on the page is the FillScore grade (2c.A6).
+import { readFileSync } from 'node:fs';
+describe('AgentCouncil panel source', () => {
+    it('renders no grade glyph and says "Council assessment"', () => {
+        const src = readFileSync(`${__dirname}/../components/AgentCouncil.tsx`, 'utf8');
+        expect(src).not.toMatch(/view\.grade|overallToGrade|text-4xl/);
+        expect(src).toContain('Council assessment');
+        expect(src).not.toContain('Council Verdict');
+        expect(src).not.toMatch(/Confidence|evidence keys/);
     });
 });
