@@ -312,6 +312,10 @@ def test_version_reports_render_commit(monkeypatch):
     assert body["builtAt"].endswith("Z")
 
 
+def test_exactly_one_version_route():
+    assert sum(1 for r in main.app.routes if getattr(r, "path", None) == "/version") == 1
+
+
 def test_version_commit_falls_back_to_unknown(monkeypatch):
     monkeypatch.delenv("RENDER_GIT_COMMIT", raising=False)
     assert client.get("/version").json()["commit"] == "unknown"

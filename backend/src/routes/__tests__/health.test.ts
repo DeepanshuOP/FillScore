@@ -76,6 +76,22 @@ describe('Health Routes', () => {
         });
     });
 
+    describe('/version registration', () => {
+        it('has exactly one route layer answering /version', () => {
+            const layers = (healthRouter as any).stack.filter((l: any) => l.route && [].concat(l.route.path).includes('/version'));
+            expect(layers.length).toBe(1);
+        });
+        it('reads the env on every request, not at import', async () => {
+            const saved = process.env.RENDER_GIT_COMMIT;
+            try {
+                process.env.RENDER_GIT_COMMIT = 'aaaaaaa1';
+                expect((await request(app).get('/version')).body.commit).toBe('aaaaaaa1');
+                process.env.RENDER_GIT_COMMIT = 'bbbbbbb2';
+                expect((await request(app).get('/version')).body.commit).toBe('bbbbbbb2');
+            } finally { if (saved === undefined) delete process.env.RENDER_GIT_COMMIT; else process.env.RENDER_GIT_COMMIT = saved; }
+        });
+    });
+
     describe('/version and /api/version', () => {
         it('returns the real package.json version on both paths', async () => {
             for (const path of ['/version', '/api/version']) {
