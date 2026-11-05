@@ -1,5 +1,5 @@
 # Render Blueprint: backend API and ml-service on Render's free plan.
-# Setup steps are in docs/FREE_HOSTING.md. Secret values are never stored here:
+# The single deploy guide is docs/DEPLOY.md (first real user: docs/FIRST_REAL_USER.md). Secret values are never stored here:
 # every `sync: false` entry is typed into the Render dashboard by hand.
 #
 # Free web services sleep after 15 idle minutes and wake in about a minute.
@@ -48,6 +48,11 @@ services:
         sync: false
       - key: GITHUB_CLIENT_SECRET
         sync: false
+      # Optional: transactional email. Without RESEND_API_KEY no email is sent.
+      - key: RESEND_API_KEY
+        sync: false
+      - key: EMAIL_FROM
+        sync: false
 
   - type: web
     name: fillscore-ml
@@ -70,5 +75,11 @@ services:
         sync: false
       - key: GROQ_API_KEY
         sync: false
+      # Optional: adds the Gemini free-tier models to the Council routes when set.
+      - key: GEMINI_API_KEY
+        sync: false
+      # Marks this as a deployment: the local grounding debug sink refuses to turn on.
+      - key: FILLSCORE_DEPLOY
+        value: "1"
       - key: COUNCIL_DAILY_RUN_CAP
         value: "8"

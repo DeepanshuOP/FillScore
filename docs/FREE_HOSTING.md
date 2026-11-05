@@ -1,5 +1,7 @@
 # Free hosting guide
 
+> **Superseded (Phase 2a, 2026-11-05).** The single deploy guide is [`docs/DEPLOY.md`](DEPLOY.md): Render (backend + ml-service, Frankfurt) and Vercel (frontend). This file is kept for history only; do not follow it.
+
 How to run FillScore for **$0 a month** now that the Railway trial is over.
 Written in plain steps. Nothing here needs code changes; the repo is already prepared
 (`render.yaml`, the Vercel `/api` proxy, the cold-start handling in the Council panel).

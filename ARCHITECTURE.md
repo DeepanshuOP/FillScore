@@ -198,7 +198,7 @@ Canonical demo scores: `demo-disciplined` 95.885 (A), `demo-moderate` 84.809 (B)
 
 ## 7. Known gaps
 
-- **ml-service is not deployed** and the Railway region is geo-blocked by Binance (HTTP 451). See ROADMAP §3.
+- **ml-service is not deployed yet.** Deploy target: Render (backend and ml-service, Frankfurt) and Vercel (frontend); see `docs/DEPLOY.md`. Railway is retired; its region got HTTP 451 from Binance, so Binance reachability is checked by `scripts/smoke_prod.sh`.
 - **Council replay** endpoint does not exist; runs are persisted but not replayable.
 - **State is per instance:** rate limiters and the Council run budget live in memory. Running more
   than one instance needs a shared store (ROADMAP R5-C8).

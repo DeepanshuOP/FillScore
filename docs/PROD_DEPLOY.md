@@ -1,5 +1,7 @@
 # Production deploy — Oracle Cloud VM (R6-B0.1 / R6-B0.2)
 
+> **Superseded (Phase 2a, 2026-11-05).** The single deploy guide is [`docs/DEPLOY.md`](DEPLOY.md): Render (backend + ml-service, Frankfurt) and Vercel (frontend). This file is kept for history only; do not follow it.
+
 Repo-side prep for moving `backend` and `ml-service` off Railway onto a
 self-hosted Oracle Cloud Always Free VM (Ampere A1, ARM64, `eu-frankfurt-1`),
 behind Caddy for HTTPS. Frontend stays on Vercel. See `ROADMAP.md` §3

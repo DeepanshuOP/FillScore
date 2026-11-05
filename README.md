@@ -147,7 +147,8 @@ FillScore/
 - [ARCHITECTURE.md](ARCHITECTURE.md): how the three services fit together, the API surface, the data model, and what is not built yet
 - [SECURITY.md](SECURITY.md): threat model, known limits, and how to report a vulnerability
 - [CONTRIBUTING.md](CONTRIBUTING.md): the product rules and how to run the checks
-- [docs/PROD_DEPLOY.md](docs/PROD_DEPLOY.md): deploying the backend and ml-service behind Caddy
+- [docs/DEPLOY.md](docs/DEPLOY.md): the deploy guide (Render for backend and ml-service, Vercel for the frontend)
+- [docs/FIRST_REAL_USER.md](docs/FIRST_REAL_USER.md): first real user on the deployed stack
 - [ROADMAP.md](ROADMAP.md): the task register
 
 ## License

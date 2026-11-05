@@ -1,3 +1,5 @@
+# SUPERSEDED (Phase 2a, 2026-11-05): the Oracle VM deploy is no longer the plan.
+# The single deploy guide is docs/DEPLOY.md (Render + Vercel). Kept for history only.
 # ==============================================================================
 # Caddy reverse-proxy config for the Oracle Cloud VM.
 # Replace the two domains below with the real subdomains before first boot.

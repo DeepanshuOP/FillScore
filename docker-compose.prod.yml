@@ -1,3 +1,5 @@
+# SUPERSEDED (Phase 2a, 2026-11-05): the Oracle VM deploy is no longer the plan.
+# The single deploy guide is docs/DEPLOY.md (Render + Vercel). Kept for history only.
 # ==============================================================================
 # PRODUCTION OVERRIDE — apply on top of docker-compose.yml on the Oracle Cloud
 # VM. Does not affect local dev (`docker compose up` with no -f flags).
