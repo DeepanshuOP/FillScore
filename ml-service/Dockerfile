@@ -22,6 +22,9 @@ COPY . .
 RUN groupadd -r appuser && useradd -r -g appuser -d /app appuser && chown -R appuser:appuser /app
 USER appuser
 
+# Marks this image as a deployment: the local grounding debug sink (FILLSCORE_GROUNDING_DEBUG) refuses to turn on.
+ENV FILLSCORE_DEPLOY=1
+
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \

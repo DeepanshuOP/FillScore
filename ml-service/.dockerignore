@@ -12,3 +12,7 @@ eval/
 scripts/
 test_stream.py
 whale/test_*.py
+.debug
+.venv
+.mypy_cache
+.ruff_cache

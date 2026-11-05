@@ -77,14 +77,24 @@ _mongo_client: MongoClient | None = None
 _db = None
 
 
+def _mongo_client_kwargs(uri: str) -> dict:
+    """certifi's CA bundle only for TLS URIs (SRV, or tls/ssl=true): passing tlsCAFile turns TLS on, which a
+    plain local mongod never answers. 5 s server selection so /ready fails fast instead of after 30 s."""
+    kwargs: dict = {"serverSelectionTimeoutMS": 5000}
+    low = uri.lower()
+    if low.startswith("mongodb+srv://") or "tls=true" in low or "ssl=true" in low:
+        import certifi
+
+        kwargs["tlsCAFile"] = certifi.where()
+    return kwargs
+
+
 def _get_db():
     """Return the fillscore MongoDB database handle."""
     global _mongo_client, _db
     if _db is None:
-        import certifi
-
         uri = os.getenv("MONGODB_URI", "mongodb://localhost:27017/fillscore")
-        _mongo_client = MongoClient(uri, tlsCAFile=certifi.where())
+        _mongo_client = MongoClient(uri, **_mongo_client_kwargs(uri))
         db_name = uri.rsplit("/", 1)[-1].split("?")[0] if "/" in uri else "fillscore"
         _db = _mongo_client[db_name]
     return _db
@@ -97,6 +107,9 @@ def _get_db():
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Startup / shutdown lifecycle."""
+    from agents import debug_sink
+    if debug_sink.refused():
+        print("[debug-sink] FILLSCORE_GROUNDING_DEBUG ignored: FILLSCORE_DEPLOY=1")
     yield
     global _mongo_client
     if _mongo_client is not None:
@@ -185,7 +198,7 @@ async def ready() -> JSONResponse:
     checks = {"mongo": False, "groq_api_key": bool(os.environ.get("GROQ_API_KEY"))}
     try:
         db = _get_db()
-        db.client.admin.command("ping")
+        await asyncio.to_thread(db.client.admin.command, "ping")   # sync driver: keep the event loop free
         checks["mongo"] = True
     except Exception:
         checks["mongo"] = False

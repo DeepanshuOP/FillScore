@@ -291,3 +291,15 @@ def test_cors_only_allows_the_methods_and_headers_the_frontend_uses():
         },
     )
     assert res.status_code == 400  # preflight refused for a disallowed method/header
+
+
+# ── 2a C3: /ready against a local mongod (found by scripts/smoke_prod.sh on the dev stack) ──
+def test_mongo_client_kwargs_tls_only_for_atlas_style_uris():
+    import certifi
+    from main import _mongo_client_kwargs
+    # plain local mongod: no TLS CA file (tlsCAFile forces TLS on, and a plain mongod never answers),
+    # and a 5 s server-selection timeout instead of pymongo's 30 s
+    assert _mongo_client_kwargs("mongodb://127.0.0.1:27099/x") == {"serverSelectionTimeoutMS": 5000}
+    # SRV URIs imply TLS; explicit tls=true / ssl=true too: keep certifi's CA bundle
+    for uri in ("mongodb+srv://h.example/fillscore", "mongodb://h:27017/x?tls=true", "mongodb://h/x?ssl=true"):
+        assert _mongo_client_kwargs(uri) == {"serverSelectionTimeoutMS": 5000, "tlsCAFile": certifi.where()}

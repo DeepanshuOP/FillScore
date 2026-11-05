@@ -53,3 +53,7 @@ ml-service/.venv/
 .venv/
 **/.claude/agent-memory/
 **/.claude/agent-memory-local/
+
+# Local grounding debug sink (A3)
+ml-service/.debug/
+frontend/AGENTS.md
