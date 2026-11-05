@@ -1,5 +1,5 @@
 import axios from 'axios';
-import AdmZip from 'adm-zip';
+import { extractZipSafely } from '../utils/safeUnzip';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -22,8 +22,7 @@ async function downloadAndUnzip() {
             const response = await axios.get(url, { responseType: 'arraybuffer' });
             fs.writeFileSync(zipPath, response.data);
 
-            const zip = new AdmZip(zipPath);
-            zip.extractAllTo(marketDir, true);
+            extractZipSafely(zipPath, marketDir);
 
             // Calculate number of lines extracted
             const csvPath = path.join(marketDir, `${symbol}-1m-${yearMonth}.csv`);
