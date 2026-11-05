@@ -123,7 +123,7 @@ async function run() {
             const enriched = enrichAndScore(trade);
 
             const result = await Trade.updateOne(
-                { userId: enriched.userId, exchange: enriched.exchange, tradeId: enriched.tradeId },
+                { userId: enriched.userId, exchange: enriched.exchange, symbol: enriched.symbol, tradeId: enriched.tradeId },
                 { $setOnInsert: { ...enriched, accountId: enriched.userId, dataSource: 'synthetic-demo' } },
                 { upsert: true }
             );
@@ -192,7 +192,7 @@ async function run() {
         const enriched = enrichAndScore(raw);
 
         const result = await Trade.updateOne(
-            { userId: enriched.userId, exchange: 'bybit', tradeId: enriched.tradeId },
+            { userId: enriched.userId, exchange: 'bybit', symbol: enriched.symbol, tradeId: enriched.tradeId },
             { $setOnInsert: { ...enriched, accountId: enriched.userId, dataSource: 'synthetic-demo' } },
             { upsert: true }
         );
@@ -246,7 +246,7 @@ async function run() {
         const enriched = enrichAndScore(raw);
 
         const result = await Trade.updateOne(
-            { userId: enriched.userId, exchange: 'okx', tradeId: enriched.tradeId },
+            { userId: enriched.userId, exchange: 'okx', symbol: enriched.symbol, tradeId: enriched.tradeId },
             { $setOnInsert: { ...enriched, accountId: enriched.userId, dataSource: 'synthetic-demo' } },
             { upsert: true }
         );
@@ -314,7 +314,7 @@ async function run() {
             enriched.slippageScore = Math.min(100, Math.max(0, enriched.slippageScore + scoreAdjustment));
 
             const result = await Trade.updateOne(
-                { userId: enriched.userId, exchange: ex.name, tradeId: enriched.tradeId },
+                { userId: enriched.userId, exchange: ex.name, symbol: enriched.symbol, tradeId: enriched.tradeId },
                 { $setOnInsert: { ...enriched, accountId: enriched.userId, dataSource: 'synthetic-demo' } },
                 { upsert: true }
             );

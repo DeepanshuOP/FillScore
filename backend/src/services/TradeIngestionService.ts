@@ -137,6 +137,7 @@ export class TradeIngestionService {
             const filter = {
                 userId: normalised.userId,
                 exchange: normalised.exchange,
+                symbol: normalised.symbol,
                 tradeId: normalised.tradeId
             };
 
@@ -208,7 +209,7 @@ export class TradeIngestionService {
                 const normalised = await this.withFeeUsd(bybitClient.normaliseBybitTrade(raw, userId));
 
                 const updateResult = await Trade.updateOne(
-                    { userId, exchange: 'bybit', tradeId: raw.execId },
+                    { userId, exchange: 'bybit', symbol: normalised.symbol, tradeId: raw.execId },
                     { $setOnInsert: { ...normalised, accountId: userId, dataSource: VALID_DEMO_USERS.has(userId) ? 'synthetic-demo' : 'real-user' } },
                     { upsert: true }
                 );
@@ -279,7 +280,7 @@ export class TradeIngestionService {
                 const normalised = await this.withFeeUsd(okxClient.normaliseOKXTrade(raw, userId));
 
                 const updateResult = await Trade.updateOne(
-                    { userId, exchange: 'okx', tradeId: raw.billId },
+                    { userId, exchange: 'okx', symbol: normalised.symbol, tradeId: raw.billId },
                     { $setOnInsert: { ...normalised, accountId: userId, dataSource: VALID_DEMO_USERS.has(userId) ? 'synthetic-demo' : 'real-user' } },
                     { upsert: true }
                 );

@@ -40,8 +40,8 @@ function route(myTrades: (q: URLSearchParams) => Response) {
         throw new Error('unexpected ' + u.pathname);
     });
 }
-const run = (lookbackDays: number, extra: string[] = [], maxRequests?: number) =>
-    new BinanceHistorySync('k', 's', UID, { lookbackDays, extraSymbols: extra, sleep, now: () => NOW, maxRequests }).run();
+const run = (lookbackDays: number, extra: string[] = [], maxRequests?: number, coverage?: Record<string, number>) =>
+    new BinanceHistorySync('k', 's', UID, { lookbackDays, extraSymbols: extra, sleep, now: () => NOW, maxRequests, coverage }).run();
 
 describe('BinanceHistorySync', () => {
     beforeAll(async () => { await mongoose.connect(process.env.MONGODB_URI!); });
@@ -68,7 +68,7 @@ describe('BinanceHistorySync', () => {
         expect(await Trade.countDocuments({ userId: UID })).toBe(2500);
 
         myTradesCalls = [];
-        const r2 = await run(365);
+        const r2 = await run(365, [], undefined, r1.coverage); // coverage persisted on the connection between syncs
         // incremental: resumes at last stored id 2500 -> fromId 2501, empty page
         expect(myTradesCalls.filter(q => q.get('symbol') === 'BTCUSDT').map(q => q.get('fromId'))).toEqual(['2501']);
         expect(r2.inserted).toBe(0);

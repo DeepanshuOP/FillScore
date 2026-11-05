@@ -18,6 +18,8 @@ export interface ExchangeConnectionDocument extends Document {
     statusReason?: string;
     lastSyncAt?: Date;
     lastSyncPartial?: boolean;
+    /** Binance: per-symbol earliest time (ms) known fully fetched, so a repeat long-lookback sync skips the backfill. */
+    lookbackCoveredFrom?: Record<string, number>;
 }
 
 const EncryptedFieldSchema = new Schema(
@@ -44,6 +46,7 @@ const ExchangeConnectionSchema = new Schema<ExchangeConnectionDocument>(
         statusReason: { type: String, required: false },
         lastSyncAt: { type: Date, required: false },
         lastSyncPartial: { type: Boolean, required: false },
+        lookbackCoveredFrom: { type: Schema.Types.Mixed, required: false },
     }
 );
 

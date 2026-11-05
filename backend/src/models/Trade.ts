@@ -74,8 +74,10 @@ const TradeSchema = new Schema<EnrichedTradeDocument>(
     }
 );
 
-// Compound unique index on { userId, exchange, tradeId } to prevent duplicate ingestion
-TradeSchema.index({ userId: 1, exchange: 1, tradeId: 1 }, { unique: true });
+// Unique on { userId, exchange, symbol, tradeId }. Binance spot trade ids are per symbol, so the symbol is part
+// of the key (Bybit/OKX ids are globally unique but use the same key for consistency).
+// Existing deployments: run scripts/migrateTradeIndex.ts to swap the old 3-field index.
+TradeSchema.index({ userId: 1, exchange: 1, symbol: 1, tradeId: 1 }, { unique: true });
 
 // Basic index on (userId, symbol, executedAt) mentioned in step 14
 TradeSchema.index({ userId: 1, symbol: 1, executedAt: 1 });

@@ -20,7 +20,7 @@ export const MAX_REQUESTS_PER_SYNC = 400;
 const MS_PER_DAY = 86_400_000;
 const BASE = 'https://api.binance.com';
 
-export type PartialReason = 'rate_limited' | 'request_cap' | 'banned';
+export type PartialReason = 'rate_limited' | 'request_cap' | 'banned' | 'time_cap';
 
 export interface HistorySyncOptions {
     lookbackDays: number; // >= 3650 means "all available"
@@ -28,6 +28,11 @@ export interface HistorySyncOptions {
     sleep?: (ms: number) => Promise<void>;
     now?: () => number;
     maxRequests?: number;
+    /** Per-symbol earliest time (ms) already known to be fully fetched; lets a repeat sync skip the backfill. */
+    coverage?: Record<string, number>;
+    /** Wall-clock deadline (ms epoch); once passed the sync stops with partialReason 'time_cap'. */
+    deadlineMs?: number;
+    onProgress?: (p: { done: number; total: number; inserted: number }) => void;
 }
 
 export interface HistorySyncResult {
@@ -39,6 +44,8 @@ export interface HistorySyncResult {
     partial: boolean;
     partialReason?: PartialReason;
     message?: string;
+    /** Updated per-symbol coverage; persist it on the connection. */
+    coverage?: Record<string, number>;
 }
 
 class StopSync extends Error {
@@ -55,16 +62,19 @@ export class BinanceHistorySync {
     private now: () => number;
     private maxRequests: number;
     private ingestion = new TradeIngestionService();
+    private coverage: Record<string, number>;
 
     constructor(private apiKey: string, private apiSecret: string, private userId: string, private opts: HistorySyncOptions) {
         this.sleep = opts.sleep ?? (ms => new Promise(r => setTimeout(r, ms)));
         this.now = opts.now ?? Date.now;
         this.maxRequests = opts.maxRequests ?? MAX_REQUESTS_PER_SYNC;
+        this.coverage = { ...(opts.coverage ?? {}) };
     }
 
     private async call<T>(path: string, params: Record<string, string | number>, signed: boolean, weight: number): Promise<T> {
         for (let attempt = 0; attempt < 3; attempt++) {
             if (this.requests >= this.maxRequests) throw new StopSync('request_cap');
+            if (this.opts.deadlineMs !== undefined && this.now() > this.opts.deadlineMs) throw new StopSync('time_cap');
             // stay under 50% of the per-minute weight limit
             if (this.usedWeight + weight > this.weightLimit * WEIGHT_BUDGET_FRACTION) {
                 await this.sleep(61_000);
@@ -115,27 +125,55 @@ export class BinanceHistorySync {
         return { symbols: [...out].sort(), invalid };
     }
 
+    private async ingestRaw(raw: BinanceRawTrade, acc: { inserted: number; skipped: number }): Promise<void> {
+        const n = await this.ingestion.withFeeUsd(this.ingestion.normaliseTrade(raw, this.userId));
+        const r = await Trade.updateOne(
+            { userId: this.userId, exchange: 'binance', symbol: n.symbol, tradeId: n.tradeId },
+            { $setOnInsert: { ...n, accountId: this.userId, dataSource: 'real-user' } },
+            { upsert: true },
+        );
+        if (r.upsertedCount > 0) acc.inserted++; else acc.skipped++;
+    }
+
+    /** Fetch trades older than the oldest stored one: startTime=cutoff, page by fromId, stop at the stored id. */
+    private async backfill(symbol: string, cutoffMs: number, oldestId: number, acc: { inserted: number; skipped: number }): Promise<void> {
+        let params: Record<string, string | number> = { symbol, startTime: cutoffMs, limit: MYTRADES_LIMIT };
+        for (;;) {
+            const page = await this.call<BinanceRawTrade[]>('/api/v3/myTrades', params, true, 20);
+            // Walk to the end of history rather than stopping at the oldest stored id: if an earlier backfill
+            // was interrupted (cap, rate limit), the oldest stored trade is one it wrote itself and stopping
+            // there would leave a permanent hole. Stored rows are skipped by the upsert. Coverage is written
+            // by the caller only after this returns without throwing.
+            for (const raw of page) {
+                if (raw.time >= cutoffMs) await this.ingestRaw(raw, acc);
+            }
+            if (page.length < MYTRADES_LIMIT) return;
+            params = { symbol, fromId: Math.max(...page.map(t => t.id)) + 1, limit: MYTRADES_LIMIT };
+        }
+    }
+
     private async pageSymbol(symbol: string, cutoffMs: number, acc: { inserted: number; skipped: number }): Promise<void> {
-        const last = await Trade.findOne({ userId: this.userId, exchange: 'binance', symbol }, { tradeId: 1 }, { sort: { executedAt: -1 } }).lean();
+        const q = { userId: this.userId, exchange: 'binance', symbol };
+        const last = await Trade.findOne(q, { tradeId: 1 }, { sort: { executedAt: -1 } }).lean();
+        const covered = this.coverage[symbol];
+
+        if (last) {
+            const oldest = await Trade.findOne(q, { tradeId: 1, executedAt: 1 }, { sort: { executedAt: 1 } }).lean();
+            const needsGap = oldest && cutoffMs < new Date(oldest.executedAt).getTime() && (covered === undefined || cutoffMs < covered);
+            if (needsGap) await this.backfill(symbol, cutoffMs, Number(oldest!.tradeId), acc);
+        }
+
         // Incremental: resume after the last stored id. First sync: start at the lookback cutoff.
         let params: Record<string, string | number> = last
             ? { symbol, fromId: Number(last.tradeId) + 1, limit: MYTRADES_LIMIT }
             : { symbol, startTime: cutoffMs, limit: MYTRADES_LIMIT };
         for (;;) {
             const page = await this.call<BinanceRawTrade[]>('/api/v3/myTrades', params, true, 20);
-            const fresh = page.filter(t => t.time >= cutoffMs);
-            for (const raw of fresh) {
-                const n = await this.ingestion.withFeeUsd(this.ingestion.normaliseTrade(raw, this.userId));
-                const r = await Trade.updateOne(
-                    { userId: this.userId, exchange: 'binance', tradeId: n.tradeId },
-                    { $setOnInsert: { ...n, accountId: this.userId, dataSource: 'real-user' } },
-                    { upsert: true },
-                );
-                if (r.upsertedCount > 0) acc.inserted++; else acc.skipped++;
-            }
-            if (page.length < MYTRADES_LIMIT) return;
+            for (const raw of page.filter(t => t.time >= cutoffMs)) await this.ingestRaw(raw, acc);
+            if (page.length < MYTRADES_LIMIT) break;
             params = { symbol, fromId: Math.max(...page.map(t => t.id)) + 1, limit: MYTRADES_LIMIT };
         }
+        this.coverage[symbol] = covered === undefined ? cutoffMs : Math.min(covered, cutoffMs);
     }
 
     async run(): Promise<HistorySyncResult> {
@@ -152,21 +190,24 @@ export class BinanceHistorySync {
             const stored: string[] = await Trade.distinct('symbol', { userId: this.userId, exchange: 'binance' });
             const found = BinanceHistorySync.discoverSymbols(info.symbols ?? [], account.balances ?? [], this.opts.extraSymbols ?? [], stored);
             invalid = found.invalid;
+            this.opts.onProgress?.({ done: 0, total: found.symbols.length, inserted: 0 });
             for (const symbol of found.symbols) {
                 await this.pageSymbol(symbol, cutoffMs, acc);
                 scanned++;
+                this.opts.onProgress?.({ done: scanned, total: found.symbols.length, inserted: acc.inserted });
             }
         } catch (e) {
             if (e instanceof StopSync) {
                 const msg: Record<PartialReason, string> = {
                     rate_limited: 'Binance kept rate-limiting the sync, so only part of your history was fetched. Sync again later to continue where it stopped.',
                     request_cap: 'The per-sync request cap was reached, so only part of your history was fetched. Sync again to continue where it stopped.',
+                    time_cap: 'The sync reached its time limit, so only part of your history was fetched. Sync again to continue where it stopped.',
                     banned: 'Binance temporarily blocked this IP for too many requests, so the sync stopped early. Sync again later.',
                 };
-                return { ...acc, symbolsScanned: scanned, invalidSymbols: invalid, requests: this.requests, partial: true, partialReason: e.reason, message: msg[e.reason] };
+                return { ...acc, symbolsScanned: scanned, invalidSymbols: invalid, requests: this.requests, partial: true, partialReason: e.reason, message: msg[e.reason], coverage: this.coverage };
             }
             throw e;
         }
-        return { ...acc, symbolsScanned: scanned, invalidSymbols: invalid, requests: this.requests, partial: false };
+        return { ...acc, symbolsScanned: scanned, invalidSymbols: invalid, requests: this.requests, partial: false, coverage: this.coverage };
     }
 }
