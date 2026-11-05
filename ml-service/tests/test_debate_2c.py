@@ -80,7 +80,7 @@ def test_prosecution_avoidable_sentence_is_flagged():
 def test_key_dispute_whale_and_theory_sentence_is_flagged_even_with_whale_evidence():
     f = flag_sentences(KEY_DISPUTE, set(), "k", strict=True, whale_ok=True)
     assert f and {"exogenous", "unavoidable", "cont-kukanov-stoikov"} <= set(f[0].terms)
-    assert "whale" not in f[0].terms     # allowed when the packet carries whale evidence
+    assert "whale" in f[0].terms         # 2c.2 C0: no whale placeholder in the sentence, so flagged too
     g = flag_sentences("The trader faced whale adversity.", set(), "k", strict=True, whale_ok=False)
     assert g and g[0].terms == ["whale"]
 
@@ -150,4 +150,56 @@ def test_per_agent_values_cited_and_scope_trade_count():
 def test_mechanism_terms_stay_flagged_even_with_whale_evidence():
     for t in ("Whales were front-running the fills.", "The book was spoofed by manipulation."):
         assert flag_sentences(t, set(), "x", strict=True, whale_ok=True)
-    assert not flag_sentences("Whales were present in 13 trades.", set(), "x", strict=True, whale_ok=True)
+    # 2c.2 C0: the word "whale" needs a whale placeholder in the same sentence (see tests below)
+    assert flag_sentences("Whales were present in 13 trades.", set(), "x", strict=True, whale_ok=True)
+
+
+# ── 2c.2 C0: "whale" only beside a whale placeholder, and only when the count is above 0 ──
+def test_c0_whale_without_placeholder_is_flagged():
+    s = "13 adverse trades reflect whale activity."
+    f = flag_sentences(s, set(), "x", strict=True, whale_ok=True)
+    assert f and f[0].terms == ["whale"]
+
+
+def test_c0_whale_with_placeholder_and_count_above_zero_is_allowed():
+    s = "{{risk.whale_adverse_count}} trades coincided with whale flow."
+    assert not flag_sentences(s, set(), "x", strict=True, whale_ok=True)
+    assert not flag_sentences("{{whale.adverse_total}} trades met whale flow.", set(), "x", strict=True, whale_ok=True)
+
+
+def test_c0_whale_with_placeholder_but_count_zero_is_flagged():
+    s = "{{risk.whale_adverse_count}} trades coincided with whale flow."
+    f = flag_sentences(s, set(), "x", strict=True, whale_ok=False)
+    assert f and f[0].terms == ["whale"]
+
+
+def test_c0_mechanism_word_still_flagged_beside_the_placeholder():
+    s = "{{risk.whale_adverse_count}} trades coincided with whale manipulation."
+    f = flag_sentences(s, set(), "x", strict=True, whale_ok=True)
+    assert f and "manipulation" in f[0].terms and "whale" not in f[0].terms
+
+
+def test_c0_rendered_count_counts_as_the_whale_citation():
+    # enforce_debate sees RENDERED text: "{{risk.whale_adverse_count}}" is already "13"
+    ok = "13 trades coincided with whale flow."
+    assert not flag_sentences(ok, set(), "x", strict=True, whale_ok=True, whale_token="13")
+    assert flag_sentences("113 trades coincided with whale flow.", set(), "x", strict=True, whale_ok=True, whale_token="13")
+    assert flag_sentences("13 adverse trades reflect whale activity, 7 other.".replace("13", "9"), set(), "x",
+                          strict=True, whale_ok=True, whale_token="13")
+    assert flag_sentences(ok, set(), "x", strict=True, whale_ok=False, whale_token=None)
+
+
+def test_c0_enforce_debate_keeps_rendered_whale_count_sentence_only_when_count_positive():
+    fee, risk, liq, alpha = make_packets()
+    ctx = packet_ctx(fee, risk, liq, alpha)
+    ctx["risk"]["whale_adverse_count"] = 13
+    d = {"prosecution_summary": "13 trades coincided with whale flow.", "defense_summary": "Slippage was small.",
+         "key_dispute": "", "claims": [{"side": "prosecution", "claim_id": "P1a", "claim_text": "Slippage was small.",
+                                         "evidence_keys": [], "rebuts": None},
+                                        {"side": "defense", "claim_id": "D1a", "claim_text": "Slippage was small.",
+                                         "evidence_keys": [], "rebuts": None}]}
+    out, _ = enforce_debate(d, set(), ctx, ClaimsLedger())
+    assert out["prosecution_summary"] == "13 trades coincided with whale flow."
+    ctx["risk"]["whale_adverse_count"] = 0
+    out, _ = enforce_debate(d, set(), ctx, ClaimsLedger())
+    assert "whale" not in out["prosecution_summary"]

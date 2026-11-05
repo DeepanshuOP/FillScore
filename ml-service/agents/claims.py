@@ -44,9 +44,18 @@ def _rx(terms: list[str]) -> re.Pattern:
 
 _CAUSAL_RE = _rx(CAUSAL_TERMS + THEORY_TERMS)
 _WHALE_RE = _rx(WHALE_TERMS)
+_WHALE_KEY_RE = re.compile(r"\{\{\s*(?:risk\.whale_adverse_count|whale\.[A-Za-z0-9_.]+)\s*\}\}")
 _COUNTER_RE = _rx(COUNTERFACTUAL_TERMS)
 _ADVICE_RE = _rx(ADVICE_TERMS)
 _CUE_RES = {a: _rx(c) for a, c in ACTION_CUES.items()}
+
+
+def _cites_whale_count(sentence: str, token: str | None) -> bool:
+    """The sentence cites the whale evidence: its placeholder (pre-render text) or the rendered count token
+    (debate text is already rendered when the post-verification check runs)."""
+    if _WHALE_KEY_RE.search(sentence):
+        return True
+    return bool(token) and re.search(r"(?<![\d.,$])" + re.escape(token) + r"(?![\d,%]|\.\d)", sentence) is not None
 
 
 def _norm(m: re.Match) -> str:
@@ -66,12 +75,13 @@ class ClaimFlag:
 
 
 def _flag_sentence(sentence: str, index: int, passed: set[str], field_name: str,
-                   strict: bool = False, whale_ok: bool = False) -> ClaimFlag | None:
+                   strict: bool = False, whale_ok: bool = False, whale_token: str | None = None) -> ClaimFlag | None:
     advice = {_norm(m) for m in _ADVICE_RE.finditer(sentence)}
     counter = {_norm(m) for m in _COUNTER_RE.finditer(sentence)}
     if strict:
         cause = {_norm(m) for m in _CAUSAL_RE.finditer(sentence)}
-        if not whale_ok:
+        # 2c.2 C0: "whale" is allowed only in a sentence citing a whale placeholder, and only when count > 0
+        if not (whale_ok and _cites_whale_count(sentence, whale_token)):
             cause |= {_norm(m) for m in _WHALE_RE.finditer(sentence)}
         if cause:   # never excused by a passed action: no packet value supports a cause
             return ClaimFlag(field_name, index, sorted(advice | counter | cause),
@@ -85,10 +95,10 @@ def _flag_sentence(sentence: str, index: int, passed: set[str], field_name: str,
 
 
 def flag_sentences(text: str, passed: set[str], field: str, strict: bool = False,
-                   whale_ok: bool = False) -> list[ClaimFlag]:
+                   whale_ok: bool = False, whale_token: str | None = None) -> list[ClaimFlag]:
     flags = []
     for i, s in enumerate(split_sentences(text)):
-        f = _flag_sentence(s, i, passed, field, strict, whale_ok)
+        f = _flag_sentence(s, i, passed, field, strict, whale_ok, whale_token)
         if f:
             flags.append(f)
     return flags
@@ -102,11 +112,11 @@ def check_synthesis(headline: str, narrative: str, observations: list[str], pass
 
 
 def redact_claims(text: str, passed: set[str], field: str, strict: bool = False,
-                  whale_ok: bool = False) -> tuple[str, list[ClaimFlag]]:
+                  whale_ok: bool = False, whale_token: str | None = None) -> tuple[str, list[ClaimFlag]]:
     kept: list[str] = []
     flags: list[ClaimFlag] = []
     for i, s in enumerate(split_sentences(text)):
-        f = _flag_sentence(s, i, passed, field, strict, whale_ok)
+        f = _flag_sentence(s, i, passed, field, strict, whale_ok, whale_token)
         if f:
             flags.append(f)
         else:
@@ -139,12 +149,14 @@ def enforce_debate(debate: dict, passed: set[str], ctx: dict, cl: "ClaimsLedger"
 
     if not debate or not debate.get("claims"):
         return debate, []
-    whale_ok = float(ctx.get("risk", {}).get("whale_adverse_count") or 0) > 0
+    whale_n = float(ctx.get("risk", {}).get("whale_adverse_count") or 0)
+    whale_ok = whale_n > 0
+    whale_token = f"{int(round(whale_n)):,}" if whale_ok else None   # same format as render.format_value (*_count)
     out = {**debate, "claims": [dict(c) for c in debate["claims"]]}
     log: list = []
 
     def scrub(text: str, field_name: str) -> str:
-        cleaned, reds = redact_claims(text, passed, field_name, strict=True, whale_ok=whale_ok)
+        cleaned, reds = redact_claims(text, passed, field_name, strict=True, whale_ok=whale_ok, whale_token=whale_token)
         for r in reds:
             debug_sink.record("debate", field_name, "claim_redacted", split_sentences(text)[r.sentence_index],
                               r.terms)
