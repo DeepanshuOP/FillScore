@@ -20,10 +20,11 @@ export interface SyncReport {
     failures: SyncFailure[];
     partial?: boolean;
     partialMessage?: string;
+    partialReason?: string;
     invalidSymbols?: string[];
     symbolsScanned?: number;
     /** Connections refused because the key is no longer read-only (or could not be verified). */
-    refused?: Array<{ exchange: string; reason: 'key_not_read_only' | 'invalid_key' | 'network_error' }>;
+    refused?: Array<{ exchange: string; reason: 'key_not_read_only' | 'invalid_key' | 'network_error'; disable?: string[]; enable?: string[] }>;
     lookbackDays?: number;
     effectiveDays?: Record<string, number>;
 }
@@ -35,7 +36,10 @@ const toOkxInstId = (symbol: string) => symbol.replace(/USDT$/, '-USDT');
  * Pulls trades for every exchange the account has connected. Per-symbol failures are
  * collected rather than thrown so one rate-limited symbol cannot sink the whole sync.
  */
-export async function syncAccountTrades(accountId: string, daysBack: number): Promise<SyncReport> {
+export interface SyncProgress { symbolsDone: number; symbolsTotal: number; tradesAdded: number }
+export interface SyncOptions { onProgress?: (p: SyncProgress) => void; deadlineMs?: number }
+
+export async function syncAccountTrades(accountId: string, daysBack: number, options: SyncOptions = {}): Promise<SyncReport> {
     const connections = await ExchangeConnection.find({ accountId });
     if (connections.length === 0) {
         throw new Error('no_exchange_connections');
@@ -43,6 +47,7 @@ export async function syncAccountTrades(accountId: string, daysBack: number): Pr
 
     const ingestion = new TradeIngestionService();
     const report: SyncReport = { inserted: 0, skipped: 0, failures: [] };
+    let doneBase = 0, totalBase = 0, addedBase = 0;
 
     for (const conn of connections) {
         const apiKey = decryptApiKey(conn.encryptedApiKey);
@@ -65,7 +70,7 @@ export async function syncAccountTrades(accountId: string, daysBack: number): Pr
             else await validateOKXKey(apiKey, apiSecret, passphrase);
         } catch (e: any) {
             const reason = (['key_not_read_only', 'invalid_key'].includes(e?.message) ? e.message : 'network_error') as 'key_not_read_only' | 'invalid_key' | 'network_error';
-            report.refused = [...(report.refused ?? []), { exchange: conn.exchange, reason }];
+            report.refused = [...(report.refused ?? []), { exchange: conn.exchange, reason, ...(Array.isArray(e?.disable) ? { disable: e.disable, enable: e.enable ?? [] } : {}) }];
             report.failures.push({ exchange: conn.exchange, symbol: '*', reason });
             if (reason !== 'network_error') {
                 await ExchangeConnection.updateOne({ _id: conn._id }, { $set: { status: 'needs_attention', statusReason: reason } });
@@ -79,13 +84,16 @@ export async function syncAccountTrades(accountId: string, daysBack: number): Pr
 
         if (conn.exchange === 'binance') {
             try {
-                const r = await new BinanceHistorySync(apiKey, apiSecret, accountId, { lookbackDays: days, extraSymbols: conn.extraSymbols ?? [] }).run();
+                const r = await new BinanceHistorySync(apiKey, apiSecret, accountId, { lookbackDays: days, extraSymbols: conn.extraSymbols ?? [], coverage: conn.lookbackCoveredFrom ?? {}, deadlineMs: options.deadlineMs,
+                    onProgress: p => options.onProgress?.({ symbolsDone: doneBase + p.done, symbolsTotal: totalBase + p.total, tradesAdded: addedBase + p.inserted }),
+                }).run();
+                doneBase += r.symbolsScanned; totalBase += r.symbolsScanned; addedBase += r.inserted;
                 report.inserted += r.inserted;
                 report.skipped += r.skipped;
                 report.symbolsScanned = (report.symbolsScanned ?? 0) + r.symbolsScanned;
                 report.invalidSymbols = [...(report.invalidSymbols ?? []), ...r.invalidSymbols];
-                if (r.partial) { report.partial = true; report.partialMessage = r.message; }
-                await ExchangeConnection.updateOne({ _id: conn._id }, { $set: { status: 'ok', lastSyncAt: new Date(), lastSyncPartial: r.partial }, $unset: { statusReason: '' } });
+                if (r.partial) { report.partial = true; report.partialMessage = r.message; report.partialReason = r.partialReason; }
+                await ExchangeConnection.updateOne({ _id: conn._id }, { $set: { status: 'ok', lastSyncAt: new Date(), lastSyncPartial: r.partial, lookbackCoveredFrom: r.coverage ?? {} }, $unset: { statusReason: '' } });
             } catch (e: any) {
                 console.error(`[Sync] binance history failed: ${e?.message}`);
                 report.failures.push({ exchange: 'binance', symbol: '*', reason: e?.message ?? 'binance_sync_failed' });
@@ -93,6 +101,7 @@ export async function syncAccountTrades(accountId: string, daysBack: number): Pr
             continue;
         }
         const bounded = Math.min(days, NON_BINANCE_MAX_DAYS);
+        options.onProgress?.({ symbolsDone: doneBase, symbolsTotal: totalBase + INGEST_SYMBOLS.length, tradesAdded: addedBase });
 
         const results = await Promise.allSettled(
             INGEST_SYMBOLS.map(symbol => {
@@ -107,6 +116,7 @@ export async function syncAccountTrades(accountId: string, daysBack: number): Pr
             })
         );
 
+        const insertedBefore = report.inserted;
         results.forEach((result, index) => {
             if (result.status === 'fulfilled') {
                 report.inserted += result.value.inserted;
@@ -117,6 +127,8 @@ export async function syncAccountTrades(accountId: string, daysBack: number): Pr
                 report.failures.push({ exchange: conn.exchange, symbol: INGEST_SYMBOLS[index], reason });
             }
         });
+        doneBase += INGEST_SYMBOLS.length; totalBase += INGEST_SYMBOLS.length; addedBase += report.inserted - insertedBefore;
+        options.onProgress?.({ symbolsDone: doneBase, symbolsTotal: totalBase, tradesAdded: addedBase });
     }
 
     return report;

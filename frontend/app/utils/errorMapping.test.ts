@@ -86,4 +86,15 @@ describe('mapOnboardingError', () => {
       "Check that the key, secret and passphrase fields are filled in correctly."
     );
   });
+
+  it('names the permissions to disable, per exchange', () => {
+    expect(mapOnboardingError('key_not_read_only', 400, 'Binance', { disable: ['Spot & Margin Trading', 'Withdrawals'] }))
+      .toContain('Disable: Spot & Margin Trading, Withdrawals.');
+    expect(mapOnboardingError('key_not_read_only', 400, 'Bybit', { disable: ['Spot Trading', 'Withdrawals', 'Transfers'] }))
+      .toContain('Disable: Spot Trading, Withdrawals, Transfers.');
+    expect(mapOnboardingError('key_not_read_only', 400, 'OKX', { disable: ['Trade', 'Withdraw'] }))
+      .toContain('Disable: Trade, Withdraw.');
+    expect(mapOnboardingError('key_not_read_only', 400, 'Binance', { disable: [], enable: ['Reading'] }))
+      .toContain('Enable: Reading.');
+  });
 });

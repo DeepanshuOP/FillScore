@@ -1,5 +1,26 @@
 import crypto from 'crypto';
 
+/** Thrown when a key can do more than read. `disable` names the exchange's permissions to switch off. */
+export class KeyNotReadOnlyError extends Error {
+    constructor(public disable: string[], public enable: string[] = []) { super('key_not_read_only'); }
+}
+
+const BINANCE_LABELS: Record<string, string> = {
+    enableSpotAndMarginTrading: 'Spot & Margin Trading',
+    enableWithdrawals: 'Withdrawals',
+    enableInternalTransfer: 'Internal Transfer',
+    enableMargin: 'Margin Trading',
+    enableFutures: 'Futures Trading',
+    permitsUniversalTransfer: 'Universal Transfer',
+    enableVanillaOptions: 'Options Trading',
+    enablePortfolioMarginTrading: 'Portfolio Margin Trading',
+};
+const BYBIT_CATEGORY_LABELS: Record<string, string> = {
+    Spot: 'Spot Trading', ContractTrade: 'Contract Trading', Derivatives: 'Derivatives Trading', Options: 'Options Trading',
+    Exchange: 'Exchange (Convert)', CopyTrading: 'Copy Trading', BlockTrade: 'Block Trade', NFT: 'NFT', Affiliate: 'Affiliate',
+};
+const OKX_LABELS: Record<string, string> = { trade: 'Trade', withdraw: 'Withdraw' };
+
 export async function validateBinanceKey(apiKey: string, apiSecret: string): Promise<void> {
     const timestamp = Date.now();
     const queryString = `timestamp=${timestamp}`;
@@ -45,17 +66,13 @@ export async function validateBinanceKey(apiKey: string, apiSecret: string): Pro
 
     const data = await response.json();
 
-    if (data.enableReading !== true) {
-        throw new Error('key_not_read_only');
-    }
-
     const allowedFlags = new Set(['ipRestrict', 'enableReading', 'enableFixReadOnly']);
-
+    const disable: string[] = [];
     for (const [key, value] of Object.entries(data)) {
-        if (value === true && !allowedFlags.has(key)) {
-            throw new Error('key_not_read_only');
-        }
+        if (value === true && !allowedFlags.has(key)) disable.push(BINANCE_LABELS[key] ?? key);
     }
+    const enable = data.enableReading !== true ? ['Reading'] : [];
+    if (disable.length > 0 || enable.length > 0) throw new KeyNotReadOnlyError(disable, enable);
 }
 
 const BYBIT_INVALID_KEY_CODES = new Set([10003, 10004]);
@@ -106,7 +123,18 @@ export async function validateBybitKey(apiKey: string, apiSecret: string): Promi
 
     // readOnly: 1 = read only, 0 = read and write
     if (body.result?.readOnly !== 1) {
-        throw new Error('key_not_read_only');
+        const disable: string[] = [];
+        const perms = (body.result?.permissions ?? {}) as Record<string, string[]>;
+        for (const [cat, items] of Object.entries(perms)) {
+            if (!Array.isArray(items) || items.length === 0) continue;
+            if (cat === 'Wallet') {
+                if (items.includes('Withdraw')) disable.push('Withdrawals');
+                if (items.some(i => /Transfer/i.test(i))) disable.push('Transfers');
+            } else {
+                disable.push(BYBIT_CATEGORY_LABELS[cat] ?? cat);
+            }
+        }
+        throw new KeyNotReadOnlyError(disable.length ? disable : ['Read-Write (choose Read-Only)']);
     }
 }
 
@@ -157,6 +185,7 @@ export async function validateOKXKey(apiKey: string, apiSecret: string, passphra
         .map((p: string) => p.trim())
         .filter(Boolean);
     if (perms.length === 0 || !perms.every((p: string) => p === 'read_only')) {
-        throw new Error('key_not_read_only');
+        const disable = perms.filter((p: string) => p !== 'read_only').map((p: string) => OKX_LABELS[p] ?? p);
+        throw new KeyNotReadOnlyError(disable.length ? disable : ['All permissions except Read only']);
     }
 }
