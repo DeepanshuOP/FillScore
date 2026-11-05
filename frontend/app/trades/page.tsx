@@ -90,7 +90,7 @@ function TradesContent() {
       const query = buildQuery(dashboardMode, userId);
       const url = `${apiBase()}/audit/trades/${selectedTrade.tradeId}/note${query}`;
       
-      const payload: any = { note: noteText };
+      const payload: any = { note: noteText, symbol: selectedTrade.symbol };
       if (dashboardMode === 'demo') {
         payload.userId = userId;
       }
@@ -103,7 +103,7 @@ function TradesContent() {
       if (!res.ok) throw new Error('Failed to save note')
       const data = await res.json()
       
-      const updatedTrades = trades.map(t => t.tradeId === selectedTrade.tradeId ? { ...t, note: data.note } : t)
+      const updatedTrades = trades.map(t => t.tradeId === selectedTrade.tradeId && t.symbol === selectedTrade.symbol ?{ ...t, note: data.note } : t)
       setTrades(updatedTrades)
       setSelectedTrade({ ...selectedTrade, note: data.note })
       
@@ -738,7 +738,7 @@ function TradesContent() {
                     {noteText.length} / 500
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {noteStatus === 'saved' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#4ade80' }}>✓ Saved</span>}
+                    {noteStatus === 'saved' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#4ade80' }}>✓ Note stored</span>}
                     {noteStatus === 'error' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#ef4444' }}>Failed to save</span>}
                     <button
                       onClick={saveNote}

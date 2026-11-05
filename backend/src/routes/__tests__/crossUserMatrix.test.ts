@@ -52,6 +52,18 @@ describe('cross-user read matrix', () => {
         expect(res.status).toBe(403);
     });
 
+    it('trades/export: A asking for B\'s id -> 403', async () => {
+        const res = await request(app).get(`/api/audit/trades/export?userId=${idB}`).set('Authorization', `Bearer ${tokenA}`);
+        expect(res.status).toBe(403);
+    });
+
+    it('note PATCH: A cannot write a note on B\'s account via userId -> 403; a demo id is read-only -> 403', async () => {
+        const b = await request(app).patch(`/api/audit/trades/1/note?userId=${idB}`).set('Authorization', `Bearer ${tokenA}`).send({ note: 'x' });
+        expect(b.status).toBe(403);
+        const d = await request(app).patch('/api/audit/trades/1/note?userId=demo-moderate').set('Authorization', `Bearer ${tokenA}`).send({ note: 'x' });
+        expect(d.status).toBe(403);
+    });
+
     it('demo ids are read-only: POST /audit/run with a demo id -> 403', async () => {
         const res = await request(app).post('/api/audit/run?userId=demo-moderate').set('Authorization', `Bearer ${tokenA}`);
         expect(res.status).toBe(403);

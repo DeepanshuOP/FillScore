@@ -7,6 +7,7 @@ import { Trade } from '../models/Trade';
 import { Audit } from '../models/Audit';
 import { AuditHistory } from '../models/AuditHistory';
 import { ExchangeConnection } from '../models/ExchangeConnection';
+import { SyncJob } from '../models/SyncJob';
 import { RefreshToken } from '../models/RefreshToken';
 import { PasswordResetToken } from '../models/PasswordResetToken';
 import { EmailVerificationToken } from '../models/EmailVerificationToken';
@@ -104,6 +105,7 @@ accountRouter.delete('/', accountLimiter, requireAuth, async (req: Request, res:
             EmailVerificationToken.deleteMany({ userId: oid }),
             OAuthCode.deleteMany({ userId: id }),
         ]);
+        await SyncJob.deleteMany({ accountId: id });
         await User.deleteOne({ _id: oid });
 
         const [trades, audits, history, connections, refreshTokens, resetTokens, verifyTokens, oauthCodes] = results.map(r => r.deletedCount);

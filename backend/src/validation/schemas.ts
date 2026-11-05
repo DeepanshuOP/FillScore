@@ -53,6 +53,8 @@ export const downloadTokenBodySchema = z.object({
 
 export const noteBodySchema = z.object({
     note: z.string().transform(v => v.trim().substring(0, NOTE_MAX_LENGTH)),
+    // the same exchange trade id can exist on two symbols, so the note is addressed by symbol + tradeId
+    symbol: z.string().trim().toUpperCase().regex(/^[A-Z0-9]{3,20}$/).optional(),
 });
 
 /**

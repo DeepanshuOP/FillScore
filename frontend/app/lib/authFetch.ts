@@ -1,7 +1,8 @@
 export async function authFetch(
   url: string | URL | Request,
   options: RequestInit = {},
-  auth: { accessToken: string | null; refreshAccessToken: () => Promise<string | null> }
+  auth: { accessToken: string | null; refreshAccessToken: () => Promise<string | null> },
+  fetchFn: typeof fetch = (...a) => fetch(...a)
 ): Promise<Response> {
   const headers = new Headers(options.headers || {});
   
@@ -15,13 +16,13 @@ export async function authFetch(
     credentials: 'include',
   };
 
-  let response = await fetch(url, fetchOptions);
+  let response = await fetchFn(url, fetchOptions);
 
   if (response.status === 401) {
     const newToken = await auth.refreshAccessToken();
     if (newToken) {
       headers.set('Authorization', `Bearer ${newToken}`);
-      response = await fetch(url, { ...fetchOptions, headers });
+      response = await fetchFn(url, { ...fetchOptions, headers });
     }
   }
 

@@ -10,9 +10,11 @@ import { scoreTrade, scoreTiming, computeArrivalSlippageBps, computeFeeDragBps }
 import { aggregateCostAttribution } from '../scoring/attribution';
 import { tradeFeeUsd, FEE_USD_EXPR, computeFeeUsd } from '../scoring/fees';
 import { ReportService } from '../services/ReportService';
+import { descriptiveAudit } from '../services/auditText';
 import { EnrichedTrade } from '../types';
 import rateLimit from 'express-rate-limit';
 import { resolveAccount, resolveDownloadAccount, VALID_DEMO_USERS } from '../middleware/resolveAccount';
+import { ExchangeConnection } from '../models/ExchangeConnection';
 import { requireAuth } from '../middleware/requireAuth';
 import { signDownloadToken, DOWNLOAD_TOKEN_TTL_SECONDS } from '../utils/downloadToken';
 import { INGEST_DAYS_BACK } from '../config/ingestion';
@@ -132,7 +134,7 @@ auditRouter.get('/', resolveAccount, async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'No audit found — run an audit first' });
         }
 
-        return res.status(200).json(latestAudit);
+        return res.status(200).json(await descriptiveAudit(latestAudit, accountId));
     } catch (error: any) {
         console.error('Error fetching audit:', error);
         return res.status(500).json({ error: 'Internal Server Error' });
@@ -156,7 +158,16 @@ auditRouter.post('/run', auditRunLimiter, resolveAccount, async (req: Request, r
         } else {
             // STANDARD USER FLOW
             try {
-                await syncAccountTrades(accountId, daysBack);
+                const report = await syncAccountTrades(accountId, daysBack);
+                // Fail closed: if every connection was refused, do not grade stale data as if it were fresh.
+                const total = await ExchangeConnection.countDocuments({ accountId });
+                if (report.refused?.length && report.refused.length >= total) {
+                    const r = report.refused[0];
+                    const permission = r.reason !== 'network_error';
+                    return res.status(permission ? 409 : 502).json({
+                        error: r.reason, exchange: r.exchange, disable: r.disable ?? [], enable: r.enable ?? [], refused: report.refused,
+                    });
+                }
             } catch (e: any) {
                 if (e.message === 'no_exchange_connections') {
                     return res.status(404).json({ error: 'No exchange connection found' });
@@ -194,7 +205,7 @@ auditRouter.get('/score', resolveAccount, async (req: Request, res: Response) =>
             return res.status(404).json({ error: 'No audit found for this user.' });
         }
 
-        return res.status(200).json(latestAudit);
+        return res.status(200).json(await descriptiveAudit(latestAudit, accountId));
 
     } catch (error: any) {
         console.error('Error fetching score:', error);
@@ -293,7 +304,7 @@ auditRouter.get('/report', resolveDownloadAccount('report'), async (req: Request
             comparisonData = { exchanges, bestExchange, worstExchange, venueAlphaBps, perSymbolRanking };
         }
 
-        const doc = ReportService.generateReport(latestAudit, attribution, worstTrades, comparisonData);
+        const doc = ReportService.generateReport(await descriptiveAudit(latestAudit, accountId), attribution, worstTrades, comparisonData);
         
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="fillscore-audit-${accountId}-${new Date().toISOString().split('T')[0]}.pdf"`);
@@ -459,8 +470,12 @@ auditRouter.patch('/trades/:tradeId/note', shareLimiter, resolveAccount, async (
 
     const trimmedNote = body.note;
 
+    if (!body.symbol && (await Trade.countDocuments({ tradeId, accountId })) > 1) {
+      return res.status(409).json({ error: 'ambiguous_trade', message: 'This trade id exists on more than one symbol; send the symbol.' });
+    }
+
     const trade = await Trade.findOneAndUpdate(
-      { tradeId, accountId },
+      { tradeId, accountId, ...(body.symbol ? { symbol: body.symbol } : {}) },
       { $set: { note: trimmedNote } },
       { new: true }
     );
