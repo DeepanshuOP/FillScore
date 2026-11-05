@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
 import express from 'express';
 import mongoose from 'mongoose';
 import { healthRouter } from '../health';
@@ -55,6 +55,24 @@ describe('Health Routes', () => {
                     expect(res.body.status).toBe('ready');
                 }
             });
+        });
+    });
+
+    describe('/version commit', () => {
+        const saved = process.env.RENDER_GIT_COMMIT;
+        afterEach(() => { if (saved === undefined) delete process.env.RENDER_GIT_COMMIT; else process.env.RENDER_GIT_COMMIT = saved; });
+
+        it('reports RENDER_GIT_COMMIT and an ISO builtAt', async () => {
+            process.env.RENDER_GIT_COMMIT = '30d08b1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+            const res = await request(app).get('/version');
+            expect(res.body.commit).toBe('30d08b1aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+            expect(new Date(res.body.builtAt).toISOString()).toBe(res.body.builtAt);
+        });
+
+        it('falls back to "unknown" when unset', async () => {
+            delete process.env.RENDER_GIT_COMMIT;
+            const res = await request(app).get('/api/version');
+            expect(res.body.commit).toBe('unknown');
         });
     });
 

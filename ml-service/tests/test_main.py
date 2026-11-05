@@ -28,7 +28,7 @@ def test_health_returns_200_with_model_info():
 def test_version_returns_app_version():
     res = client.get("/version")
     assert res.status_code == 200
-    assert res.json() == {"version": EXPECTED_VERSION}
+    assert res.json()["version"] == EXPECTED_VERSION  # commit and builtAt are covered below
 
 
 def test_ready_returns_200_when_mongo_and_groq_ok(monkeypatch):
@@ -303,3 +303,15 @@ def test_mongo_client_kwargs_tls_only_for_atlas_style_uris():
     # SRV URIs imply TLS; explicit tls=true / ssl=true too: keep certifi's CA bundle
     for uri in ("mongodb+srv://h.example/fillscore", "mongodb://h:27017/x?tls=true", "mongodb://h/x?ssl=true"):
         assert _mongo_client_kwargs(uri) == {"serverSelectionTimeoutMS": 5000, "tlsCAFile": certifi.where()}
+
+
+def test_version_reports_render_commit(monkeypatch):
+    monkeypatch.setenv("RENDER_GIT_COMMIT", "30d08b1abc")
+    body = client.get("/version").json()
+    assert body["commit"] == "30d08b1abc"
+    assert body["builtAt"].endswith("Z")
+
+
+def test_version_commit_falls_back_to_unknown(monkeypatch):
+    monkeypatch.delenv("RENDER_GIT_COMMIT", raising=False)
+    assert client.get("/version").json()["commit"] == "unknown"

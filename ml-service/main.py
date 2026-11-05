@@ -13,6 +13,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.responses import JSONResponse, StreamingResponse
 import asyncio, json
+from datetime import datetime, timezone
+
+_PROCESS_START = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from pymongo import MongoClient
@@ -185,7 +188,8 @@ def _council_maintenance_response() -> JSONResponse:
 @app.get("/version")
 async def version() -> dict:
     """Service version, sourced from the FastAPI app's own version string."""
-    return {"version": app.version}
+    # RENDER_GIT_COMMIT is a default Render env var; builtAt is the process start time.
+    return {"version": app.version, "commit": os.environ.get("RENDER_GIT_COMMIT") or "unknown", "builtAt": _PROCESS_START}
 
 
 @app.get("/ready")

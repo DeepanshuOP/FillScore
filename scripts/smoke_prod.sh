@@ -8,13 +8,14 @@
 # Response bodies are never printed except the short status fields named below.
 set -u
 
-if [ $# -ne 3 ]; then
-  echo "usage: $0 BACKEND_URL ML_URL FRONTEND_ORIGIN" >&2
+if [ $# -lt 3 ] || [ $# -gt 4 ]; then
+  echo "usage: $0 BACKEND_URL ML_URL FRONTEND_ORIGIN [EXPECTED_SHA]" >&2
   exit 2
 fi
 BACKEND="${1%/}"
 ML="${2%/}"
 ORIGIN="${3%/}"
+EXPECTED_SHA="${4:-}"
 EVIL="https://evil.example"
 WAKE_TIMEOUT="${SMOKE_WAKE_TIMEOUT:-90}"   # a sleeping free Render service takes about a minute to wake
 TIMEOUT="${SMOKE_TIMEOUT:-20}"
@@ -48,6 +49,25 @@ for svc in backend ml; do
   check_get "$svc /ready" "$base/ready"
   check_get "$svc /version" "$base/version"
 done
+
+# Deployed commit of each service; with EXPECTED_SHA, a service on a different commit FAILs.
+check_commit() {  # check_commit name url
+  local commit short want
+  commit=$(curl -s --max-time "$TIMEOUT" "$2" 2>/dev/null | python3 -c 'import json,sys
+try: print(json.load(sys.stdin).get("commit",""))
+except Exception: print("")' 2>/dev/null)
+  short="${commit:0:7}"
+  if [ -z "$EXPECTED_SHA" ]; then
+    report PASS "$1 commit" "${short:-none reported}"
+  else
+    want="${EXPECTED_SHA:0:7}"
+    if [ -n "$short" ] && [ "$short" = "$want" ]; then report PASS "$1 commit" "$short"
+    else report FAIL "$1 commit" "live ${short:-none}, expected $want"; fi
+  fi
+}
+check_commit backend "$BACKEND/version"
+check_commit ml "$ML/version"
+check_commit frontend "$ORIGIN/frontend-version"
 
 # CORS preflight: the allowed origin must be echoed in Access-Control-Allow-Origin; evil must not be.
 allow_origin_header() {  # allow_origin_header url origin method

@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { frontendCommit } from '../lib/buildInfo';
 
 export default function SiteFooter() {
   const linkStyle: React.CSSProperties = { color: '#a78b71', textDecoration: 'none', display: 'inline-block', padding: '0.6rem 0.25rem' };
@@ -10,7 +11,7 @@ export default function SiteFooter() {
       justifyContent: 'center', alignItems: 'center',
       fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', color: '#6a6560',
     }}>
-      <span>FillScore audits past execution. Not financial advice.</span>
+      <span title={`build ${frontendCommit().slice(0, 7)}`}>FillScore audits past execution. Not financial advice.</span>
       <Link href="/terms" style={linkStyle}>Terms</Link>
       <Link href="/privacy" style={linkStyle}>Privacy</Link>
     </footer>
