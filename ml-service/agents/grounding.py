@@ -13,12 +13,12 @@ from typing import Any, Callable
 
 from agents import debug_sink
 from agents.render import (
-    Violation, catalog_entries, render,
+    PLACEHOLDER_RE, Violation, catalog_entries, render,
 )
 
 __all__ = [
     "Numeral", "Violation", "Check", "Redaction", "GroundingFailed", "GroundingLedger",
-    "GLOSSARY", "extract_numerals", "check", "split_sentences", "redact", "suggest_placeholder",
+    "GLOSSARY", "PERCENTILE_LABELS", "extract_numerals", "strip_duplicates", "check", "split_sentences", "redact", "suggest_placeholder",
     "feedback", "finalize", "grounded_complete",
 ]
 
@@ -95,6 +95,11 @@ _GLOSSARY_RE = re.compile(
     + r")(?![A-Za-z0-9_])", re.I)
 
 
+# Percentile labels are definitional names (2c.A5), allowed bare ("a p90 of {{...}}").
+PERCENTILE_LABELS = ("p50", "p75", "p90", "p95", "p99")
+_PCTL_RE = re.compile(r"(?<![A-Za-z0-9_])(?:" + "|".join(PERCENTILE_LABELS) + r")(?![A-Za-z0-9_])", re.I)
+
+
 def extract_numerals(text: str) -> list[Numeral]:
     found: list[Numeral] = []
     for m in _NUMERAL_RE.finditer(text):
@@ -102,10 +107,56 @@ def extract_numerals(text: str) -> list[Numeral]:
             found.append(Numeral(m.group("num"), m.start("num"), m.end("num")))
     for m in _WORD_RE.finditer(text):
         found.append(Numeral(m.group(0), m.start(), m.end()))
-    gloss = [m.span() for m in _GLOSSARY_RE.finditer(text)]
+    gloss = [m.span() for m in _GLOSSARY_RE.finditer(text)] + [m.span() for m in _PCTL_RE.finditer(text)]
     found = [n for n in found if not any(a <= n.start and n.end <= b for a, b in gloss)]
     found.sort(key=lambda n: n.start)
     return found
+
+
+# ── duplicate-value strip (2c.A1) ──
+_CLAUSE_SEP = re.compile(r"[,;:]")
+
+
+def strip_duplicates(template: str, ctx: dict[str, dict]) -> tuple[str, int]:
+    """Delete a raw numeral that repeats, character for character, the value the renderer produces for
+    a placeholder in the same or the adjacent comma/semicolon/colon clause of the same sentence
+    ("42.6% of trades, {{k}}" with {{k}} = 42.6%). Any other numeral is left for the grounding check.
+    Returns (template, number of tokens deleted)."""
+    out, total = [], 0
+    pieces = re.split(r"(?<=[.!?])(\s+)", template)   # sentences, whitespace kept
+    for piece in pieces:
+        new, n = _strip_sentence(piece, ctx)
+        out.append(new)
+        total += n
+    return "".join(out), total
+
+
+def _strip_sentence(sentence: str, ctx: dict[str, dict]) -> tuple[str, int]:
+    phs = list(PLACEHOLDER_RE.finditer(sentence))
+    if not phs:
+        return sentence, 0
+    clause = lambda pos: len(_CLAUSE_SEP.findall(sentence[:pos]))
+    values = []   # (clause index, rendered value)
+    for m in phs:
+        r = render(m.group(0), ctx)
+        if not r.problems and r.n_rendered == 1:
+            values.append((clause(m.start()), r.text))
+    if not values:
+        return sentence, 0
+    blanked = PLACEHOLDER_RE.sub(lambda m: " " * len(m.group(0)), sentence)
+    kill: list[Numeral] = []
+    for n in extract_numerals(blanked):
+        c = clause(n.start)
+        if any(abs(c - pc) <= 1 and n.text == val for pc, val in values):
+            kill.append(n)
+    if not kill:
+        return sentence, 0
+    for n in sorted(kill, key=lambda n: n.start, reverse=True):
+        sentence = sentence[:n.start] + sentence[n.end:]
+    sentence = re.sub(r"[ \t]{2,}", " ", sentence)
+    sentence = re.sub(r"\s+([,;:.!?])", r"\1", sentence)
+    sentence = re.sub(r"([(\[])\s+", r"\1", sentence).strip()
+    return sentence, len(kill)
 
 
 # ── check / sentences / redaction ──
@@ -233,6 +284,7 @@ class GroundingLedger:
     _final: list[Check] = field(default_factory=list)
     _agents: dict[str, dict[str, Any]] = field(default_factory=dict)
     fallbacks: list[dict[str, Any]] = field(default_factory=list)
+    duplicates_stripped: int = 0
 
     def record(self, agent: str, field_count: int, first: list[Check], final: list[Check],
                regenerated: bool) -> None:
@@ -265,16 +317,26 @@ class GroundingLedger:
             "regenerations": self.regenerations,
             "redactions": [asdict(r) for r in self.redactions],
             "fallbacks": [dict(f) for f in self.fallbacks],
+            "duplicates_stripped": self.duplicates_stripped,
             "numbers_checked": ln + lv,
             "faithfulness_first_pass": _faith(fn, fv),
             "faithfulness_after": None if degraded else _faith(ln, lv),
             "per_agent": {
                 name: {"violations_first_pass": a["viol"], "regenerated": a["regen"],
                        "faithfulness_after": None if degraded else _faith(a["n"], a["v"]),
+                       "values_cited": a["n"],   # placeholders this agent's final text rendered (code-counted)
                        "fallback_text": any(f["agent"] == name for f in self.fallbacks)}
                 for name, a in self._agents.items()
             },
         }
+
+
+def _strip_all(tpl: dict[str, str], ctx_for, ledger: "GroundingLedger") -> dict[str, str]:
+    out = {}
+    for p, t in tpl.items():
+        out[p], n = strip_duplicates(t, ctx_for(p))
+        ledger.duplicates_stripped += n
+    return out
 
 
 # ── blocking LLM wrapper ──
@@ -289,7 +351,7 @@ async def grounded_complete(
     """Returns the model with cleaned *templates* applied; the caller renders via finalize()."""
     out = await llm.complete(role, system, user, schema, max_tokens=max_tokens,
                              temperature=temperature, telemetry=telemetry)
-    tpl = fields(out)
+    tpl = _strip_all(fields(out), ctx_for, ledger)
     first = {p: check(t, ctx_for(p)) for p, t in tpl.items()}
     viols = [v for c in first.values() for v in c.violations]
     if not viols:
@@ -317,7 +379,7 @@ async def grounded_complete(
         except Exception:
             out2 = None
         if out2 is not None:
-            chosen, chosen_tpl = out2, fields(out2)
+            chosen, chosen_tpl = out2, _strip_all(fields(out2), ctx_for, ledger)
             final = {p: check(t, ctx_for(p)) for p, t in chosen_tpl.items()}
 
     cleaned = dict(chosen_tpl)

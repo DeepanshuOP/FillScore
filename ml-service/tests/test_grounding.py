@@ -56,7 +56,7 @@ def test_extract(text, expected):
 
 @pytest.mark.parametrize("text,expected", [
     ("over 30d", ["30d"]), ("at 5pm", ["5pm"]), ("in 3days", ["3days"]), ("50bp", ["50bp"]),
-    ("the p95 fill", ["95"]), ("top5 trades", ["5"]), ("v2", ["2"]),
+    ("the p95 fill", []), ("top5 trades", ["5"]), ("v2", ["2"]),
     ("thirty trades", ["thirty"]), ("a dozen fills", ["dozen"]), ("one hundred", ["one", "hundred"]),
     ("Fifty THOUSAND million billion forty sixty seventy eighty ninety",
      ["Fifty", "THOUSAND", "million", "billion", "forty", "sixty", "seventy", "eighty", "ninety"]),
@@ -164,12 +164,12 @@ def test_ledger_to_dict_numbers():
     assert d["faithfulness_after"] == 1.0               # 3/(3+0)
     assert d["numbers_checked"] == 3
     assert d["per_agent"]["a"] == {"violations_first_pass": 1, "regenerated": True, "faithfulness_after": 1.0,
-                                    "fallback_text": False}
+                                    "values_cited": 3, "fallback_text": False}   # 2c.A6: 3 rendered placeholders
     assert L.to_dict(degraded=True)["faithfulness_after"] is None
     # 1c.10 F4: a degraded run reports no per-agent faithfulness either
     dd = L.to_dict(degraded=True)
     assert dd["per_agent"]["a"] == {"violations_first_pass": 1, "regenerated": True, "faithfulness_after": None,
-                                     "fallback_text": False}
+                                     "values_cited": 3, "fallback_text": False}
     assert dd["faithfulness_first_pass"] == 0.5 and dd["violations_first_pass"] == 1
 
 
@@ -313,7 +313,7 @@ def test_glossary_metric_is_a_real_packet_field(phrase, metric):
 
 @pytest.mark.parametrize("text,expected", [
     ("5", ["5"]), ("30", ["30"]), ("the 30s window", ["30s"]), ("5-minute", ["5"]), ("five", ["five"]),
-    ("30s reversion of 12 bps", ["12 bps"]), ("top 5 trades", ["5"]), ("p90", ["90"]),
+    ("30s reversion of 12 bps", ["12 bps"]), ("top 5 trades", ["5"]), ("p90", []),
     ("5-minute VWAPs", ["5"]),                      # plural: not word-bounded, still flagged
     ("a 30s reversion and a 30s window", ["30s"]),  # only the glossary span is exempt
 ])
