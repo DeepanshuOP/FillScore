@@ -112,7 +112,7 @@ describe('computeAuditSummary', () => {
 });
 
 describe('generateRecommendations', () => {
-    it('includes limit-order recommendation if makerRatio < 0.3', async () => {
+    it('states taker-fee cost when makerRatio < 0.3', async () => {
         const trades = [
             makeTrade({ isMaker: false }),
             makeTrade({ isMaker: false }),
@@ -121,7 +121,7 @@ describe('generateRecommendations', () => {
             makeTrade({ isMaker: true }),
         ];
         const summary = await computeAuditSummary('u1', trades);
-        const limitRec = summary.recommendations.find(r => r.includes('market orders') && r.includes('limit orders'));
+        const limitRec = summary.recommendations.find(r => r.includes('market orders') && r.includes('taker-fee cost'));
         expect(limitRec).toBeDefined();
     });
 });

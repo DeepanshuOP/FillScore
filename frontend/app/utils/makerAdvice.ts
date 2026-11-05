@@ -13,5 +13,5 @@ export function makerRatioNote(makerRatioPct: number): string {
   if (makerRatioPct >= MAKER_TARGET_PCT) {
     return `${shown}% of your fills were maker — nothing to change on order type here.`;
   }
-  return `${shown}% of your fills were maker. Where a venue charges less for maker fills, moving more orders to limit orders cuts fee drag; ${MAKER_TARGET_PCT}% is the level this panel treats as healthy.`;
+  return `${shown}% of your fills were maker; ${MAKER_TARGET_PCT}% is the level this panel treats as healthy. Fee drag is higher where fewer fills are maker.`;
 }

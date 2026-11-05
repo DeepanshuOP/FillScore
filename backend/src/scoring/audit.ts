@@ -176,7 +176,7 @@ export function generateRecommendations(summary: AuditSummary, trades: EnrichedT
         const takingPercent = Math.round((1 - b.makerRatio) * 100);
         const savingsUsd = summary.estimatedLossUSD * monthlyMultiplier;
         const y = savingsUsd.toFixed(2);
-        recs.push(`You used market orders for ${takingPercent}% of trades, paying taker fees every time. Switching to limit orders could save ~$${y}/month based on your trading volume.`);
+        recs.push(`You used market orders for ${takingPercent}% of trades, paying taker fees on each. Modelled taker-fee cost at this period's pace: ~$${y} per 30 days.`);
     }
 
     if (b.worstHour >= 22 || b.worstHour < 7) {
@@ -202,12 +202,12 @@ export function generateRecommendations(summary: AuditSummary, trades: EnrichedT
         const xStr = worstScore.toFixed(1);
         const improvement = Math.min(30, bestScore - worstScore);
         const zStr = improvement.toFixed(1);
-        recs.push(`Your worst-performing trades (avg score: ${xStr}) happen between 22:00–07:00 UTC when crypto spreads are 2–4× wider. Shifting these to 08:00–16:00 UTC could improve your worst-hour avg score by ~${zStr} points.`);
+        recs.push(`Your worst-performing trades (avg score: ${xStr}) fell between 22:00–07:00 UTC. Your best hour averaged ${zStr} points higher (capped at 30).`);
     }
 
     if (b.avgSlippageBps > 20) {
         const xStr = b.avgSlippageBps.toFixed(1);
-        recs.push(`Your average arrival slippage of ${xStr} bps is above the retail average of 15–20 bps. This suggests you're often entering during volatile moments. Consider using limit orders with a small price buffer.`);
+        recs.push(`Your average arrival slippage of ${xStr} bps is above the retail average of 15–20 bps. Entries often landed during volatile moments.`);
     }
 
     if (summary.estimatedLossUSD > 50) {

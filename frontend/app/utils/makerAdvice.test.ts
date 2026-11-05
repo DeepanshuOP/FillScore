@@ -12,10 +12,10 @@ describe('makerRatioNote', () => {
     expect(makerRatioNote(MAKER_TARGET_PCT)).not.toMatch(/increase|shift/i);
   });
 
-  it('suggests more limit orders only when the ratio is below target, and quotes the measured value', () => {
+  it('states the measured ratio and the target below it, without telling the user what to do', () => {
     const note = makerRatioNote(25.4);
     expect(note).toContain('25%');
-    expect(note).toMatch(/limit orders/i);
+    expect(note).not.toMatch(/\b(should|recommend|consider|try|switch|shift|move more|moving)\b/i);
     expect(note).toContain(`${MAKER_TARGET_PCT}%`);
   });
 

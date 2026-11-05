@@ -15,14 +15,14 @@ export default function ConnectPrompt() {
         fontSize: '2rem', color: '#ede8e0', marginBottom: '1rem',
         letterSpacing: '-0.02em'
       }}>
-        Score Your Execution
+        No trades yet
       </h2>
       <p style={{
         fontFamily: 'var(--font-inter)', fontSize: '0.9rem',
         color: '#888078', marginBottom: '2rem', lineHeight: 1.5,
         maxWidth: '400px'
       }}>
-        Connect your exchange to analyze your trades, measure slippage, and receive personalized execution advice.
+        No scored trades were found for your account in the period last synced. Sync again, optionally over a longer period, to audit your past fills.
       </p>
       
       <Link href="/onboarding" style={{
@@ -37,10 +37,10 @@ export default function ConnectPrompt() {
       onMouseEnter={e => e.currentTarget.style.background = '#c4a882'}
       onMouseLeave={e => e.currentTarget.style.background = '#a78b71'}
       >
-        CONNECT YOUR EXCHANGE
+        SYNC AGAIN
       </Link>
 
-      <Link href="/dashboard?userId=demo-disciplined" style={{
+      <Link href="/dashboard?userId=demo-disciplined&sample=1" style={{
         fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
         color: '#888078', textDecoration: 'none', letterSpacing: '0.05em',
         transition: 'color 0.2s ease', marginBottom: '3rem'
@@ -48,7 +48,7 @@ export default function ConnectPrompt() {
       onMouseEnter={e => e.currentTarget.style.color = '#c4a882'}
       onMouseLeave={e => e.currentTarget.style.color = '#888078'}
       >
-        or explore a sample account
+        View sample dashboard
       </Link>
 
       <div style={{
