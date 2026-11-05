@@ -121,7 +121,14 @@ async function performSync(accountId: string, ctl: JobControl): Promise<JobOutco
         const r = report.refused[0];
         return { state: 'needs_attention', result: { error: r.reason, exchange: r.exchange, disable: r.disable ?? [], enable: r.enable ?? [], refused: report.refused } };
     }
-    await marketDataService.enrichAllPendingTrades(accountId);
+    // Past the deadline: no enrichment or audit starts; the next sync resumes from the stored coverage.
+    if (Date.now() >= ctl.deadlineMs) {
+        return { state: 'partial', partialReason: 'time_cap', partialMessage: report.partialMessage, result: { lookbackDays: report.lookbackDays, effectiveDays: report.effectiveDays, invalidSymbols: report.invalidSymbols ?? [], refused: report.refused ?? [], auditSkipped: true } };
+    }
+    await marketDataService.enrichAllPendingTrades(accountId, ctl.deadlineMs);
+    if (Date.now() >= ctl.deadlineMs) {
+        return { state: 'partial', partialReason: 'time_cap', result: { lookbackDays: report.lookbackDays, effectiveDays: report.effectiveDays, invalidSymbols: report.invalidSymbols ?? [], refused: report.refused ?? [], auditSkipped: true } };
+    }
     const base = {
         lookbackDays: report.lookbackDays, effectiveDays: report.effectiveDays,
         invalidSymbols: report.invalidSymbols ?? [], refused: report.refused ?? [],

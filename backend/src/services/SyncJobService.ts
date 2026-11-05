@@ -13,6 +13,8 @@ import { INGEST_DAYS_BACK } from '../config/ingestion';
  */
 export const LEASE_MS = 15 * 60_000;
 export const WALL_CLOCK_CAP_MS = 10 * 60_000;
+/** After the cap, wait this long for in-flight requests to settle before the lock is released. */
+export const CAP_GRACE_MS = 2_000;
 export const TIME_CAP_MESSAGE = 'The sync reached its 10 minute limit, so only part of your history was fetched. Sync again to continue where it stopped.';
 
 export interface JobOutcome {
@@ -53,7 +55,7 @@ async function finish(accountId: string, syncId: string, set: Record<string, unk
     await SyncJob.updateOne({ accountId, syncId, state: 'running' }, { $set: { ...set, finishedAt: new Date() } });
 }
 
-export async function runSyncJob(accountId: string, syncId: string, work: (ctl: JobControl) => Promise<JobOutcome>, capMs = WALL_CLOCK_CAP_MS): Promise<void> {
+export async function runSyncJob(accountId: string, syncId: string, work: (ctl: JobControl) => Promise<JobOutcome>, capMs = WALL_CLOCK_CAP_MS, graceMs = CAP_GRACE_MS): Promise<void> {
     const ctl: JobControl = {
         deadlineMs: Date.now() + capMs,
         progress: p => { SyncJob.updateOne({ accountId, syncId, state: 'running' }, { $set: p }).catch(() => {}); },
@@ -65,6 +67,8 @@ export async function runSyncJob(accountId: string, syncId: string, work: (ctl: 
         const out = await Promise.race([w, capped]);
         if (out === 'cap') {
             w.catch(() => undefined); // a late failure after the cap must not be an unhandled rejection
+            // No new work starts after the deadline; give in-flight requests a bounded moment to settle before freeing the lock.
+            await Promise.race([w.then(() => undefined, () => undefined), new Promise(r => setTimeout(r, graceMs))]);
             await finish(accountId, syncId, { state: 'partial', partial: true, partialReason: 'time_cap', partialMessage: TIME_CAP_MESSAGE });
         } else {
             await finish(accountId, syncId, {

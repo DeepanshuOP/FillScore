@@ -114,4 +114,28 @@ describe('syncAccountTrades', () => {
     it('reports no connections distinctly', async () => {
         await expect(syncAccountTrades('nobody', 30)).rejects.toThrow('no_exchange_connections');
     });
+
+    it('starts no Bybit/OKX symbol work and no later connection once the deadline has passed', async () => {
+        await connect('bybit');
+        await connect('okx', true);
+        const bybit = vi.spyOn(TradeIngestionService.prototype, 'ingestBybitForUser').mockResolvedValue({ inserted: 1, skipped: 0 });
+        const okx = vi.spyOn(TradeIngestionService.prototype, 'ingestOKXForUser').mockResolvedValue({ inserted: 1, skipped: 0 });
+
+        const report = await syncAccountTrades('acct-1', 30, { deadlineMs: Date.now() - 1 });
+
+        expect(bybit).not.toHaveBeenCalled();
+        expect(okx).not.toHaveBeenCalled();
+        expect(report).toMatchObject({ inserted: 0, partial: true, partialReason: 'time_cap' });
+    });
+
+    it('stops starting symbols mid-connection when the deadline passes while running', async () => {
+        await connect('bybit');
+        const deadline = Date.now() + 1000;
+        let calls = 0;
+        vi.spyOn(TradeIngestionService.prototype, 'ingestBybitForUser').mockImplementation(async () => { calls++; return { inserted: 1, skipped: 0 }; });
+        vi.spyOn(Date, 'now').mockReturnValueOnce(deadline - 1).mockReturnValueOnce(deadline - 1).mockReturnValue(deadline + 1);
+        const report = await syncAccountTrades('acct-1', 30, { deadlineMs: deadline });
+        expect(calls).toBeLessThan(INGEST_SYMBOLS.length);
+        expect(report.partialReason).toBe('time_cap');
+    });
 });

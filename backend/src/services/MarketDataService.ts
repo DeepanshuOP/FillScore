@@ -116,7 +116,7 @@ export class MarketDataService {
         });
     }
 
-    public async enrichAllPendingTrades(userId: string): Promise<{ enriched: number; failed: number }> {
+    public async enrichAllPendingTrades(userId: string, deadlineMs?: number): Promise<{ enriched: number; failed: number }> {
         const pendingTrades = await Trade.find({
             userId,
             $or: [
@@ -136,6 +136,7 @@ export class MarketDataService {
         }
 
         for (let i = 0; i < totalBatches; i++) {
+            if (deadlineMs != null && Date.now() >= deadlineMs) break; // no new batch after the sync deadline
             const batch = pendingTrades.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
 
             let batchEnriched = 0;

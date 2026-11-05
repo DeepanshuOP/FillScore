@@ -48,8 +48,12 @@ export async function syncAccountTrades(accountId: string, daysBack: number, opt
     const ingestion = new TradeIngestionService();
     const report: SyncReport = { inserted: 0, skipped: 0, failures: [] };
     let doneBase = 0, totalBase = 0, addedBase = 0;
+    // Once the deadline has passed no new request, connection or symbol is started.
+    const expired = () => options.deadlineMs != null && Date.now() >= options.deadlineMs;
+    const markTimeCap = () => { report.partial = true; report.partialReason = report.partialReason ?? 'time_cap'; };
 
     for (const conn of connections) {
+        if (expired()) { markTimeCap(); break; }
         const apiKey = decryptApiKey(conn.encryptedApiKey);
         const apiSecret = decryptApiKey(conn.encryptedApiSecret);
 
@@ -104,7 +108,8 @@ export async function syncAccountTrades(accountId: string, daysBack: number, opt
         options.onProgress?.({ symbolsDone: doneBase, symbolsTotal: totalBase + INGEST_SYMBOLS.length, tradesAdded: addedBase });
 
         const results = await Promise.allSettled(
-            INGEST_SYMBOLS.map(symbol => {
+            INGEST_SYMBOLS.map(async symbol => {
+                if (expired()) { markTimeCap(); return { inserted: 0, skipped: 0 }; }
                 switch (conn.exchange) {
                     case 'bybit':
                         return ingestion.ingestBybitForUser(accountId, apiKey, apiSecret, symbol, bounded);

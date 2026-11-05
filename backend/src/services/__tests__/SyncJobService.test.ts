@@ -81,4 +81,17 @@ describe('SyncJobService', () => {
         await ExchangeConnection.create({ accountId: A, exchange: 'binance', encryptedApiKey: encryptApiKey('k'), encryptedApiSecret: encryptApiKey('s'), lookbackDays: 90 });
         expect(await getSyncStatus(A)).toMatchObject({ state: 'idle', lookbackDays: 90 });
     });
+
+    it('the lock is not freed while in-flight work is still settling after the cap', async () => {
+        const l = (await acquireSyncLock(A, 365))!;
+        let finishWork!: () => void;
+        const inflight = new Promise<any>(r => { finishWork = () => r({ state: 'done' }); });
+        const job = runSyncJob(A, l.syncId, () => inflight, 20, 1000);
+        await new Promise(r => setTimeout(r, 120)); // past the cap, inside the grace window
+        expect((await getSyncStatus(A)).state).toBe('running');
+        expect(await acquireSyncLock(A, 365)).toBeNull(); // a second sync cannot start on top of the in-flight one
+        finishWork();
+        await job;
+        expect(await getSyncStatus(A)).toMatchObject({ state: 'partial', partialReason: 'time_cap' });
+    });
 });
