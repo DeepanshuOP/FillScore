@@ -10,7 +10,8 @@ from __future__ import annotations
 
 PLACEHOLDER_RULE = (
     "Never write digits or number words (zero–twenty) in any text field. To mention a value, write its "
-    "placeholder exactly as listed, e.g. {{fee.maker_ratio}}; units are inserted for you. Packet key names "
+    "placeholder exactly as listed, e.g. {{fee.maker_ratio}}; units are inserted for you. Methodology names "
+    "such as \"5-minute VWAP\" or \"30s reversion\" may be written as is. Packet key names "
     "(e.g. maker_ratio) may be used in cited_evidence."
 )
 

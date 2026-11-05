@@ -11,13 +11,14 @@ import re
 from dataclasses import asdict, dataclass, field
 from typing import Any, Callable
 
+from agents import debug_sink
 from agents.render import (
     Violation, catalog_entries, render,
 )
 
 __all__ = [
     "Numeral", "Violation", "Check", "Redaction", "GroundingFailed", "GroundingLedger",
-    "extract_numerals", "check", "split_sentences", "redact", "suggest_placeholder",
+    "GLOSSARY", "extract_numerals", "check", "split_sentences", "redact", "suggest_placeholder",
     "feedback", "finalize", "grounded_complete",
 ]
 
@@ -73,6 +74,27 @@ _BIG_WORDS = "thirty forty fifty sixty seventy eighty ninety hundred thousand mi
 _WORD_RE = re.compile(r"\b(?:" + "|".join(_WORDS + _BIG_WORDS) + r")\b", re.I)
 
 
+# Methodology names whose digits/number words are definitional, not data. Closed list; phrase -> the
+# packet metric ("namespace.field") the name refers to. Matched case-insensitively, word-bounded.
+GLOSSARY: dict[str, str] = {
+    "5-minute VWAP": "alpha.avg_vwap_deviation_bps",
+    "five-minute VWAP": "alpha.avg_vwap_deviation_bps",
+    "30s reversion": "liquidity.reversion_30s_avg_bps",
+    "30-second reversion": "liquidity.reversion_30s_avg_bps",
+    "60s reversion": "liquidity.reversion_60s_avg_bps",
+    "60-second reversion": "liquidity.reversion_60s_avg_bps",
+    "30s and 60s reversion": "liquidity.reversion_30s_avg_bps",
+    "30s/60s reversion": "liquidity.reversion_30s_avg_bps",
+    "top 5 worst trades": "liquidity.worst5_slippage_bps",
+    "five worst trades": "liquidity.worst5_slippage_bps",
+    "p90 slippage": "liquidity.p90_slippage_bps",
+    "p90 trade size": "risk.p90_trade_usd",
+}
+_GLOSSARY_RE = re.compile(
+    r"(?<![A-Za-z0-9_])(?:" + "|".join(re.escape(p) for p in sorted(GLOSSARY, key=len, reverse=True))
+    + r")(?![A-Za-z0-9_])", re.I)
+
+
 def extract_numerals(text: str) -> list[Numeral]:
     found: list[Numeral] = []
     for m in _NUMERAL_RE.finditer(text):
@@ -80,6 +102,8 @@ def extract_numerals(text: str) -> list[Numeral]:
             found.append(Numeral(m.group("num"), m.start("num"), m.end("num")))
     for m in _WORD_RE.finditer(text):
         found.append(Numeral(m.group(0), m.start(), m.end()))
+    gloss = [m.span() for m in _GLOSSARY_RE.finditer(text)]
+    found = [n for n in found if not any(a <= n.start and n.end <= b for a, b in gloss)]
     found.sort(key=lambda n: n.start)
     return found
 
@@ -119,6 +143,7 @@ def redact(template: str, ctx: dict[str, dict], agent: str, field_name: str) -> 
         if c.violations:
             reds.append(Redaction(agent, field_name, i, len(c.violations),
                                   sorted({v.kind for v in c.violations})))
+            debug_sink.record(agent, field_name, "numeral_redacted", sentence, [v.token for v in c.violations])
         else:
             kept.append(sentence)
     return " ".join(kept), reds
@@ -207,6 +232,7 @@ class GroundingLedger:
     _first: list[Check] = field(default_factory=list)
     _final: list[Check] = field(default_factory=list)
     _agents: dict[str, dict[str, Any]] = field(default_factory=dict)
+    fallbacks: list[dict[str, Any]] = field(default_factory=list)
 
     def record(self, agent: str, field_count: int, first: list[Check], final: list[Check],
                regenerated: bool) -> None:
@@ -221,6 +247,10 @@ class GroundingLedger:
     def add_redactions(self, reds: list[Redaction]) -> None:
         self.redactions.extend(reds)
 
+    def add_fallback(self, agent: str, field_name: str) -> None:
+        """A required text field was emptied by redaction and replaced by code-built text."""
+        self.fallbacks.append({"agent": agent, "field": field_name, "fallback_text": True})
+
     def to_dict(self, degraded: bool) -> dict:
         """Run-level grounding report. `faithfulness_first_pass` and `faithfulness_after` are measured
         on the model's text: first answers, and the final candidate after regeneration but BEFORE
@@ -234,12 +264,14 @@ class GroundingLedger:
             "violations_first_pass": fv,
             "regenerations": self.regenerations,
             "redactions": [asdict(r) for r in self.redactions],
+            "fallbacks": [dict(f) for f in self.fallbacks],
             "numbers_checked": ln + lv,
             "faithfulness_first_pass": _faith(fn, fv),
             "faithfulness_after": None if degraded else _faith(ln, lv),
             "per_agent": {
                 name: {"violations_first_pass": a["viol"], "regenerated": a["regen"],
-                       "faithfulness_after": None if degraded else _faith(a["n"], a["v"])}
+                       "faithfulness_after": None if degraded else _faith(a["n"], a["v"]),
+                       "fallback_text": any(f["agent"] == name for f in self.fallbacks)}
                 for name, a in self._agents.items()
             },
         }
@@ -263,6 +295,14 @@ async def grounded_complete(
     if not viols:
         ledger.record(agent, len(tpl), list(first.values()), list(first.values()), False)
         return apply(out, tpl)
+
+    if debug_sink.enabled():
+        for p, c in first.items():
+            if c.violations:
+                for sentence in split_sentences(tpl[p]):
+                    sv = check(sentence, ctx_for(p)).violations
+                    if sv:
+                        debug_sink.record(agent, p, "numeral_flagged", sentence, [v.token for v in sv])
 
     chosen, chosen_tpl, final = out, tpl, first
     regenerated = False

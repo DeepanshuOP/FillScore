@@ -161,7 +161,7 @@ def test_placeholders_render_packet_values_without_regeneration():
                           "degraded", "degraded_reasons"}
     assert synth["headline"] == "Fees came to $328.00" and synth["overallRating"] == "POOR"
     gate = _event(events, "gate_done")
-    assert set(gate) == {"verification", "grounding"} and gate["grounding"] == g
+    assert set(gate) == {"verification", "grounding", "claims"} and gate["grounding"] == g
     assert "grounding_report" not in result.model_dump() and "gate_report" not in result.model_dump()
 
 
@@ -285,15 +285,17 @@ def test_a_degraded_run_has_no_faithfulness_and_no_findings():
                                    "re_reasoned": 0, "dropped": []}
 
 
-def test_a_specialist_explanation_removed_by_the_number_check_fails_that_agent():
+def test_a_specialist_explanation_removed_by_the_number_check_gets_the_fallback_sentence():
+    # 1d.4: was "fails that agent / degrades the run"; now the run continues with code-built text
     result, _, _, provider = _run({"liquidity_scout": dict(LIQUIDITY, slippageRoot=JUNK)})
-    assert result.degraded is True and result.synthesis.overallRating is None
-    assert "liquidity_scout: its explanation had to be removed by the number check" in result.degraded_reasons
-    assert "agent_failed" in result.liquidity.flags
+    assert result.degraded is False and result.synthesis.overallRating is not None
+    assert result.liquidity.slippageRoot == "Liquidity verdict: GOOD; average slippage 0.0 bps."
+    assert "agent_failed" not in result.liquidity.flags
     assert provider.count["liquidity_scout"] == 2                     # base + one regeneration
-    assert "prosecution" not in provider.count                        # debate skipped once degraded
-    assert result.n_calls_ok == 3
-    assert result.grounding["faithfulness_after"] is None
+    assert result.n_calls_ok == result.n_calls_expected
+    assert result.grounding["fallbacks"] == [
+        {"agent": "liquidity_scout", "field": "slippageRoot", "fallback_text": True}]
+    assert result.grounding["per_agent"]["liquidity_scout"]["fallback_text"] is True
 
 
 def test_a_debate_turn_emptied_by_the_number_check_stops_the_debate():
@@ -314,7 +316,8 @@ def test_claims_emptied_by_the_number_check_are_dropped():
     assert ids == ["P1a", "P2a"] and result.degraded is False   # 1c.10: ids are code-assigned per round (was the model's own "P1a" twice)
 
 
-def test_a_synthesis_headline_removed_by_the_number_check_fails_synthesis():
+def test_a_synthesis_headline_removed_by_the_number_check_gets_the_fallback_sentence():
+    # 1d.4: was "fails synthesis / degrades the run"
     answers = _synthesis([_rec("general", {}, "Costs were uneven.")], None)
     first = answers["synthesis"]
 
@@ -322,9 +325,9 @@ def test_a_synthesis_headline_removed_by_the_number_check_fails_synthesis():
         return dict(first(kw, 1), headline=JUNK)
 
     result, *_ = _run({"synthesis": junk_headline})
-    assert result.degraded is True and result.n_calls_ok == 8
-    assert "synthesis: its explanation had to be removed by the number check" in result.degraded_reasons
-    assert result.synthesis.overallRating is None and result.synthesis.observations == []
+    assert result.degraded is False and result.n_calls_ok == result.n_calls_expected
+    assert result.synthesis.headline == f"Overall verdict: {result.synthesis.overallRating}."
+    assert {"agent": "synthesis", "field": "headline", "fallback_text": True} in result.grounding["fallbacks"]
 
 
 def test_cached_replay_emits_the_same_payloads():

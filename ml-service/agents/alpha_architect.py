@@ -14,7 +14,7 @@ from agents.schemas import TradeContext, AlphaVerdict
 ROLE = "specialist"
 MAX_TOKENS = 500
 NAMESPACE = "alpha"
-TEXT_FIELD = "bestAlternative"   # the explanation; emptied by redaction -> the agent failed
+TEXT_FIELD = "bestAlternative"   # the explanation; emptied by redaction -> code-built fallback sentence
 
 SYSTEM_PROMPT = system_prompt(
     "You are FillScore's Alpha Architect agent. You audit whether a trader's past "
@@ -30,6 +30,7 @@ SYSTEM_PROMPT = system_prompt(
     '  "confidence": float (0-1),\n'
     '  "flags": [string]\n'
     "}\n"
+    "\nExample: \"bestAlternative\": \"Fills sat close to the VWAP benchmark, with a median deviation of {{alpha.median_vwap_deviation_bps}}.\"  Wrong: \"a median deviation of 2 bps\" or \"within three bps\" (digits or number words outside a placeholder).\n"
 )
 
 
@@ -47,10 +48,10 @@ Schema: alphaRating (POSITIVE/NEUTRAL/NEGATIVE/SEVERELY_NEGATIVE), bestAlternati
 async def run(context: TradeContext, llm, packet: AlphaMetricsPacket, telemetry: list | None = None, *,
               ctx: dict | None = None, ledger=None) -> AlphaVerdict:
     """Run the agent through the router with blocking grounding (agents.grounded_call). Raises if no
-    model produced a valid verdict, or GroundingFailed if its explanation had to be removed."""
+    model produced a valid verdict, or, if its explanation had to be removed, uses the code-built fallback sentence."""
     ctx = ctx if ctx is not None else {NAMESPACE: packet.to_prompt_dict()}
     return await grounded_verdict(
         llm, ROLE, SYSTEM_PROMPT, build_user_prompt(context, packet, ctx), AlphaVerdict,
         agent="alpha_architect", text_field=TEXT_FIELD, ctx=ctx, ledger=ledger, telemetry=telemetry, max_tokens=MAX_TOKENS,
-        namespace=NAMESPACE,
+        namespace=NAMESPACE, fallback=("Alpha", "alphaRating", "alpha.avg_vwap_deviation_bps"),
     )

@@ -4,7 +4,7 @@ Specialist verdicts are LABEL-ONLY: agents cite evidence keys,
 never originate numeric values. All numbers come from MetricsPackets.
 """
 from __future__ import annotations
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, create_model, field_validator
 from typing import Literal, Optional
 
 from agents.verification import ACTIONS
@@ -78,6 +78,16 @@ class ConflictEntry(BaseModel):
     rule_applied: str = Field(description="The regime rule used to resolve, e.g. 'STABLE: Fee > Risk'")
     winner: str = Field(description="Which agent's recommendation was prioritised")
 
+    @field_validator("between", mode="before")
+    @classmethod
+    def _join_agent_list(cls, v):
+        """One synthesis model wrote `between` as a list of agent names (1d.3, recorded loc/type
+        `conflictLedger.N.between: string_type`). A list of strings is joined with " vs "; any other
+        non-string still fails. The joined text is grounded like any other text field."""
+        if isinstance(v, list) and v and all(isinstance(x, str) for x in v):
+            return " vs ".join(v)
+        return v
+
 
 OverallRating = Literal["EXCELLENT", "GOOD", "FAIR", "POOR", "CRITICAL"]
 
@@ -145,6 +155,12 @@ class SynthesisLLMOutput(BaseModel):
     )
 
 
+class SynthesisTextOutput(BaseModel):
+    """The verification-aware rewrite (2a.2): only the headline and narrative."""
+    headline: str
+    narrative: str
+
+
 class ReReasonOutput(BaseModel):
     """The forced re-reason: replacements for rejected recommendations (possibly none)."""
     recommendations: list[Recommendation] = Field(default_factory=list)
@@ -190,6 +206,7 @@ class CouncilResult(BaseModel):
         default_factory=dict,
         description="1c.3 blocking grounding: GroundingLedger.to_dict (violations, regenerations, redactions, faithfulness)"
     )
+    claims: dict = Field(default_factory=dict, description="2a.2 claim check: ClaimsLedger.to_dict")
     verification: dict = Field(
         default_factory=dict,
         description="1c.4 counterfactual verifier: verification.summarise (proposed, passed, rejected, re_reasoned, dropped)"

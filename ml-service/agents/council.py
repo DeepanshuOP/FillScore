@@ -27,10 +27,12 @@ from typing import Any, Awaitable, Callable, Optional, TypedDict
 
 from langgraph.graph import END, START, StateGraph
 
+from agents import claims as claims_mod
+from agents import debug_sink
 from agents import alpha_architect, fee_optimizer, liquidity_scout, risk_auditor, synthesis
 from agents.confidence import inject_coverage_confidence
 from agents.debate import MAX_ROUNDS, run_debate, transcript_to_dict
-from agents.grounding import GroundingFailed, GroundingLedger, finalize
+from agents.grounding import GroundingFailed, GroundingLedger, finalize, split_sentences
 from agents.metrics.alpha_packet import AlphaMetricsPacket
 from agents.metrics.fee_packet import FeeMetricsPacket
 from agents.metrics.liquidity_packet import LiquidityMetricsPacket
@@ -140,6 +142,7 @@ def _failure_reason(exc: BaseException) -> str:
     if isinstance(exc, RouterExhausted):
         return {
             "budget": "the daily AI budget was used up",
+            "attempt_cap": "the script's call cap was reached",
             "no_provider": "no AI provider is configured",
         }.get(exc.reason, "no model returned a valid answer")
     return "an unexpected error"
@@ -392,6 +395,76 @@ async def verify_draft(run: RunCollector, draft, trades: list[dict] | None, symb
     return findings, observations, verification
 
 
+async def enforce_claims(run: RunCollector, draft, findings, observations, verification):
+    """2a.2: after verification, no user-visible text (headline, narrative, observations, finding
+    texts, conflict ledger) may call a cost avoidable, missed or saved unless that action area PASSED,
+    and none may give advice. Flagged headline/narrative get one verification-aware rewrite (it never
+    degrades the run and is not counted in ok_calls); whatever is still flagged is dropped by sentence.
+    Finding texts and ledger entries are only redacted. Returns
+    (headline, narrative, findings, observations, conflictLedger, claims dict)."""
+    passed = {f.action_type for f in findings}
+    cl = claims_mod.ClaimsLedger()
+    headline, narrative = draft.headline, draft.narrative
+    ledger_keys = ("between", "rule_applied", "winner")
+    texts = {"headline": headline, "narrative": narrative}
+    texts.update({f"observations.{i}": o.text for i, o in enumerate(observations)})
+    texts.update({f"findings.{i}": f.text for i, f in enumerate(findings)})
+    for j, e in enumerate(draft.conflictLedger):
+        texts.update({f"conflictLedger.{j}.{k}": getattr(e, k) for k in ledger_keys})
+    flags = [fl for field_name, text in texts.items()
+             for fl in claims_mod.flag_sentences(text, passed, field_name)]
+    cl.flagged_first_pass = len(flags)
+    if not flags:
+        return headline, narrative, findings, observations, list(draft.conflictLedger), cl.to_dict()
+    for fl in flags:
+        debug_sink.record("synthesis", fl.field, "claim_flagged", split_sentences(texts[fl.field])[fl.sentence_index],
+                          fl.terms)
+    if any(fl.field in ("headline", "narrative") for fl in flags):
+        cl.regenerated = True
+        view = {"passed": [{"action_type": f.action_type, "params": f.params} for f in findings],
+                "rejected": [{"action_type": r["action"], "params": r["params"], "reason": r["reason"]}
+                             for r in verification.get("rejected", []) + verification.get("dropped", [])]}
+        try:
+            headline, narrative = await synthesis.regenerate_text(run.llm, draft, view, ledger=run.ledger,
+                                                                  telemetry=run.telemetry)
+        except Exception as exc:
+            print(f"[claims] regeneration failed: {type(exc).__name__}")
+            headline, narrative = draft.headline, draft.narrative
+
+    def scrub(text: str, field_name: str) -> str:
+        cleaned, reds = claims_mod.redact_claims(text, passed, field_name)
+        for r in reds:
+            debug_sink.record("synthesis", field_name, "claim_redacted", split_sentences(text)[r.sentence_index],
+                              r.terms)
+        cl.redactions.extend(reds)
+        return cleaned
+
+    headline, narrative = scrub(headline, "headline"), scrub(narrative, "narrative")
+    kept = []
+    for i, o in enumerate(observations):
+        text = scrub(o.text, f"observations.{i}")
+        if text.strip():
+            kept.append(o.model_copy(update={"text": text}))
+    new_findings = []
+    for i, f in enumerate(findings):
+        text = scrub(f.text, f"findings.{i}")
+        new_findings.append(f.model_copy(update={"text": text if text.strip() else f.method}))
+    entries = []
+    for j, e in enumerate(draft.conflictLedger):
+        vals = {k: scrub(getattr(e, k), f"conflictLedger.{j}.{k}") for k in ledger_keys}
+        if all(v.strip() for v in vals.values()):
+            entries.append(e.model_copy(update=vals))
+    for key, value in (("headline", headline), ("narrative", narrative)):
+        if not value.strip():
+            fb = synthesis.fallback_sentence("Overall", draft.overallRating, run.ctx, "synthesis", key)
+            run.ledger.add_fallback("synthesis", key)
+            if key == "headline":
+                headline = fb
+            else:
+                narrative = fb
+    return headline, narrative, new_findings, kept, entries, cl.to_dict()
+
+
 def _model_usage(telemetry: list[dict]) -> dict:
     def used(role: str) -> str:
         labels = []
@@ -436,7 +509,8 @@ def result_events(result: CouncilResult) -> list[tuple[str, dict]]:
             "turns_expected": d.get("turns_expected", 2 * MAX_ROUNDS),
         }))
     events.append(("synthesis_done", synthesis_event(result.synthesis, result.degraded, result.degraded_reasons)))
-    events.append(("gate_done", {"verification": result.verification, "grounding": result.grounding}))
+    events.append(("gate_done", {"verification": result.verification, "grounding": result.grounding,
+                                  "claims": result.claims}))
     events.append(("complete", result.model_dump(mode="json")))
     return events
 
@@ -515,17 +589,20 @@ async def run_council_pipeline(
     draft = final_state.get("draft")
     if draft is not None and not degraded:
         findings, observations, verification = await verify_draft(run, draft, trades, symbol)
-        synth = SynthesisOutput(headline=draft.headline, narrative=draft.narrative, findings=findings,
-                                observations=observations, conflictLedger=draft.conflictLedger,
+        headline, narrative, findings, observations, ledger_entries, claims = await enforce_claims(
+            run, draft, findings, observations, verification)
+        synth = SynthesisOutput(headline=headline, narrative=narrative, findings=findings,
+                                observations=observations, conflictLedger=ledger_entries,
                                 overallRating=draft.overallRating)
     else:
         synth, verification = _default_synthesis(), summarise([], None)
+        claims = claims_mod.ClaimsLedger().to_dict()
     synth = override_synthesis_cost(synth, fee_pkt)
     if degraded:
         synth = synth.model_copy(update={"overallRating": None})
     grounding = run.ledger.to_dict(degraded)
     await run.event("synthesis_done", synthesis_event(synth, degraded, reasons))
-    await run.event("gate_done", {"verification": verification, "grounding": grounding})
+    await run.event("gate_done", {"verification": verification, "grounding": grounding, "claims": claims})
 
     elapsed_ms = (_clock() - start) * 1000
     result = CouncilResult(
@@ -536,6 +613,7 @@ async def run_council_pipeline(
         fee=fee_v,
         synthesis=synth,
         grounding=grounding,
+        claims=claims,
         verification=verification,
         debate_transcript=final_state.get("debate_dict", {}),
         totalLatencyMs=round(elapsed_ms, 2),

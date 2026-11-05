@@ -14,7 +14,7 @@ from agents.schemas import TradeContext, FeeVerdict
 ROLE = "specialist"
 MAX_TOKENS = 500
 NAMESPACE = "fee"
-TEXT_FIELD = "recommendedAction"   # the explanation; emptied by redaction -> the agent failed
+TEXT_FIELD = "recommendedAction"   # the explanation; emptied by redaction -> code-built fallback sentence
 
 SYSTEM_PROMPT = system_prompt(
     "You are FillScore's Fee Optimizer agent. You audit the fee efficiency of a "
@@ -30,6 +30,7 @@ SYSTEM_PROMPT = system_prompt(
     '  "confidence": float (0-1),\n'
     '  "flags": [string]\n'
     "}\n"
+    "\nExample: \"recommendedAction\": \"Maker orders were {{fee.maker_ratio}} of fills, which left fee drag at {{fee.fee_drag_bps}}.\"  Wrong: \"22% maker\" or \"about ten bps of drag\" (digits or number words outside a placeholder).\n"
 )
 
 
@@ -47,10 +48,10 @@ Schema: feeRating (OPTIMAL/MODERATE/WASTEFUL/SEVERELY_WASTEFUL), recommendedActi
 async def run(context: TradeContext, llm, packet: FeeMetricsPacket, telemetry: list | None = None, *,
               ctx: dict | None = None, ledger=None) -> FeeVerdict:
     """Run the agent through the router with blocking grounding (agents.grounded_call). Raises if no
-    model produced a valid verdict, or GroundingFailed if its explanation had to be removed."""
+    model produced a valid verdict, or, if its explanation had to be removed, uses the code-built fallback sentence."""
     ctx = ctx if ctx is not None else {NAMESPACE: packet.to_prompt_dict()}
     return await grounded_verdict(
         llm, ROLE, SYSTEM_PROMPT, build_user_prompt(context, packet, ctx), FeeVerdict,
         agent="fee_optimizer", text_field=TEXT_FIELD, ctx=ctx, ledger=ledger, telemetry=telemetry, max_tokens=MAX_TOKENS,
-        namespace=NAMESPACE,
+        namespace=NAMESPACE, fallback=("Fee", "feeRating", "fee.fee_drag_bps"),
     )

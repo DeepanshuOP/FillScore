@@ -29,6 +29,7 @@ SYSTEM_PROMPT = system_prompt(
     '  "confidence": float (0-1),\n'
     '  "flags": [string]\n'
     "}\n"
+    "\nExample: \"flags\": [\"Notional was concentrated, with the top symbol at {{risk.top_symbol_notional_fraction}} of the total.\"]  Wrong: \"the top symbol was 75%\" or \"two symbols dominated\" (digits or number words outside a placeholder).\n"
 )
 
 

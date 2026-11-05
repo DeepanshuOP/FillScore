@@ -163,11 +163,13 @@ def test_ledger_to_dict_numbers():
     assert d["faithfulness_first_pass"] == 0.5          # 1/(1+1)
     assert d["faithfulness_after"] == 1.0               # 3/(3+0)
     assert d["numbers_checked"] == 3
-    assert d["per_agent"]["a"] == {"violations_first_pass": 1, "regenerated": True, "faithfulness_after": 1.0}
+    assert d["per_agent"]["a"] == {"violations_first_pass": 1, "regenerated": True, "faithfulness_after": 1.0,
+                                    "fallback_text": False}
     assert L.to_dict(degraded=True)["faithfulness_after"] is None
     # 1c.10 F4: a degraded run reports no per-agent faithfulness either
     dd = L.to_dict(degraded=True)
-    assert dd["per_agent"]["a"] == {"violations_first_pass": 1, "regenerated": True, "faithfulness_after": None}
+    assert dd["per_agent"]["a"] == {"violations_first_pass": 1, "regenerated": True, "faithfulness_after": None,
+                                     "fallback_text": False}
     assert dd["faithfulness_first_pass"] == 0.5 and dd["violations_first_pass"] == 1
 
 
@@ -270,3 +272,62 @@ def test_gc_number_free():
     c = [Check("a", [], 2)]
     L2.record("x", 1, c, c, False)
     assert L2.to_dict(degraded=True)["faithfulness_after"] is None
+
+
+# ── 1d.4 closed glossary allowlist ──
+import dataclasses
+
+from agents.grounding import GLOSSARY
+from agents.metrics.alpha_packet import AlphaMetricsPacket
+from agents.metrics.liquidity_packet import LiquidityMetricsPacket
+from agents.metrics.risk_packet import RiskMetricsPacket
+
+_PACKETS = {"liquidity": LiquidityMetricsPacket, "alpha": AlphaMetricsPacket, "risk": RiskMetricsPacket}
+_EXPECTED_GLOSSARY = {
+    "5-minute VWAP": "alpha.avg_vwap_deviation_bps", "five-minute VWAP": "alpha.avg_vwap_deviation_bps",
+    "30s reversion": "liquidity.reversion_30s_avg_bps", "30-second reversion": "liquidity.reversion_30s_avg_bps",
+    "60s reversion": "liquidity.reversion_60s_avg_bps", "60-second reversion": "liquidity.reversion_60s_avg_bps",
+    "30s and 60s reversion": "liquidity.reversion_30s_avg_bps", "30s/60s reversion": "liquidity.reversion_30s_avg_bps",
+    "top 5 worst trades": "liquidity.worst5_slippage_bps", "five worst trades": "liquidity.worst5_slippage_bps",
+    "p90 slippage": "liquidity.p90_slippage_bps", "p90 trade size": "risk.p90_trade_usd",
+}
+
+
+def test_glossary_is_the_closed_table():
+    assert GLOSSARY == _EXPECTED_GLOSSARY
+
+
+@pytest.mark.parametrize("phrase", list(_EXPECTED_GLOSSARY))
+def test_glossary_phrase_alone_is_clean(phrase):
+    assert extract_numerals(phrase) == []
+    assert extract_numerals(phrase.upper()) == []        # case-insensitive
+    assert check(phrase, {}).violations == []
+    assert check(f"The {phrase}.", {}).violations == []
+
+
+@pytest.mark.parametrize("phrase,metric", list(_EXPECTED_GLOSSARY.items()))
+def test_glossary_metric_is_a_real_packet_field(phrase, metric):
+    ns, name = metric.split(".")
+    assert name in {f.name for f in dataclasses.fields(_PACKETS[ns])}
+
+
+@pytest.mark.parametrize("text,expected", [
+    ("5", ["5"]), ("30", ["30"]), ("the 30s window", ["30s"]), ("5-minute", ["5"]), ("five", ["five"]),
+    ("30s reversion of 12 bps", ["12 bps"]), ("top 5 trades", ["5"]), ("p90", ["90"]),
+    ("5-minute VWAPs", ["5"]),                      # plural: not word-bounded, still flagged
+    ("a 30s reversion and a 30s window", ["30s"]),  # only the glossary span is exempt
+])
+def test_non_glossary_numerals_still_flagged(text, expected):
+    assert [v.token for v in check(text, {}).violations] == expected
+
+
+def test_glossary_phrase_next_to_placeholder():
+    c = check("Slippage on the 5-minute VWAP was {{liquidity.avg_slippage_bps}}.", CTX)
+    assert c.violations == [] and c.rendered == "Slippage on the 5-minute VWAP was 7.3 bps."
+
+
+def test_redaction_removes_only_the_offending_sentence():
+    tpl = "Fills were clean. Slippage hit 7.3 bps at {{liquidity.worst_hour_utc}}. Most fills were limit orders."
+    cleaned, reds = redact(tpl, CTX, "liquidity_scout", "slippageRoot")
+    assert cleaned == "Fills were clean. Most fills were limit orders."
+    assert reds == [Redaction("liquidity_scout", "slippageRoot", 1, 1, ["numeral"])]

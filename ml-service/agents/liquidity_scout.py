@@ -14,7 +14,7 @@ from agents.schemas import TradeContext, LiquidityVerdict
 ROLE = "specialist"
 MAX_TOKENS = 500
 NAMESPACE = "liquidity"
-TEXT_FIELD = "slippageRoot"   # the explanation; emptied by redaction -> the agent failed
+TEXT_FIELD = "slippageRoot"   # the explanation; emptied by redaction -> code-built fallback sentence
 
 SYSTEM_PROMPT = system_prompt(
     "You are FillScore's Liquidity Scout agent. You audit the liquidity conditions of a "
@@ -34,6 +34,7 @@ SYSTEM_PROMPT = system_prompt(
     "- GOOD: low slippage, little adverse selection\n"
     "- POOR / CRITICAL: high slippage, strong adverse selection\n"
     "- MODERATE: everything else\n"
+    "\nExample: \"slippageRoot\": \"Market orders averaged {{liquidity.avg_slippage_bps}} of slippage and were worst at {{liquidity.worst_hour_utc}}.\"  Wrong: \"averaged 7.3 bps\" or \"the five worst trades\" (digits or number words outside a placeholder).\n"
 )
 
 
@@ -51,10 +52,10 @@ Schema: liquidityRating (GOOD/MODERATE/POOR/CRITICAL), slippageRoot (str), cited
 async def run(context: TradeContext, llm, packet: LiquidityMetricsPacket, telemetry: list | None = None, *,
               ctx: dict | None = None, ledger=None) -> LiquidityVerdict:
     """Run the agent through the router with blocking grounding (agents.grounded_call). Raises if no
-    model produced a valid verdict, or GroundingFailed if its explanation had to be removed."""
+    model produced a valid verdict, or, if its explanation had to be removed, uses the code-built fallback sentence."""
     ctx = ctx if ctx is not None else {NAMESPACE: packet.to_prompt_dict()}
     return await grounded_verdict(
         llm, ROLE, SYSTEM_PROMPT, build_user_prompt(context, packet, ctx), LiquidityVerdict,
         agent="liquidity_scout", text_field=TEXT_FIELD, ctx=ctx, ledger=ledger, telemetry=telemetry, max_tokens=MAX_TOKENS,
-        namespace=NAMESPACE,
+        namespace=NAMESPACE, fallback=("Liquidity", "liquidityRating", "liquidity.avg_slippage_bps"),
     )
