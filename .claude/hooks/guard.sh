@@ -33,11 +33,57 @@ RE_PYTHON_RUN="${SEP}([^[:space:];|&]*python[0-9.]*|uv[[:space:]]+run)[[:space:]
 RE_APPLY='--apply([[:space:]]|$)'
 RE_SLEEP_LOW='(sleep|--sleep)[[:space:]]*=?[[:space:]]*([0-9]|[1-5][0-9]|6[0-4])([^0-9]|$)'
 
+# Heredoc bodies that are only *written to a file* are data, not a read, so they are stripped before
+# the .env read checks. Deliberately narrow (Phase 1d.1 + review):
+#   - backslash-newline continuations are joined first (a continued line is one command);
+#   - a body is stripped only if its header line is EXACTLY `cat >[>] PATH <<D`, `cat <<D >[>] PATH`
+#     or `tee [-a] PATH [>/dev/null] <<D` (PATH a plain path, not /dev or /proc; nothing else on the line);
+#   - an unquoted-delimiter body containing `$(` or a backtick anywhere is kept (the shell expands it);
+#   - if anything outside the stripped bodies could execute a file or text (bash, sh, source, ., ./,
+#     python, node, chmod, exec, eval, xargs, ...), nothing is stripped at all.
+# Everything else (headers, other heredocs, lines after the terminator) is checked exactly as before.
+strip_written_heredocs() {
+  awk '
+    function strict(l,   P, D) {
+      P = "[A-Za-z0-9_.~/-]+"; D = "(\047[A-Za-z_][A-Za-z0-9_]*\047|\"[A-Za-z_][A-Za-z0-9_]*\"|[A-Za-z_][A-Za-z0-9_]*)"
+      t = l; gsub(/>[ \t]*\/dev\/null/, "", t); if (t ~ /\/dev\/|\/proc\//) return 0
+      return (l ~ ("^[ \t]*cat[ \t]+>>?[ \t]*" P "[ \t]+<<-?[ \t]*" D "[ \t]*$")) ||
+             (l ~ ("^[ \t]*cat[ \t]+<<-?[ \t]*" D "[ \t]+>>?[ \t]*" P "[ \t]*$")) ||
+             (l ~ ("^[ \t]*tee[ \t]+(-a[ \t]+)?" P "([ \t]+>[ \t]*/dev/null)?[ \t]+<<-?[ \t]*" D "[ \t]*$"))
+    }
+    function flush(   k) { if (!drop || (!quoted && unsafe)) { for (k = 1; k <= nb; k++) print body[k] } nb = 0; unsafe = 0 }
+    inbody {
+      line = $0; if (dash) sub(/^\t+/, "", line)
+      if (line == delim) { flush(); inbody = 0; print; next }
+      body[++nb] = $0
+      if ($0 ~ /\$\(/ || $0 ~ /`/) unsafe = 1
+      next
+    }
+    {
+      print
+      if (match($0, /(^|[^<])<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*["\047]?/)) {
+        tok = substr($0, RSTART, RLENGTH); sub(/^[^<]/, "", tok)
+        dash = (tok ~ /^<<-/); quoted = (tok ~ /["\047]/)
+        sub(/^<<-?[ \t]*/, "", tok); gsub(/["\047]/, "", tok)
+        delim = tok; inbody = 1; nb = 0; unsafe = 0
+        drop = strict($0)
+      }
+    }
+    END { if (inbody) flush() }
+  ' <<<"$1"
+}
+NL=$'\n'
+cmd_joined="${cmd//\\${NL}/}"
+cmd_checked="$(strip_written_heredocs "$cmd_joined")"
+RE_EXEC="(^|[[:space:];|&(\`])(bash|sh|zsh|ksh|dash|fish|csh|tcsh|source|\.|python[0-9.]*|py|node|nodejs|deno|bun|perl|ruby|php|lua|pwsh|powershell|exec|eval|xargs|chmod|env|nohup|timeout|watch|make|npx|uv)([[:space:];|&)]|$)|(^|[[:space:];|&(\`])\./|>\(|<\("
+[[ "$cmd_checked" != "$cmd_joined" && "$cmd_checked" =~ $RE_EXEC ]] && cmd_checked="$cmd_joined"
+RE_ENV_READ_LINE="${SEP}(cat|tac|less|more|head|tail|bat|batcat|nl|od|xxd|hexdump|strings|grep|egrep|fgrep|rg|sed|awk|cut|sort|uniq|diff|cp|mv|source|\.|type|Get-Content|gc|Select-String|sls|base64|tee|vi|vim|nano|code)[[:space:]][^|;&]*\.env"
+
 # --- 1. Never read or print secrets --------------------------------------------------------------
 [[ "$path" =~ $RE_ENV_PATH ]] && deny ".env is off limits. Confirm environment variables by key name or a non-empty check instead."
-[[ "$cmd" =~ $RE_ENV_READ ]] && deny "This would read or print .env contents. Check env vars by key name or non-empty check only."
-[[ "$cmd" =~ $RE_ENV_SCRIPTED ]] && deny "Reading .env from a script one-liner is still a read of secrets."
-[[ "$cmd" =~ $RE_ENV_REDIRECT ]] && deny "Redirecting .env into a command is a read of secrets."
+[[ "$cmd_checked" =~ $RE_ENV_READ_LINE ]] && deny "This would read or print .env contents. Check env vars by key name or non-empty check only."
+[[ "$cmd_checked" =~ $RE_ENV_SCRIPTED ]] && deny "Reading .env from a script one-liner is still a read of secrets."
+[[ "$cmd_checked" =~ $RE_ENV_REDIRECT ]] && deny "Redirecting .env into a command is a read of secrets."
 
 # --- 2. No commits or pushes; Deepanshu commits after review -------------------------------------
 [[ "$cmd" =~ $RE_GIT_COMMIT_PUSH ]] && deny "git commit / git push are reserved for Deepanshu after review."

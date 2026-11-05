@@ -12,11 +12,28 @@ Every eval number produced before this check was invented turned out to be inval
 Run all four checks. Report each one's raw result. If any fails, the run is void — say so and do not
 report its numbers.
 
-## 1. Failure-string sweep
+## 1. Structured acceptance
 
-Grep the run's stdout/stderr and the persisted document for: `failed:`, `Max retries`, `_default_`,
-`429`, `rate limit`. Report the match count for each string, including zeros. Zero matches across all
-five is the only passing result.
+Run `cd ml-service && .venv/bin/python scripts/check_council_run.py <file> [--log <stdout>]`
+(exit 0 = ACCEPTED, 1 = REJECTED). A run is accepted only if all of these hold:
+
+1. `degraded` is false.
+2. `n_calls_ok == n_calls_expected`.
+3. No fallback default object: no verdict with an `agent_failed` flag and no synthesis headline
+   "Analysis incomplete". Code-built fallback sentences (`grounding.fallbacks` with `fallback_text`)
+   are not default objects; they are noted.
+4. `grounding.redactions` is empty, or every required field (`liquidity.slippageRoot`,
+   `alpha.bestAlternative`, `fee.recommendedAction`, `synthesis.headline`, `synthesis.narrative`, each
+   debate summary) is non-empty after strip.
+5. Every synthesis finding has a recomputed effect: numeric `effect_usd`, non-empty `method`,
+   `verified` true. Zero findings passes.
+
+429 policy: `http_429` attempts in `llm_calls` are counted. In an accepted run they are only a note
+("N rate-limited attempts, all recovered"). In a rejected run they are reported as a failure
+(unrecovered), because a 429 that led to a default or degradation is not acceptable.
+
+Secondary line, never a gate: the script also prints a failure-string sweep (`failed:`, `Max retries`,
+`_default_`, `429`, `rate limit`). Report the counts; a recovered 429 is logged, not a failure.
 
 ## 2. Run status and call count
 

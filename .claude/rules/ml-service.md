@@ -13,10 +13,10 @@ cd ml-service && GROQ_API_KEY=bogus OPENROUTER_API_KEY=bogus MONGODB_URI=mongodb
 
 Gotchas:
 - Council LLMs: free tiers routed by `ml-service/agents/llm_router.py` from `ml-service/config/llm_routes.yaml`
-  (the only place model names live): Groq `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, `qwen/qwen3.8-27b`; Gemini
-  when `GEMINI_API_KEY` is set. Synthesis tries gpt-oss-120b first; specialists/debate start on qwen3.8-27b.
-  Fallback on errors, per-model daily budgets in Mongo `llm_usage`. Llama models are retired; `GROQ_SPECIALIST_MODEL` /
-  `GROQ_SYNTHESIS_MODEL` no longer exist.
+  (the only place model names, order, budgets and `tpm`/`rpm` pacing limits live). Groq `qwen/qwen3.8-27b`,
+  `openai/gpt-oss-120b`, `openai/gpt-oss-20b`; Gemini models join the candidate lists when `GEMINI_API_KEY` is set.
+  Specialists and synthesis start on qwen3.8-27b; debate starts on gpt-oss-20b so qwen keeps headroom for synthesis. To change a model, edit the YAML, not env vars.
+  Fallback on errors, per-model daily budgets in Mongo `llm_usage`, per-model token-bucket pacing. Llama models are retired.
 - LLM budget is $0. `run_consistency_eval` inter-run sleep stays at 65 s.
 - `council_runs.created_at` is an ISO-8601 **string** (query by prefix); `trades.executedAt` is a native datetime.
 - After any council run, consistency eval or ablation, use the `verify-council-run` skill before reporting numbers.
