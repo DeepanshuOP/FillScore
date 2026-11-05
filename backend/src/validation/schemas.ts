@@ -41,6 +41,12 @@ export const connectBodySchema = z.object({
     apiPassphrase: z.string().trim().min(1).max(128).optional(),
 });
 
+export const LOOKBACK_CHOICES = [30, 90, 365, 3650] as const; // 3650 = all available history
+export const syncBodySchema = z.object({
+    lookbackDays: z.union([z.literal(30), z.literal(90), z.literal(365), z.literal(3650)]).optional(),
+    extraSymbols: z.array(z.string().trim().toUpperCase().regex(/^[A-Z0-9]{5,20}$/)).max(50).optional(),
+}).default({});
+
 export const downloadTokenBodySchema = z.object({
     kind: z.enum(['report', 'export']),
 });

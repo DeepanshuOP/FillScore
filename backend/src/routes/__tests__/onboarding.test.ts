@@ -26,6 +26,26 @@ const mockValidateBinanceKey = validateBinanceKey as any;
 const mockValidateBybitKey = validateBybitKey as any;
 const mockValidateOKXKey = validateOKXKey as any;
 
+vi.mock('../../services/BinanceHistorySync', () => ({
+    BinanceHistorySync: class {
+        constructor(_k: string, _s: string, private userId: string) {}
+        async run() {
+            const { Trade } = await import('../../models/Trade');
+            await Trade.updateOne(
+                { accountId: this.userId, tradeId: 'mock_BTCUSDT' },
+                { $setOnInsert: {
+                    accountId: this.userId, userId: this.userId, exchange: 'binance', symbol: 'BTCUSDT',
+                    tradeId: 'mock_BTCUSDT', orderId: 'order_BTCUSDT', side: 'BUY', orderType: 'LIMIT', isMaker: true,
+                    executionPrice: 50000, quantity: 1, notional: 50000, fee: 5, feeAsset: 'USDT',
+                    executedAt: new Date(), dataSource: 'real-user',
+                }},
+                { upsert: true }
+            );
+            return { inserted: 1, skipped: 0, symbolsScanned: 1, invalidSymbols: [], requests: 3, partial: false };
+        }
+    },
+}));
+
 vi.mock('../../services/TradeIngestionService', () => {
     return {
         TradeIngestionService: class {

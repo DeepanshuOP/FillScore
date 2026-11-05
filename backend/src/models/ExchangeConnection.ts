@@ -10,6 +10,14 @@ export interface ExchangeConnectionDocument extends Document {
     // OKX only; other exchanges leave it unset
     encryptedPassphrase?: EncryptedPayload;
     createdAt: Date;
+    /** Sync lookback chosen by the user; 3650 means all available history. */
+    lookbackDays?: number;
+    /** Binance: extra symbols the user says they traded (validated against exchangeInfo at sync). */
+    extraSymbols?: string[];
+    status?: 'ok' | 'needs_attention';
+    statusReason?: string;
+    lastSyncAt?: Date;
+    lastSyncPartial?: boolean;
 }
 
 const EncryptedFieldSchema = new Schema(
@@ -30,6 +38,12 @@ const ExchangeConnectionSchema = new Schema<ExchangeConnectionDocument>(
         encryptedApiSecret: { type: EncryptedFieldSchema, required: true },
         encryptedPassphrase: { type: EncryptedFieldSchema, required: false },
         createdAt: { type: Date, default: Date.now },
+        lookbackDays: { type: Number, required: false },
+        extraSymbols: { type: [String], default: undefined },
+        status: { type: String, enum: ['ok', 'needs_attention'], default: 'ok' },
+        statusReason: { type: String, required: false },
+        lastSyncAt: { type: Date, required: false },
+        lastSyncPartial: { type: Boolean, required: false },
     }
 );
 

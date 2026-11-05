@@ -6,6 +6,13 @@ import { ExchangeConnection } from '../../models/ExchangeConnection';
 import { encryptApiKey } from '../../utils/encryption';
 import { INGEST_SYMBOLS } from '../../config/ingestion';
 import { loadEnv } from '../../config/env';
+import { BinanceHistorySync } from '../BinanceHistorySync';
+
+vi.mock('../keyValidation', () => ({
+    validateBinanceKey: vi.fn().mockResolvedValue(undefined),
+    validateBybitKey: vi.fn().mockResolvedValue(undefined),
+    validateOKXKey: vi.fn().mockResolvedValue(undefined),
+}));
 
 loadEnv();
 
@@ -33,24 +40,25 @@ describe('syncAccountTrades', () => {
         await connect('bybit');
         await connect('okx', true);
 
-        const binance = vi.spyOn(TradeIngestionService.prototype, 'ingestForUser').mockResolvedValue({ inserted: 2, skipped: 1 });
+        const binance = vi.spyOn(BinanceHistorySync.prototype, 'run').mockResolvedValue({ inserted: 2, skipped: 1, symbolsScanned: 1, invalidSymbols: [], requests: 3, partial: false });
         const bybit = vi.spyOn(TradeIngestionService.prototype, 'ingestBybitForUser').mockResolvedValue({ inserted: 3, skipped: 0 });
         const okx = vi.spyOn(TradeIngestionService.prototype, 'ingestOKXForUser').mockResolvedValue({ inserted: 4, skipped: 0 });
 
         const report = await syncAccountTrades('acct-1', 30);
 
         const n = INGEST_SYMBOLS.length;
-        expect(binance).toHaveBeenCalledTimes(n);
+        // Binance now discovers symbols itself: one history sync per connection
+        expect(binance).toHaveBeenCalledTimes(1);
         expect(bybit).toHaveBeenCalledTimes(n);
         expect(okx).toHaveBeenCalledTimes(n);
 
-        expect(binance.mock.calls[0]).toEqual(['acct-1', 'binance-key', 'binance-secret', 'BTCUSDT', 30]);
         expect(bybit.mock.calls[0]).toEqual(['acct-1', 'bybit-key', 'bybit-secret', 'BTCUSDT', 30]);
         // OKX uses dashed instrument ids and needs the decrypted passphrase
         expect(okx.mock.calls[0]).toEqual(['acct-1', 'okx-key', 'okx-secret', 'the-passphrase', 'BTC-USDT', 30]);
         expect(okx.mock.calls.map(c => c[4])).toEqual(['BTC-USDT', 'ETH-USDT', 'BNB-USDT', 'SOL-USDT']);
 
-        expect(report.inserted).toBe(n * (2 + 3 + 4));
+        // binance 2 once; bybit 3 and okx 4 per fixed symbol
+        expect(report.inserted).toBe(2 + n * (3 + 4));
         expect(report.failures).toEqual([]);
     });
 
@@ -75,6 +83,32 @@ describe('syncAccountTrades', () => {
 
         expect(okx).not.toHaveBeenCalled();
         expect(report.failures).toEqual([{ exchange: 'okx', symbol: '*', reason: 'missing_passphrase' }]);
+    });
+
+    it('refuses a key that gained trading permission, marks needs_attention and ingests nothing', async () => {
+        const { validateBinanceKey } = await import('../keyValidation');
+        (validateBinanceKey as any).mockRejectedValueOnce(new Error('key_not_read_only'));
+        await connect('binance');
+        const run = vi.spyOn(BinanceHistorySync.prototype, 'run');
+
+        const report = await syncAccountTrades('acct-1', 365);
+
+        expect(run).not.toHaveBeenCalled();
+        expect(report.refused).toEqual([{ exchange: 'binance', reason: 'key_not_read_only' }]);
+        const conn = await ExchangeConnection.findOne({ accountId: 'acct-1', exchange: 'binance' });
+        expect(conn!.status).toBe('needs_attention');
+        expect(conn!.statusReason).toBe('key_not_read_only');
+    });
+
+    it('fails closed when permissions cannot be checked (no ingestion, not marked bad)', async () => {
+        const { validateBybitKey } = await import('../keyValidation');
+        (validateBybitKey as any).mockRejectedValueOnce(new Error('network_error'));
+        await connect('bybit');
+        const by = vi.spyOn(TradeIngestionService.prototype, 'ingestBybitForUser');
+        const report = await syncAccountTrades('acct-1', 30);
+        expect(by).not.toHaveBeenCalled();
+        expect(report.refused).toEqual([{ exchange: 'bybit', reason: 'network_error' }]);
+        expect((await ExchangeConnection.findOne({ accountId: 'acct-1' }))!.status).toBe('ok');
     });
 
     it('reports no connections distinctly', async () => {

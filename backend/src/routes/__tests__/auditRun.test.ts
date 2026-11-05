@@ -15,6 +15,12 @@ import { loadEnv } from '../../config/env';
 
 loadEnv();
 
+vi.mock('../../services/keyValidation', () => ({
+    validateBinanceKey: vi.fn().mockResolvedValue(undefined),
+    validateBybitKey: vi.fn().mockResolvedValue(undefined),
+    validateOKXKey: vi.fn().mockResolvedValue(undefined),
+}));
+
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
@@ -62,9 +68,12 @@ describe('POST /api/audit/run for a real account', () => {
     });
 
     it('finds the connection by accountId and runs the pipeline', async () => {
-        const ingest = vi
-            .spyOn(TradeIngestionService.prototype, 'ingestForUser')
-            .mockResolvedValue({ inserted: 0, skipped: 0 });
+        // Binance history sync goes through global fetch; no balances -> no symbols to scan
+        const fetchMock = vi.fn(async (url: string) => {
+            const body = String(url).includes('exchangeInfo') ? { symbols: [] } : { balances: [] };
+            return new Response(JSON.stringify(body), { status: 200 });
+        });
+        global.fetch = fetchMock as any;
 
         const res = await request(app)
             .post('/api/audit/run')
@@ -73,9 +82,9 @@ describe('POST /api/audit/run for a real account', () => {
         expect(res.status).toBe(200);
         expect(res.body.accountId).toBe(accountId);
         expect(res.body.dataSource).toBe('real-user');
-        expect(ingest).toHaveBeenCalled();
-        expect(ingest.mock.calls[0][1]).toBe('real-key');
-        expect(ingest.mock.calls[0][2]).toBe('real-secret');
+        // the stored (decrypted) key signed the history requests
+        expect(fetchMock).toHaveBeenCalled();
+        expect((fetchMock.mock.calls[0] as any)[1].headers['X-MBX-APIKEY']).toBe('real-key');
     });
 
     it('returns 404 when the account has no exchange connection', async () => {

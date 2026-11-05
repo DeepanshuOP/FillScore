@@ -1,5 +1,6 @@
 'use client';
 
+import { lookbackLabel } from '../utils/navLinks';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
@@ -37,6 +38,10 @@ export default function OnboardingPage() {
     tradesScored: number;
   } | null>(null);
   const [noTrades, setNoTrades] = useState(false);
+  const [lookbackDays, setLookbackDays] = useState<number>(365);
+  const [extraSymbols, setExtraSymbols] = useState('');
+  const [usedLookback, setUsedLookback] = useState<number | null>(null);
+  const [syncNote, setSyncNote] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -111,8 +116,11 @@ export default function OnboardingPage() {
 
     try {
       const baseUrl = apiBase();
+      const symbols = extraSymbols.split(/[\s,]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
       const res = await authFetch(`${baseUrl}/onboarding/sync`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lookbackDays, extraSymbols: symbols }),
       }, { accessToken, refreshAccessToken });
       
       const data = await res.json();
@@ -120,6 +128,11 @@ export default function OnboardingPage() {
 
       if (!res.ok) {
         if (data.error === 'no_trades_found') {
+          setUsedLookback(data.lookbackDays ?? lookbackDays);
+          const bits: string[] = [];
+          if (data.partial && data.partialMessage) bits.push(data.partialMessage);
+          if (data.invalidSymbols?.length) bits.push(`Not found on the exchange: ${data.invalidSymbols.join(', ')}.`);
+          setSyncNote(bits.length ? bits.join(' ') : null);
           setNoTrades(true);
         } else if (data.error === 'No exchange connections found' || data.error === 'no_exchange_connections_found') {
           // Go back to connect step
@@ -129,6 +142,10 @@ export default function OnboardingPage() {
           setErrorMsg(mapOnboardingError(data.error || 'unknown', res.status));
         }
       } else {
+        const bits: string[] = [];
+        if (data.partial && data.partialMessage) bits.push(data.partialMessage);
+        if (data.invalidSymbols?.length) bits.push(`Not found on the exchange: ${data.invalidSymbols.join(', ')}.`);
+        setSyncNote(bits.length ? bits.join(' ') : null);
         setSyncResult({
           fillScore: data.fillScore,
           grade: data.grade,
@@ -229,9 +246,17 @@ export default function OnboardingPage() {
                   marginBottom: '2rem', textAlign: 'left'
                 }}>
                   <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#8a7d6a', lineHeight: 1.6 }}>
-                    We connected successfully, but found no spot trades in the last 30 days. FillScore analyses your executed trades — once you've traded, come back and sync.
+                    We connected successfully, but found no spot trades in {lookbackLabel(usedLookback)}. Assets you hold are searched automatically; an asset you fully sold is only found if you list it. Use “Sync a longer period” or add symbols below.
                   </p>
                 </div>
+                {syncNote && <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.8rem', color: '#c8b898', marginBottom: '1rem', textAlign: 'left' }}>{syncNote}</p>}
+                <button
+                  onClick={() => { setNoTrades(false); setSyncNote(null); if (lookbackDays < 3650) setLookbackDays(lookbackDays < 90 ? 90 : lookbackDays < 365 ? 365 : 3650); }}
+                  className="w-full flex justify-center items-center rounded-[2px]"
+                  style={{ padding: '1rem', marginBottom: '0.75rem', border: '1px solid rgba(167,139,113,0.4)', color: '#c8b898', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em', cursor: 'pointer' }}
+                >
+                  SYNC A LONGER PERIOD
+                </button>
                 <button
                   onClick={() => router.push('/dashboard')}
                   className="w-full relative overflow-hidden flex justify-center items-center rounded-[2px]"
@@ -279,6 +304,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
+                {syncNote && <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.8rem', color: '#c8b898', marginBottom: '1rem', textAlign: 'left' }}>{syncNote}</p>}
                 <button
                   onClick={() => router.push('/dashboard')}
                   className="w-full relative overflow-hidden flex justify-center items-center rounded-[2px]"
@@ -320,6 +346,23 @@ export default function OnboardingPage() {
                     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
                   </div>
                 ) : (
+                  <>
+                  <div style={{ textAlign: 'left', marginBottom: '1.25rem', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#8a7d6a' }}>
+                    <label htmlFor="lookback" style={{ display: 'block', marginBottom: '0.4rem', letterSpacing: '0.1em' }}>HISTORY TO ANALYSE</label>
+                    <select id="lookback" value={lookbackDays} onChange={e => setLookbackDays(Number(e.target.value))}
+                      style={{ width: '100%', padding: '0.6rem', background: '#161614', color: '#ede8e0', border: '1px solid rgba(167,139,113,0.3)' }}>
+                      <option value={30}>Last 30 days</option>
+                      <option value={90}>Last 90 days</option>
+                      <option value={365}>Last 365 days (default)</option>
+                      <option value={3650}>All available history</option>
+                    </select>
+                    <label htmlFor="extra" style={{ display: 'block', margin: '1rem 0 0.4rem', letterSpacing: '0.1em' }}>I ALSO TRADED (OPTIONAL, BINANCE)</label>
+                    <input id="extra" value={extraSymbols} onChange={e => setExtraSymbols(e.target.value)} placeholder="SOLUSDT, DOGEUSDT"
+                      style={{ width: '100%', padding: '0.6rem', background: '#161614', color: '#ede8e0', border: '1px solid rgba(167,139,113,0.3)' }} />
+                    <p style={{ marginTop: '0.5rem', lineHeight: 1.5 }}>
+                      Assets you currently hold are found automatically. Assets you have fully sold are only found if you list them here.
+                    </p>
+                  </div>
                   <button
                     onClick={handleSync}
                     className="w-full relative overflow-hidden flex justify-center items-center rounded-[2px]"
@@ -331,6 +374,7 @@ export default function OnboardingPage() {
                   >
                     {errorMsg ? 'TRY AGAIN' : 'ANALYSE MY TRADES'}
                   </button>
+                  </>
                 )}
               </div>
             ) : !selectedExchange ? (

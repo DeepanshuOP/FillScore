@@ -79,6 +79,11 @@ describe('validateOKXKey', () => {
 
     const withPerm = (perm: string) => ({ code: '0', msg: '', data: [{ perm, uid: '1' }] });
 
+    it.each(['read_only,trade', 'read_only,withdraw', 'trade', 'read_only,trade,withdraw'])('rejects perm "%s"', async (perm) => {
+        fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ code: '0', data: [{ perm }] }), { status: 200 }));
+        await expect(validateOKXKey('k', 's', 'p')).rejects.toThrow('key_not_read_only');
+    });
+
     it('accepts a read_only key', async () => {
         fetchMock.mockResolvedValueOnce(ok(withPerm('read_only')));
         await expect(validateOKXKey('k', 's', 'p')).resolves.toBeUndefined();

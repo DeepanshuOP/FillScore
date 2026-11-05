@@ -54,14 +54,15 @@ const FILLS = [
     { id: 1003, orderId: 9003, symbol: 'BTCUSDT', price: '50000', qty: '0.05', quoteQty: '2500', commission: '0.004', commissionAsset: 'BNB', time: at(17), isBuyer: true, isMaker: false, isBestMatch: true },
 ];
 
-vi.mock('../services/BinanceClient', () => ({
-    BinanceApiError: class extends Error {},
-    BinanceClient: class {
-        constructor(_k: string, _s: string) {}
-        async fetchRecentTrades(symbol: string) { return FILLS.filter(f => f.symbol === symbol); }
-        async fetchTradesForWindow() { return []; }
-    },
-}));
+// Binance history sync talks to the exchange through global fetch (mocked HTTP): one BTC balance -> BTCUSDT
+const jsonRes = (body: unknown) => new Response(JSON.stringify(body), { status: 200 });
+global.fetch = (async (url: string) => {
+    const u = new URL(String(url));
+    if (u.pathname === '/api/v3/exchangeInfo') return jsonRes({ symbols: [{ symbol: 'BTCUSDT', baseAsset: 'BTC', quoteAsset: 'USDT', status: 'TRADING', isSpotTradingAllowed: true }] });
+    if (u.pathname === '/api/v3/account') return jsonRes({ balances: [{ asset: 'BTC', free: '1', locked: '0' }] });
+    if (u.pathname === '/api/v3/myTrades') return jsonRes(FILLS.filter(f => f.symbol === u.searchParams.get('symbol')));
+    throw new Error('unexpected ' + u.pathname);
+}) as any;
 
 // Binance public klines: [openTime, open, high, low, close, volume, closeTime, ...]
 vi.mock('axios', () => {

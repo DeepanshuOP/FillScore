@@ -5,7 +5,7 @@ import { encryptApiKey } from '../utils/encryption';
 import { requireAuth } from '../middleware/requireAuth';
 import { validateBinanceKey, validateBybitKey, validateOKXKey } from '../services/keyValidation';
 import { syncAccountTrades } from '../services/SyncService';
-import { parseOrReject, connectBodySchema } from '../validation/schemas';
+import { parseOrReject, connectBodySchema, syncBodySchema } from '../validation/schemas';
 import { MarketDataService } from '../services/MarketDataService';
 import { executeAuditPipeline } from './audit';
 import { INGEST_DAYS_BACK } from '../config/ingestion';
@@ -66,10 +66,11 @@ onboardingRouter.post('/connect', requireAuth, accountExists, connectLimiter, as
         const update: Record<string, unknown> = {
             accountId,
             exchange,
+            status: 'ok',
             encryptedApiKey: encryptApiKey(apiKey),
             encryptedApiSecret: encryptApiKey(apiSecret),
         };
-        const unset: Record<string, ''> = {};
+        const unset: Record<string, ''> = { statusReason: '' };
         if (exchange === 'okx') {
             update.encryptedPassphrase = encryptApiKey(apiPassphrase!);
         } else {
@@ -114,11 +115,23 @@ onboardingRouter.delete('/connections/:exchange', requireAuth, async (req: Reque
 onboardingRouter.post('/sync', requireAuth, accountExists, async (req: Request, res: Response) => {
     try {
         const accountId = req.userId!;
+        const body = parseOrReject(syncBodySchema, req.body ?? {}, res);
+        if (!body) return;
+
+        // The user's choice is kept on their connections; a later sync without a body reuses it.
+        const set: Record<string, unknown> = {};
+        if (body.lookbackDays !== undefined) set.lookbackDays = body.lookbackDays;
+        if (Object.keys(set).length) await ExchangeConnection.updateMany({ accountId }, { $set: set });
+        if (body.extraSymbols !== undefined) await ExchangeConnection.updateMany({ accountId, exchange: 'binance' }, { $set: { extraSymbols: body.extraSymbols } });
 
         const marketDataService = new MarketDataService();
-
+        let report;
         try {
-            await syncAccountTrades(accountId, INGEST_DAYS_BACK);
+            report = await syncAccountTrades(accountId, INGEST_DAYS_BACK);
+            if (report.refused?.length && report.refused.length === (await ExchangeConnection.countDocuments({ accountId }))) {
+                const r = report.refused[0];
+                return res.status(r.reason === 'key_not_read_only' ? 400 : r.reason === 'invalid_key' ? 401 : 502).json({ error: r.reason, exchange: r.exchange });
+            }
         } catch (e: any) {
             if (e.message === 'no_exchange_connections') {
                 return res.status(400).json({ error: 'No exchange connections found' });
@@ -135,11 +148,20 @@ onboardingRouter.post('/sync', requireAuth, accountExists, async (req: Request, 
                 tradesIngested: totalIngested,
                 tradesScored,
                 fillScore: savedAudit.avgFillScore,
-                grade: savedAudit.fillGrade
+                grade: savedAudit.fillGrade,
+                lookbackDays: report.lookbackDays,
+                effectiveDays: report.effectiveDays,
+                partial: !!report.partial,
+                partialMessage: report.partialMessage,
+                invalidSymbols: report.invalidSymbols ?? [],
+                refused: report.refused ?? [],
             });
         } catch (e: any) {
             if (e.message === 'no_trades_found') {
-                return res.status(400).json({ error: 'no_trades_found' });
+                return res.status(400).json({
+                    error: 'no_trades_found', lookbackDays: report?.lookbackDays ?? INGEST_DAYS_BACK,
+                    partial: !!report?.partial, partialMessage: report?.partialMessage, invalidSymbols: report?.invalidSymbols ?? [],
+                });
             }
             throw e;
         }
