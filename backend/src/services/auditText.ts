@@ -6,10 +6,10 @@ import { EnrichedTrade } from '../types';
 /**
  * Stored audits can carry recommendation text written by older code (advice wording). Text is
  * regenerated from the deterministic generator whenever a stored line contains an advice or
- * counterfactual term, so stale wording can never reach a user. Scores and other fields are untouched.
+ * counterfactual term, or the old "(capped at N)" gap wording, so stale wording can never reach a user. Scores and other fields are untouched.
  */
 export const isStaleRecommendations = (recs: unknown): boolean =>
-    Array.isArray(recs) && recs.some(r => typeof r === 'string' && findAdviceTerms(r).length > 0);
+    Array.isArray(recs) && recs.some(r => typeof r === 'string' && (findAdviceTerms(r).length > 0 || /\(capped at \d+\)/.test(r)));
 
 export async function regenerateRecommendations(audit: any, accountId: string): Promise<string[]> {
     const docs = await Trade.find({ accountId, fillScore: { $exists: true, $ne: null } }).lean();

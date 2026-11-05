@@ -7,6 +7,17 @@ import {
 } from './engine';
 import { tradeFeeUsd } from './fees';
 
+/**
+ * Wording for the best-hour vs worst-hour score gap. A measured gap is stated exactly. When only the capped
+ * model value is available, a value at the cap is a floor ("at least"), below the cap it is exact.
+ */
+export function hourGapPhrase(input: { measured?: number | null; modelValue?: number; cap?: number }): string {
+    const cap = input.cap ?? 30;
+    if (input.measured != null && Number.isFinite(input.measured)) return `averaged ${input.measured.toFixed(1)} points higher`;
+    const v = input.modelValue ?? 0;
+    return v >= cap ? `averaged at least ${cap.toFixed(1)} points higher` : `averaged ${v.toFixed(1)} points higher`;
+}
+
 export async function computeAuditSummary(userId: string, trades: EnrichedTrade[]): Promise<AuditSummary> {
     if (trades.length === 0) {
         return {
@@ -33,7 +44,8 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
     }
 
     // Pin determinism for floating-point math
-    trades.sort((a, b) => a.tradeId.localeCompare(b.tradeId));
+    // tradeId is only unique per symbol, so ties break on symbol (same order as before when ids are distinct).
+    trades.sort((a, b) => a.tradeId.localeCompare(b.tradeId) || a.symbol.localeCompare(b.symbol));
 
     let totalNotional = 0;
     let weightedFillScoreSum = 0;
@@ -200,9 +212,10 @@ export function generateRecommendations(summary: AuditSummary, trades: EnrichedT
         }
 
         const xStr = worstScore.toFixed(1);
-        const improvement = Math.min(30, bestScore - worstScore);
-        const zStr = improvement.toFixed(1);
-        recs.push(`Your worst-performing trades (avg score: ${xStr}) fell between 22:00–07:00 UTC. Your best hour averaged ${zStr} points higher (capped at 30).`);
+        // The measured gap (best-hour avg minus worst-hour avg) is stated as measured; no model cap is applied.
+        const gapPhrase = hourGapPhrase({ measured: bestScore - worstScore });
+        const gapText = bestScore > worstScore ? ` Your best hour ${gapPhrase}.` : '';
+        recs.push(`Your worst-performing trades (avg score: ${xStr}) fell between 22:00–07:00 UTC.${gapText}`);
     }
 
     if (b.avgSlippageBps > 20) {
