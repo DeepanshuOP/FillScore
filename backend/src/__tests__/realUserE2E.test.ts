@@ -34,6 +34,7 @@
  *                                        = (368823.75 + 799920 + 168750) / 17500 = 1337493.75 / 17500
  *                                        = 76.42821428571428… → B
  */
+import { waitForSync } from '../test-utils/waitForSync';
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
@@ -99,8 +100,10 @@ describe('F-01 real-user path end to end', () => {
         expect(conn.status).toBe(200);
 
         const sync = await request(app).post('/api/onboarding/sync').set('Authorization', `Bearer ${token}`);
-        expect(sync.status).toBe(200);
-        expect(sync.body.tradesIngested).toBe(3);
+        expect(sync.status).toBe(202);
+        const status = await waitForSync(app, token);
+        expect(status.state).toBe('done');
+        expect(status.result.tradesIngested).toBe(3);
 
         const run = await request(app).post('/api/audit/run').set('Authorization', `Bearer ${token}`);
         expect(run.status).toBe(200);

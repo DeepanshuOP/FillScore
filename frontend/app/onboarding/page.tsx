@@ -9,6 +9,7 @@ import { mapOnboardingError } from '../utils/errorMapping';
 import { getGradeColor } from '../utils/gradeColor';
 import { EXCHANGES, getExchange, ExchangeId } from '../utils/exchanges';
 import { apiBase } from '../lib/apiBase';
+import { pollSyncStatus, progressText, SyncStatus } from '../utils/syncPolling';
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -42,6 +43,23 @@ export default function OnboardingPage() {
   const [extraSymbols, setExtraSymbols] = useState('');
   const [usedLookback, setUsedLookback] = useState<number | null>(null);
   const [syncNote, setSyncNote] = useState<string | null>(null);
+
+  // Stored lookback (closes "no endpoint exposes it") and resume of a job already running.
+  useEffect(() => {
+    if (!user || !accessToken) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await authFetch(`${apiBase()}/onboarding/sync/status`, {}, { accessToken, refreshAccessToken });
+        if (!res.ok || cancelled) return;
+        const s: SyncStatus = await res.json();
+        if (s.lookbackDays) { setUsedLookback(s.lookbackDays); setLookbackDays(s.lookbackDays); }
+        if (s.state === 'running') { setIsSuccess(true); void followSync(); }
+      } catch { /* status is best-effort */ }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, accessToken]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -85,7 +103,7 @@ export default function OnboardingPage() {
       const data = await res.json();
       
       if (!res.ok) {
-        setErrorMsg(mapOnboardingError(data.error || 'unknown', res.status, selected?.name));
+        setErrorMsg(mapOnboardingError(data.error || 'unknown', res.status, selected?.name, { disable: data.disable, enable: data.enable }));
       } else {
         setIsSuccess(true);
         // Clear secrets from state immediately
@@ -101,60 +119,68 @@ export default function OnboardingPage() {
     }
   };
 
+  const applyTerminal = (s: SyncStatus) => {
+    const r = s.result ?? {};
+    const bits: string[] = [];
+    if (s.partialMessage) bits.push(s.partialMessage);
+    if (r.invalidSymbols?.length) bits.push(`Not found on the exchange: ${r.invalidSymbols.join(', ')}.`);
+    setSyncNote(bits.length ? bits.join(' ') : null);
+    if (s.lookbackDays) setUsedLookback(s.lookbackDays);
+    if (s.state === 'failed') { setErrorMsg(mapOnboardingError('unknown', 500)); return; }
+    if (s.state === 'needs_attention') { setErrorMsg(mapOnboardingError(r.error || 'key_not_read_only', undefined, undefined, { disable: r.disable, enable: r.enable })); return; }
+    if (r.noTrades) { setNoTrades(true); return; }
+    setSyncResult({ fillScore: r.fillScore ?? 0, grade: r.grade ?? '-', tradesIngested: r.tradesIngested ?? 0, tradesScored: r.tradesScored ?? 0 });
+    // A complete sync goes straight to the dashboard; a partial one stays so the note is read first.
+    if (s.state === 'done') router.push('/dashboard');
+  };
+
+  /** Polls the background job every 3 s, showing progress, until it finishes. */
+  const followSync = async () => {
+    setSyncing(true);
+    try {
+      const final = await pollSyncStatus({
+        fetchStatus: async () => {
+          const res = await authFetch(`${apiBase()}/onboarding/sync/status`, {}, { accessToken, refreshAccessToken });
+          if (!res.ok) throw new Error('status_http_' + res.status);
+          return res.json();
+        },
+        onUpdate: s => setSyncStatusText(s.state === 'running' ? progressText(s) : ''),
+      });
+      applyTerminal(final);
+    } catch {
+      setErrorMsg(mapOnboardingError('network_error'));
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const handleSync = async () => {
     if (syncing) return;
     setSyncing(true);
     setErrorMsg(null);
     setNoTrades(false);
-
-    // ESTIMATED progress messages for the UI, since we don't have a real stream
     setSyncStatusText(`Fetching your trades from ${selected?.name ?? 'your exchange'}...`);
-    const timers = [
-      setTimeout(() => setSyncStatusText('Enriching against market data...'), 5000),
-      setTimeout(() => setSyncStatusText('Computing your FillScore...'), 12000)
-    ];
-
     try {
-      const baseUrl = apiBase();
       const symbols = extraSymbols.split(/[\s,]+/).map(x => x.trim().toUpperCase()).filter(Boolean);
-      const res = await authFetch(`${baseUrl}/onboarding/sync`, {
+      const res = await authFetch(`${apiBase()}/onboarding/sync`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ lookbackDays, extraSymbols: symbols }),
       }, { accessToken, refreshAccessToken });
-      
-      const data = await res.json();
-      timers.forEach(clearTimeout);
-
-      if (!res.ok) {
-        if (data.error === 'no_trades_found') {
-          setUsedLookback(data.lookbackDays ?? lookbackDays);
-          const bits: string[] = [];
-          if (data.partial && data.partialMessage) bits.push(data.partialMessage);
-          if (data.invalidSymbols?.length) bits.push(`Not found on the exchange: ${data.invalidSymbols.join(', ')}.`);
-          setSyncNote(bits.length ? bits.join(' ') : null);
-          setNoTrades(true);
-        } else if (data.error === 'No exchange connections found' || data.error === 'no_exchange_connections_found') {
-          // Go back to connect step
-          setIsSuccess(false);
-          setErrorMsg(mapOnboardingError('no_exchange_connections_found'));
-        } else {
-          setErrorMsg(mapOnboardingError(data.error || 'unknown', res.status));
-        }
-      } else {
-        const bits: string[] = [];
-        if (data.partial && data.partialMessage) bits.push(data.partialMessage);
-        if (data.invalidSymbols?.length) bits.push(`Not found on the exchange: ${data.invalidSymbols.join(', ')}.`);
-        setSyncNote(bits.length ? bits.join(' ') : null);
-        setSyncResult({
-          fillScore: data.fillScore,
-          grade: data.grade,
-          tradesIngested: data.tradesIngested,
-          tradesScored: data.tradesScored
-        });
+      // 202 = started, 409 = one is already running: both mean "follow the running job".
+      if (res.status === 202 || res.status === 409) {
+        setSyncing(false);
+        await followSync();
+        return;
       }
-    } catch (err: any) {
-      timers.forEach(clearTimeout);
+      const data = await res.json().catch(() => ({}));
+      if (data.error === 'No exchange connections found' || data.error === 'no_exchange_connections_found') {
+        setIsSuccess(false);
+        setErrorMsg(mapOnboardingError('no_exchange_connections_found'));
+      } else {
+        setErrorMsg(mapOnboardingError(data.error || 'unknown', res.status));
+      }
+    } catch {
       setErrorMsg(mapOnboardingError('network_error'));
     } finally {
       setSyncing(false);

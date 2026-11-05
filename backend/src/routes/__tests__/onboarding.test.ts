@@ -1,3 +1,5 @@
+import { SyncJob } from '../../models/SyncJob';
+import { waitForSync } from '../../test-utils/waitForSync';
 import { describe, it, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
 import request from 'supertest';
 import express from 'express';
@@ -141,6 +143,7 @@ describe('Onboarding Routes', () => {
         await ExchangeConnection.deleteMany({ accountId: userId });
         await Trade.deleteMany({ accountId: userId });
         await Audit.deleteMany({ accountId: userId });
+        await SyncJob.deleteMany({ accountId: userId });
         vi.clearAllMocks();
         for (const key of ['::ffff:127.0.0.1', '127.0.0.1', '::1']) {
             await connectLimiter.resetKey(key);
@@ -349,9 +352,11 @@ describe('Onboarding Routes', () => {
                 .post('/api/onboarding/sync')
                 .set('Authorization', `Bearer ${accessToken}`);
 
-            expect(res.status).toBe(200);
-            expect(res.body.success).toBe(true);
-            expect(res.body.tradesIngested).toBeGreaterThan(0);
+            expect(res.status).toBe(202);
+            expect(res.body.syncId).toBeTruthy();
+            const status = await waitForSync(app, accessToken);
+            expect(status.state).toBe('done');
+            expect(status.result.tradesIngested).toBeGreaterThan(0);
 
             const trades = await Trade.find({ accountId: userId });
             expect(trades.length).toBeGreaterThan(0);
@@ -391,6 +396,7 @@ describe('Onboarding Routes', () => {
             await request(app)
                 .post('/api/onboarding/sync')
                 .set('Authorization', `Bearer ${accessToken}`);
+            await waitForSync(app, accessToken);
 
             // Ensure demo trade remains untouched
             const demoTrade = await Trade.findOne({ accountId: 'demo-test' });

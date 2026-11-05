@@ -121,6 +121,7 @@ Generated from the app (`npm run docs:routes`).
 | POST | `/api/onboarding/connect` |
 | DELETE | `/api/onboarding/connections/:exchange` |
 | POST | `/api/onboarding/sync` |
+| GET | `/api/onboarding/sync/status` |
 | GET | `/api/preflight/exchanges` |
 | GET | `/api/ready` |
 | GET | `/api/version` |
