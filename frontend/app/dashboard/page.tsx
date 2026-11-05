@@ -1,5 +1,6 @@
 'use client';
 
+import { formatPeriodLabel } from '../utils/periodLabel';
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '../components/Navbar';
@@ -14,7 +15,7 @@ import { authFetch } from '../lib/authFetch';
 import { resolveIdentityState } from '../utils/identityResolver';
 import { buildQuery } from '../utils/queryBuilder';
 import { buildTrend, HistoryPoint } from '../utils/trend';
-import { openAuthenticatedDownload } from '../lib/downloads';
+import { downloadReport } from '../lib/downloads';
 import Link from 'next/link';
 import ConnectPrompt from '../components/ConnectPrompt';
 import { venueComparisonNote } from '../utils/navLinks';
@@ -70,11 +71,6 @@ const formatCurrency = (val: number) =>
 const formatNumber = (val: number) =>
   new Intl.NumberFormat('en-US').format(Math.round(val));
 
-const formatPeriod = (start: string, end: string) => {
-  const s = new Date(start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  const e = new Date(end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  return `${s} — ${e}`;
-};
 
 const gradeConfig = {
   A: { color: '#4ade80', glow: 'rgba(74,222,128,0.25)', label: 'Excellent' },
@@ -204,14 +200,12 @@ function DashboardContent() {
     setDownloading(true);
     setDownloadError(null);
     try {
-      if (dashboardMode === 'real') {
-        const ok = await openAuthenticatedDownload('report', '/audit/report', {}, { accessToken, refreshAccessToken });
-        if (!ok) setDownloadError('Could not prepare the report. Please try again.');
-      } else if (resolvedUserId) {
-        window.open(`${apiBase()}/audit/report?userId=${resolvedUserId}`, '_blank');
-      }
+      const r = await downloadReport({ mode: dashboardMode, userId: resolvedUserId }, { accessToken, refreshAccessToken });
+      if (!r.ok) setDownloadError(r.message ?? 'Could not prepare the report. Please try again.');
+    } catch {
+      setDownloadError('Could not prepare the report. Please try again.');
     } finally {
-      setTimeout(() => setDownloading(false), 500);
+      setDownloading(false); // never left on "generating"
     }
   };
 
@@ -675,7 +669,7 @@ function DashboardContent() {
                     <line x1="4" y1="1" x2="4" y2="3" stroke="currentColor" strokeWidth="1"/>
                     <line x1="8" y1="1" x2="8" y2="3" stroke="currentColor" strokeWidth="1"/>
                   </svg>
-                  PERIOD  ·  {formatPeriod(audit.period.start, audit.period.end)}
+                  PERIOD  ·  {formatPeriodLabel(audit.period.start, audit.period.end)}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#888078' }}>
                   <span>EXCHANGE  ·  {audit.exchange.toUpperCase()}</span>
@@ -988,7 +982,7 @@ function DashboardContent() {
                         fontSize: '0.85rem',
                         color: '#ede8e0'
                       }}>
-                        Routing to <span style={{ color: getExchangeColor(exchangeComparison.bestExchange), fontWeight: 600, textTransform: 'uppercase' }}>{exchangeComparison.bestExchange}</span> instead of <span style={{ color: getExchangeColor(exchangeComparison.worstExchange), fontWeight: 600, textTransform: 'uppercase' }}>{exchangeComparison.worstExchange}</span> saves you <span style={{ color: '#d4af37', fontWeight: 600 }}>~{exchangeComparison.venueAlphaBps.toFixed(1)} bps</span> on slippage.
+                        Fills on <span style={{ color: getExchangeColor(exchangeComparison.bestExchange), fontWeight: 600, textTransform: 'uppercase' }}>{exchangeComparison.bestExchange}</span> cost <span style={{ color: '#d4af37', fontWeight: 600 }}>~{exchangeComparison.venueAlphaBps.toFixed(1)} bps</span> less slippage than on <span style={{ color: getExchangeColor(exchangeComparison.worstExchange), fontWeight: 600, textTransform: 'uppercase' }}>{exchangeComparison.worstExchange}</span> in this period.
                       </div>
 
                       <div style={{
@@ -1447,7 +1441,7 @@ function DashboardContent() {
                 }}>
                   <span>FillScore v0.9 beta</span>
                   <span>·</span>
-                  <span>Data: Jan 1 – Jan 31, 2024</span>
+                  <span>Data: {audit ? formatPeriodLabel(audit.period.start, audit.period.end) : '—'}</span>
                   <span>·</span>
                   <span>AES-256-GCM encrypted</span>
                 </div>

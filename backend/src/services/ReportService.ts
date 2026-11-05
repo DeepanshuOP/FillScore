@@ -198,7 +198,7 @@ export class ReportService {
 
       // Venue alpha headline
       doc.fillColor(white).font('Courier').fontSize(12).text(
-        `Routing to `, 50, 90,
+        `Fills on `, 50, 90,
         { continued: true }
       );
       doc.fillColor(getExchangeColor(comparisonData.bestExchange)).font('Courier-Bold').text(
@@ -206,7 +206,7 @@ export class ReportService {
         { continued: true }
       );
       doc.fillColor(white).font('Courier').text(
-        ` instead of `,
+        ` cost less slippage than on `,
         { continued: true }
       );
       doc.fillColor(getExchangeColor(comparisonData.worstExchange)).font('Courier-Bold').text(
@@ -214,7 +214,7 @@ export class ReportService {
         { continued: true }
       );
       doc.fillColor(white).font('Courier').text(
-        ` saves you ~${comparisonData.venueAlphaBps.toFixed(1)} bps on slippage.`
+        ` in this period (a difference of ~${comparisonData.venueAlphaBps.toFixed(1)} bps).`
       );
 
       // Venue cards
@@ -307,12 +307,12 @@ export class ReportService {
     }
 
     // ─────────────────────────────────────────────────────────
-    // LAST PAGE — RECOMMENDATIONS & ACTION PLAN
+    // LAST PAGE — INSIGHTS & EXECUTION PATTERNS
     // ─────────────────────────────────────────────────────────
     doc.addPage({ size: 'A4', margin: 50 });
     drawBackground();
 
-    doc.fillColor(white).font('Courier-Bold').fontSize(18).text('RECOMMENDATIONS & ACTION PLAN', 50, 50);
+    doc.fillColor(white).font('Courier-Bold').fontSize(18).text('INSIGHTS & EXECUTION PATTERNS', 50, 50);
 
     let ry = 90;
 
