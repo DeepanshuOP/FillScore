@@ -12,6 +12,7 @@ from datetime import datetime, timezone
 from typing import Optional
 from motor.motor_asyncio import AsyncIOMotorClient
 from collections import Counter
+from agents.metrics.loader import TRADE_PROJECTION, normalise_trade_doc
 
 CUTOFF_DATE = "2024-01-15T00:00:00+00:00"  # Jan week 1-2 boundary
 EVAL_USERS = ["demo-disciplined", "demo-moderate", "demo-aggressive"]
@@ -60,20 +61,9 @@ async def fetch_trades_before_cutoff(
                 "symbol": symbol,
                 "executedAt": {"$lt": cutoff_dt},
             },
-            {
-                "_id": 1, "symbol": 1, "exchange": 1,
-                "isMaker": 1, "feePaid": 1, "notionalValue": 1,
-                "orderType": 1, "arrivalSlippageBps": 1,
-                "fillScore": 1, "executedAt": 1, "side": 1,
-                "executionPrice": 1, "vwap5m": 1,
-                "whale_adverse": 1,
-            }
+            TRADE_PROJECTION  # F-11: the production projection, not a stale hand-written one
         ).sort("executedAt", 1)
-        trades = []
-        async for doc in cursor:
-            doc["id"] = str(doc.get("_id", ""))
-            trades.append(doc)
-        return trades
+        return [normalise_trade_doc(doc) async for doc in cursor]
     finally:
         client.close()
 
