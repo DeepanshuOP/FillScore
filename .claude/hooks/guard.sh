@@ -98,4 +98,76 @@ RE_ENV_READ_LINE="${SEP}(cat|tac|less|more|head|tail|bat|batcat|nl|od|xxd|hexdum
 # --- 4. Guard the eval timing constant ------------------------------------------------------------
 [[ "$cmd" =~ run_consistency_eval && "$cmd" =~ $RE_SLEEP_LOW ]] && deny "Inter-run sleep below 65s causes 429 contamination. Keep it at 65."
 
+# --- 5. Repo files are written with the Write/Edit tools, never by shell (3a broke this twice) -----
+# Allowed: redirection to /tmp, /dev/*, fd dups (2>&1) and absolute paths outside the repo.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)"
+MSG_WRITE="Write files with the Write/Edit tools."
+
+# Prints the first redirection target (>, >>, &>, >|) that points inside the repo. Quoted text and
+# heredoc bodies are ignored, so '=>' in a node -e string or code in a heredoc is not a redirect.
+repo_redirect_target() {
+  awk -v root="$REPO_ROOT" '
+    function allowed(t) {
+      gsub(/^["\047]+|["\047]+$/, "", t)
+      if (t == "") return 1
+      if (t ~ /^\/tmp\// || t ~ /^\/dev\// || t ~ /^\$\{?TMPDIR/) return 1
+      if (t ~ /^\//) return (index(t, root "/") != 1 && t != root)
+      return 0
+    }
+    {
+      if (inbody) { if ($0 == delim) inbody = 0; next }
+      line = $0; out = ""; n = length(line)
+      for (i = 1; i <= n; i++) {
+        c = substr(line, i, 1)
+        if (q == "") {
+          if (c == "\\") { out = out c substr(line, i + 1, 1); i++; continue }
+          if (c == "\047" || c == "\"") q = c
+          out = out c
+        } else {
+          if (c == q) { q = ""; out = out c }
+          else if (c == ">" || c == "<" || c == "&" || c == "|" || c == ";") out = out "_"
+          else out = out c
+        }
+      }
+      s = out
+      while (match(s, /[0-9&]?>>?\|?[ \t]*[^ \t;&|<>()]*/)) {
+        tok = substr(s, RSTART, RLENGTH); pre = (RSTART > 1) ? substr(s, RSTART - 1, 1) : ""
+        s = substr(s, RSTART + RLENGTH)
+        if (pre == "-" || pre == "=") continue
+        sub(/^[0-9&]?>>?\|?[ \t]*/, "", tok)
+        if (!allowed(tok)) { print tok; exit }
+      }
+      if (match(out, /(^|[^<])<<-?[ \t]*["\047]?[A-Za-z_][A-Za-z0-9_]*["\047]?/)) {
+        d = substr(out, RSTART, RLENGTH); sub(/^[^<]/, "", d); dash = (d ~ /^<<-/)
+        sub(/^<<-?[ \t]*/, "", d); gsub(/["\047]/, "", d); delim = d; inbody = 1
+      }
+    }
+  ' <<<"$1"
+}
+
+RE_SED_INPLACE="${SEP}sed[[:space:]]([^;|&]*[[:space:]])?(-[a-zA-Z]*i[^[:space:]]*|--in-place[^[:space:]]*)([[:space:]]|\$)"
+RE_PERL_INPLACE="${SEP}perl[[:space:]]([^;|&]*[[:space:]])?-[a-zA-Z]*i[^[:space:]]*([[:space:]]|\$)"
+RE_TEE="${SEP}tee[[:space:]]"
+RE_SCRIPT_C="${SEP}([^[:space:];|&]*python[0-9.]*|node|nodejs)[[:space:]]+(-[a-zA-Z]*[ce]|--eval|-)([[:space:]]|\$)"
+RE_SCRIPT_WRITE='(open\([^)]*,[[:space:]]*(mode[[:space:]]*=[[:space:]]*)?["'"'"'][wax+]|write_text|write_bytes|writeFile|appendFile|createWriteStream|fs\.write|openSync\([^)]*["'"'"'][wax])'
+
+if [[ -n "$cmd" ]]; then
+  [[ "$cmd_joined" =~ $RE_SED_INPLACE ]] && deny "sed -i edits a file by shell. $MSG_WRITE"
+  [[ "$cmd_joined" =~ $RE_PERL_INPLACE ]] && deny "perl -i edits a file by shell. $MSG_WRITE"
+  if [[ "$cmd_joined" =~ $RE_SCRIPT_C && "$cmd_joined" =~ $RE_SCRIPT_WRITE ]]; then
+    deny "An inline python/node script that opens files for writing. $MSG_WRITE"
+  fi
+  if [[ "$cmd_joined" =~ $RE_TEE ]]; then
+    tee_args="${cmd_joined#*tee }"; tee_args="${tee_args%%[;|&]*}"; tee_args="${tee_args%%<<*}"
+    for a in $tee_args; do
+      [[ "$a" == -* ]] && continue
+      a="${a//[\"\']/}"
+      case "$a" in /tmp/*|/dev/*|\$TMPDIR*|\$\{TMPDIR*) continue ;; /*) [[ "$a" == "$REPO_ROOT"/* ]] || continue ;; esac
+      deny "tee into the repo. $MSG_WRITE"
+    done
+  fi
+  bad="$(repo_redirect_target "$cmd_joined")"
+  [[ -n "$bad" ]] && deny "Shell redirection into the repo ($bad). $MSG_WRITE"
+fi
+
 exit 0
