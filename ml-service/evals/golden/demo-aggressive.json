@@ -1,0 +1,128 @@
+{
+ "id": "demo-aggressive",
+ "kind": "demo",
+ "n_trades": 88,
+ "packet": {
+  "alpha": {
+   "avg_vwap_deviation_bps": -65.1767,
+   "best_hour_avg_score": 94.3,
+   "best_hour_utc": 14,
+   "best_symbol": "BTCUSDT",
+   "best_symbol_avg_score": 58.35,
+   "content_hash": "7d1237ec45c1a557",
+   "evidence_counts": {
+    "all_trades": 88,
+    "limit_trades": 20,
+    "market_trades": 68,
+    "symbol_BTCUSDT": 88,
+    "vwap_trades": 68,
+    "worst5_vwap_trades": 5
+   },
+   "market_order_count": 68,
+   "median_vwap_deviation_bps": -62.4583,
+   "metrics_version": "1.1.0",
+   "pct_beating_vwap": 1.0,
+   "symbol_avg_fill_score": {
+    "BTCUSDT": 58.35
+   },
+   "vwap_trades_count": 68,
+   "worst5_vwap_deviation_bps": [
+    -7.3109,
+    -17.4404,
+    -23.5517,
+    -26.1257,
+    -26.3474
+   ],
+   "worst_hour_avg_score": 45.32,
+   "worst_hour_utc": 5,
+   "worst_symbol": "BTCUSDT",
+   "worst_symbol_avg_score": 58.35
+  },
+  "fee": {
+   "avg_fee_per_trade_usd": 0.242,
+   "content_hash": "12c85adcffbad6c7",
+   "evidence_counts": {
+    "all_trades": 88,
+    "maker_trades": 20,
+    "taker_streak": 8,
+    "taker_trades": 68
+   },
+   "fee_drag_bps": 10.0,
+   "longest_taker_streak": 8,
+   "maker_count": 20,
+   "maker_ratio": 0.2273,
+   "metrics_version": "1.1.0",
+   "taker_count": 68,
+   "total_fee_paid_usd": 21.2976,
+   "trade_count": 88
+  },
+  "liquidity": {
+   "adverse_market_count": 12,
+   "adverse_slippage_avg_bps": 0.0107,
+   "adverse_vs_clean_diff_bps": 0.0316,
+   "avg_slippage_bps": -0.0153,
+   "best_hour_utc": 15,
+   "clean_market_count": 56,
+   "clean_slippage_avg_bps": -0.0209,
+   "content_hash": "7325376b019d8520",
+   "evidence_counts": {
+    "adverse_market_trades": 12,
+    "all_trades": 88,
+    "clean_market_trades": 56,
+    "limit_trades": 20,
+    "market_trades": 68,
+    "reversion_trades": 0,
+    "worst5_trades": 5
+   },
+   "has_reversion_data": false,
+   "limit_order_count": 20,
+   "market_order_count": 68,
+   "median_slippage_bps": 0.0,
+   "metrics_version": "1.1.0",
+   "p90_slippage_bps": 0.0023,
+   "pct_negative_slippage": 0.4265,
+   "reversion_30s_avg_bps": 0.0,
+   "reversion_60s_avg_bps": 0.0,
+   "reversion_trade_count": 0,
+   "worst5_slippage_bps": [
+    0.1323,
+    0.0025,
+    0.0024,
+    0.0024,
+    0.0024
+   ],
+   "worst_hour_utc": 23
+  },
+  "risk": {
+   "adverse_rate": 0.1932,
+   "adverse_rate_by_symbol": {
+    "BTCUSDT": 0.1932
+   },
+   "avg_trade_usd": 242.02,
+   "content_hash": "684a70fa45cad87c",
+   "evidence_counts": {
+    "adverse_trades": 17,
+    "all_trades": 88,
+    "large_trades": 0,
+    "symbol_BTCUSDT": 88
+   },
+   "hour_hhi": 0.1072,
+   "large_trade_count": 0,
+   "median_trade_usd": 244.95,
+   "metrics_version": "1.1.0",
+   "p90_trade_usd": 308.13,
+   "symbol_hhi": 1.0,
+   "symbol_notional_shares": {
+    "BTCUSDT": 1.0
+   },
+   "top_hour_trade_count": 15,
+   "top_hour_trade_fraction": 0.1705,
+   "top_hour_utc": 0,
+   "top_symbol_by_notional": "BTCUSDT",
+   "top_symbol_notional_fraction": 1.0,
+   "total_trades": 88,
+   "whale_adverse_count": 17
+  }
+ },
+ "symbol": "BTCUSDT"
+}

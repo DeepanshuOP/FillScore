@@ -93,6 +93,22 @@ jobs:
       - run: pytest -p no:cacheprovider -m "not integration"
         working-directory: ml-service
 
+  # Offline Council eval: stored demo fixtures + recorded responses vs the golden-set invariants.
+  # Pure Python, no secrets, no network; fails on any invariant violation.
+  eval:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: ml-service/requirements.lock
+      - run: pip install -r requirements.lock
+        working-directory: ml-service
+      - run: python evals/run_offline.py
+        working-directory: ml-service
+
   e2e:
     needs: [backend, frontend, ml-service]
     runs-on: ubuntu-24.04
