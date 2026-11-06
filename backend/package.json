@@ -13,6 +13,7 @@
     "download:data": "ts-node src/scripts/downloadMarketData.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "sentry:smoke": "ts-node src/scripts/sentrySmoke.ts",
     "docs:routes": "ts-node src/scripts/printRoutes.ts"
   },
   "dependencies": {
