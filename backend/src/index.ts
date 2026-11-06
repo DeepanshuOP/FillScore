@@ -1,3 +1,6 @@
+import { initSentry } from './observability/sentry';
+initSentry(); // no-op unless SENTRY_DSN is set
+
 import { loadEnv, env } from './config/env';
 import { connectDatabase } from './config/database';
 import { createApp } from './app';

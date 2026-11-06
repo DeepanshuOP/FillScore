@@ -1,9 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
+import { captureWithRequestId } from '../observability/sentry';
+import { hashAccountId } from '../observability/requestLog';
 
 export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
-    const requestId = crypto.randomUUID();
+    const requestId = (req as Request & { requestId?: string }).requestId ?? crypto.randomUUID();
     console.error(`[RequestID: ${requestId}] Unhandled Error:`, err);
+    // No-op unless Sentry was initialised (SENTRY_DSN); tagged with the same id as the log line.
+    captureWithRequestId(err, requestId, hashAccountId((req as Request & { accountId?: string }).accountId));
 
     if (err.name === 'ValidationError') {
         const messages = Object.values(err.errors).map((val: any) => val.message);

@@ -4,6 +4,7 @@ import { performance } from 'perf_hooks';
 import passport from './config/passport';
 import { setupSecurity, auditReadLimiter, availabilityLimiter } from './middleware/security';
 import { errorHandler } from './middleware/errorHandler';
+import { requestLog } from './observability/requestLog';
 import { connectRouter } from './routes/connect';
 import { auditRouter } from './routes/audit';
 import { attributionRouter } from './routes/attribution';
@@ -32,14 +33,7 @@ export function createApp(): Application {
     app.use(cookieParser());
     app.use(passport.initialize());
 
-    app.use((req, res, next) => {
-        const start = performance.now();
-        res.on('finish', () => {
-            const ms = (performance.now() - start).toFixed(2);
-            console.log(`[${req.method}] ${req.path} → ${res.statusCode} (${ms}ms)`);
-        });
-        next();
-    });
+    app.use(requestLog); // request id + one JSON log line per request (account id hashed)
 
     app.use(healthRouter);
 
