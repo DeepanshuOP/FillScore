@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   backend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       JWT_ACCESS_SECRET: test1
       JWT_REFRESH_SECRET: test2
@@ -34,8 +34,8 @@ jobs:
       BINANCE_API_SECRET: test-secret
       ENCRYPTION_KEY: 6470df2f901f61569c667de386f434a71f51e1f2d44c913698859b16e42054cd
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -44,7 +44,7 @@ jobs:
         working-directory: backend
       # after npm ci: npm ci deletes node_modules, which would wipe a binary restored earlier
       - name: Cache mongodb-memory-server binary
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: backend/node_modules/.cache/mongodb-memory-server
           key: mongoms-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
@@ -54,10 +54,10 @@ jobs:
         working-directory: backend
 
   frontend:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -66,21 +66,23 @@ jobs:
         working-directory: frontend
       - run: npx tsc --noEmit --incremental false
         working-directory: frontend
+      - run: npm run lint
+        working-directory: frontend
       - run: npx vitest run
         working-directory: frontend
       - run: npm run build
         working-directory: frontend
 
   ml-service:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       JWT_ACCESS_SECRET: test-secret
       GROQ_API_KEY: bogus
       OPENROUTER_API_KEY: bogus
       MONGODB_URI: mongodb://127.0.0.1:1/x
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -93,11 +95,7 @@ jobs:
 
   e2e:
     needs: [backend, frontend, ml-service]
-    runs-on: ubuntu-latest
-    # Seeding the demo users into the service-container MongoDB is not wired yet (see
-    # .work/REPORT_phase3a.md section 5), so the specs cannot pass on an empty database. Reported but not gating
-    # until the seed step is added; then delete this line.
-    continue-on-error: true
+    runs-on: ubuntu-24.04
     services:
       mongo:
         image: mongo:7
@@ -108,15 +106,15 @@ jobs:
     env:
       E2E_MONGO_PORT: "27017"
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: |
             backend/package-lock.json
             frontend/package-lock.json
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -131,7 +129,7 @@ jobs:
         working-directory: frontend
       - run: npm run test:e2e
         working-directory: frontend
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: playwright-report
