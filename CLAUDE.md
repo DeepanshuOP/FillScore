@@ -70,3 +70,9 @@ that tier. Run the whole tier and read the summary line. All three must be green
 ## Compact instructions
 
 When compacting, preserve: the current brief path, the checklist file path and its status, files changed so far, test commands and their latest summary lines, and open questions.
+
+## Research record
+Start every session by reading docs/HANDOFF.md. Findings, experiments and decisions live in docs/research/ (append-only; see its README). Every phase report ends by appending its research notes to docs/research/LOG.md.
+
+## Research record
+Start every session by reading docs/HANDOFF.md. Findings, experiments and decisions live in docs/research/ (append-only; see its README). Every phase report ends by appending its research notes to docs/research/LOG.md.
