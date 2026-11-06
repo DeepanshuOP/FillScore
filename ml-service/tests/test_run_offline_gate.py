@@ -19,14 +19,16 @@ def test_failing_council_recording_fails_the_gate(monkeypatch):
     assert run_with(monkeypatch, [("rec:council-t-1", "t", bad())]) == 1
 
 
-def test_single_recording_missing_evidence_is_informational(monkeypatch, capsys):
-    r = good()
-    r["risk"]["flags"] = []   # fails evidence_cited only
+def test_evidence_miss_is_measured_identically_for_both_arms(monkeypatch, capsys):
+    council = good()
+    council["synthesis"].update(headline="Execution was solid.", narrative="Fine.")   # misses the synthesis key
+    single = good()
     for k in ("liquidity", "alpha", "risk", "fee"):
-        r.pop(k)
-    r["grounding"]["per_agent"] = {"synthesis": {"values_cited": 3}}   # single arm: needs the union of keys, absent
-    assert run_with(monkeypatch, [("rec:council-t-1", "t", good()), ("rec:single-t-1", "t", r)]) == 0
-    assert "informational" in capsys.readouterr().out
+        single.pop(k)
+    single["grounding"]["per_agent"] = {"synthesis": {"values_cited": 3}}
+    single["synthesis"].update(headline="Execution was solid.", narrative="Fine.")    # same miss, same treatment
+    assert run_with(monkeypatch, [("rec:council-t-1", "t", council), ("rec:single-t-1", "t", single)]) == 0
+    assert "evidence_cited misses 2" in capsys.readouterr().out   # one per arm, no arm exempted
 
 
 def test_single_recording_safety_failure_still_gates(monkeypatch):

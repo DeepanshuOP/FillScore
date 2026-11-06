@@ -3,7 +3,7 @@ import json
 import os
 import random
 
-from evals.invariants import NAMES, check_all
+from evals.invariants import NAMES, agent_evidence, check_all
 from tests.test_eval_invariants import GOLDEN, failing, good
 
 
@@ -47,34 +47,36 @@ def test_finding_text_may_use_its_method_numbers_only():
 def test_required_evidence_key_must_be_cited_not_just_something():
     r = good()
     r["fee"]["recommendedAction"] = "Slippage was 2.4 bps."   # a packet value, but not fee.maker_ratio
-    out = check_all(r, GOLDEN)
-    assert not out["evidence_cited"].ok
-    assert "fee_optimizer" in out["evidence_cited"].detail and "fee.maker_ratio" in out["evidence_cited"].detail
+    out = agent_evidence(r, GOLDEN)
+    assert not out.ok
+    assert "fee_optimizer" in out.detail and "fee.maker_ratio" in out.detail
 
 
 def test_required_evidence_may_be_cited_in_flags():
     r = good()
     r["risk"]["flags"] = []
-    assert failing(r) == {"evidence_cited"}
+    assert not agent_evidence(r, GOLDEN).ok
+    assert failing(r) == set()                       # evidence_cited is synthesis-level now
     r["risk"]["flags"] = ["Adverse selection touched 11.0% of fills."]
-    assert failing(r) == set()
+    assert agent_evidence(r, GOLDEN).ok
 
 
-def test_single_call_arm_needs_the_union_of_required_keys_in_synthesis_text():
-    r = good()
+def test_synthesis_evidence_rule_is_identical_for_both_arms():
+    council = good()
+    single = good()
     for k in ("liquidity", "alpha", "risk", "fee"):
-        r.pop(k)
-    r["grounding"]["per_agent"] = {"synthesis": {"values_cited": 3}}
-    r["synthesis"]["narrative"] = "Makers were 50.0%, adverse 11.0%, slippage 2.4 bps."
-    assert failing(r) == set()
-    r["synthesis"]["narrative"] = "Makers were 50.0%."
-    assert failing(r) == {"evidence_cited"}
+        single.pop(k)
+    single["grounding"]["per_agent"] = {"synthesis": {"values_cited": 3}}
+    for r in (council, single):
+        assert failing(r) == set()                                                   # headline shows 11.0%
+        r["synthesis"].update(headline="Execution was solid.", narrative="Makers were 50.0%.")   # no longer does
+        assert failing(r) == {"evidence_cited"}
 
 
 def test_every_invariant_has_a_mutation_that_fails_only_it():
     bad = {
         "rating_allowed": lambda r: r["synthesis"].update(overallRating="CRITICAL"),
-        "evidence_cited": lambda r: r["risk"].update(flags=[]),
+        "evidence_cited": lambda r: r["synthesis"].update(headline="Execution was solid.", narrative="Fine."),
         "no_flagged_terms": lambda r: r["synthesis"].update(narrative="The trader should use limit orders."),
         "numerals_grounded": lambda r: r["synthesis"].update(narrative="There were 7 fills."),
         "findings_gated": lambda r: r["synthesis"]["findings"][0].update(method=""),

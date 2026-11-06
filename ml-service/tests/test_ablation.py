@@ -54,7 +54,7 @@ def test_table_numbers_by_hand(tmp_path):
     assert c["calls"] == 10.0           # (9 + 11) / 2
     assert (c["tok_in"], c["tok_out"], c["wall_s"]) == (2000.0, 200.0, 15.0)
     assert c["agree"] == (1, 1)         # GOOD, GOOD
-    assert c["inv_all"] == (12, 12) and c["inv_common"] == (10, 10)
+    assert c["inv_all"] == (12, 12) and c["agent_ev"] == (2, 2) and s["agent_ev"] is None   # Council-only column
     assert (c["proposed"], c["passed"]) == (4, 2)
     assert (c["claims_syn"], c["claims_deb"]) == (1.0, 3.0)
     assert rows[("council", "ALL")]["agree"] == (1, 1)

@@ -7,7 +7,9 @@ from evals.invariants import check_all, NAMES
 GOLDEN = {"id": "t", "n_trades": 20, "allowed_overall": ["GOOD", "FAIR"],
           # required evidence: the agent's rendered text must show these packet values (render's formatter)
           "required_evidence": {"fee_optimizer": ["fee.maker_ratio"], "risk_auditor": ["risk.adverse_rate"],
-                                "liquidity_scout": ["liquidity.avg_slippage_bps"], "alpha_architect": []},
+                                "liquidity_scout": ["liquidity.avg_slippage_bps"], "alpha_architect": [],
+                                # 3c: synthesis-level key, the same rule for both arms. risk.adverse_rate renders "11.0%"
+                                "synthesis": ["risk.adverse_rate"]},
           "packet": {"fee": {"total_fee_paid_usd": 40.0, "maker_ratio": 0.5, "content_hash": "f1"},
                      "risk": {"whale_adverse_count": 0, "adverse_rate": 0.11, "content_hash": "r1"},
                      "liquidity": {"avg_slippage_bps": 2.4, "content_hash": "l1"},
@@ -23,7 +25,7 @@ def good():
         "alpha": {"alphaRating": "NEUTRAL", "bestAlternative": "Fills tracked the benchmark."},
         "risk": {"riskLevel": "LOW", "flags": ["Adverse selection touched 11.0% of fills."]},
         "fee": {"feeRating": "OPTIMAL", "recommendedAction": "Half of fills were maker orders (50.0%)."},
-        "synthesis": {"headline": "Execution was solid.", "narrative": "Adverse selection touched 11.0% of fills.",
+        "synthesis": {"headline": "Execution was solid; adverse selection touched 11.0% of fills.", "narrative": "Adverse selection touched 11.0% of fills.",
                       "overallRating": "GOOD", "estimatedMonthlyCostUSD": 40.0,
                       "findings": [{"action_type": "maker_instead_of_taker", "text": "Maker fills would have cost $5.00 less.",
                                     "effect_usd": 5.0, "effect_bps": 1.0, "n_trades_affected": 4,
@@ -55,8 +57,12 @@ def test_specialist_rating_not_in_schema_enum():
 
 
 def test_missing_evidence_citation():
-    r = good(); r["grounding"]["per_agent"]["risk_auditor"] = {"values_cited": 0}
+    from evals.invariants import agent_evidence
+    r = good(); r["grounding"]["per_agent"]["synthesis"] = {"values_cited": 0}
     assert failing(r) == {"evidence_cited"}
+    r = good(); r["grounding"]["per_agent"]["risk_auditor"] = {"values_cited": 0}
+    assert failing(r) == set()                      # a specialist miss is the Council-only column now
+    assert not agent_evidence(r, GOLDEN).ok
 
 
 def test_advice_term_flagged():

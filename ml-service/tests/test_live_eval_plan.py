@@ -24,7 +24,9 @@ def test_recording_meta_names_arm_prompt_and_routes():
     router, _ = make_router()
     council, single = recording_meta("council", router), recording_meta("single", router)
     assert council["arm"] == "council" and single["arm"] == "single"
-    assert council["prompt_version"] == single["prompt_version"]
+    from config.versions import PROMPT_VERSION, SINGLE_PROMPT_VERSION
+    assert council["prompt_version"] == PROMPT_VERSION and single["prompt_version"] == SINGLE_PROMPT_VERSION
+    assert single["single_prompt_version"] == SINGLE_PROMPT_VERSION and council["single_prompt_version"] is None
     assert council["route_config_hash"] == router.config.hash
     assert council["synthesis_prompt_sha256"] != single["synthesis_prompt_sha256"]
     assert "synthesis" in single["routes"]

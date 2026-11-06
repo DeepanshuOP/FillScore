@@ -17,7 +17,7 @@ from agents.prompts import (SYNTH_COST_RULE, SYNTH_JSON_ONLY, SYNTH_WRITING_RULE
 from agents.render import packet_ctx
 from agents.schemas import SynthesisOutput, TradeContext
 from agents.verification import summarise
-from config.versions import PROMPT_VERSION
+from config.versions import SINGLE_PROMPT_VERSION
 from observability import tracing
 
 SINGLE_CALL_SYSTEM_PROMPT = system_prompt("""You write FillScore's single-pass audit of a trader's past executions.
@@ -82,6 +82,7 @@ async def run_single_call(account_id: str, symbol: str, fee_pkt, risk_pkt, liqui
     if degraded:
         synth = synth.model_copy(update={"overallRating": None})
     tokens = sum(c.get("tokens", 0) for c in run.telemetry)
+    tracing.finish_run("degraded" if degraded else "ok")
     return {
         "tradeContext": context.model_dump(mode="json"),
         "synthesis": synth.model_dump(mode="json"),
@@ -97,7 +98,7 @@ async def run_single_call(account_id: str, symbol: str, fee_pkt, risk_pkt, liqui
         "llm_calls": list(run.telemetry),
         "trace_id": trace_id,
         "arm": "single_call",
-        "prompt_version": PROMPT_VERSION,
+        "prompt_version": SINGLE_PROMPT_VERSION,
         "route_config_hash": llm.config.hash,
         "modelUsage": _model_usage(run.telemetry),
         "tokenUsage": _token_usage(run.telemetry),

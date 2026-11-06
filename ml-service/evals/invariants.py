@@ -145,29 +145,29 @@ def _cited(ctx: dict, texts: list, keys: list[str]) -> list[str]:
 
 
 def evidence_cited(result: dict, golden: dict) -> Outcome:
-    """Each agent cited at least one packet value (values_cited) AND showed every key the golden file
-    requires of it (golden["required_evidence"][agent]; the key's rendered value must appear in the
-    agent's text). Single-call arm: the synthesis text must show the union of all required keys."""
+    """SYNTHESIS-LEVEL, the same rule for both arms: the synthesis cited at least one packet value
+    (values_cited) AND its text shows every key golden["required_evidence"]["synthesis"] names (the key's
+    rendered value must appear as a numeral token in the headline, narrative, observations or findings)."""
     per = ((result.get("grounding") or {}).get("per_agent")) or {}
-    council = "liquidity" in result
-    expected = ("fee_optimizer", "risk_auditor", "alpha_architect", "liquidity_scout", "synthesis") \
-        if council else ("synthesis",)
-    bad = [f"{a}: no packet value cited" for a in expected if not (per.get(a) or {}).get("values_cited")]
+    bad = [] if (per.get("synthesis") or {}).get("values_cited") else ["synthesis: no packet value cited"]
+    req = golden.get("required_evidence") or {}
+    miss = _cited(_ctx(golden), _synthesis_text(result), req.get("synthesis") or [])
+    if miss:
+        bad.append(f"synthesis: required {', '.join(miss)} not cited")
+    return Outcome(not bad, "; ".join(bad))
+
+
+def agent_evidence(result: dict, golden: dict) -> Outcome:
+    """COUNCIL-ONLY extra column (a single call has no specialists): each specialist cited at least one packet
+    value AND showed every key golden["required_evidence"][agent] names, in its own text."""
+    per = ((result.get("grounding") or {}).get("per_agent")) or {}
+    bad = [f"{a}: no packet value cited" for a in AGENT_TEXT if not (per.get(a) or {}).get("values_cited")]
     ctx = _ctx(golden)
     req = golden.get("required_evidence") or {}
-    if council:
-        for agent, getter in AGENT_TEXT.items():
-            miss = _cited(ctx, getter(result), req.get(agent) or [])
-            if miss:
-                bad.append(f"{agent}: required {', '.join(miss)} not cited")
-        miss = _cited(ctx, _synthesis_text(result), req.get("synthesis") or [])
+    for agent, getter in AGENT_TEXT.items():
+        miss = _cited(ctx, getter(result), req.get(agent) or [])
         if miss:
-            bad.append(f"synthesis: required {', '.join(miss)} not cited")
-    else:
-        union = list(dict.fromkeys(k for keys in req.values() for k in keys))
-        miss = _cited(ctx, _synthesis_text(result), union)
-        if miss:
-            bad.append(f"synthesis: required {', '.join(miss)} not cited")
+            bad.append(f"{agent}: required {', '.join(miss)} not cited")
     return Outcome(not bad, "; ".join(bad))
 
 

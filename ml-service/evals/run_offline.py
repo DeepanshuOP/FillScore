@@ -15,7 +15,10 @@ ROOT = os.path.dirname(HERE)
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
-from evals.invariants import NAMES, check_all  # noqa: E402
+from evals.invariants import NAMES, agent_evidence, check_all  # noqa: E402
+
+COLUMNS = NAMES + ("agent_evidence",)
+MEASURED = ("evidence_cited", "agent_evidence")   # scored for both arms the same way, reported not gated
 
 # Allowed overall ratings per golden case. Ratings are advisory bands around the locked grades
 # (A/B/C), wide enough for model variance, tight enough that a wildly wrong verdict fails.
@@ -68,24 +71,25 @@ def main(recordings: bool = True) -> int:
     runs = collect_runs(golden, recordings)
     print(f"golden cases: {len(golden)} ({', '.join(golden)})")
     w = max([len(r[0]) for r in runs] + [10])
-    print(f"{'run':<{w}}  " + "  ".join(n[:12].ljust(12) for n in NAMES))
-    failures = informational = 0
+    print(f"{'run':<{w}}  " + "  ".join(n[:12].ljust(12) for n in COLUMNS))
+    failures = 0
+    measured = {"evidence_cited": 0, "agent_evidence": 0}
     for label, gid, res in runs:
         outs = check_all(res, golden[gid])
-        print(f"{label:<{w}}  " + "  ".join(("pass" if outs[n].ok else "FAIL").ljust(12) for n in NAMES)
+        if "liquidity" in res:   # Council-only extra column; a single call has no specialists
+            outs["agent_evidence"] = agent_evidence(res, golden[gid])
+        print(f"{label:<{w}}  " + "  ".join(("pass" if outs[n].ok else "FAIL").ljust(12) for n in COLUMNS if n in outs)
               + "  " + run_stats(res))
-        for n in NAMES:
-            if not outs[n].ok:
-                # single-call recordings are ablation data (never shown to users). Safety invariants gate them
-                # like any run; only evidence_cited (a different, stricter ask of that arm) is reported, not gated
-                if label.startswith(INFORMATIONAL_PREFIX) and n == "evidence_cited":
-                    informational += 1
-                    print(f"    {label} {n}: {outs[n].detail}  [informational: ablation arm]")
-                else:
-                    failures += 1
-                    print(f"    {label} {n}: {outs[n].detail}")
+        for n in COLUMNS:
+            if n in outs and not outs[n].ok:
+                if n in MEASURED:   # same rule for both arms; a measured rate, not a gate (see ablation_notes.md)
+                    measured[n] += 1
+                    continue
+                failures += 1
+                print(f"    {label} {n}: {outs[n].detail}")
     print(f"\n{len(runs)} runs x {len(NAMES)} invariants: {failures} violation(s)"
-          f" (+{informational} informational on the single-call ablation arm)")
+          f" (measured, not gated, same rule for both arms: evidence_cited misses {measured['evidence_cited']},"
+          f" agent_evidence misses {measured['agent_evidence']} on Council runs)")
     return 1 if failures or not runs else 0
 
 

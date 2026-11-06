@@ -45,9 +45,10 @@ def plan_3b2() -> list[tuple[str, str, int]]:
 def recording_meta(arm: str, router) -> dict:
     from agents.single_call import SINGLE_CALL_SYSTEM_PROMPT
     from agents.synthesis import SYNTHESIS_SYSTEM_PROMPT
-    from config.versions import PROMPT_VERSION
+    from config.versions import PROMPT_VERSION, SINGLE_PROMPT_VERSION
     prompt = SINGLE_CALL_SYSTEM_PROMPT if arm == "single" else SYNTHESIS_SYSTEM_PROMPT
-    return {"arm": arm, "prompt_version": PROMPT_VERSION, "route_config_hash": router.config.hash,
+    return {"arm": arm, "prompt_version": SINGLE_PROMPT_VERSION if arm == "single" else PROMPT_VERSION,
+            "single_prompt_version": SINGLE_PROMPT_VERSION if arm == "single" else None, "route_config_hash": router.config.hash,
             "synthesis_prompt_sha256": hashlib.sha256(prompt.encode()).hexdigest()[:16],
             "routes": {role: list(models) for role, models in router.config.roles.items()}
             if hasattr(router.config, "roles") else None}
@@ -119,4 +120,9 @@ if __name__ == "__main__":
     else:
         ap.error("give --plan or --arm")
     load_service_env(os.path.join(ROOT, ".env"), os.path.join(ROOT, "..", "backend", ".env"))
-    asyncio.run(main(steps, a.cap))
+    from observability import tracing
+    tracing.init_tracing()
+    try:
+        asyncio.run(main(steps, a.cap))
+    finally:
+        tracing.shutdown_tracing()
