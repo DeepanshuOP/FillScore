@@ -122,7 +122,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     from agents import debug_sink
     if debug_sink.refused():
         print("[debug-sink] FILLSCORE_GROUNDING_DEBUG ignored: FILLSCORE_DEPLOY=1")
+    from observability import tracing
+    print(f"[tracing] langfuse export: {'on' if tracing.init_tracing() else 'off'}")
     yield
+    tracing.shutdown_tracing()
     global _mongo_client
     if _mongo_client is not None:
         _mongo_client.close()

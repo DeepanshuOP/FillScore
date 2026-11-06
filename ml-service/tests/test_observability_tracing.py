@@ -39,10 +39,14 @@ def _run(account):
 def test_one_trace_id_stored_and_shared_by_all_nine_spans(spans):
     _, doc = _run("acct-real-1")
     finished = spans.get_finished_spans()
-    assert len(finished) == 9                                   # 9 calls, 1 attempt each
+    assert len(finished) == 10                                  # 9 calls, 1 attempt each, + 1 real root span
     assert len(doc["trace_id"]) == 32
     assert {format(s.context.trace_id, "032x") for s in finished} == {doc["trace_id"]}
-    a = finished[0].attributes
+    (root,) = [s for s in finished if s.parent is None or s.parent.is_remote]   # Langfuse needs a root per trace
+    assert root.name == "council-run"
+    children = [s for s in finished if s is not root]
+    assert {s.parent.span_id for s in children} == {root.context.span_id}
+    a = children[0].attributes
     assert a["fillscore.outcome"] == "ok" and a["gen_ai.usage.input_tokens"] == 100   # fake reply: 100 + 20
     assert a["gen_ai.usage.output_tokens"] == 20 and "gen_ai.request.model" in a and "fillscore.role" in a
 
@@ -57,6 +61,8 @@ def test_real_user_spans_carry_no_text(spans):
 def test_demo_user_spans_carry_text(spans):
     _run("demo-moderate")
     for s in spans.get_finished_spans():
+        if s.name == "council-run":
+            continue          # the root span carries no prompt text by design
         assert "[system]" in s.attributes["langfuse.observation.input"]
         assert s.attributes["langfuse.observation.output"]
 

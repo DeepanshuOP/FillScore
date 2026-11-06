@@ -110,8 +110,13 @@ def main() -> int:
         print("This makes live LLM calls (9+ per demo user) and writes llm_usage. Re-run with --yes.")
         return 2
     load_service_env(str(ROOT / ".env"), str(ROOT.parent / "backend" / ".env"))
-    return asyncio.run(generate(args.persist, args.user or DEMO_USERS, max_calls=args.max_calls,
-                                  retries=args.retries))
+    from observability import tracing
+    tracing.init_tracing()
+    try:
+        return asyncio.run(generate(args.persist, args.user or DEMO_USERS, max_calls=args.max_calls,
+                                    retries=args.retries))
+    finally:
+        tracing.shutdown_tracing()
 
 
 if __name__ == "__main__":

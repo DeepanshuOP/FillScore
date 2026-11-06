@@ -678,6 +678,7 @@ async def run_council_pipeline(
             print(f"[persistence] Failed to save run: {type(e).__name__}")
             result.run_id = None
 
+    tracing.finish_run("degraded" if result.degraded else "ok")
     await run.event("complete", result.model_dump(mode="json"))
     return result
 
