@@ -5,7 +5,9 @@ import { buildCoach, describePeriod } from '../scoring/coach';
 import { aggregateCostAttribution } from '../scoring/attribution';
 import { ReportService } from '../services/ReportService';
 import { scoreTrade } from '../scoring/engine';
-import { findAdviceTerms, KNOWN_BAD_STRINGS } from '../constants/adviceTerms';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { findAdviceTerms, findConnectiveTerms, CONNECTIVE_TERMS, KNOWN_BAD_STRINGS } from '../constants/adviceTerms';
 import { EnrichedTrade } from '../types';
 
 // Synthetic fixtures shaped like the three demo users: disciplined (maker, daytime, tight slippage),
@@ -72,6 +74,31 @@ describe('no advice language where copy is generated (three demo-shaped users)',
             expect(pdf).toContain('INSIGHTS & EXECUTION PATTERNS');
         });
     }
+
+    it('generated copy has no causal connectives either (CONNECTIVE_TERMS)', async () => {
+        for (const p of PROFILES) {
+            const ts = trades(p);
+            const summary = await computeAuditSummary(`demo-${p.name}`, ts);
+            const attribution = aggregateCostAttribution(ts.map(t => ({ ...t, ...scoreTrade(t) })) as any);
+            const coach = buildCoach({ breakdown: summary.breakdown, periodText: describePeriod(summary.period), trades: ts.map(t => ({ executedAt: t.executedAt, fillScore: scoreTrade(t).fillScore })), attribution: attribution as any, venue: null });
+            const copy = [summary.recommendations.join('\n'), coach.headline, ...coach.actions.flatMap(a => [a.title, a.detail, a.estimatedImpact]), pdfText(summary, attribution, [], undefined)].join('\n');
+            expect({ p: p.name, hits: findConnectiveTerms(copy) }).toEqual({ p: p.name, hits: [] });
+        }
+    });
+
+    it('the connective detector flags each term and ignores lookalikes', () => {
+        for (const t of CONNECTIVE_TERMS) expect(findConnectiveTerms(`Slippage rose ${t} the venue.`)).toEqual([t]);
+        expect(findConnectiveTerms('Due To capitalised')).toEqual(['due to']);
+        expect(findConnectiveTerms('redundant towel')).toEqual([]);
+    });
+
+    it('CONNECTIVE_TERMS mirrors ml-service/agents/claims.py exactly', () => {
+        const py = readFileSync(join(__dirname, '../../../ml-service/agents/claims.py'), 'utf8');
+        const block = py.match(/CONNECTIVE_TERMS\s*=\s*\[([\s\S]*?)\]/)![1];
+        const pyTerms = [...block.matchAll(/"([^"]+)"/g)].map(m => m[1]);
+        expect(pyTerms.length).toBeGreaterThan(0);
+        expect([...CONNECTIVE_TERMS]).toEqual(pyTerms);
+    });
 
     it('the three strings seen on the deployed sample dashboard are caught by the detector', () => {
         for (const s of KNOWN_BAD_STRINGS) expect(findAdviceTerms(s).length).toBeGreaterThan(0);

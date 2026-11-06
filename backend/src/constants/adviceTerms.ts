@@ -13,6 +13,11 @@ export const ADVICE_TERMS = [
     'should', 'recommend', 'recommends', 'recommended', 'recommendation', 'recommendations',
     'consider', 'better to', 'ought', 'must', 'needs to', 'need to', 'switch to',
 ];
+/** Causal connectives (claims.CONNECTIVE_TERMS): the audit states what happened, never why. Kept apart from the
+ *  advice list because they are checked by their own detector (findConnectiveTerms). */
+export const CONNECTIVE_TERMS = [
+    'due to', 'because of', 'resulting from', 'caused by', 'driven by', 'led to', 'as a result of',
+];
 /** Extra imperative / routing phrases seen in earlier copy (not in claims.py). */
 export const EXTRA_ADVICE_PHRASES = [
     'saves you', 'route flow to', 'routing to', 'trade around', 'trading closer', 'shift trades', 'action plan',
@@ -21,6 +26,13 @@ export const EXTRA_ADVICE_PHRASES = [
 const rx = (terms: string[]) => new RegExp(
     '(?<![A-Za-z])(?:' + [...terms].sort((a, b) => b.length - a.length).map(t => t.split(' ').map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+')).join('|') + ')(?![A-Za-z])', 'gi');
 const ALL_RX = rx([...ADVICE_TERMS, ...COUNTERFACTUAL_TERMS, ...EXTRA_ADVICE_PHRASES]);
+
+const CONNECTIVE_RX = rx(CONNECTIVE_TERMS);
+
+/** Distinct (lower-cased) causal connectives found in text. */
+export function findConnectiveTerms(text: string): string[] {
+    return [...new Set([...text.matchAll(CONNECTIVE_RX)].map(m => m[0].toLowerCase().replace(/\s+/g, ' ')))];
+}
 
 /** Distinct (lower-cased) advice/counterfactual terms found in text. */
 export function findAdviceTerms(text: string): string[] {
