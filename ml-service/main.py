@@ -21,6 +21,9 @@ from pydantic import BaseModel
 from pymongo import MongoClient
 
 from agents.schemas import CouncilResult
+from config.startup_guard import assert_no_e2e_flag_in_production
+
+assert_no_e2e_flag_in_production()
 
 # ---------------------------------------------------------------------------
 # Auth Guard
@@ -41,6 +44,7 @@ from agents.errors import (
 def get_account_id(requested_user_id: str | None, req: Request) -> str:
     if requested_user_id:
         if requested_user_id in VALID_DEMO_USERS:
+            req.state.account_id = requested_user_id   # read by the request-log middleware (hashed there)
             return requested_user_id
         else:
             raise HTTPException(status_code=403, detail="Forbidden: Invalid userId or unauthorized access")
@@ -55,6 +59,7 @@ def get_account_id(requested_user_id: str | None, req: Request) -> str:
         # Only backend access tokens (typ "access", F-27): never refresh or other tokens on this secret
         if payload.get("typ") != "access":
             raise ValueError("wrong token type")
+        req.state.account_id = payload["userId"]
         return payload["userId"]
     except Exception:
         raise HTTPException(status_code=401, detail="Invalid or expired access token")
@@ -66,6 +71,10 @@ load_service_env(
     os.path.join(os.path.dirname(__file__), ".env"),
     os.path.join(os.path.dirname(__file__), "..", "backend", ".env"),
 )
+
+from observability.sentry_init import init_sentry
+
+init_sentry()  # no-op unless SENTRY_DSN is set
 
 JWT_ACCESS_SECRET = os.environ.get("JWT_ACCESS_SECRET", "")
 if not JWT_ACCESS_SECRET:
@@ -132,6 +141,10 @@ app = FastAPI(
 
 _allowed_origins_raw = os.environ.get("ALLOWED_ORIGINS", "http://localhost:3000,http://127.0.0.1:3000")
 _allowed_origins = [o.strip() for o in _allowed_origins_raw.split(",") if o.strip()]
+
+from observability.request_log import install_request_log
+
+install_request_log(app)
 
 app.add_middleware(
     CORSMiddleware,
