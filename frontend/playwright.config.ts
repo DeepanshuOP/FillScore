@@ -86,8 +86,12 @@ export default defineConfig({
         JWT_ACCESS_SECRET: backendEnv.JWT_ACCESS_SECRET,
         MONGODB_URI: mongoUri,
         ALLOWED_ORIGINS: SITE,
-        GROQ_API_KEY: 'bogus', // never used: the e2e specs make no live LLM calls
+        // Dummy provider keys make the router treat providers as configured; the guard below makes any
+        // attempted provider call raise (agents/llm_router.py), so no outbound LLM call is possible.
+        GROQ_API_KEY: 'bogus',
         OPENROUTER_API_KEY: 'bogus',
+        GEMINI_API_KEY: 'bogus',
+        FILLSCORE_E2E_NO_LLM: '1',
       },
       reuseExistingServer: false,
       timeout: 120_000,
