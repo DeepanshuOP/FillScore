@@ -25,7 +25,7 @@ _PERCENT_KEYS = {
     "maker_ratio", "pct_beating_vwap", "pct_negative_slippage", "adverse_rate",
     "top_hour_trade_fraction", "top_symbol_notional_fraction", "target_ratio",
 }
-_PERCENT_PARENTS = {"adverse_rate_by_symbol", "symbol_notional_shares"}
+_PERCENT_PARENTS = {"adverse_rate_by_symbol", "symbol_notional_shares", "adverse_share"}
 _COUNT_KEYS = {"trade_count", "total_trades", "longest_taker_streak"}
 
 _UNIT_BPS = re.compile(r"\s*(?:bps|basis points)\b", re.I)
@@ -204,10 +204,40 @@ def prompt_view(packet_dict: dict) -> dict:
     return {k: v for k, v in packet_dict.items() if k not in _SAVINGS_KEYS}
 
 
-def packet_ctx(fee, risk, liquidity, alpha) -> dict[str, dict]:
+def enrichment_ctx(trades) -> dict[str, dict]:
+    """`markout.*` and `spread.*` placeholder namespaces (4a). Empty unless trades carry `postPrices` /
+    `spreadBps` enrichment, so un-enriched accounts keep byte-identical prompts. All values deterministic."""
+    from agents.metrics.markout_packet import HORIZONS_S, build_markout_summary
+    ctx: dict[str, dict] = {}
+    summary = build_markout_summary(trades or [])
+    mk: dict = {"adverse_share": {}}
+    for h in HORIZONS_S:
+        s = summary[str(h)]
+        if s["n"] == 0:
+            continue
+        mk[f"n_fills_h{h}"] = s["n"]
+        for stat in ("mean", "weighted_mean", "median", "p10", "p90"):
+            mk[f"h{h}_{stat}_bps"] = s[f"{stat}_bps"]
+        for side in ("maker", "taker"):
+            mk[f"h{h}_{side}_mean_bps"] = s[side]["mean_bps"]
+        mk["adverse_share"][f"h{h}"] = s["adverse_share"]
+    if mk["adverse_share"]:
+        ctx["markout"] = mk
+    cs = [t["spreadBps"]["cs"] for t in trades or [] if (t.get("spreadBps") or {}).get("cs") is not None]
+    ar = [t["spreadBps"]["ar"] for t in trades or [] if (t.get("spreadBps") or {}).get("ar") is not None]
+    hs = [t["halfSpreadBps"] for t in trades or [] if t.get("halfSpreadBps") is not None]
+    if cs and ar and hs:
+        cs_m, ar_m = sum(cs) / len(cs), sum(ar) / len(ar)
+        ctx["spread"] = {"cs_bps": cs_m, "ar_bps": ar_m, "conservative_bps": min(cs_m, ar_m),
+                         "half_spread_bps": min(cs_m, ar_m) / 2, "n_fills_priced": len(hs)}   # always conservative / 2
+    return ctx
+
+
+def packet_ctx(fee, risk, liquidity, alpha, trades=None) -> dict[str, dict]:
     return {
         "fee": prompt_view(fee.to_prompt_dict()),
         "risk": risk.to_prompt_dict(),
         "liquidity": liquidity.to_prompt_dict(),
         "alpha": alpha.to_prompt_dict(),
+        **(enrichment_ctx(trades) if trades else {}),
     }

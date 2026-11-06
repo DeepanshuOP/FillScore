@@ -10,6 +10,7 @@ import { scoreTrade, scoreTiming, computeArrivalSlippageBps, computeFeeDragBps }
 import { aggregateCostAttribution } from '../scoring/attribution';
 import { tradeFeeUsd, FEE_USD_EXPR, computeFeeUsd } from '../scoring/fees';
 import { ReportService } from '../services/ReportService';
+import { summariseMarkouts, MarkoutTrade } from '../analytics/markouts';
 import { descriptiveAudit } from '../services/auditText';
 import { EnrichedTrade } from '../types';
 import rateLimit from 'express-rate-limit';
@@ -624,6 +625,7 @@ auditRouter.get('/analytics', resolveAccount, async (req, res) => {
       scoreDistribution: Object.entries(buckets)
         .map(([grade, count]) => ({ grade, count })),
       hourlyScores,
+      markouts: summariseMarkouts(trades as unknown as MarkoutTrade[]),
       totalTrades: trades.length
     })
 

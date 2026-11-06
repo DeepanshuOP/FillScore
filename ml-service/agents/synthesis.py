@@ -31,7 +31,7 @@ from agents.schemas import ConflictEntry, Recommendation, SynthesisLLMOutput, Sy
 ROLE = "synthesis"
 MAX_TOKENS = 1000
 AGENT = "synthesis"
-NAMESPACES = ["fee", "risk", "liquidity", "alpha"]
+NAMESPACES = ["fee", "risk", "liquidity", "alpha", "markout", "spread"]   # last two exist only for enriched trades
 # Packet-only fields (a {{cf.*}} placeholder here is unknown); rationales also get the effect keys.
 TEXT_PATTERNS = ["headline", "narrative", "conflictLedger.*.between", "conflictLedger.*.rule_applied",
                  "conflictLedger.*.winner"]

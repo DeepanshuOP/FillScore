@@ -5,6 +5,8 @@ import { makerRatioNote } from '../utils/makerAdvice';
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "../components/Navbar";
 import WhaleCorrelation from "./WhaleCorrelation";
+import MarkoutCard from "./MarkoutCard";
+import type { MarkoutHorizon } from "../utils/markoutCopy";
 import { useAuth } from "../context/AuthContext";
 import { authFetch } from "../lib/authFetch";
 import { resolveIdentityState } from "../utils/identityResolver";
@@ -56,6 +58,7 @@ interface AnalyticsData {
   symbolBreakdown: SymbolData[];
   scoreDistribution: DistributionBar[];
   hourlyScores: HourlyScore[];
+  markouts?: MarkoutHorizon[];
   totalTrades: number;
 }
 
@@ -449,6 +452,8 @@ function AnalyticsContent() {
             <div className="flex items-center gap-1.5 pl-4 border-l border-[rgba(255,255,255,0.06)]"><div className="w-2.5 h-2.5 rounded-[2px] bg-[rgba(255,255,255,0.02)] border border-[#888078] border-opacity-20"></div>Faint &nbsp;&mdash;&nbsp; Low activity</div>
           </div>
         </section>
+
+        <MarkoutCard rows={data.markouts} />
 
         {/* SECTION 2 — TWO-COLUMN GRID (below heatmap) */}
         <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[24px]">
