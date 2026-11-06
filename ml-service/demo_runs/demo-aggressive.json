@@ -16,7 +16,7 @@
     "liquidity": {
       "agent": "liquidity_scout",
       "liquidityRating": "GOOD",
-      "slippageRoot": "Market orders executed with an average slippage of -0.0 bps and a median of 0.0 bps, indicating minimal impact on the order book.",
+      "slippageRoot": "Market orders executed with an average slippage of 0.0 bps and a median of 0.0 bps, indicating minimal impact on the order book.",
       "cited_evidence": [],
       "severity": "LOW",
       "confidence": 0.0,
@@ -275,13 +275,6 @@
           "claim_text": "Negative slippage filled 42.6% of trades, indicating better than arrival price in many cases.",
           "evidence_keys": [],
           "rebuts": "P1b"
-        },
-        {
-          "side": "prosecution",
-          "claim_id": "P2a",
-          "claim_text": "The trader incurred a fee drag of 10.0 bps due to a high maker ratio of 22.7% and 68 market orders.",
-          "evidence_keys": [],
-          "rebuts": "D1a"
         },
         {
           "side": "defense",

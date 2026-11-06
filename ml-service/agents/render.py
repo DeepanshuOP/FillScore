@@ -55,6 +55,11 @@ def _is_int(seg: str) -> bool:
     return seg.isdigit()
 
 
+def _no_neg_zero(s: str) -> str:
+    """3a G0: a value that rounds to zero reads "0.0", never "-0.0"."""
+    return s[1:] if s == "-0.0" else s
+
+
 def format_value(path: list[str], value: Any) -> str:
     named = [s for s in path if not _is_int(s)]
     k = named[-1] if named else ""
@@ -76,11 +81,12 @@ def format_value(path: list[str], value: Any) -> str:
     if p == "evidence_counts":
         return f"{int(round(x)):,}"
     if k.endswith("_usd"):
-        return f"-${abs(x):,.2f}" if x < 0 else f"${x:,.2f}"
+        s = f"{abs(x):,.2f}"
+        return f"-${s}" if x < 0 and s != "0.00" else f"${s}"
     if k.endswith("_bps"):
-        return f"{x:.1f} bps"
+        return f"{_no_neg_zero(f'{x:.1f}')} bps"
     if k in _PERCENT_KEYS or p in _PERCENT_PARENTS:
-        return f"{x * 100:.1f}%"
+        return f"{_no_neg_zero(f'{x * 100:.1f}')}%"
     if k.endswith("_count") or k in _COUNT_KEYS or k.startswith("n_"):
         return f"{int(round(x)):,}"
     if is_hour:

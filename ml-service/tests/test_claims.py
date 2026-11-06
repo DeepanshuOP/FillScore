@@ -227,3 +227,31 @@ def test_a_conflict_entry_with_advice_is_dropped():
     assert [e.between for e in result.synthesis.conflictLedger] == ["fee_optimizer vs liquidity_scout"]
     assert result.claims["flagged_first_pass"] == 1
     assert result.claims["redactions"][0]["field"] == "conflictLedger.0.rule_applied"
+
+
+# 3a G0: causal connectives are flagged in synthesis, debate and finding text unless the sentence describes a
+# PASSED finding of the matching action. Fixture sentences are hand-written; the expected flags are the terms.
+CAUSE = "The trader incurred a fee drag of 10.0 bps due to a high maker ratio of 22.7%."
+
+
+def test_causal_connective_flagged_when_action_not_passed():
+    # "due to" matches; cue "fee drag"/"fee"/"maker" -> maker_instead_of_taker, not passed -> flagged
+    assert flag_sentences(CAUSE, set(), "narrative") == [
+        ClaimFlag("narrative", 0, ["due to"], ["maker_instead_of_taker"])]
+    assert flag_sentences(CAUSE, set(), "narrative", strict=True)[0].terms == ["due to"]
+
+
+def test_causal_connective_excused_by_passed_matching_action():
+    assert flag_sentences(CAUSE, MAKER, "narrative") == []
+
+
+def test_causal_connective_without_action_cue_is_flagged_even_when_something_passed():
+    # no action cue in the sentence -> nothing it describes is a passed finding
+    s = "Losses were driven by volatility."
+    assert [f.terms for f in flag_sentences(s, MAKER, "narrative")] == [["driven by"]]
+
+
+def test_every_connective_is_flagged():
+    for t in ["due to", "because of", "resulting from", "caused by", "driven by", "led to", "as a result of"]:
+        assert flag_sentences(f"Costs rose {t} the open.", set(), "x"), t
+    assert flag_sentences("Costs rose, resulting in a higher rate.", set(), "x") == []

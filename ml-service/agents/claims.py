@@ -29,6 +29,10 @@ CAUSAL_TERMS += ["manipulation", "manipulated", "spoof", "spoofing", "front-run"
                  "frontrunning"]
 THEORY_TERMS = ["Cont-Kukanov-Stoikov", "Cont Kukanov Stoikov", "Kukanov", "Almgren-Chriss", "Almgren", "Chriss",
                 "Kyle"]
+# 3a G0: causal connectives are flagged in every text (debate, synthesis, findings) unless the sentence
+# describes a PASSED verified finding of the matching action (same excuse as the counterfactual terms).
+CONNECTIVE_TERMS = ["due to", "because of", "resulting from", "caused by", "driven by", "led to",
+                    "as a result of"]
 ACTION_CUES: dict[str, list[str]] = {
     "maker_instead_of_taker": ["taker", "maker", "fee", "fees", "fee drag"],
     "exclude_hours": ["hour", "hours", "UTC", "session", "sessions", "off-peak", "time of day"],
@@ -45,7 +49,7 @@ def _rx(terms: list[str]) -> re.Pattern:
 _CAUSAL_RE = _rx(CAUSAL_TERMS + THEORY_TERMS)
 _WHALE_RE = _rx(WHALE_TERMS)
 _WHALE_KEY_RE = re.compile(r"\{\{\s*(?:risk\.whale_adverse_count|whale\.[A-Za-z0-9_.]+)\s*\}\}")
-_COUNTER_RE = _rx(COUNTERFACTUAL_TERMS)
+_COUNTER_RE = _rx(COUNTERFACTUAL_TERMS + CONNECTIVE_TERMS)
 _ADVICE_RE = _rx(ADVICE_TERMS)
 _CUE_RES = {a: _rx(c) for a, c in ACTION_CUES.items()}
 

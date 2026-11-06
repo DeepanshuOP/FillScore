@@ -134,3 +134,10 @@ def test_packet_savings_are_not_placeholders():
     assert [(p.kind, p.token) for p in r.problems] == [("unknown_placeholder", "{{fee.savings_at_080_usd}}")]
     assert fee.to_prompt_dict()["savings_at_080_usd"] == 0.08       # the packet itself is unchanged
     assert render("Fees {{fee.total_fee_paid_usd}}", ctx).text == "Fees $9.70"
+
+
+def test_negative_zero_renders_as_zero():
+    # -0.04 rounds to -0.0 at one decimal; the display must read 0.0, never -0.0
+    assert format_value(["liquidity", "avg_slippage_bps"], -0.04) == "0.0 bps"
+    assert format_value(["liquidity", "avg_slippage_bps"], -0.06) == "-0.1 bps"
+    assert format_value(["fee", "total_fee_paid_usd"], -0.001) == "$0.00"
