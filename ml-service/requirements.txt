@@ -19,3 +19,6 @@ groq==1.7.0
 motor==3.7.1
 pyjwt==2.15.1
 pyyaml==6.0.3
+sentry-sdk
+opentelemetry-sdk
+opentelemetry-exporter-otlp-proto-http

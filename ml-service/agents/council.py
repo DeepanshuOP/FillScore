@@ -551,6 +551,8 @@ async def run_council_pipeline(
     from agents.persistence import save_council_run
     from config.versions import METRICS_VERSION, PROMPT_VERSION
 
+    from observability import tracing
+    trace_id = tracing.start_run(account_id)   # one trace per Council run; spans are no-ops without Langfuse env
     llm = llm or llm_router.get_default_router()
     context = TradeContext(
         userId=user_id,
@@ -664,6 +666,7 @@ async def run_council_pipeline(
                     "n_calls_ok": n_ok,
                     "metrics_version": METRICS_VERSION,
                     "route_config_hash": llm.config.hash,
+                    "trace_id": trace_id,
                     "llm_calls": list(run.telemetry),
                     # LLM self-reported confidence, kept for calibration analysis only
                     "llm_self_confidence": {

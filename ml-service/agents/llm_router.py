@@ -418,6 +418,12 @@ class LLMRouter:
 
         def record(outcome: str, usage: dict | None = None, error: dict | None = None):
             usage = usage or {}
+            from observability import tracing   # no-op unless a run trace + Langfuse env exist
+            tracing.emit_attempt(
+                role=role, provider=c.provider, model=c.model, attempt=state["attempt"],
+                latency_ms=(_clock() - state["t0"]) * 1000, prompt_tokens=usage.get("prompt_tokens", 0),
+                completion_tokens=usage.get("completion_tokens", 0), outcome=outcome,
+                paced_wait_s=state.get("paced_wait", 0.0), system=system, user=user, output=state.get("content"))
             if telemetry is not None:
                 entry = {
                     "role": role,
@@ -451,6 +457,7 @@ class LLMRouter:
                 raise AttemptCapReached()
             if wait > 0:
                 self.paced_wait_s += wait
+                state["paced_wait"] = wait
                 await (self._sleep or asyncio.sleep)(wait)
             self.http_attempts += 1
             state["attempt"] += 1
@@ -489,6 +496,7 @@ class LLMRouter:
             content = resp.choices[0].message.content
         except Exception:
             content = None
+        state["content"] = str(content) if content else None
         if not content or not str(content).strip():
             record("empty", usage)
             return {"attempt": state["attempt"], "parsed": None, "outcome": "empty"}
