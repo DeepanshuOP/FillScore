@@ -7,7 +7,26 @@ import {
   groundingLine,
   verificationLine,
   splitFindings,
+  noFindingsLine,
+  NO_FINDINGS_MESSAGE,
 } from './councilFindings';
+
+describe('noFindingsLine (3a G1)', () => {
+  const f = { text: 't', effect_usd: 5, verified: true } as never;
+  it('says why when a complete run has no verified finding', () => {
+    expect(noFindingsLine({ findings: [] })).toBe(
+      'No counterfactual passed the materiality threshold (≥ max($1, 0.5% of fees)).',
+    );
+    expect(noFindingsLine({ degraded: false })).toBe(NO_FINDINGS_MESSAGE);
+    // an unverified finding is not shown, so the empty state still applies
+    expect(noFindingsLine({ findings: [{ text: 't', effect_usd: 5, verified: false } as never] })).toBe(NO_FINDINGS_MESSAGE);
+  });
+  it('stays silent when there is a verified finding, a degraded run, or no synthesis', () => {
+    expect(noFindingsLine({ findings: [f] })).toBe('');
+    expect(noFindingsLine({ degraded: true, findings: [] })).toBe('');
+    expect(noFindingsLine(undefined)).toBe('');
+  });
+});
 
 describe('formatEffectUsd', () => {
   it('formats with 2dp and thousands commas', () => {

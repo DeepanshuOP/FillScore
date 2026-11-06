@@ -87,9 +87,11 @@ export async function runSyncJob(accountId: string, syncId: string, work: (ctl: 
 
 export async function getSyncStatus(accountId: string) {
     const job = await SyncJob.findOne({ accountId }).lean();
+    // 3a G5 #6: the connections' current lookback wins unless a job is running (it ran with its own value)
+    const conns = await ExchangeConnection.find({ accountId }, { lookbackDays: 1 }).lean();
+    const currentLookback = conns.length ? Math.max(...conns.map(c => c.lookbackDays ?? INGEST_DAYS_BACK)) : undefined;
     if (!job) {
-        const conns = await ExchangeConnection.find({ accountId }, { lookbackDays: 1 }).lean();
-        const lookbackDays = conns.length ? Math.max(...conns.map(c => c.lookbackDays ?? INGEST_DAYS_BACK)) : undefined;
+        const lookbackDays = currentLookback;
         return { state: 'idle' as const, symbolsDone: 0, symbolsTotal: 0, tradesAdded: 0, lookbackDays };
     }
     const lost = job.state === 'running' && job.syncLockExpiresAt.getTime() < Date.now();
@@ -97,7 +99,7 @@ export async function getSyncStatus(accountId: string) {
         state: lost ? ('failed' as const) : job.state,
         syncId: job.syncId,
         symbolsDone: job.symbolsDone, symbolsTotal: job.symbolsTotal, tradesAdded: job.tradesAdded,
-        lookbackDays: job.lookbackDays,
+        lookbackDays: job.state === 'running' && !lost ? job.lookbackDays : (currentLookback ?? job.lookbackDays),
         partial: !!job.partial, partialReason: job.partialReason, partialMessage: job.partialMessage,
         error: lost ? 'lease_expired' : job.error,
         startedAt: job.startedAt, finishedAt: job.finishedAt,

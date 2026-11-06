@@ -1,7 +1,7 @@
 'use client';
 
 import { lookbackLabel } from '../utils/navLinks';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/authFetch';
@@ -43,6 +43,9 @@ export default function OnboardingPage() {
   const [extraSymbols, setExtraSymbols] = useState('');
   const [usedLookback, setUsedLookback] = useState<number | null>(null);
   const [syncNote, setSyncNote] = useState<string | null>(null);
+
+  const pollAbort = useRef<AbortController | null>(null);
+  useEffect(() => () => pollAbort.current?.abort(), []);   // 3a G5 #9: stop polling on unmount (above the early return)
 
   // Stored lookback (closes "no endpoint exposes it") and resume of a job already running.
   useEffect(() => {
@@ -136,9 +139,13 @@ export default function OnboardingPage() {
 
   /** Polls the background job every 3 s, showing progress, until it finishes. */
   const followSync = async () => {
+    pollAbort.current?.abort();
+    const ctl = new AbortController();
+    pollAbort.current = ctl;
     setSyncing(true);
     try {
       const final = await pollSyncStatus({
+        signal: ctl.signal,
         fetchStatus: async () => {
           const res = await authFetch(`${apiBase()}/onboarding/sync/status`, {}, { accessToken, refreshAccessToken });
           if (!res.ok) throw new Error('status_http_' + res.status);
@@ -148,9 +155,10 @@ export default function OnboardingPage() {
       });
       applyTerminal(final);
     } catch {
+      if (ctl.signal.aborted) return;   // unmounted or superseded: write nothing
       setErrorMsg(mapOnboardingError('network_error'));
     } finally {
-      setSyncing(false);
+      if (!ctl.signal.aborted) setSyncing(false);
     }
   };
 

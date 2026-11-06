@@ -82,6 +82,15 @@ describe('SyncJobService', () => {
         expect(await getSyncStatus(A)).toMatchObject({ state: 'idle', lookbackDays: 90 });
     });
 
+    it('3a G5 #6: after a finished job, status shows the connection lookback changed since, not the stale job value', async () => {
+        await ExchangeConnection.create({ accountId: A, exchange: 'binance', encryptedApiKey: encryptApiKey('k'), encryptedApiSecret: encryptApiKey('s'), lookbackDays: 30 });
+        const l = (await acquireSyncLock(A, 30))!;
+        await runSyncJob(A, l.syncId, async () => ({ state: 'done', result: {} }));
+        expect(await getSyncStatus(A)).toMatchObject({ state: 'done', lookbackDays: 30 });
+        await ExchangeConnection.updateOne({ accountId: A }, { $set: { lookbackDays: 90 } });
+        expect(await getSyncStatus(A)).toMatchObject({ state: 'done', lookbackDays: 90 });
+    });
+
     it('the lock is not freed while in-flight work is still settling after the cap', async () => {
         const l = (await acquireSyncLock(A, 365))!;
         let finishWork!: () => void;

@@ -22,16 +22,21 @@ export async function pollSyncStatus(opts: {
   sleep?: (ms: number) => Promise<void>;
   intervalMs?: number;
   maxPolls?: number;
+  /** Abort on unmount: no further fetch, and a late response is dropped (progress writes stay ordered). */
+  signal?: AbortSignal;
 }): Promise<SyncStatus> {
   const sleep = opts.sleep ?? (ms => new Promise<void>(r => setTimeout(r, ms)));
   const interval = opts.intervalMs ?? POLL_INTERVAL_MS;
   const max = opts.maxPolls ?? 400; // 400 x 3 s = 20 min, longer than the server's 15 min lease
   for (let i = 0; i < max; i++) {
+    if (opts.signal?.aborted) throw new Error('sync_poll_cancelled');
     const s = await opts.fetchStatus();
+    if (opts.signal?.aborted) throw new Error('sync_poll_cancelled');
     opts.onUpdate?.(s);
     if (s.state !== 'running') return s;
     await sleep(interval);
   }
+  if (opts.signal?.aborted) throw new Error('sync_poll_cancelled');
   throw new Error('sync_poll_timeout');
 }
 

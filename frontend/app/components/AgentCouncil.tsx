@@ -18,6 +18,7 @@ import {
   groundingLine,
   verificationLine,
   splitFindings,
+  noFindingsLine,
   type CouncilFinding,
   type CouncilObservation,
   type CouncilGrounding,
@@ -462,6 +463,10 @@ export default function AgentCouncil({
             </div>
           ) : (
             <p className="text-slate-300 text-sm leading-relaxed">{synthesis.headline}</p>
+          )}
+
+          {noFindingsLine(synthesis) && (
+            <p className="text-slate-500 text-xs">{noFindingsLine(synthesis)}</p>
           )}
 
           {!synthesis.degraded && findings.length > 0 && (

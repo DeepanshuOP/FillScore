@@ -68,6 +68,17 @@ export function verificationLine(v: CouncilVerification | null | undefined): str
   }`;
 }
 
+export const NO_FINDINGS_MESSAGE =
+  'No counterfactual passed the materiality threshold (≥ max($1, 0.5% of fees)).'; // wording fixed by the brief; the gate itself is strict (>), see verification.py
+
+/** The empty-state line for a complete (non-degraded) run whose verified findings list is empty, else ''. */
+export function noFindingsLine(
+  synthesis: { degraded?: boolean; findings?: CouncilFinding[] } | null | undefined,
+): string {
+  if (!synthesis || synthesis.degraded) return '';
+  return splitFindings(synthesis).findings.length === 0 ? NO_FINDINGS_MESSAGE : '';
+}
+
 /** Only verified findings with a finite recomputed effect are ever shown with a dollar value. */
 export function splitFindings(
   synthesis: { findings?: CouncilFinding[]; observations?: CouncilObservation[] } | null | undefined,

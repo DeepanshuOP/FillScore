@@ -18,6 +18,31 @@ describe('pollSyncStatus', () => {
       expect((await pollSyncStatus({ fetchStatus: async () => st(s), sleep: async () => {} })).state).toBe(s);
     }
   });
+  it('3a G5 #9: an aborted poll stops, never calls onUpdate again and rejects sync_poll_cancelled', async () => {
+    const ctl = new AbortController();
+    const seen: string[] = [];
+    let fetches = 0;
+    const p = pollSyncStatus({
+      signal: ctl.signal,
+      fetchStatus: async () => { fetches++; return st('running'); },
+      sleep: async () => { ctl.abort(); },   // unmount happens while waiting between polls
+      onUpdate: s => seen.push(s.state),
+    });
+    await expect(p).rejects.toThrow('sync_poll_cancelled');
+    expect(fetches).toBe(1);
+    expect(seen).toEqual(['running']);        // 1 update before the abort, none after
+  });
+  it('3a G5 #9: a response that arrives after the abort is not reported', async () => {
+    const ctl = new AbortController();
+    const seen: string[] = [];
+    const p = pollSyncStatus({
+      signal: ctl.signal,
+      fetchStatus: async () => { ctl.abort(); return st('done'); },   // aborted while the request was in flight
+      onUpdate: s => seen.push(s.state),
+    });
+    await expect(p).rejects.toThrow('sync_poll_cancelled');
+    expect(seen).toEqual([]);
+  });
   it('gives up after maxPolls', async () => {
     await expect(pollSyncStatus({ fetchStatus: async () => st('running'), sleep: async () => {}, maxPolls: 3 })).rejects.toThrow('sync_poll_timeout');
   });
