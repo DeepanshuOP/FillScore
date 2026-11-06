@@ -19,6 +19,7 @@ import {
   verificationLine,
   splitFindings,
   noFindingsLine,
+  notComputableLine,
   type CouncilFinding,
   type CouncilObservation,
   type CouncilGrounding,
@@ -468,6 +469,9 @@ export default function AgentCouncil({
           {noFindingsLine(synthesis) && (
             <p className="text-slate-500 text-xs">{noFindingsLine(synthesis)}</p>
           )}
+          {!synthesis.degraded && notComputableLine(verification) && (
+            <p className="text-slate-500 text-xs">{notComputableLine(verification)}</p>
+          )}
 
           {!synthesis.degraded && findings.length > 0 && (
             <div className="space-y-2">
@@ -528,7 +532,7 @@ export default function AgentCouncil({
       {totalLatencyMs !== null && (
         <p className="text-slate-600 text-xs text-right">
           {cached
-            ? "Saved analysis of the same trades (no new AI calls)"
+            ? "Stored analysis of the same trades (no new AI calls)"
             : `Analysis completed in ${(totalLatencyMs / 1000).toFixed(2)}s`}
         </p>
       )}

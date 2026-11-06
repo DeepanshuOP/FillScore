@@ -68,8 +68,18 @@ export function verificationLine(v: CouncilVerification | null | undefined): str
   }`;
 }
 
+// The gate is strict (effect > max($1, 0.5% of fees), verification.py `cf.effect_usd > materiality_threshold`).
 export const NO_FINDINGS_MESSAGE =
-  'No counterfactual passed the materiality threshold (≥ max($1, 0.5% of fees)).'; // wording fixed by the brief; the gate itself is strict (>), see verification.py
+  'No counterfactual passed the materiality threshold (> max($1, 0.5% of fees)).';
+
+export const NOT_COMPUTABLE_MESSAGE = 'A counterfactual could not be computed from the available data.';
+
+/** Separate line when the gate marked any proposed counterfactual `not_computable:*` (rejected or dropped). */
+export function notComputableLine(v: CouncilVerification | null | undefined): string {
+  if (!v) return '';
+  const hit = [...(v.rejected ?? []), ...(v.dropped ?? [])].some((x) => typeof x?.reason === 'string' && x.reason.startsWith('not_computable'));
+  return hit ? NOT_COMPUTABLE_MESSAGE : '';
+}
 
 /** The empty-state line for a complete (non-degraded) run whose verified findings list is empty, else ''. */
 export function noFindingsLine(

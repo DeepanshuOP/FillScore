@@ -8,14 +8,16 @@ import {
   verificationLine,
   splitFindings,
   noFindingsLine,
+  notComputableLine,
   NO_FINDINGS_MESSAGE,
+  NOT_COMPUTABLE_MESSAGE,
 } from './councilFindings';
 
 describe('noFindingsLine (3a G1)', () => {
   const f = { text: 't', effect_usd: 5, verified: true } as never;
   it('says why when a complete run has no verified finding', () => {
     expect(noFindingsLine({ findings: [] })).toBe(
-      'No counterfactual passed the materiality threshold (≥ max($1, 0.5% of fees)).',
+      'No counterfactual passed the materiality threshold (> max($1, 0.5% of fees)).',
     );
     expect(noFindingsLine({ degraded: false })).toBe(NO_FINDINGS_MESSAGE);
     // an unverified finding is not shown, so the empty state still applies
@@ -25,6 +27,26 @@ describe('noFindingsLine (3a G1)', () => {
     expect(noFindingsLine({ findings: [f] })).toBe('');
     expect(noFindingsLine({ degraded: true, findings: [] })).toBe('');
     expect(noFindingsLine(undefined)).toBe('');
+  });
+});
+
+describe('notComputableLine', () => {
+  const v = (rejected: string[], dropped: string[] = []) => ({
+    proposed: 2, passed: 0, observations: 0, re_reasoned: 0,
+    rejected: rejected.map((reason) => ({ action: 'a', params: {}, reason })),
+    dropped: dropped.map((reason) => ({ action: 'a', params: {}, reason })),
+  });
+  it('has its own fixed wording', () => {
+    expect(NOT_COMPUTABLE_MESSAGE).toBe('A counterfactual could not be computed from the available data.');
+  });
+  it('shows when a rejected or dropped item is not_computable', () => {
+    expect(notComputableLine(v(['not_computable:no_trades']))).toBe(NOT_COMPUTABLE_MESSAGE);
+    expect(notComputableLine(v([], ['not_computable:bad_params']))).toBe(NOT_COMPUTABLE_MESSAGE);
+  });
+  it('is silent for below-threshold rejections or no verification', () => {
+    expect(notComputableLine(v(['below_materiality']))).toBe('');
+    expect(notComputableLine(v([]))).toBe('');
+    expect(notComputableLine(null)).toBe('');
   });
 });
 
