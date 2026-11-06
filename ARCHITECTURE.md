@@ -153,6 +153,17 @@ fixed messages. A run budget (`config/budget.py`) refuses runs past the free-tie
 of letting a mid-run 429 degrade the result into default verdicts. `config/env_loader.py` fixes env
 precedence: real environment, then `backend/.env` for shared keys, then `ml-service/.env`.
 
+Post-trade analytics (4a, additional only; never an input to the FillScore composite or the demo grades):
+`marketdata/` fetches Binance public 1s klines (SHA-256 verified, disk cache) and reads the price at
+t+1/5/30/60/300 s after each fill (`price_path.py`, staleness cap 5 s, else null). `agents/metrics/markout_packet.py`
+(`markout.*`, sign: positive = price moved in the trader's favour) and `spread_estimators.py` (`spread.*`,
+Corwin-Schultz and Abdi-Ranaldo, the smaller is used) feed `maker_instead_of_taker`, which is now
+`0.5 * (fee + half-spread - adverse selection)` (`spread_aware=False` keeps the fee-only model). Per-trade fields
+`postPrices`, `spreadBps`, `halfSpreadBps`, `markoutVersion` are written only by `scripts/backfill_markouts.py`
+(dry run by default). The backend mirrors the markout convention in `backend/src/analytics/markouts.ts` for the
+analytics card.
+`FILLSCORE_TRACING=0` (set by `tests/conftest.py`) turns off Langfuse export and Sentry in tests.
+
 ## 4. Frontend (`frontend/app`)
 
 | Route | Purpose |
