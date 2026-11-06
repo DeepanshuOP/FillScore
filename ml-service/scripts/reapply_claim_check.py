@@ -56,8 +56,18 @@ def reapply(doc: dict) -> tuple[dict, list[tuple[str, str, str]]]:
     whale_ok = whale_n > 0
     whale_token = f"{int(round(whale_n)):,}" if whale_ok else None
 
+    ledger = r.setdefault("claims", {})
+
     def scrub(text: str, field: str, strict: bool = False) -> str:
-        out, _ = redact_claims(text, passed, field, strict=strict, whale_ok=whale_ok, whale_token=whale_token)
+        out, flags = redact_claims(text, passed, field, strict=strict, whale_ok=whale_ok, whale_token=whale_token)
+        # Keep the stored claims ledger in step with what was just redacted: strict (debate) sentences count into
+        # debate_flagged / debate_redactions, synthesis sentences are appended to redactions. flagged_first_pass is
+        # the historical first-pass count and is not rewritten.
+        if flags and strict:
+            ledger["debate_flagged"] = int(ledger.get("debate_flagged", 0)) + len(flags)
+            ledger.setdefault("debate_redactions", []).extend(f.to_dict() for f in flags)
+        elif flags:
+            ledger.setdefault("redactions", []).extend(f.to_dict() for f in flags)
         out = re.sub(r"(?<![\d.])-(0\.0)(?= bps|%)", r"\1", out)   # negative zero, as in render._no_neg_zero
         if out != text:
             changes.append((field, text, out))
@@ -113,7 +123,10 @@ def reapply(doc: dict) -> tuple[dict, list[tuple[str, str, str]]]:
     if d.get("key_dispute"):
         kd = scrub(d["key_dispute"], "key_dispute", strict=True)
         d["key_dispute"] = kd if kd.strip() else KEY_DISPUTE_FALLBACK
-    if dict(numeric_leaves(doc)) != dict(numeric_leaves(new)):
+    # The claims ledger is bookkeeping about the redactions themselves, not a displayed value: its counts are
+    # expected to move, so it is excluded from the "no number changes" guard.
+    shown = lambda d: {p: v for p, v in numeric_leaves(d) if not p.startswith(".council_result.claims.")}
+    if shown(doc) != shown(new):
         raise Refuse("a numeric field would change")
     return new, changes
 
