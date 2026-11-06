@@ -1,0 +1,465 @@
+{
+ "arm": "council",
+ "attempts": 13,
+ "council_result": {
+  "alpha": {
+   "agent": "alpha_architect",
+   "alphaRating": "POSITIVE",
+   "bestAlternative": "Executions consistently outperformed the VWAP benchmark, with a median deviation of -62.5 bps and an average deviation of -65.2 bps.",
+   "cited_evidence": [],
+   "confidence": 0.0,
+   "evidence_coverage_detail": {
+    "available_count": 15,
+    "cited_count": 0,
+    "coverage_score": 0.0
+   },
+   "flags": [
+    "consistent_vwap_outperformance",
+    "stable_regime"
+   ],
+   "severity": "LOW"
+  },
+  "cached": false,
+  "claims": {
+   "debate_flagged": 5,
+   "debate_redactions": [
+    {
+     "action_types": [
+      "maker_instead_of_taker"
+     ],
+     "field": "prosecution_summary",
+     "sentence_index": 0,
+     "terms": [
+      "could have"
+     ]
+    },
+    {
+     "action_types": [
+      "maker_instead_of_taker"
+     ],
+     "field": "debate.claims.2",
+     "sentence_index": 0,
+     "terms": [
+      "execution error"
+     ]
+    },
+    {
+     "action_types": [
+      "maker_instead_of_taker"
+     ],
+     "field": "debate.claims.4",
+     "sentence_index": 0,
+     "terms": [
+      "avoidable"
+     ]
+    },
+    {
+     "action_types": [],
+     "field": "debate.claims.5",
+     "sentence_index": 0,
+     "terms": [
+      "exogenous",
+      "kukanov",
+      "whale"
+     ]
+    },
+    {
+     "action_types": [
+      "maker_instead_of_taker"
+     ],
+     "field": "key_dispute",
+     "sentence_index": 1,
+     "terms": [
+      "execution error"
+     ]
+    }
+   ],
+   "flagged_first_pass": 0,
+   "redactions": [],
+   "regenerated": false
+  },
+  "debate_transcript": {
+   "claims": [
+    {
+     "claim_id": "P1a",
+     "claim_text": "The trader incurred a fee drag of 10.0 bps because only 22.7% were maker trades.",
+     "evidence_keys": [],
+     "rebuts": null,
+     "side": "prosecution"
+    },
+    {
+     "claim_id": "P1b",
+     "claim_text": "The trader executed 68 market orders, which are costlier than limit orders.",
+     "evidence_keys": [],
+     "rebuts": null,
+     "side": "prosecution"
+    },
+    {
+     "claim_id": "D1b",
+     "claim_text": "With 68 market orders, the trader achieved a 100.0% of trades better than VWAP, showing efficient execution despite market orders.",
+     "evidence_keys": [],
+     "rebuts": "P1b",
+     "side": "defense"
+    }
+   ],
+   "debate_latency_ms": 41097.38,
+   "defense_summary": "Adverse selection from large order flow explains the fee drag, and the trader achieved a 100.0% rate of beating VWAP, showing overall reasonable execution quality.",
+   "failed_turns": [],
+   "key_dispute": "Prosecution argues: The trader incurred a fee drag of 10.0 bps because only 22.7% were maker trades.",
+   "prosecution_summary": "Taker orders were 68 of 88 trades.",
+   "round_count": 2,
+   "turns_expected": 4,
+   "turns_ok": 4
+  },
+  "degraded": false,
+  "degraded_reasons": [],
+  "fee": {
+   "agent": "fee_optimizer",
+   "cited_evidence": [],
+   "confidence": 0.0,
+   "evidence_coverage_detail": {
+    "available_count": 12,
+    "cited_count": 0,
+    "coverage_score": 0.0
+   },
+   "feeRating": "WASTEFUL",
+   "flags": [
+    "high_taker_frequency",
+    "low_maker_participation"
+   ],
+   "recommendedAction": "The trader executed 68 taker orders against only 20 maker orders, resulting in a maker ratio of 22.7% and a fee drag of 10.0 bps.",
+   "severity": "MEDIUM"
+  },
+  "grounding": {
+   "duplicates_stripped": 0,
+   "faithfulness_after": 1.0,
+   "faithfulness_first_pass": 0.7353,
+   "fallbacks": [],
+   "numbers_checked": 28,
+   "per_agent": {
+    "alpha_architect": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": false,
+     "values_cited": 2,
+     "violations_first_pass": 0
+    },
+    "defense": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": true,
+     "values_cited": 6,
+     "violations_first_pass": 1
+    },
+    "fee_optimizer": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": false,
+     "values_cited": 4,
+     "violations_first_pass": 0
+    },
+    "liquidity_scout": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": false,
+     "values_cited": 2,
+     "violations_first_pass": 0
+    },
+    "prosecution": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": false,
+     "values_cited": 5,
+     "violations_first_pass": 0
+    },
+    "risk_auditor": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": false,
+     "values_cited": 4,
+     "violations_first_pass": 0
+    },
+    "synthesis": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": true,
+     "values_cited": 5,
+     "violations_first_pass": 8
+    }
+   },
+   "redactions": [],
+   "regenerations": 2,
+   "violations_first_pass": 9
+  },
+  "liquidity": {
+   "agent": "liquidity_scout",
+   "cited_evidence": [],
+   "confidence": 0.0,
+   "evidence_coverage_detail": {
+    "available_count": 18,
+    "cited_count": 0,
+    "coverage_score": 0.0
+   },
+   "flags": [],
+   "liquidityRating": "GOOD",
+   "severity": "LOW",
+   "slippageRoot": "Market orders executed with an average slippage of 0.0 bps and a median of 0.0 bps, indicating minimal impact on the order book."
+  },
+  "llm_calls": [
+   {
+    "attempt": 1,
+    "completion_tokens": 0,
+    "latency_ms": 374.95,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "http_429",
+    "prompt_tokens": 0,
+    "provider": "groq",
+    "role": "specialist",
+    "tokens": 0
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 178,
+    "latency_ms": 947.57,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 1039,
+    "provider": "groq",
+    "role": "specialist",
+    "tokens": 1217
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 183,
+    "latency_ms": 1094.29,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 671,
+    "provider": "groq",
+    "role": "specialist",
+    "tokens": 854
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 196,
+    "latency_ms": 1106.4,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 907,
+    "provider": "groq",
+    "role": "specialist",
+    "tokens": 1103
+   },
+   {
+    "attempt": 2,
+    "completion_tokens": 239,
+    "latency_ms": 17988.69,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 728,
+    "provider": "groq",
+    "role": "specialist",
+    "tokens": 967
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 202,
+    "latency_ms": 1576.48,
+    "model": "openai/gpt-oss-20b",
+    "outcome": "ok",
+    "prompt_tokens": 1888,
+    "provider": "groq",
+    "role": "debate",
+    "tokens": 2090
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 298,
+    "latency_ms": 2774.32,
+    "model": "openai/gpt-oss-20b",
+    "outcome": "ok",
+    "prompt_tokens": 2032,
+    "provider": "groq",
+    "role": "debate",
+    "tokens": 2330
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 259,
+    "latency_ms": 1042.81,
+    "model": "openai/gpt-oss-20b",
+    "outcome": "ok",
+    "prompt_tokens": 2083,
+    "provider": "groq",
+    "role": "debate",
+    "tokens": 2342
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 143,
+    "latency_ms": 12994.18,
+    "model": "openai/gpt-oss-20b",
+    "outcome": "ok",
+    "prompt_tokens": 1989,
+    "provider": "groq",
+    "role": "debate",
+    "tokens": 2132
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 192,
+    "latency_ms": 22356.32,
+    "model": "openai/gpt-oss-20b",
+    "outcome": "ok",
+    "prompt_tokens": 2065,
+    "provider": "groq",
+    "role": "debate",
+    "tokens": 2257
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 340,
+    "latency_ms": 1245.83,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 3076,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 3416
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 360,
+    "latency_ms": 1292.85,
+    "model": "openai/gpt-oss-120b",
+    "outcome": "ok",
+    "prompt_tokens": 3069,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 3429
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 188,
+    "latency_ms": 4647.01,
+    "model": "openai/gpt-oss-120b",
+    "outcome": "ok",
+    "prompt_tokens": 3048,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 3236
+   }
+  ],
+  "metrics_version": "1.1.0",
+  "modelUsage": {
+   "debate_model": "groq/openai/gpt-oss-20b",
+   "specialists_model": "groq/qwen/qwen3.8-27b",
+   "synthesis_model": "groq/qwen/qwen3.8-27b, groq/openai/gpt-oss-120b"
+  },
+  "n_calls_expected": 9,
+  "n_calls_ok": 9,
+  "prompt_version": "1.5.0",
+  "risk": {
+   "agent": "risk_auditor",
+   "cited_evidence": [],
+   "confidence": 0.0,
+   "evidence_coverage_detail": {
+    "available_count": 16,
+    "cited_count": 0,
+    "coverage_score": 0.0
+   },
+   "flags": [
+    "Notional was fully concentrated, with the top symbol at 100.0% of the total.",
+    "Adverse selection rate was 19.3%, driven by 17 adverse trades out of 88 total executions.",
+    "All adverse trades were classified as whale adverse events, indicating significant exposure to informed flow."
+   ],
+   "riskLevel": "HIGH",
+   "severity": "HIGH"
+  },
+  "route_config_hash": "9c3af0624a402f81",
+  "run_id": null,
+  "synthesis": {
+   "conflictLedger": [
+    {
+     "between": "fee_optimizer vs risk_auditor",
+     "rule_applied": "Fee priority in stable regime",
+     "winner": "fee_optimizer"
+    }
+   ],
+   "estimatedMonthlyCostUSD": 21.297563,
+   "findings": [],
+   "headline": "Trader incurred fee drag despite full VWAP outperformance",
+   "narrative": "The execution record showed a fee drag of 10.0 bps while the fills beat VWAP on every trade. Adverse selection occurred on a notable share of trades, and maker participation was limited.",
+   "observations": [],
+   "overallRating": "CRITICAL"
+  },
+  "tokenUsage": {
+   "completion_tokens": 2778,
+   "n_calls": 12,
+   "prompt_tokens": 22595,
+   "total_tokens": 25373
+  },
+  "totalLatencyMs": 67438.45,
+  "tradeContext": {
+   "alpha_packet_hash": "7d1237ec45c1a557",
+   "fee_packet_hash": "12c85adcffbad6c7",
+   "liquidity_packet_hash": "7325376b019d8520",
+   "regime": "STABLE",
+   "risk_packet_hash": "684a70fa45cad87c",
+   "symbol": "BTCUSDT",
+   "trade_count": 88,
+   "userId": "demo-aggressive"
+  },
+  "verification": {
+   "dropped": [
+    {
+     "action": "maker_instead_of_taker",
+     "params": {},
+     "reason": "invalid_params"
+    }
+   ],
+   "observations": 0,
+   "passed": 0,
+   "proposed": 1,
+   "re_reasoned": 1,
+   "rejected": [
+    {
+     "action": "maker_instead_of_taker",
+     "params": {},
+     "reason": "invalid_params"
+    }
+   ]
+  }
+ },
+ "golden_id": "demo-aggressive",
+ "meta": {
+  "arm": "council",
+  "prompt_version": "1.5.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "routes": {
+   "debate": [
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "groq-qwen3.8-27b"
+   ],
+   "specialist": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash"
+   ],
+   "synthesis": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-120b",
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite",
+    "groq-gpt-oss-20b"
+   ]
+  },
+  "synthesis_prompt_sha256": "161856d464391bff"
+ },
+ "run": 3,
+ "wall_s": 67.4
+}

@@ -1,0 +1,138 @@
+{
+ "arm": "single",
+ "attempts": 2,
+ "council_result": {
+  "arm": "single_call",
+  "claims": {
+   "flagged_first_pass": 0,
+   "redactions": [],
+   "regenerated": false
+  },
+  "debate_transcript": {},
+  "degraded": false,
+  "degraded_reasons": [],
+  "grounding": {
+   "duplicates_stripped": 0,
+   "faithfulness_after": 1.0,
+   "faithfulness_first_pass": 0.3333,
+   "fallbacks": [],
+   "numbers_checked": 3,
+   "per_agent": {
+    "synthesis": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": true,
+     "values_cited": 3,
+     "violations_first_pass": 4
+    }
+   },
+   "redactions": [],
+   "regenerations": 1,
+   "violations_first_pass": 4
+  },
+  "llm_calls": [
+   {
+    "attempt": 1,
+    "completion_tokens": 166,
+    "latency_ms": 1690.48,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 1934,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2100
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 162,
+    "latency_ms": 924.72,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 2009,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2171
+   }
+  ],
+  "modelUsage": {
+   "debate_model": "none",
+   "specialists_model": "none",
+   "synthesis_model": "groq/qwen/qwen3.8-27b"
+  },
+  "n_attempts": 2,
+  "n_calls_ok": 2,
+  "prompt_version": "1.5.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "synthesis": {
+   "conflictLedger": [],
+   "estimatedMonthlyCostUSD": 13.971628,
+   "findings": [],
+   "headline": "All executions were maker orders with no slippage or adverse market impact.",
+   "narrative": "The trader executed 82 limit orders on BTCUSDT, achieving a maker ratio of 100.0%. Slippage and VWAP deviation were both 0.0 bps, indicating fills matched the reference price exactly.",
+   "observations": [
+    {
+     "action_type": "none",
+     "text": "These executions showed no slippage or adverse market impact, with all fills occurring as maker orders."
+    }
+   ],
+   "overallRating": "EXCELLENT"
+  },
+  "tokenUsage": {
+   "completion_tokens": 328,
+   "n_calls": 2,
+   "prompt_tokens": 3943,
+   "total_tokens": 4271
+  },
+  "totalLatencyMs": 3045.83,
+  "trace_id": "e4b14603fbdb9b75d776987334c7c5eb",
+  "tradeContext": {
+   "alpha_packet_hash": "a6517bcbe87fb460",
+   "fee_packet_hash": "79f9f493f5f1cfd6",
+   "liquidity_packet_hash": "1da7649b879b4f69",
+   "regime": "STABLE",
+   "risk_packet_hash": "dffc724559cd09f4",
+   "symbol": "BTCUSDT",
+   "trade_count": 82,
+   "userId": "demo-disciplined"
+  },
+  "verification": {
+   "dropped": [],
+   "observations": 1,
+   "passed": 0,
+   "proposed": 1,
+   "re_reasoned": 0,
+   "rejected": []
+  }
+ },
+ "golden_id": "demo-disciplined",
+ "meta": {
+  "arm": "single",
+  "prompt_version": "1.5.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "routes": {
+   "debate": [
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "groq-qwen3.8-27b"
+   ],
+   "specialist": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash"
+   ],
+   "synthesis": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-120b",
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite",
+    "groq-gpt-oss-20b"
+   ]
+  },
+  "synthesis_prompt_sha256": "349bf833894c971a"
+ },
+ "run": 3,
+ "wall_s": 3.0
+}

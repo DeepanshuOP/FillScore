@@ -1,0 +1,161 @@
+{
+ "arm": "single",
+ "attempts": 3,
+ "council_result": {
+  "arm": "single_call",
+  "claims": {
+   "flagged_first_pass": 0,
+   "redactions": [],
+   "regenerated": false
+  },
+  "debate_transcript": {},
+  "degraded": false,
+  "degraded_reasons": [],
+  "grounding": {
+   "duplicates_stripped": 0,
+   "faithfulness_after": 1.0,
+   "faithfulness_first_pass": 0.8333,
+   "fallbacks": [],
+   "numbers_checked": 4,
+   "per_agent": {
+    "synthesis": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": true,
+     "values_cited": 4,
+     "violations_first_pass": 1
+    }
+   },
+   "redactions": [],
+   "regenerations": 1,
+   "violations_first_pass": 1
+  },
+  "llm_calls": [
+   {
+    "attempt": 1,
+    "completion_tokens": 289,
+    "latency_ms": 1916.31,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 2297,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2586
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 287,
+    "latency_ms": 1761.47,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 2354,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2641
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 7,
+    "latency_ms": 18617.99,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 2408,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2415
+   }
+  ],
+  "modelUsage": {
+   "debate_model": "none",
+   "specialists_model": "none",
+   "synthesis_model": "groq/qwen/qwen3.8-27b"
+  },
+  "n_attempts": 3,
+  "n_calls_ok": 3,
+  "prompt_version": "1.5.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "synthesis": {
+   "conflictLedger": [],
+   "estimatedMonthlyCostUSD": 21.297563,
+   "findings": [],
+   "headline": "Trades executed exclusively on BTCUSDT with consistent negative VWAP deviations and high taker usage.",
+   "narrative": "All executions occurred on a single symbol, resulting in complete concentration. The majority of orders were taker trades, contributing to a fee drag of 10.0 bps. VWAP deviations remained negative across the portfolio, with the worst instances reaching -26.3 bps.",
+   "observations": [],
+   "overallRating": "POOR"
+  },
+  "tokenUsage": {
+   "completion_tokens": 583,
+   "n_calls": 3,
+   "prompt_tokens": 7059,
+   "total_tokens": 7642
+  },
+  "totalLatencyMs": 22970.66,
+  "trace_id": "9335005781385527c740404e2167f7cf",
+  "tradeContext": {
+   "alpha_packet_hash": "7d1237ec45c1a557",
+   "fee_packet_hash": "12c85adcffbad6c7",
+   "liquidity_packet_hash": "7325376b019d8520",
+   "regime": "STABLE",
+   "risk_packet_hash": "684a70fa45cad87c",
+   "symbol": "BTCUSDT",
+   "trade_count": 88,
+   "userId": "demo-aggressive"
+  },
+  "verification": {
+   "dropped": [],
+   "observations": 0,
+   "passed": 0,
+   "proposed": 2,
+   "re_reasoned": 0,
+   "rejected": [
+    {
+     "action": "maker_instead_of_taker",
+     "params": {
+      "target_ratio": 0.5
+     },
+     "reason": "immaterial"
+    },
+    {
+     "action": "exclude_hours",
+     "params": {
+      "hours": [
+       5
+      ]
+     },
+     "reason": "immaterial"
+    }
+   ]
+  }
+ },
+ "golden_id": "demo-aggressive",
+ "meta": {
+  "arm": "single",
+  "prompt_version": "1.5.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "routes": {
+   "debate": [
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "groq-qwen3.8-27b"
+   ],
+   "specialist": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash"
+   ],
+   "synthesis": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-120b",
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite",
+    "groq-gpt-oss-20b"
+   ]
+  },
+  "synthesis_prompt_sha256": "349bf833894c971a"
+ },
+ "run": 2,
+ "wall_s": 23.0
+}

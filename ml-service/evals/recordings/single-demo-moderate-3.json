@@ -1,0 +1,161 @@
+{
+ "arm": "single",
+ "attempts": 3,
+ "council_result": {
+  "arm": "single_call",
+  "claims": {
+   "flagged_first_pass": 0,
+   "redactions": [],
+   "regenerated": false
+  },
+  "debate_transcript": {},
+  "degraded": false,
+  "degraded_reasons": [],
+  "grounding": {
+   "duplicates_stripped": 0,
+   "faithfulness_after": 1.0,
+   "faithfulness_first_pass": 0.0,
+   "fallbacks": [],
+   "numbers_checked": 11,
+   "per_agent": {
+    "synthesis": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": true,
+     "values_cited": 11,
+     "violations_first_pass": 9
+    }
+   },
+   "redactions": [],
+   "regenerations": 1,
+   "violations_first_pass": 9
+  },
+  "llm_calls": [
+   {
+    "attempt": 1,
+    "completion_tokens": 328,
+    "latency_ms": 1642.76,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 2302,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2630
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 348,
+    "latency_ms": 1248.98,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 2490,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2838
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 7,
+    "latency_ms": 19267.27,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 2413,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2420
+   }
+  ],
+  "modelUsage": {
+   "debate_model": "none",
+   "specialists_model": "none",
+   "synthesis_model": "groq/qwen/qwen3.8-27b"
+  },
+  "n_attempts": 3,
+  "n_calls_ok": 3,
+  "prompt_version": "1.5.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "synthesis": {
+   "conflictLedger": [],
+   "estimatedMonthlyCostUSD": 25.363936,
+   "findings": [],
+   "headline": "Executions showed strong VWAP performance with minimal slippage but concentrated taker activity during specific hours.",
+   "narrative": "The trader's fills beat the VWAP in 78.4% of cases, with an average deviation of -10.4 bps. Slippage remained negligible across the board, averaging 0.0 bps even in adverse markets. However, taker orders constituted 37 of the total, with a notable streak of 5 consecutive taker executions.",
+   "observations": [],
+   "overallRating": "GOOD"
+  },
+  "tokenUsage": {
+   "completion_tokens": 683,
+   "n_calls": 3,
+   "prompt_tokens": 7205,
+   "total_tokens": 7888
+  },
+  "totalLatencyMs": 22420.05,
+  "trace_id": "6053cf711b2b49b104b30709149b1aa1",
+  "tradeContext": {
+   "alpha_packet_hash": "48063e54f75307f0",
+   "fee_packet_hash": "c55e488c7dfa3346",
+   "liquidity_packet_hash": "2749657fa7450262",
+   "regime": "STABLE",
+   "risk_packet_hash": "d033675f94f21481",
+   "symbol": "BTCUSDT",
+   "trade_count": 109,
+   "userId": "demo-moderate"
+  },
+  "verification": {
+   "dropped": [],
+   "observations": 0,
+   "passed": 0,
+   "proposed": 2,
+   "re_reasoned": 0,
+   "rejected": [
+    {
+     "action": "maker_instead_of_taker",
+     "params": {
+      "target_ratio": 0.8
+     },
+     "reason": "immaterial"
+    },
+    {
+     "action": "exclude_hours",
+     "params": {
+      "hours": [
+       7
+      ]
+     },
+     "reason": "immaterial"
+    }
+   ]
+  }
+ },
+ "golden_id": "demo-moderate",
+ "meta": {
+  "arm": "single",
+  "prompt_version": "1.5.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "routes": {
+   "debate": [
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "groq-qwen3.8-27b"
+   ],
+   "specialist": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash"
+   ],
+   "synthesis": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-120b",
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite",
+    "groq-gpt-oss-20b"
+   ]
+  },
+  "synthesis_prompt_sha256": "349bf833894c971a"
+ },
+ "run": 3,
+ "wall_s": 22.4
+}
