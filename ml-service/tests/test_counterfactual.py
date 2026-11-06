@@ -48,7 +48,7 @@ def no_advice(s):
 
 
 def test_maker_05():
-    r = maker_instead_of_taker(OKX, 0.5)  # k=3, m=1 -> 2 smallest: o3,o1 -> 1500*0.0002=0.30
+    r = maker_instead_of_taker(OKX, 0.5, spread_aware=False)  # legacy fee-only model, pinned. k=3, m=1 -> 2 smallest: o3,o1 -> 1500*0.0002=0.30
     assert r.effect_usd == pytest.approx(0.30, abs=A)
     assert r.effect_bps == pytest.approx(0.285714, abs=A)
     assert r.n_trades_affected == 2 and r.affected_ids == ["o3", "o1"]
@@ -57,7 +57,7 @@ def test_maker_05():
 
 
 def test_maker_08():
-    r = maker_instead_of_taker(OKX, 0.8)  # k=4 -> 3: o3,o1,o2 = 3500*0.0002=0.70
+    r = maker_instead_of_taker(OKX, 0.8, spread_aware=False)  # legacy fee-only. k=4 -> 3: o3,o1,o2 = 3500*0.0002=0.70
     assert r.effect_usd == pytest.approx(0.70, abs=A)
     assert r.effect_bps == pytest.approx(0.666667, abs=A)
     assert r.n_trades_affected == 3
@@ -65,14 +65,14 @@ def test_maker_08():
 
 def test_maker_flat_fee():
     flat = [{**t, "exchange": "binance"} for t in OKX]
-    r = maker_instead_of_taker(flat, 0.5)
+    r = maker_instead_of_taker(flat, 0.5, spread_aware=False)
     assert r.effect_usd == 0.0 and r.effect_bps == 0.0 and r.n_trades_affected == 2
 
 
 def test_maker_already_above():
     ts = [T(f"m{i}", "okx", True, "BTCUSDT", 100 * (i + 1), 0.1, 0, D(2024, 1, 15, i)) for i in range(4)]
     ts.append(T("t1", "okx", False, "BTCUSDT", 100, 0.1, 0, D(2024, 1, 15, 5)))
-    r = maker_instead_of_taker(ts, 0.5)  # k=3 <= 4
+    r = maker_instead_of_taker(ts, 0.5, spread_aware=False)  # k=3 <= 4
     assert r.effect_usd == 0 and r.n_trades_affected == 0
 
 

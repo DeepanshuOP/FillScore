@@ -69,7 +69,47 @@ def _result(effect_usd, trades, n, method, details, ids) -> CounterfactualResult
     return CounterfactualResult(round(effect_usd, 6), round(bps, 6), n, method, details, ids)
 
 
-def maker_instead_of_taker(trades: list[dict], target_ratio: float) -> CounterfactualResult:
+# ── spread-aware maker counterfactual: every ASSUMPTION is a named constant ─────────────────────────────
+FILL_PROBABILITY_HAIRCUT = 0.5   # ASSUMPTION: a passive order may not fill; only this share of the modelled saving counts
+ADVERSE_HORIZON_S = 60           # markout horizon used to price adverse selection
+HALF_SPREAD_CAP_BPS = 1.0        # ASSUMPTION: bar-range estimators read high from volatility; credit at most 1 bp per fill
+MIN_MAKER_FILLS = 10             # own maker fills (with a markout at the horizon) needed to use them directly
+
+
+def _markouts_at(trades: list[dict], horizon_s: int, maker: bool) -> list[float]:
+    from agents.metrics.markout_packet import trade_markouts
+    return [m for m, _, mk, _ in trade_markouts(trades)[str(horizon_s)] if mk is maker]
+
+
+def adverse_selection_bps(trades: list[dict], horizon_s: int = ADVERSE_HORIZON_S,
+                          min_maker_fills: int = MIN_MAKER_FILLS) -> tuple[float | None, str, int]:
+    """(bps, basis, n_used). Cost of being picked off, never negative (a favourable markout earns no credit).
+      own_maker_fills : >= min_maker_fills own maker fills have a markout at the horizon -> max(0, -mean maker markout).
+      own_taker_fills : fallback, conservative proxy from the trader's own taker markouts -> max(0, -mean taker markout).
+      None, 'unknown' : no markout data at all; the caller then lets adverse selection cancel the spread credit."""
+    mk = _markouts_at(trades, horizon_s, True)
+    if len(mk) >= min_maker_fills:
+        return max(0.0, -sum(mk) / len(mk)), "own_maker_fills", len(mk)
+    tk = _markouts_at(trades, horizon_s, False)
+    if tk:
+        return max(0.0, -sum(tk) / len(tk)), "own_taker_fills", len(tk)
+    return None, "unknown", 0
+
+
+def maker_instead_of_taker(trades: list[dict], target_ratio: float, *, spread_aware: bool = True,
+                           haircut: float = FILL_PROBABILITY_HAIRCUT, horizon_s: int = ADVERSE_HORIZON_S,
+                           min_maker_fills: int = MIN_MAKER_FILLS) -> CounterfactualResult:
+    """Replay the smallest taker fills as maker fills until the target maker ratio is reached.
+
+    spread_aware=False: the old fee-rate-only model (no haircut), pinned by tests.
+    spread_aware=True, per converted fill (notional N):
+        net = N*(taker_rate - maker_rate)            fee_component
+            + N*half_spread_bps/1e4                  spread_component  (per-fill `halfSpreadBps` = HALF the SMALLER
+                                                      of Corwin-Schultz / Abdi-Ranaldo; absent -> 0, no credit)
+            - N*adverse_bps/1e4                      adverse_selection_component (trader-level, see adverse_selection_bps;
+                                                      basis 'unknown' -> equals the fill's spread credit)
+        effect = fill_haircut * sum(net)             may be <= 0, which the materiality gate rejects.
+    """
     trades = _valid(trades)
     n = len(trades)
     makers = sum(1 for t in trades if t.get("isMaker"))
@@ -77,14 +117,37 @@ def maker_instead_of_taker(trades: list[dict], target_ratio: float) -> Counterfa
                     key=lambda t: (_notional(t), _id(t)))
     k = math.ceil(round(target_ratio * n, 9))
     conv = takers[: min(max(0, k - makers), len(takers))]
-    effect = 0.0
+    fee_c = 0.0
     for t in conv:
         r = FEE_RATES.get(_venue(t), DEFAULT_RATES)
-        effect += _notional(t) * (r["taker"] - r["maker"])
-    method = (f"Replayed {len(conv)} of {len(takers)} taker fills as maker fills (smallest notional first) "
-              f"to reach a {target_ratio:.0%} maker ratio; fee difference ${effect:.2f}.")
-    return _result(effect, trades, len(conv), method, {"target_ratio": target_ratio},
-                   [_id(t) for t in conv])
+        fee_c += _notional(t) * (r["taker"] - r["maker"])
+    ids = [_id(t) for t in conv]
+    if not spread_aware:
+        method = (f"Replayed {len(conv)} of {len(takers)} taker fills as maker fills (smallest notional first) "
+                  f"to reach a {target_ratio:.0%} maker ratio; fee difference ${fee_c:.2f}.")
+        return _result(fee_c, trades, len(conv), method, {"target_ratio": target_ratio}, ids)
+
+    adv_bps, basis, n_used = adverse_selection_bps(trades, horizon_s, min_maker_fills)
+    spread_c = adverse_c = 0.0
+    for t in conv:
+        sp = min(float(t.get("halfSpreadBps") or 0.0), HALF_SPREAD_CAP_BPS) / 1e4 * _notional(t)
+        spread_c += sp
+        if adv_bps is None:
+            adverse_c += sp                                    # unknown: cancels the spread credit
+        elif basis == "own_taker_fills":
+            adverse_c += max(sp, adv_bps / 1e4 * _notional(t))  # weak proxy: never leaves a net spread credit
+        else:
+            adverse_c += adv_bps / 1e4 * _notional(t)
+    effect = haircut * (fee_c + spread_c - adverse_c)
+    method = (f"Replayed {len(conv)} of {len(takers)} taker fills as maker fills (smallest notional first) to reach a "
+              f"{target_ratio:.0%} maker ratio: fee difference ${fee_c:.2f}, estimated half-spread ${spread_c:.2f}, "
+              f"adverse selection ${adverse_c:.2f} ({basis}), times a {haircut:.0%} fill-probability assumption "
+              f"= ${effect:.2f}.")
+    details = {"target_ratio": target_ratio, "fee_component": fee_c, "spread_component": spread_c,
+               "adverse_selection_component": adverse_c, "fill_haircut": haircut,
+               "adverse_basis": basis, "adverse_bps": adv_bps, "adverse_horizon_s": horizon_s,
+               "adverse_n_fills": n_used}
+    return _result(effect, trades, len(conv), method, details, ids)
 
 
 def exclude_hours(trades: list[dict], hours: list[int]) -> CounterfactualResult:
