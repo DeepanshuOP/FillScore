@@ -2,7 +2,7 @@ import { spawnSync } from 'node:child_process'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { assertLocalMongoUri } from '../lib/localMongo'
-import { dummyBackendEnv } from './env'
+import { e2eBackendEnv } from './env'
 
 /**
  * Seeds the demo users into the e2e MongoDB, then verifies all six exist.
@@ -20,7 +20,8 @@ export default async function globalSetup() {
   for (const script of ['seed', 'seed:audit']) {
     const run = spawnSync('npm', ['run', script], {
       cwd: backend,
-      env: { ...process.env, ...dummyBackendEnv, MONGODB_URI: uri } as NodeJS.ProcessEnv,
+      // same block as the backend webServer (PORT etc. included), so CI needs no backend/.env
+      env: { ...process.env, ...e2eBackendEnv(uri) } as NodeJS.ProcessEnv,
       encoding: 'utf8',
       timeout: 240_000,
     })

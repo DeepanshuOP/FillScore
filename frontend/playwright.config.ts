@@ -2,7 +2,7 @@ import { defineConfig } from '@playwright/test'
 import { existsSync, mkdtempSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { delimiter, join, resolve } from 'node:path'
-import { dummyBackendEnv } from './e2e/env'
+import { API, SITE, e2eBackendEnv } from './e2e/env'
 
 /**
  * Browser tests (3a G3). Everything is local and secret-free:
@@ -29,18 +29,9 @@ const localMongod = isCI ? '' : findMongod()
 const mongoDbPath = isCI ? '' : mkdtempSync(join(tmpdir(), 'fs-e2e-mongo-')) // throwaway, never reused
 const python =existsSync(join(root, 'ml-service/.venv/bin/python')) ? join(root, 'ml-service/.venv/bin/python') : 'python'
 
-const SITE = 'http://localhost:3000'
-const API = 'http://localhost:3001'
 const ML = 'http://localhost:8000'
 
-const backendEnv = {
-  ...dummyBackendEnv,
-  PORT: '3001',
-  MONGODB_URI: mongoUri,
-  FRONTEND_URL: SITE,
-  BACKEND_URL: API,
-  ALLOWED_ORIGINS: SITE,
-}
+const backendEnv = e2eBackendEnv(mongoUri)
 
 process.env.MONGODB_URI = mongoUri // read by global-setup (which refuses a non-local URI)
 
