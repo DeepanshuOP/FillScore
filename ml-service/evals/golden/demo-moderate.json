@@ -1,5 +1,6 @@
 {
  "id": "demo-moderate",
+ "required_evidence": {"alpha_architect": ["alpha.avg_vwap_deviation_bps"], "fee_optimizer": ["fee.fee_drag_bps"], "liquidity_scout": ["liquidity.avg_slippage_bps"], "risk_auditor": ["risk.adverse_rate"], "synthesis": []},
  "kind": "demo",
  "n_trades": 109,
  "packet": {

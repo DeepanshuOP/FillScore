@@ -1,5 +1,6 @@
 {
  "id": "edge-whale-adverse",
+ "required_evidence": {"alpha_architect": ["alpha.avg_vwap_deviation_bps"], "fee_optimizer": ["fee.fee_drag_bps"], "liquidity_scout": ["liquidity.avg_slippage_bps"], "risk_auditor": ["risk.adverse_rate"], "synthesis": []},
  "kind": "edge",
  "n_trades": 12,
  "packet": {

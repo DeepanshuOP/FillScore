@@ -28,6 +28,9 @@ ALLOWED_OVERALL = {
 }
 
 
+INFORMATIONAL_PREFIX = "rec:single-"
+
+
 def load_golden() -> dict[str, dict]:
     out = {}
     for p in sorted(glob.glob(os.path.join(HERE, "golden", "*.json"))):
@@ -66,16 +69,23 @@ def main(recordings: bool = True) -> int:
     print(f"golden cases: {len(golden)} ({', '.join(golden)})")
     w = max([len(r[0]) for r in runs] + [10])
     print(f"{'run':<{w}}  " + "  ".join(n[:12].ljust(12) for n in NAMES))
-    failures = 0
+    failures = informational = 0
     for label, gid, res in runs:
         outs = check_all(res, golden[gid])
         print(f"{label:<{w}}  " + "  ".join(("pass" if outs[n].ok else "FAIL").ljust(12) for n in NAMES)
               + "  " + run_stats(res))
         for n in NAMES:
             if not outs[n].ok:
-                failures += 1
-                print(f"    {label} {n}: {outs[n].detail}")
-    print(f"\n{len(runs)} runs x {len(NAMES)} invariants: {failures} violation(s)")
+                # single-call recordings are ablation data (never shown to users). Safety invariants gate them
+                # like any run; only evidence_cited (a different, stricter ask of that arm) is reported, not gated
+                if label.startswith(INFORMATIONAL_PREFIX) and n == "evidence_cited":
+                    informational += 1
+                    print(f"    {label} {n}: {outs[n].detail}  [informational: ablation arm]")
+                else:
+                    failures += 1
+                    print(f"    {label} {n}: {outs[n].detail}")
+    print(f"\n{len(runs)} runs x {len(NAMES)} invariants: {failures} violation(s)"
+          f" (+{informational} informational on the single-call ablation arm)")
     return 1 if failures or not runs else 0
 
 

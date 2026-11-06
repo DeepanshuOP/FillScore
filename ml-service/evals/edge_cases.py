@@ -9,6 +9,10 @@ from agents.metrics.loader import build_all_packets
 from agents.render import packet_ctx
 
 GOLDEN = os.path.join(os.path.dirname(__file__), "golden")
+# Packet keys each agent's rendered text must show (invariant evidence_cited); the same headline metric per agent.
+REQUIRED_EVIDENCE = {"alpha_architect": ["alpha.avg_vwap_deviation_bps"], "fee_optimizer": ["fee.fee_drag_bps"],
+                     "liquidity_scout": ["liquidity.avg_slippage_bps"], "risk_auditor": ["risk.adverse_rate"],
+                     "synthesis": []}
 
 
 def _trade(i: int, *, maker: bool, whale: bool = False, full: bool = True) -> dict:
@@ -37,7 +41,8 @@ def main() -> None:
     for name, trades in edge_trades().items():
         ctx = packet_ctx(*build_all_packets(trades, name, "BTCUSDT"))
         with open(os.path.join(GOLDEN, f"{name}.json"), "w") as f:
-            json.dump({"id": name, "kind": "edge", "symbol": "BTCUSDT", "n_trades": len(trades), "packet": ctx},
+            json.dump({"id": name, "kind": "edge", "symbol": "BTCUSDT", "n_trades": len(trades), "packet": ctx,
+                       "required_evidence": REQUIRED_EVIDENCE},
                       f, indent=1, sort_keys=True, default=str)
         print(name, len(trades))
 
