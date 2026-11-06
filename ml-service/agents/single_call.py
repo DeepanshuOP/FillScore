@@ -51,12 +51,20 @@ Schema fields: headline, narrative, recommendations (one to three {{action_type,
 
 async def run_single_call(account_id: str, symbol: str, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt, llm,
                           trades: list[dict] | None) -> dict:
+    try:
+        return await _run_single_call(account_id, symbol, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt, llm, trades)
+    finally:
+        tracing.finish_run("error")   # idempotent: a no-op after the normal path's own finish_run
+
+
+async def _run_single_call(account_id: str, symbol: str, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt, llm,
+                           trades: list[dict] | None) -> dict:
     trace_id = tracing.start_run(account_id)
     start = _clock()
     context = TradeContext(userId=account_id, symbol=symbol, regime="STABLE", trade_count=fee_pkt.trade_count,
                            fee_packet_hash=fee_pkt.content_hash, risk_packet_hash=risk_pkt.content_hash,
                            liquidity_packet_hash=liquidity_pkt.content_hash, alpha_packet_hash=alpha_pkt.content_hash)
-    run = RunCollector(llm=llm, ctx=packet_ctx(fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt))
+    run = RunCollector(llm=llm, ctx=packet_ctx(fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt, trades))
     reasons: list[str] = []
     try:
         draft = await synthesis.run(context, {}, llm, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt,

@@ -9,7 +9,7 @@ from observability.scrub import before_send
 def init_sentry(env=None) -> bool:
     env = os.environ if env is None else env
     dsn = (env.get("SENTRY_DSN") or "").strip()
-    if not dsn:
+    if not dsn or (env.get("FILLSCORE_TRACING") or "").strip() == "0":   # kill switch also covers Sentry in tests
         return False
     import sentry_sdk
     sentry_sdk.init(dsn=dsn, send_default_pii=False, before_send=before_send, traces_sample_rate=0,

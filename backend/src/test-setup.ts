@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 
 dotenv.config({ path: path.resolve(__dirname, '../.env.test') });
+delete process.env.SENTRY_DSN; // tests never report to Sentry, whatever the shell has
 
 let mongod: MongoMemoryServer;
 

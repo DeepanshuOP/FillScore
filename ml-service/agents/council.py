@@ -531,7 +531,21 @@ def synthesis_event(synth: SynthesisOutput, degraded: bool, reasons: list[str]) 
 # The pipeline
 # ---------------------------------------------------------------------------
 
-async def run_council_pipeline(
+async def run_council_pipeline(account_id: str, user_id: str, symbol: str, fee_pkt, risk_pkt, liquidity_pkt,
+                               alpha_pkt, llm=None, on_event: EventSink = None, persist: bool = True,
+                               trades: list[dict] | None = None) -> CouncilResult:
+    """Starts the run trace and guarantees its root span ends even if the pipeline raises (try/finally;
+    finish_run is idempotent, so the normal path's own finish_run("ok"/"degraded") wins)."""
+    from observability import tracing
+    trace_id = tracing.start_run(account_id)   # one trace per Council run; spans are no-ops without Langfuse env
+    try:
+        return await _run_council_pipeline(account_id, user_id, symbol, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt,
+                                           llm, on_event, persist, trades, trace_id)
+    finally:
+        tracing.finish_run("error")
+
+
+async def _run_council_pipeline(
     account_id: str,
     user_id: str,
     symbol: str,
@@ -543,6 +557,7 @@ async def run_council_pipeline(
     on_event: EventSink = None,
     persist: bool = True,
     trades: list[dict] | None = None,
+    trace_id: str | None = None,
 ) -> CouncilResult:
     """Run the whole Council on prepared packets. Both HTTP endpoints, the eval harness and the
     demo-run generator go through here. `trades` are the normalised trades the packets were built
@@ -552,7 +567,6 @@ async def run_council_pipeline(
     from config.versions import METRICS_VERSION, PROMPT_VERSION
 
     from observability import tracing
-    trace_id = tracing.start_run(account_id)   # one trace per Council run; spans are no-ops without Langfuse env
     llm = llm or llm_router.get_default_router()
     context = TradeContext(
         userId=user_id,
@@ -564,7 +578,7 @@ async def run_council_pipeline(
         liquidity_packet_hash=liquidity_pkt.content_hash,
         alpha_packet_hash=alpha_pkt.content_hash,
     )
-    run = RunCollector(llm=llm, emit=on_event, ctx=packet_ctx(fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt))
+    run = RunCollector(llm=llm, emit=on_event, ctx=packet_ctx(fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt, trades))
     start = _clock()
 
     final_state = await _compiled_graph.ainvoke({

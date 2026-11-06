@@ -76,6 +76,10 @@ def init_tracing(env=None, exporter=None) -> bool:
     if _provider is not None:
         return True
     env = os.environ if env is None else env
+    if exporter is None and (env.get("FILLSCORE_TRACING") or "").strip() == "0":
+        _tracer, _tracer_resolved = None, True   # explicit kill switch (conftest sets it): never build an exporter
+        _status["configured"] = False
+        return False
     if exporter is None and not langfuse_configured(env):
         _tracer, _tracer_resolved = None, True
         _status["configured"] = False
