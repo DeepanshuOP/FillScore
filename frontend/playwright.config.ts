@@ -1,7 +1,8 @@
 import { defineConfig } from '@playwright/test'
-import { existsSync, mkdtempSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join, resolve } from 'node:path'
+import { delimiter, join, resolve } from 'node:path'
+import { dummyBackendEnv } from './e2e/env'
 
 /**
  * Browser tests (3a G3). Everything is local and secret-free:
@@ -14,8 +15,17 @@ const isCI = !!process.env.CI
 const mongoPort = Number(process.env.E2E_MONGO_PORT ?? (isCI ? 27017 : 27018))
 const mongoUri = `mongodb://127.0.0.1:${mongoPort}/fillscore_e2e`
 const root = resolve(__dirname, '..')
-const localMongod =
-  process.env.E2E_MONGOD ?? join(root, 'backend/node_modules/.cache/mongodb-memory-server/mongod-x64-ubuntu-6.0.9')
+// mongod: E2E_MONGOD, else any mongod on PATH, else whatever binary mongodb-memory-server cached.
+function findMongod(): string {
+  if (process.env.E2E_MONGOD) return process.env.E2E_MONGOD
+  for (const dir of (process.env.PATH ?? '').split(delimiter)) {
+    if (dir && existsSync(join(dir, 'mongod'))) return join(dir, 'mongod')
+  }
+  const cache = join(root, 'backend/node_modules/.cache/mongodb-memory-server')
+  const cached = existsSync(cache) ? readdirSync(cache).find((f) => f.startsWith('mongod')) : undefined
+  return cached ? join(cache, cached) : 'mongod'
+}
+const localMongod = isCI ? '' : findMongod()
 const mongoDbPath = isCI ? '' : mkdtempSync(join(tmpdir(), 'fs-e2e-mongo-')) // throwaway, never reused
 const python =existsSync(join(root, 'ml-service/.venv/bin/python')) ? join(root, 'ml-service/.venv/bin/python') : 'python'
 
@@ -23,20 +33,10 @@ const SITE = 'http://localhost:3000'
 const API = 'http://localhost:3001'
 const ML = 'http://localhost:8000'
 
-// Dummy values only: nothing here is a credential. Real keys are never needed offline.
 const backendEnv = {
-  NODE_ENV: 'test',
+  ...dummyBackendEnv,
   PORT: '3001',
   MONGODB_URI: mongoUri,
-  JWT_ACCESS_SECRET: 'e2e-access-secret',
-  JWT_REFRESH_SECRET: 'e2e-refresh-secret',
-  ENCRYPTION_KEY: '6470df2f901f61569c667de386f434a71f51e1f2d44c913698859b16e42054cd',
-  GOOGLE_CLIENT_ID: 'x',
-  GOOGLE_CLIENT_SECRET: 'x',
-  GITHUB_CLIENT_ID: 'x',
-  GITHUB_CLIENT_SECRET: 'x',
-  BINANCE_API_KEY: 'x',
-  BINANCE_API_SECRET: 'x',
   FRONTEND_URL: SITE,
   BACKEND_URL: API,
   ALLOWED_ORIGINS: SITE,
@@ -46,14 +46,13 @@ process.env.MONGODB_URI = mongoUri // read by global-setup (which refuses a non-
 
 export default defineConfig({
   testDir: './e2e',
-  // 3a: seeding the demo users is NOT done here. Writing a global-setup that spawns the seed script was denied
-  // by the permission classifier; Deepanshu adds it (see .work/REPORT_phase3a.md, section 5).
+  globalSetup: './e2e/global-setup.ts', // seeds the demo users; throws unless MONGODB_URI is local
   timeout: 60_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   workers: 1,
   retries: isCI ? 1 : 0,
-  reporter: isCI ? [['list'], ['html', { open: 'never' }]] : 'list',
+  reporter: isCI ? [['list'], ['html', { open: 'never' }]] : 'list', // CI uploads the HTML report on failure only
   use: { baseURL: SITE, acceptDownloads: true, trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { browserName: 'chromium' } }],
   webServer: [
@@ -97,7 +96,8 @@ export default defineConfig({
       name: 'frontend',
       command: 'npm run build && npm run start',
       url: SITE,
-      env: { PORT: '3000', NEXT_PUBLIC_API_URL: API, NEXT_PUBLIC_ML_URL: ML, NEXT_PUBLIC_SITE_URL: SITE },
+      // Production-like: the browser calls relative /api and Next rewrites it to the backend (BACKEND_PROXY_URL).
+      env: { PORT: '3000', BACKEND_PROXY_URL: API, NEXT_PUBLIC_ML_URL: ML, NEXT_PUBLIC_SITE_URL: SITE },
       reuseExistingServer: !isCI,
       timeout: 300_000,
     },
