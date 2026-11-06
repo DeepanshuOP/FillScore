@@ -38,6 +38,28 @@ def untrusted(text: object, source: str) -> str:
     return f'<untrusted_agent_text source="{source}">\n{clean}\n</untrusted_agent_text>'
 
 
+# ── Synthesis prompt parts shared by the Council judge and the single-call ablation arm ──
+# Everything that tells the model HOW to write (placeholders, tense, recommendation format, cost rule, JSON
+# only) lives here once, so the two arms differ only in reasoning structure. Council text is unchanged.
+SYNTH_WRITING_RULES = """- Produce a headline (max 20 words), a narrative (2-3 sentences) and between one and three
+  recommendations. Each recommendation is {action_type, params, rationale_text}: choose action_type
+  and params ONLY from the listed actions and values. You never write the effect: code replays this
+  trader's own trades and inserts {{cf.effect_usd}}, {{cf.effect_bps}} and {{cf.n_trades_affected}}
+  (and the action's detail keys) where you place them in rationale_text.
+- The headline and narrative describe what happened in these executions; they must not describe or name any
+  proposed action — actions go only in recommendations.
+- The headline and narrative never call a cost avoidable, missed or saved, never speak of an opportunity or savings,
+  and never use should, recommend, consider or better to: a verifier replays the actions afterwards and decides
+  whether any effect was material.
+- rationale_text is past tense, about these executions only (e.g. "These fills cost {{cf.effect_usd}}
+  more than the trader's other hours"). Never write "you should", "could save", "consider" or "route".
+- none / general are observations with no effect: use them for a finding no action replays, and do
+  not put {{cf.*}} placeholders in them. {{cf.*}} placeholders are allowed only in rationale_text.
+"""
+SYNTH_COST_RULE = "- Never output a cost figure; code fills it from the fee packet\n"
+SYNTH_JSON_ONLY = "Respond ONLY with valid JSON matching the schema. No preamble."
+
+
 def packet_values(ctx: dict, namespaces: list[str]) -> str:
     """The packet values a model may mention, one `{{ns.key}} = value` line each (Phase 1c.2).
     The model writes the placeholder; agents.render inserts the value."""

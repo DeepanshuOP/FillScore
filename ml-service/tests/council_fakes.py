@@ -66,7 +66,8 @@ def agent_of(kwargs) -> str:
     for marker, name in (("judge", "synthesis"), ("you are the prosecution", "prosecution"),
                          ("you are the defense", "defense"), ("liquidity scout", "liquidity_scout"),
                          ("alpha architect", "alpha_architect"), ("risk auditor", "risk_auditor"),
-                         ("fee optimizer", "fee_optimizer")):
+                         ("fee optimizer", "fee_optimizer"),
+                         ("single-pass audit", "synthesis")):   # the single-call ablation arm's prompt
         if marker in system:
             return name
     raise AssertionError("unknown agent prompt")

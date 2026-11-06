@@ -23,7 +23,8 @@ from agents.metrics.fee_packet import MAKER_RATIO_TARGETS, FeeMetricsPacket
 from agents.metrics.liquidity_packet import LiquidityMetricsPacket
 from agents.metrics.risk_packet import RiskMetricsPacket
 from agents.metrics.time_utils import utc_hour
-from agents.prompts import UNTRUSTED_NOTE, packet_values, system_prompt, untrusted
+from agents.prompts import (SYNTH_COST_RULE, SYNTH_JSON_ONLY, SYNTH_WRITING_RULES, UNTRUSTED_NOTE, packet_values,
+                            system_prompt, untrusted)
 from agents.render import CF_DUMMY, prompt_view
 from agents.schemas import ConflictEntry, Recommendation, SynthesisLLMOutput, SynthesisTextOutput, TradeContext, re_reason_schema
 
@@ -49,33 +50,18 @@ You receive:
 
 Your job:
 - Weigh the specialist verdicts and the debate transcript
-- Produce a headline (max 20 words), a narrative (2-3 sentences) and between one and three
-  recommendations. Each recommendation is {action_type, params, rationale_text}: choose action_type
-  and params ONLY from the listed actions and values. You never write the effect: code replays this
-  trader's own trades and inserts {{cf.effect_usd}}, {{cf.effect_bps}} and {{cf.n_trades_affected}}
-  (and the action's detail keys) where you place them in rationale_text.
-- The headline and narrative describe what happened in these executions; they must not describe or name any
-  proposed action — actions go only in recommendations.
-- The headline and narrative never call a cost avoidable, missed or saved, never speak of an opportunity or savings,
-  and never use should, recommend, consider or better to: a verifier replays the actions afterwards and decides
-  whether any effect was material.
-- rationale_text is past tense, about these executions only (e.g. "These fills cost {{cf.effect_usd}}
-  more than the trader's other hours"). Never write "you should", "could save", "consider" or "route".
-- none / general are observations with no effect: use them for a finding no action replays, and do
-  not put {{cf.*}} placeholders in them. {{cf.*}} placeholders are allowed only in rationale_text.
-- Resolve any conflicts using the regime priority matrix:
+""" + SYNTH_WRITING_RULES + """- Resolve any conflicts using the regime priority matrix:
   STABLE regime: Fee > Risk > Liquidity > Alpha
   VOLATILE regime: Liquidity > Risk > Fee > Alpha
 - Fill conflictLedger with one entry per resolved conflict
-- Never output a cost figure; code fills it from the fee packet
-
+""" + SYNTH_COST_RULE + """
 CRITICAL — Anti-fence-sitting rule:
 Commit to EXCELLENT, GOOD, POOR, or CRITICAL when the evidence warrants it.
 Reserve FAIR only when specialist verdicts are genuinely split (2 good, 2 bad).
 If fee is WASTEFUL and liquidity is GOOD, that is NOT balanced — the fee cost is real money.
 Never default to FAIR to avoid making a judgment.
 
-Respond ONLY with valid JSON matching the schema. No preamble.""")
+""" + SYNTH_JSON_ONLY)
 
 
 def _compress_verdict(verdict_dict: dict) -> dict:
@@ -180,6 +166,7 @@ class SynthesisDraft:
     recommendations: list[Recommendation]
     user_prompt: str
     ctx: dict = field(default_factory=dict)
+    system_prompt: str = ""   # the prompt this draft was produced under; re_reason/regenerate reuse it
 
 
 def _ctx_for(ctx: dict):
@@ -199,14 +186,18 @@ async def run(
     telemetry: list | None = None,
     trades: list[dict] | None = None,
     ledger: GroundingLedger | None = None,
+    system: str | None = None,
+    user_prompt: str | None = None,
 ) -> SynthesisDraft:
     """Execute the Synthesis agent through the router with blocking grounding. Raises if no model
-    gave a valid verdict. A headline or narrative emptied by redaction becomes a code-built sentence."""
+    gave a valid verdict. A headline or narrative emptied by redaction becomes a code-built sentence.
+    `system` / `user_prompt` let the single-call ablation arm substitute its own prompts."""
     ledger = ledger if ledger is not None else GroundingLedger()
+    system = system or SYNTHESIS_SYSTEM_PROMPT
     ctx = packet_ctx_of(fee_packet, risk_packet, liquidity_packet, alpha_packet)
-    user_content = build_user_prompt(context, verdicts, fee_packet, risk_packet, liquidity_packet,
-                                     alpha_packet, debate_dict, trades)
-    out = await grounded_model(llm, ROLE, SYNTHESIS_SYSTEM_PROMPT, user_content, SynthesisLLMOutput,
+    user_content = user_prompt or build_user_prompt(context, verdicts, fee_packet, risk_packet, liquidity_packet,
+                                                    alpha_packet, debate_dict, trades)
+    out = await grounded_model(llm, ROLE, system, user_content, SynthesisLLMOutput,
                                agent=AGENT, patterns=TEXT_PATTERNS + [RATIONALE_PATTERN], ctx_for=_ctx_for(ctx),
                                ledger=ledger, telemetry=telemetry, max_tokens=MAX_TOKENS)
     data = finalized(out, TEXT_PATTERNS, lambda _p: ctx, AGENT, ledger)
@@ -217,7 +208,7 @@ async def run(
     ledger_entries = [ConflictEntry(**e) for e in data["conflictLedger"]
                       if all(str(e[k]).strip() for k in ("between", "rule_applied", "winner"))]
     return SynthesisDraft(data["headline"], data["narrative"], ledger_entries, out.overallRating,
-                          list(out.recommendations), user_content, ctx)
+                          list(out.recommendations), user_content, ctx, system)
 
 
 def re_reason_prompt(user_prompt: str, rejected: list) -> str:
@@ -231,7 +222,8 @@ async def re_reason(llm, draft: SynthesisDraft, rejected: list, *, ledger: Groun
                     telemetry: list | None = None) -> list[Recommendation]:
     """The one forced re-reason for rejected recommendations. It is itself the second attempt, so
     there is no regeneration: violations are redacted. Raises if no model answered."""
-    out = await grounded_model(llm, ROLE, SYNTHESIS_SYSTEM_PROMPT, re_reason_prompt(draft.user_prompt, rejected),
+    out = await grounded_model(llm, ROLE, draft.system_prompt or SYNTHESIS_SYSTEM_PROMPT,
+                               re_reason_prompt(draft.user_prompt, rejected),
                                re_reason_schema(len(rejected)), agent=AGENT, patterns=[RATIONALE_PATTERN],
                                ctx_for=_ctx_for(draft.ctx), ledger=ledger, telemetry=telemetry,
                                max_tokens=MAX_TOKENS, allow_regen=False)
@@ -253,7 +245,7 @@ async def regenerate_text(llm, draft: SynthesisDraft, verification_view: dict, *
     """2a.2: one verification-aware rewrite of headline and narrative. Grounded like every other text
     (no regeneration of its own); either result may be "" after numeric redaction. Raises if no model answered."""
     patterns = ["headline", "narrative"]
-    out = await grounded_model(llm, ROLE, SYNTHESIS_SYSTEM_PROMPT,
+    out = await grounded_model(llm, ROLE, draft.system_prompt or SYNTHESIS_SYSTEM_PROMPT,
                                regenerate_prompt(draft.user_prompt, verification_view), SynthesisTextOutput,
                                agent=AGENT, patterns=patterns, ctx_for=lambda _p: draft.ctx, ledger=ledger,
                                telemetry=telemetry, max_tokens=MAX_TOKENS, allow_regen=False)
