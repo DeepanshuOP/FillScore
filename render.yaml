@@ -15,7 +15,7 @@ services:
     dockerfilePath: ./backend/Dockerfile
     dockerContext: ./backend
     healthCheckPath: /health
-    autoDeploy: true
+    autoDeployTrigger: checksPass
     envVars:
       - key: NODE_ENV
         value: production
@@ -62,7 +62,7 @@ services:
     dockerfilePath: ./ml-service/Dockerfile
     dockerContext: ./ml-service
     healthCheckPath: /health
-    autoDeploy: true
+    autoDeployTrigger: checksPass
     envVars:
       # The image listens on 8000; tell Render so it routes traffic there.
       - key: PORT
