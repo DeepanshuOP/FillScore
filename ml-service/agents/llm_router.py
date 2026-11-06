@@ -233,7 +233,15 @@ def _default_usage_db():
     return _default_db
 
 
+class LLMCallBlocked(RuntimeError):
+    """FILLSCORE_E2E_NO_LLM=1: an LLM provider call was attempted where none is allowed (e2e runs)."""
+
+
 def _openai_client_factory(provider: Provider, api_key: str):
+    # E2E guard: the browser specs must never reach a provider. The flag only ever blocks calls; it
+    # cannot enable anything, so setting it in another environment can at worst disable the Council.
+    if os.environ.get("FILLSCORE_E2E_NO_LLM") == "1":
+        raise LLMCallBlocked(f"LLM call blocked by FILLSCORE_E2E_NO_LLM (provider={provider.name})")
     from openai import AsyncOpenAI
 
     return AsyncOpenAI(
