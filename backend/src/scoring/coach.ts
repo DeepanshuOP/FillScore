@@ -8,6 +8,8 @@ export interface HourSummary {
 interface ScoredTrade {
     executedAt: Date;
     fillScore?: number | null;
+    isMaker?: boolean;
+    feeUsd?: number | null;
 }
 
 /** Average fill score of the scored trades executed in one UTC hour, or null if there are none. */
@@ -99,12 +101,13 @@ export function buildCoach(input: CoachInput): { headline: string; actions: Coac
     }
 
     if (b.makerRatio != null && b.makerRatio < 0.7 && attribution && attribution.feeCost > 0) {
-        const taker = attribution.feeCost * (0.7 - b.makerRatio);
+        // Measured: fees actually paid on taker fills (feeUsd), not a hypothetical maker-share gap.
+        const taker = trades.reduce((s, t) => s + (t.isMaker === false ? (t.feeUsd ?? 0) : 0), 0);
         actions.push({
             category: 'ORDER_TYPE',
             title: `Maker share of fills: ${Math.round(b.makerRatio * 100)}%`,
             detail: `${Math.round(b.makerRatio * 100)}% of your fills were maker; the rest paid taker fees.`,
-            estimatedImpact: `$${Math.round(attribution.feeCost)} fees paid${overPeriod}`,
+            estimatedImpact: `$${taker.toFixed(2)} fees paid on taker fills${overPeriod}`,
             impactValue: taker,
             icon: 'tag',
         });
@@ -116,8 +119,12 @@ export function buildCoach(input: CoachInput): { headline: string; actions: Coac
     let headline = 'No modelled cost driver stood out in this period.';
     if (actions.length > 0 && actions[0].impactValue > 0) {   // timing carries no $ figure any more (audit §2.10)
         const top = actions[0];
-        const driver = top.category === 'TIMING' ? 'timing' : top.category === 'VENUE' ? 'venue' : 'order type (taker fees)';
-        headline = `Largest modelled cost driver: ${driver}, ${top.estimatedImpact.replace(/ \(modelled\)$/, '')}`;
+        if (top.category === 'ORDER_TYPE') {
+            headline = `Taker fills paid $${top.impactValue.toFixed(2)} in fees${input.periodText ? ` over ${input.periodText}` : ' this period'}`;
+        } else {
+            const driver = top.category === 'TIMING' ? 'timing' : 'venue';
+            headline = `Largest modelled cost driver: ${driver}, ${top.estimatedImpact.replace(/ \(modelled\)$/, '')}`;
+        }
     }
     return { headline, actions };
 }

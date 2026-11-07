@@ -71,7 +71,7 @@ export const DEMO_PROFILES: DemoProfile[] = [
     exchangeLabel: 'MULTI',
     exchangeColor: '#2dd4bf',
     archetype: 'The Multi-Exchange Trader',
-    tagline: 'Trades across Binance, Bybit, and OKX. Compare venue alpha and execution quality.',
+    tagline: 'Trades across Binance, Bybit, and OKX. Compare average slippage and execution quality by venue.',
     score: 70.71963854879698,
   },
 ];

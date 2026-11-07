@@ -88,7 +88,7 @@ export default function Home() {
       id: 'bybit' as const,
       name: 'Bybit',
       desc: "Derivatives platform",
-      tags: ['Derivatives', 'Perpetuals', 'Institutional']
+      tags: ['Derivatives', 'Perpetuals', 'Large venue']
     },
     {
       id: 'okx' as const,

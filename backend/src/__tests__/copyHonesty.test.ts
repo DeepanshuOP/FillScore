@@ -44,11 +44,12 @@ describe('copy honesty (audit §2.10)', () => {
     it('UI/readme copy: no "Institutional-grade", "Venue Alpha"; venue card and fee label reworded', () => {
         const root = path.resolve(__dirname, '../../..');
         const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8');
-        for (const f of ['frontend/app/layout.tsx', 'frontend/app/page.tsx', 'frontend/app/dashboard/page.tsx', 'README.md']) {
-            const t = read(f);
-            expect(t.toLowerCase(), f).not.toContain('institutional-grade');
-            expect(t, f).not.toContain('Venue Alpha');
-            expect(t, f).not.toContain('Exchange spread cost');
+        const utils = fs.readdirSync(path.join(root, 'frontend/app/utils')).filter(f => f.endsWith('.ts')).map(f => `frontend/app/utils/${f}`);
+        for (const f of ['frontend/app/layout.tsx', 'frontend/app/page.tsx', 'frontend/app/dashboard/page.tsx', 'README.md', ...utils]) {
+            const t = read(f).toLowerCase();
+            expect(t, f).not.toContain('institutional');
+            expect(t, f).not.toContain('venue alpha');
+            expect(t, f).not.toContain('exchange spread cost');
         }
         expect(read('frontend/app/dashboard/page.tsx')).toContain('Average slippage by venue (unmatched)');
         expect(read('frontend/app/dashboard/componentCards.ts')).toContain("'LIQUIDITY PROVISION'");

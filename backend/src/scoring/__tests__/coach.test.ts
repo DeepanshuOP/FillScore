@@ -65,6 +65,25 @@ describe('describeWindow', () => {
     });
 });
 
+describe('buildCoach ORDER_TYPE (4R-0b: fees actually paid on taker fills)', () => {
+    const f = (isMaker: boolean, feeUsd: number) => ({ executedAt: new Date('2026-01-05T09:00:00Z'), fillScore: 70, isMaker, feeUsd });
+    it('ranks and words the action by taker fees paid, not a hypothetical', () => {
+        // taker fees: 3 + 5 = 8 (the maker fill's 1 is excluded); total feeCost 9 would give the old
+        // hypothetical 9 * (0.7 - 0.4) = 2.7, which must no longer be used.
+        const out = buildCoach({
+            breakdown: { bestHour: null, worstHour: null, makerRatio: 0.4 },
+            periodText: '31 days',
+            trades: [f(false, 3), f(false, 5), f(true, 1)] as any,
+            attribution: { timingCost: 0, feeCost: 9, totalNotional: 3000 },
+            venue: null,
+        });
+        const a = out.actions.find(x => x.category === 'ORDER_TYPE')!;
+        expect(a.impactValue).toBe(8);
+        expect(a.estimatedImpact).toBe('$8.00 fees paid on taker fills over 31 days');
+        expect(out.headline).toBe('Taker fills paid $8.00 in fees over 31 days');
+    });
+});
+
 describe('buildCoach headline (2c.2 C3)', () => {
     it('reads "driver, ~$N over period" with no nested parentheses; the badge keeps (modelled)', () => {
         // timingCost 1.4 -> Math.round = 1 -> "~$1"; periodText "31 days" -> " over 31 days"

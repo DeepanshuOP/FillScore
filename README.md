@@ -109,7 +109,7 @@ npm run verify-seed   # confirms 6 demo users, all grades locked
 
 - **Exchange connections:** Binance, Bybit and OKX through read-only keys. Each key is checked against the exchange itself and refused if it can trade or withdraw; keys are stored AES-256-GCM encrypted.
 - **Real score history:** every audit run appends an immutable snapshot, and the dashboard trend plots only stored results.
-- **Multi-exchange venue comparison** with venue alpha (bps) calculation
+- **Multi-exchange venue comparison** with measured average slippage by venue (bps, unmatched trades)
 - **Whale correlation:** real Binance aggTrades via REST, burst-detection algorithm, adverse selection scoring per trade (sample accounts only; connected accounts get an explicit "unavailable")
 - **PDF audit report and CSV export** for signed-in users, shareable scorecard (OpenGraph) for the sample accounts
 - **Execution Coach mode**, with every figure labelled by the period it covers
