@@ -27,7 +27,7 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'FillScore — Execution Intelligence',
-  description: 'Institutional-grade transaction cost analysis for retail crypto traders.',
+  description: 'Transaction cost analysis for retail crypto traders, graded against public Binance market data.',
 }
 
 export default function RootLayout({

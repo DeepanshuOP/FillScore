@@ -87,7 +87,7 @@ export default function Home() {
     {
       id: 'bybit' as const,
       name: 'Bybit',
-      desc: "Institutional-grade derivatives platform",
+      desc: "Derivatives platform",
       tags: ['Derivatives', 'Perpetuals', 'Institutional']
     },
     {
@@ -143,7 +143,7 @@ export default function Home() {
             <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '2px', background: 'linear-gradient(to bottom, transparent, #a78b71, transparent)', borderRadius: '2px 0 0 2px' }} />
             <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#a78b71', opacity: 0.9 }} />
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.35em', color: '#b8a088' }}>
-              INSTITUTIONAL-GRADE TCA
+              TRANSACTION COST ANALYSIS
             </span>
           </div>
 
@@ -185,7 +185,7 @@ export default function Home() {
                lineHeight: 1.85, 
                color: '#a09890'
              }}>
-            Institutional transaction cost analysis for retail crypto traders. Discover how much slippage, poor timing, and fees are costing you — trade by trade.
+            Transaction cost analysis for retail crypto traders, graded against public Binance market data. See the slippage and fees on each past trade, and when you traded.
           </p>
 
           {/* 4. Stat strip */}

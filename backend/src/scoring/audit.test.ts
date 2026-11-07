@@ -121,7 +121,7 @@ describe('generateRecommendations', () => {
             makeTrade({ isMaker: true }),
         ];
         const summary = await computeAuditSummary('u1', trades);
-        const limitRec = summary.recommendations.find(r => r.includes('market orders') && r.includes('taker-fee cost'));
+        const limitRec = summary.recommendations.find(r => r.includes('market orders') && r.includes('in fees on taker fills this period'));
         expect(limitRec).toBeDefined();
     });
 });

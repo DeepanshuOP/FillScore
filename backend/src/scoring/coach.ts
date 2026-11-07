@@ -79,8 +79,8 @@ export function buildCoach(input: CoachInput): { headline: string; actions: Coac
             category: 'TIMING',
             title: `Best-scoring hour: ${bestH} UTC`,
             detail: `Your highest-scoring trades clustered around ${bestH} UTC${best ? ` (${best})` : ''}; your lowest around ${worstH} UTC${worst ? ` (${worst})` : ''}.`,
-            estimatedImpact: `~$${Math.round(attribution.timingCost)}${overPeriod} (modelled)`,
-            impactValue: attribution.timingCost,
+            estimatedImpact: 'Impact not measured',
+            impactValue: 0,
             icon: 'clock',
         });
     }
@@ -90,8 +90,8 @@ export function buildCoach(input: CoachInput): { headline: string; actions: Coac
         const worstX = (venue.worstExchange || '').toUpperCase();
         actions.push({
             category: 'VENUE',
-            title: `Lowest-slippage venue: ${bestX}`,
-            detail: `Your fills averaged less slippage on ${bestX} than on ${worstX}.`,
+            title: `Average slippage by venue (not matched by symbol, time or size)`,
+            detail: `Your fills averaged less slippage on ${bestX} than on ${worstX}; the comparison is not matched by symbol, time or size.`,
             estimatedImpact: `~${venue.venueAlphaBps.toFixed(1)} bps slippage difference`,
             impactValue: venue.venueAlphaBps * (attribution?.totalNotional || 0) / 10000,
             icon: 'exchange',
@@ -104,7 +104,7 @@ export function buildCoach(input: CoachInput): { headline: string; actions: Coac
             category: 'ORDER_TYPE',
             title: `Maker share of fills: ${Math.round(b.makerRatio * 100)}%`,
             detail: `${Math.round(b.makerRatio * 100)}% of your fills were maker; the rest paid taker fees.`,
-            estimatedImpact: `~$${Math.round(taker)} of taker-fee cost${overPeriod} (modelled)`,
+            estimatedImpact: `$${Math.round(attribution.feeCost)} fees paid${overPeriod}`,
             impactValue: taker,
             icon: 'tag',
         });
@@ -114,7 +114,7 @@ export function buildCoach(input: CoachInput): { headline: string; actions: Coac
     actions.forEach((a, i) => { a.priority = i + 1; });
 
     let headline = 'No modelled cost driver stood out in this period.';
-    if (actions.length > 0) {
+    if (actions.length > 0 && actions[0].impactValue > 0) {   // timing carries no $ figure any more (audit §2.10)
         const top = actions[0];
         const driver = top.category === 'TIMING' ? 'timing' : top.category === 'VENUE' ? 'venue' : 'order type (taker fees)';
         headline = `Largest modelled cost driver: ${driver}, ${top.estimatedImpact.replace(/ \(modelled\)$/, '')}`;

@@ -5,7 +5,7 @@
 ![Node.js](https://img.shields.io/badge/Node.js-20+-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-FillScore answers the question retail crypto traders ignore — not whether you were directionally right, but HOW WELL you actually executed. It grades every trade on slippage, fees, timing, and spread cost against real market microstructure, producing an A–F FillScore. It is explicitly NOT a signal or prediction tool.
+FillScore answers the question retail crypto traders ignore — not whether you were directionally right, but HOW WELL you actually executed. It grades every trade on arrival slippage, maker share, UTC session and an estimated spread against public Binance market data, producing an A–F FillScore. It is explicitly NOT a signal or prediction tool.
 
 ## The Execution Council
 
@@ -157,4 +157,4 @@ MIT, see [LICENSE](LICENSE).
 
 ## Disclaimer
 
-FillScore audits historical execution quality. It does not provide trading signals, investment advice, or future price predictions. Demo data is synthetic trader populations evaluated against real Binance market microstructure (January 2024).
+FillScore audits historical execution quality. It does not provide trading signals, investment advice, or future price predictions. Demo data is synthetic trader populations evaluated against real Binance market microstructure (January 2024), except the three multi-venue demo accounts (Bybit, OKX, multi), whose prices are simulated and which are hidden.

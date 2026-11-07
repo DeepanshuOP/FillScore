@@ -75,7 +75,8 @@ describe('buildCoach headline (2c.2 C3)', () => {
             attribution: { timingCost: 1.4, feeCost: 0, totalNotional: 1000 },
             venue: null,
         });
-        expect(out.headline).toBe('Largest modelled cost driver: timing, ~$1 over 31 days');
-        expect(out.actions[0].estimatedImpact).toBe('~$1 over 31 days (modelled)');
+        // 4R-0 (audit §2.10): the flat timing $ figure is removed, so timing is never the headline driver
+        expect(out.headline).toBe('No modelled cost driver stood out in this period.');
+        expect(out.actions[0].estimatedImpact).toBe('Impact not measured');
     });
 });

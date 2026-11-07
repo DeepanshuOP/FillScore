@@ -46,7 +46,7 @@ describe('GET /api/audit/coach', () => {
     it('states the audited period instead of claiming a monthly figure', async () => {
         const res = await request(app).get('/api/audit/coach?userId=demo-disciplined');
         const timing = res.body.actions.find((a: any) => a.category === 'TIMING');
-        expect(timing.estimatedImpact).toMatch(/^~\$\d+ over 29 days \(modelled\)$/);
+        expect(timing.estimatedImpact).toBe('Impact not measured');   // 4R-0: flat timing $ removed (audit §2.10)
         expect(JSON.stringify(res.body)).not.toMatch(/\/month/);
     });
 
