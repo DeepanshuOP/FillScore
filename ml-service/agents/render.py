@@ -206,7 +206,7 @@ def prompt_view(packet_dict: dict) -> dict:
 
 def enrichment_ctx(trades) -> dict[str, dict]:
     """`markout.*` and `spread.*` placeholder namespaces (4a). Empty unless trades carry `postPrices` /
-    `spreadBps` enrichment, so un-enriched accounts keep byte-identical prompts. All values deterministic."""
+    `spreadEstimates` enrichment, so un-enriched accounts keep byte-identical prompts. All values deterministic."""
     from agents.metrics.markout_packet import HORIZONS_S, build_markout_summary
     ctx: dict[str, dict] = {}
     summary = build_markout_summary(trades or [])
@@ -223,8 +223,8 @@ def enrichment_ctx(trades) -> dict[str, dict]:
         mk["adverse_share"][f"h{h}"] = s["adverse_share"]
     if mk["adverse_share"]:
         ctx["markout"] = mk
-    cs = [t["spreadBps"]["cs"] for t in trades or [] if (t.get("spreadBps") or {}).get("cs") is not None]
-    ar = [t["spreadBps"]["ar"] for t in trades or [] if (t.get("spreadBps") or {}).get("ar") is not None]
+    cs = [t["spreadEstimates"]["cs"] for t in trades or [] if (t.get("spreadEstimates") or {}).get("cs") is not None]
+    ar = [t["spreadEstimates"]["ar"] for t in trades or [] if (t.get("spreadEstimates") or {}).get("ar") is not None]
     hs = [t["halfSpreadBps"] for t in trades or [] if t.get("halfSpreadBps") is not None]
     if cs and ar and hs:
         cs_m, ar_m = sum(cs) / len(cs), sum(ar) / len(ar)

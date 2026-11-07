@@ -129,6 +129,8 @@ def maker_instead_of_taker(trades: list[dict], target_ratio: float, *, spread_aw
 
     adv_bps, basis, n_used = adverse_selection_bps(trades, horizon_s, min_maker_fills)
     spread_c = adverse_c = 0.0
+    # no converted fill carries an estimate -> "unavailable": spread_component 0 is "no estimate", not a finding
+    spread_source = "estimated" if any(t.get("halfSpreadBps") is not None for t in conv) else "unavailable"
     for t in conv:
         sp = min(float(t.get("halfSpreadBps") or 0.0), HALF_SPREAD_CAP_BPS) / 1e4 * _notional(t)
         spread_c += sp
@@ -143,7 +145,7 @@ def maker_instead_of_taker(trades: list[dict], target_ratio: float, *, spread_aw
               f"{target_ratio:.0%} maker ratio: fee difference ${fee_c:.2f}, estimated half-spread ${spread_c:.2f}, "
               f"adverse selection ${adverse_c:.2f} ({basis}), times a {haircut:.0%} fill-probability assumption "
               f"= ${effect:.2f}.")
-    details = {"target_ratio": target_ratio, "fee_component": fee_c, "spread_component": spread_c,
+    details = {"target_ratio": target_ratio, "fee_component": fee_c, "spread_component": spread_c, "spread_source": spread_source,
                "adverse_selection_component": adverse_c, "fill_haircut": haircut,
                "adverse_basis": basis, "adverse_bps": adv_bps, "adverse_horizon_s": horizon_s,
                "adverse_n_fills": n_used}

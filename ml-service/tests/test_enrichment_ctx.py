@@ -31,7 +31,7 @@ def test_placeholder_renders_and_unknown_does_not():
 
 
 def test_spread_keys():
-    t = [{**TRADES[0], "halfSpreadBps": 1.5, "spreadBps": {"cs": 4.0, "ar": 3.0}}]
+    t = [{**TRADES[0], "halfSpreadBps": 1.5, "spreadEstimates": {"cs": 4.0, "ar": 3.0}}]
     e = dict(catalog_entries(enrichment_ctx(t), ["spread"]))
     # conservative = min(4.0, 3.0) = 3.0 bps ; half = 1.5
     assert e["spread.cs_bps"] == "4.0 bps" and e["spread.ar_bps"] == "3.0 bps"

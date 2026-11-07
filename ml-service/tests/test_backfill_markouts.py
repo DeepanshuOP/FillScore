@@ -45,7 +45,7 @@ def test_apply_writes_only_new_fields_and_is_idempotent():
     # executed at BASE+0 s: h1 -> target 1 -> bar0 ended 1, 100.0; h5 -> target 5 -> bar2 ended 3 (age 2) -> 100.2
     assert a["postPrices"] == {"1": 100.0, "5": 100.2, "30": None, "60": None, "300": None}
     assert a["markoutVersion"] == ENRICH_VERSION
-    assert a["halfSpreadBps"] is None and a["spreadBps"]["cs"] is None     # fixture too thin for the estimators
+    assert a["halfSpreadBps"] is None and a["spreadEstimates"]["cs"] is None and "spreadBps" not in a    # fixture too thin for the estimators
     # a symbol with no public data: fields are explicit None, never guessed
     assert col.find_one({"_id": "c"})["postPrices"] == {"1": None, "5": None, "30": None, "60": None, "300": None}
     # scores/grades untouched, demo rows untouched
@@ -90,5 +90,5 @@ def test_apply_sets_only_whitelisted_fields():
     run_backfill(col, fetch_day, apply=True, cache_dir=None)
     after = col.find_one({"_id": "b"})
     new = set(after) - set(before)
-    assert new == {"postPrices", "spreadBps", "halfSpreadBps", "markoutVersion"}
+    assert new == {"postPrices", "spreadEstimates", "halfSpreadBps", "markoutVersion"}   # never spreadBps
     assert {k: after[k] for k in before} == before

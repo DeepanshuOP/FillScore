@@ -70,6 +70,14 @@ export interface MarketSnapshot {
     spreadBps: number;
 }
 
+/** 4a enrichment written by the ml-service backfill; optional, never read by the v1 scorer. */
+export interface MarkoutEnrichment {
+    spreadEstimates?: { cs: number | null; ar: number | null; n_pairs: number; version: number } | null;
+    halfSpreadBps?: number | null;
+    postPrices?: Record<string, number | null> | null;
+    markoutVersion?: number;
+}
+
 export interface TradeMetrics {
     arrivalSlippageBps: number;
     vwapSlippageBps: number;
@@ -103,7 +111,7 @@ export interface WhaleCorrelation {
     whaleEnrichedAt: Date;
 }
 
-export interface EnrichedTrade extends NormalisedTrade, Partial<MarketSnapshot>, Partial<TradeMetrics>, Partial<TradeScores>, Partial<WhaleCorrelation> { }
+export interface EnrichedTrade extends NormalisedTrade, Partial<MarketSnapshot>, Partial<TradeMetrics>, Partial<TradeScores>, Partial<WhaleCorrelation>, MarkoutEnrichment { }
 
 export interface AuditSummary {
     userId: string;
@@ -122,6 +130,8 @@ export interface AuditSummary {
         worstHour: number;
         bestSymbol: string;
         worstSymbol: string;
+        /** Notional-weighted means of the engine's component scores (4R-0). Absent on audits stored before it. */
+        componentMeans?: { slippage: number | null; fees: number | null; timing: number | null; spread: number | null } | null;
     };
     recommendations: string[];
     createdAt: Date;

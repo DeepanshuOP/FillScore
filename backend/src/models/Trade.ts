@@ -37,6 +37,12 @@ const TradeSchema = new Schema<EnrichedTradeDocument>(
         askAtExecution: { type: Number },
         spreadBps: { type: Number },
 
+        // 4a markout/spread enrichment (owner: ml-service/scripts/backfill_markouts.py). Never overwrites spreadBps.
+        spreadEstimates: { type: Schema.Types.Mixed },
+        halfSpreadBps: { type: Number },
+        postPrices: { type: Schema.Types.Mixed },
+        markoutVersion: { type: Number },
+
         // Trade Metrics (optional)
         arrivalSlippageBps: { type: Number },
         vwapSlippageBps: { type: Number },

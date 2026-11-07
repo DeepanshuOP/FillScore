@@ -1,5 +1,5 @@
-"""Per-trade markout + spread enrichment. Writes ONLY postPrices, spreadBps, halfSpreadBps, markoutVersion; never a
-score, grade or any existing field. Idempotent (skips docs already at ENRICH_VERSION). Dry-run unless apply=True.
+"""Per-trade markout + spread enrichment. Writes ONLY postPrices, spreadEstimates, halfSpreadBps, markoutVersion; never
+spreadBps, a score, a grade or any existing field. Idempotent (skips docs already at ENRICH_VERSION). Dry-run unless apply=True.
 
 Reference market: Binance SPOT 1s klines for the trade's symbol (public data). For fills on other venues this is a
 reference price path, not that venue's own tape (an assumption, stated in the report).
@@ -12,7 +12,7 @@ from agents.metrics.spread_estimators import estimate_spread_window
 from marketdata.price_path import HORIZONS_S, aggregate_minutes, post_prices
 
 ENRICH_VERSION = 1
-FIELDS = ("postPrices", "spreadBps", "halfSpreadBps", "markoutVersion")
+FIELDS = ("postPrices", "spreadEstimates", "halfSpreadBps", "markoutVersion")
 
 
 def _epoch(dt) -> float:
@@ -74,7 +74,9 @@ def enrich_trade(doc: dict, bars: _Bars) -> dict:
     prices = post_prices(path, t * 1000)
     est = estimate_spread_window(aggregate_minutes(wide), t)
     return {"postPrices": prices,
-            "spreadBps": {"cs": est["cs_bps"], "ar": est["ar_bps"], "n_pairs": est["n_pairs"]},
+            # NEVER spreadBps: that is the scorer's numeric input (owner MarketDataService.ts). See shared/fieldRegistry.json.
+            "spreadEstimates": {"cs": est["cs_bps"], "ar": est["ar_bps"], "n_pairs": est["n_pairs"],
+                                "version": ENRICH_VERSION},
             "halfSpreadBps": est["half_spread_bps"], "markoutVersion": ENRICH_VERSION}
 
 

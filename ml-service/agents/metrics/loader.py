@@ -22,7 +22,7 @@ TRADE_PROJECTION = {
     "fillScore": 1, "executedAt": 1, "side": 1,
     "executionPrice": 1, "vwap5min": 1,
     "whaleAdverse": 1,
-    "postPrices": 1, "spreadBps": 1, "halfSpreadBps": 1,   # 4a enrichment (absent until backfilled)
+    "postPrices": 1, "spreadEstimates": 1, "halfSpreadBps": 1,   # 4a enrichment (absent until backfilled)
 }
 
 

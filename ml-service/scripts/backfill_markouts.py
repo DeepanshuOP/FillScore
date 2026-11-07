@@ -1,10 +1,10 @@
 """Backfill markout and spread enrichment onto existing trades. Run by a human, never by an agent.
 
   .venv/bin/python scripts/backfill_markouts.py                  # DRY RUN (default): counts, first 5 rows, cache size
-  .venv/bin/python scripts/backfill_markouts.py --apply          # writes postPrices, spreadBps, halfSpreadBps, markoutVersion
+  .venv/bin/python scripts/backfill_markouts.py --apply          # writes postPrices, spreadEstimates, halfSpreadBps, markoutVersion
   options: --user-id <id>  one account only | --include-demo  also demo-* accounts | --cache-dir <dir>
 
-Writes ONLY those four new fields (never a score or grade) and skips docs already at the current version, so a
+Writes ONLY those four fields (never spreadBps, a score or a grade) and skips docs already at the current version, so a
 re-run is a no-op. Public data comes from data.binance.vision (1s klines, SHA-256 verified, cached on disk).
 """
 from __future__ import annotations
