@@ -18,6 +18,24 @@ export function hourGapPhrase(input: { measured?: number | null; modelValue?: nu
     return v >= cap ? `averaged at least ${cap.toFixed(1)} points higher` : `averaged ${v.toFixed(1)} points higher`;
 }
 
+export interface ComponentMeans { slippage: number | null; fees: number | null; timing: number | null; spread: number | null }
+type ScoredLike = { notional: number; slippageScore?: number | null; feeScore?: number | null; timingScore?: number | null; exchangeScore?: number | null };
+
+/** Notional-weighted means of the per-trade component scores the engine already computed. A component averages only
+ *  over trades that carry it, and is null when no trade does. Display only; never feeds the grade. */
+export function computeComponentMeans(trades: ScoredLike[]): ComponentMeans {
+    const mean = (pick: (t: ScoredLike) => number | null | undefined): number | null => {
+        let sum = 0, w = 0;
+        for (const t of trades) {
+            const v = pick(t);
+            if (v == null || !Number.isFinite(v) || !(t.notional > 0)) continue;
+            sum += v * t.notional; w += t.notional;
+        }
+        return w > 0 ? sum / w : null;
+    };
+    return { slippage: mean(t => t.slippageScore), fees: mean(t => t.feeScore), timing: mean(t => t.timingScore), spread: mean(t => t.exchangeScore) };
+}
+
 export async function computeAuditSummary(userId: string, trades: EnrichedTrade[]): Promise<AuditSummary> {
     if (trades.length === 0) {
         return {
@@ -54,6 +72,7 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
     let makerCount = 0;
     let estimatedLossUSD = 0;
 
+    const scoredForMeans: ScoredLike[] = [];
     let minDate = trades[0].executedAt;
     let maxDate = trades[0].executedAt;
 
@@ -69,6 +88,7 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
         }
 
         const notional = trade.notional;
+        scoredForMeans.push({ notional, ...scores });
         totalNotional += notional;
 
         if (trade.executedAt < minDate) minDate = trade.executedAt;
@@ -164,7 +184,8 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
             bestHour,
             worstHour,
             bestSymbol,
-            worstSymbol
+            worstSymbol,
+            componentMeans: computeComponentMeans(scoredForMeans)
         },
         recommendations: [],
         createdAt: new Date()
@@ -179,16 +200,12 @@ export function generateRecommendations(summary: AuditSummary, trades: EnrichedT
     const recs: string[] = [];
     const b = summary.breakdown;
 
-    const msDiff = summary.period.end.getTime() - summary.period.start.getTime();
-    let days = msDiff / (1000 * 60 * 60 * 24);
-    if (days < 1) days = 1;
-    const monthlyMultiplier = 30 / days;
 
     if (b.makerRatio < 0.3) {
         const takingPercent = Math.round((1 - b.makerRatio) * 100);
-        const savingsUsd = summary.estimatedLossUSD * monthlyMultiplier;
-        const y = savingsUsd.toFixed(2);
-        recs.push(`You used market orders for ${takingPercent}% of trades, paying taker fees on each. Modelled taker-fee cost at this period's pace: ~$${y} per 30 days.`);
+        let takerFeesUsd = 0;
+        for (const t of trades) { if (!t.isMaker) { try { takerFeesUsd += tradeFeeUsd(t); } catch (e) { } } }
+        recs.push(`You used market orders for ${takingPercent}% of trades, paying taker fees on each. You paid $${takerFeesUsd.toFixed(2)} in fees on taker fills this period.`);
     }
 
     if (b.worstHour >= 22 || b.worstHour < 7) {
@@ -220,7 +237,7 @@ export function generateRecommendations(summary: AuditSummary, trades: EnrichedT
 
     if (b.avgSlippageBps > 20) {
         const xStr = b.avgSlippageBps.toFixed(1);
-        recs.push(`Your average arrival slippage of ${xStr} bps is above the retail average of 15–20 bps. Entries often landed during volatile moments.`);
+        recs.push(`Your average arrival slippage of ${xStr} bps over this period.`);
     }
 
     if (summary.estimatedLossUSD > 50) {
@@ -247,7 +264,7 @@ export function generateRecommendations(summary: AuditSummary, trades: EnrichedT
         if (avgTime < lowest) { lowest = avgTime; contributor = 'timing'; }
 
         const xStr = summary.estimatedLossUSD.toFixed(2);
-        recs.push(`Poor execution quality has cost you an estimated $${xStr} over this period. The biggest contributor is ${contributor}.`);
+        recs.push(`Fees above 2 bps of notional came to $${xStr} over this period (2 bps is a reference level, not a benchmark). The lowest-scoring component was ${contributor}.`);
     }
 
     const symStats: Record<string, { sum: number; notional: number }> = {};

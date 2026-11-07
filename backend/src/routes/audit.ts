@@ -11,7 +11,7 @@ import { aggregateCostAttribution } from '../scoring/attribution';
 import { tradeFeeUsd, FEE_USD_EXPR, computeFeeUsd } from '../scoring/fees';
 import { ReportService } from '../services/ReportService';
 import { summariseMarkouts, MarkoutTrade } from '../analytics/markouts';
-import { descriptiveAudit } from '../services/auditText';
+import { descriptiveAudit, withComponentMeans } from '../services/auditText';
 import { EnrichedTrade } from '../types';
 import rateLimit from 'express-rate-limit';
 import { resolveAccount, resolveDownloadAccount, VALID_DEMO_USERS } from '../middleware/resolveAccount';
@@ -135,7 +135,7 @@ auditRouter.get('/', resolveAccount, async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'No audit found — run an audit first' });
         }
 
-        return res.status(200).json(await descriptiveAudit(latestAudit, accountId));
+        return res.status(200).json(await withComponentMeans(await descriptiveAudit(latestAudit, accountId), accountId));
     } catch (error: any) {
         console.error('Error fetching audit:', error);
         return res.status(500).json({ error: 'Internal Server Error' });

@@ -20,6 +20,7 @@ import Link from 'next/link';
 import ConnectPrompt from '../components/ConnectPrompt';
 import { venueComparisonNote } from '../utils/navLinks';
 import { apiBase } from '../lib/apiBase';
+import { buildComponentCards, type ComponentMeans } from './componentCards';
 
 interface CostAttribution {
   slippageCost: number;
@@ -37,6 +38,7 @@ interface AuditBreakdown {
   worstHour: number;
   bestSymbol: string;
   worstSymbol: string;
+  componentMeans?: ComponentMeans | null;
 }
 
 interface AuditSummary {
@@ -698,41 +700,12 @@ function DashboardContent() {
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-[1rem]">
-                  {[
-                    {
-                      label: 'SLIPPAGE',
-                      key: 'slippage',
-                      score: Math.min(100, Math.max(0, Math.round(100 - (audit.breakdown.avgSlippageBps * 6)))),
-                      weight: '35%',
-                      value: `${audit.breakdown.avgSlippageBps.toFixed(1)} bps avg`,
-                      description: 'Arrival price vs execution'
-                    },
-                    {
-                      label: 'FEE EFFICIENCY',
-                      key: 'fees',
-                      score: Math.min(100, Math.max(0, Math.round(audit.breakdown.makerRatio * 100))),
-                      weight: '25%',
-                      value: `${Math.round(audit.breakdown.makerRatio * 100)}% maker`,
-                      description: 'Maker vs taker order ratio'
-                    },
-                    {
-                      label: 'TIMING',
-                      key: 'timing',
-                      score: Math.min(100, Math.max(0, audit.breakdown.worstHour >= 22 || audit.breakdown.worstHour <= 7 ? 65 : 85)),
-                      weight: '25%',
-                      value: `Best hour: ${audit.breakdown.bestHour}:00 UTC`,
-                      description: 'Liquidity window quality'
-                    },
-                    {
-                      label: 'SPREAD',
-                      key: 'exchange',
-                      score: Math.min(100, Math.max(0, Math.round(100 - (audit.breakdown.avgFeeDragBps * 2)))),
-                      weight: '15%',
-                      value: `${audit.breakdown.avgFeeDragBps.toFixed(1)} bps drag`,
-                      description: 'Exchange spread cost'
-                    }
-                  ].map((component) => (
-                    <div key={component.key} style={{
+                  {buildComponentCards(audit.breakdown).map((card) => ({
+                    ...card,
+                    display: card.score,
+                    score: card.score === '—' ? 0 : Number(card.score),
+                  })).map((component) => (
+                    <div key={component.key} title={component.tooltip} style={{
                       display: 'flex', flexDirection: 'column', gap: '1rem',
                       padding: '1.5rem',
                       background: '#161614',
@@ -758,10 +731,10 @@ function DashboardContent() {
 
                       <div>
                         <div className="text-[2rem] md:text-[2.5rem]" style={{ margin: '0.25rem 0', fontFamily: 'var(--font-inter)', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.03em', color: getScoreColor(component.score), transition: 'color 0.3s ease' }}>
-                          {component.score}
+                          {component.display}
                         </div>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.12em', color: getScoreColor(component.score), opacity: 0.7 }}>
-                          {getScoreLabel(component.score).toUpperCase()}
+                          {component.display === '—' ? 'NO SCORE' : getScoreLabel(component.score).toUpperCase()}
                         </div>
                         
                         <div style={{ margin: '0.25rem 0', width: '100%', height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', marginTop: '0.75rem' }}>
@@ -966,7 +939,7 @@ function DashboardContent() {
                 <div style={{ marginBottom: '2.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
-                      EXCHANGE COMPARISON
+                      Average slippage by venue (unmatched)
                     </div>
                   </div>
 

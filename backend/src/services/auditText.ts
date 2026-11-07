@@ -1,5 +1,5 @@
 import { Trade } from '../models/Trade';
-import { generateRecommendations } from '../scoring/audit';
+import { generateRecommendations, computeComponentMeans } from '../scoring/audit';
 import { findAdviceTerms } from '../constants/adviceTerms';
 import { EnrichedTrade } from '../types';
 
@@ -26,4 +26,19 @@ export async function descriptiveAudit(audit: any, accountId: string): Promise<a
         plain.recommendations = await regenerateRecommendations(plain, accountId);
     }
     return plain;
+}
+
+/** Response-only (never saved): adds breakdown.componentMeans to an audit stored without it, from the stored
+ *  per-trade scores. null when they are not stored, so the UI shows "—". Kept apart from descriptiveAudit, which
+ *  must leave every stored field byte-identical. */
+export async function withComponentMeans(plain: any, accountId: string): Promise<any> {
+    if (!plain?.breakdown || plain.breakdown.componentMeans != null) return plain;
+    const docs = await Trade.find({ accountId, fillScore: { $exists: true, $ne: null } }).lean();
+    return { ...plain, breakdown: { ...plain.breakdown, componentMeans: componentMeansFromStored(docs) } };
+}
+
+/** Read-only: component means from stored per-trade scores; null when no trade carries them. */
+export function componentMeansFromStored(docs: any[]) {
+    const m = computeComponentMeans(docs);
+    return Object.values(m).every(v => v == null) ? null : m;
 }

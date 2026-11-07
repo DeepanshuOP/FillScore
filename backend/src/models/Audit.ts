@@ -30,6 +30,7 @@ const AuditSchema = new Schema<AuditSummaryDocument>(
             worstHour: { type: Number, required: true },
             bestSymbol: { type: String, required: true },
             worstSymbol: { type: String, required: true },
+            componentMeans: { type: mongoose.Schema.Types.Mixed },
         },
         recommendations: [{ type: String }],
         createdAt: { type: Date, default: Date.now },
