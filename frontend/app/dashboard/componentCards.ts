@@ -11,6 +11,13 @@ export interface CardInput {
 
 export interface ComponentCard { label: string; key: string; score: string; weight: string; value: string; description: string; tooltip?: string }
 
+/** What the card draws. A "—" (null) component has no bar and no colour score, so it can never look like a worst case. */
+export function cardVisual(card: ComponentCard): { hasBar: boolean; barPct: number; colorScore: number | null } {
+  if (card.score === '—') return { hasBar: false, barPct: 0, colorScore: null }
+  const n = Number(card.score)
+  return { hasBar: true, barPct: n, colorScore: n }
+}
+
 export const NO_SCORES_TOOLTIP = 'Re-run audit to see component scores'
 
 const show = (n: number | null | undefined) => (n == null || !Number.isFinite(n) ? '—' : String(Math.round(n)))

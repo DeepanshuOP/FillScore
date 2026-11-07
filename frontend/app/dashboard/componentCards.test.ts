@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { buildComponentCards, NO_SCORES_TOOLTIP } from './componentCards'
+import { buildComponentCards, cardVisual, NO_SCORES_TOOLTIP } from './componentCards'
 
 const base = { avgSlippageBps: 2.5, makerRatio: 0.4, bestHour: 10 }
 
@@ -14,6 +14,11 @@ describe('dashboard component cards', () => {
     expect(spread.value).not.toMatch(/drag|bps/i)
     expect(JSON.stringify(cards)).not.toContain('Exchange spread cost')
     expect(JSON.stringify(cards)).not.toContain('avgFeeDragBps')
+  })
+  it('a null component has no bar and no worst-case colour; a real 0 still does', () => {
+    const [slip, fees] = buildComponentCards({ ...base, componentMeans: { slippage: null, fees: 0, timing: 70, spread: 88 } })
+    expect(cardVisual(slip)).toEqual({ hasBar: false, barPct: 0, colorScore: null })
+    expect(cardVisual(fees)).toEqual({ hasBar: true, barPct: 0, colorScore: 0 })
   })
   it('missing componentMeans shows "—" with the re-run tooltip, never an invented score', () => {
     const cards = buildComponentCards({ ...base, componentMeans: null })

@@ -20,7 +20,8 @@ import Link from 'next/link';
 import ConnectPrompt from '../components/ConnectPrompt';
 import { venueComparisonNote } from '../utils/navLinks';
 import { apiBase } from '../lib/apiBase';
-import { buildComponentCards, type ComponentMeans } from './componentCards';
+import { buildComponentCards, cardVisual, type ComponentMeans } from './componentCards';
+import { skippedNotice, type SkippedTrades } from './skipped';
 
 interface CostAttribution {
   slippageCost: number;
@@ -52,6 +53,7 @@ interface AuditSummary {
   estimatedLossUSD: number;
   breakdown: AuditBreakdown;
   recommendations: string[];
+  skippedTrades?: SkippedTrades;
   createdAt: string;
 }
 
@@ -698,13 +700,23 @@ function DashboardContent() {
                     Weighted Composite
                   </div>
                 </div>
+                {skippedNotice(audit.skippedTrades) && (
+                  <div data-testid="skipped-trades" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.08em', color: '#b8b0a6', marginBottom: '1rem' }}>
+                    {skippedNotice(audit.skippedTrades)}
+                  </div>
+                )}
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-[1rem]">
-                  {buildComponentCards(audit.breakdown).map((card) => ({
-                    ...card,
-                    display: card.score,
-                    score: card.score === '—' ? 0 : Number(card.score),
-                  })).map((component) => (
+                  {buildComponentCards(audit.breakdown).map((card) => {
+                    const vis = cardVisual(card)
+                    return {
+                      ...card,
+                      display: card.score,
+                      vis,
+                      score: vis.colorScore ?? 0,
+                      color: vis.colorScore == null ? '#888078' : getScoreColor(vis.colorScore),
+                    }
+                  }).map((component) => (
                     <div key={component.key} title={component.tooltip} style={{
                       display: 'flex', flexDirection: 'column', gap: '1rem',
                       padding: '1.5rem',
@@ -718,7 +730,7 @@ function DashboardContent() {
                     onMouseOver={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
                     onMouseOut={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
                     >
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(to right, transparent, ${getScoreColor(component.score)}30, transparent)` }} />
+                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(to right, transparent, ${component.color}30, transparent)` }} />
                       
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.18em', color: '#888078' }}>
@@ -730,22 +742,24 @@ function DashboardContent() {
                       </div>
 
                       <div>
-                        <div className="text-[2rem] md:text-[2.5rem]" style={{ margin: '0.25rem 0', fontFamily: 'var(--font-inter)', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.03em', color: getScoreColor(component.score), transition: 'color 0.3s ease' }}>
+                        <div className="text-[2rem] md:text-[2.5rem]" style={{ margin: '0.25rem 0', fontFamily: 'var(--font-inter)', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.03em', color: component.color, transition: 'color 0.3s ease' }}>
                           {component.display}
                         </div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.12em', color: getScoreColor(component.score), opacity: 0.7 }}>
+                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.12em', color: component.color, opacity: 0.7 }}>
                           {component.display === '—' ? 'NO SCORE' : getScoreLabel(component.score).toUpperCase()}
                         </div>
                         
+                        {component.vis.hasBar && (
                         <div style={{ margin: '0.25rem 0', width: '100%', height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', marginTop: '0.75rem' }}>
                           <div style={{
                             height: '100%',
-                            width: `${barsVisible ? component.score : 0}%`,
-                            background: `linear-gradient(to right, ${getScoreColor(component.score)}80, ${getScoreColor(component.score)})`,
+                            width: `${barsVisible ? component.vis.barPct : 0}%`,
+                            background: `linear-gradient(to right, ${component.color}80, ${component.color})`,
                             borderRadius: '2px',
                             transition: 'width 1s cubic-bezier(0.22, 1, 0.36, 1)'
                           }} />
                         </div>
+                        )}
                       </div>
 
                       <div style={{ marginTop: 'auto' }}>

@@ -34,7 +34,19 @@ export async function descriptiveAudit(audit: any, accountId: string): Promise<a
 export async function withComponentMeans(plain: any, accountId: string): Promise<any> {
     if (!plain?.breakdown || plain.breakdown.componentMeans != null) return plain;
     const docs = await Trade.find({ accountId, fillScore: { $exists: true, $ne: null } }).lean();
-    return { ...plain, breakdown: { ...plain.breakdown, componentMeans: componentMeansFromStored(docs) } };
+    return { ...plain, breakdown: { ...plain.breakdown, componentMeans: componentMeansForPeriod(docs, plain.period) } };
+}
+
+/** Component means over only the trades inside the audit's period (bounds inclusive). With no usable period the
+ *  trades are not filtered. */
+export function componentMeansForPeriod(docs: any[], period?: { start?: any; end?: any } | null) {
+    const s = period?.start ? new Date(period.start).getTime() : NaN;
+    const e = period?.end ? new Date(period.end).getTime() : NaN;
+    if (!Number.isFinite(s) || !Number.isFinite(e)) return componentMeansFromStored(docs);
+    return componentMeansFromStored(docs.filter(d => {
+        const t = new Date(d.executedAt).getTime();
+        return t >= s && t <= e;
+    }));
 }
 
 /** Read-only: component means from stored per-trade scores; null when no trade carries them. */

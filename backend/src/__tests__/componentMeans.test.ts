@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { computeComponentMeans } from '../scoring/audit';
-import { componentMeansFromStored } from '../services/auditText';
+import { componentMeansFromStored, componentMeansForPeriod } from '../services/auditText';
 
 describe('computeComponentMeans (notional-weighted means of the engine\'s per-trade component scores)', () => {
     it('notional 100 & 300, slippage scores 80 & 40 -> 50', () => {
@@ -37,6 +37,24 @@ describe('computeComponentMeans (notional-weighted means of the engine\'s per-tr
 
     it('empty -> all null', () => {
         expect(computeComponentMeans([])).toEqual({ slippage: null, fees: null, timing: null, spread: null });
+    });
+});
+
+describe('componentMeansForPeriod (same window the audit used)', () => {
+    const period = { start: new Date('2026-01-01T00:00:00Z'), end: new Date('2026-01-31T23:59:59Z') };
+    const t = (d: string, notional: number, slippageScore: number) => ({ executedAt: new Date(d), notional, slippageScore });
+    it('averages only trades inside the period (bounds inclusive)', () => {
+        const docs = [
+            t('2026-01-05T00:00:00Z', 100, 80),
+            t('2026-01-31T23:59:59Z', 300, 40),   // exactly period.end: inside
+            t('2026-02-02T00:00:00Z', 1000, 0),   // outside
+            t('2025-12-31T00:00:00Z', 1000, 0),   // outside
+        ];
+        // inside: (100*80 + 300*40) / (100+300) = 20000/400 = 50 (with the outside trades it would be 20000/2400 = 8.33)
+        expect(componentMeansForPeriod(docs, period)!.slippage).toBe(50);
+    });
+    it('null when nothing in the period carries scores', () => {
+        expect(componentMeansForPeriod([t('2026-03-01T00:00:00Z', 100, 80)], period)).toBeNull();
     });
 });
 
