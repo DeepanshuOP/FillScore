@@ -36,7 +36,23 @@ export function computeComponentMeans(trades: ScoredLike[]): ComponentMeans {
     return { slippage: mean(t => t.slippageScore), fees: mean(t => t.feeScore), timing: mean(t => t.timingScore), spread: mean(t => t.exchangeScore) };
 }
 
-export async function computeAuditSummary(userId: string, trades: EnrichedTrade[]): Promise<AuditSummary> {
+export type SkippedTrades = { count: number; reasons: Record<string, number> };
+
+/** Stable reason key for a trade the scorer refused. Keys only; the engine's messages are unchanged. */
+export function skipReason(e: unknown): string {
+    const m = e instanceof Error ? e.message : String(e);
+    if (/spreadBps/.test(m)) return 'invalid_spreadBps';
+    if (/arrivalPriceProxy|enrichment/.test(m)) return 'missing_market_data';
+    return 'invalid_input';
+}
+
+export function addSkip(s: SkippedTrades, reason: string): void {
+    s.count++;
+    s.reasons[reason] = (s.reasons[reason] ?? 0) + 1;
+}
+
+export async function computeAuditSummary(userId: string, trades: EnrichedTrade[], priorSkips?: SkippedTrades): Promise<AuditSummary> {
+    const skipped: SkippedTrades = { count: priorSkips?.count ?? 0, reasons: { ...(priorSkips?.reasons ?? {}) } };
     if (trades.length === 0) {
         return {
             userId,
@@ -57,6 +73,7 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
                 worstSymbol: ''
             },
             recommendations: [],
+            skippedTrades: skipped,
             createdAt: new Date()
         };
     }
@@ -84,6 +101,7 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
         try {
             scores = scoreTrade(trade);
         } catch (e) {
+            addSkip(skipped, skipReason(e));
             continue;
         }
 
@@ -188,6 +206,7 @@ export async function computeAuditSummary(userId: string, trades: EnrichedTrade[
             componentMeans: computeComponentMeans(scoredForMeans)
         },
         recommendations: [],
+        skippedTrades: skipped,
         createdAt: new Date()
     };
 

@@ -3,7 +3,7 @@ import { syncAccountTrades } from '../services/SyncService';
 import { MarketDataService } from '../services/MarketDataService';
 import { Trade } from '../models/Trade';
 import { Audit } from '../models/Audit';
-import { computeAuditSummary } from '../scoring/audit';
+import { computeAuditSummary, addSkip, skipReason, type SkippedTrades } from '../scoring/audit';
 import { recordAuditSnapshot, getAuditHistory } from '../scoring/history';
 import { hourSummary, describePeriod, describeWindow, buildCoach } from '../scoring/coach';
 import { scoreTrade, scoreTiming, computeArrivalSlippageBps, computeFeeDragBps } from '../scoring/engine';
@@ -14,7 +14,7 @@ import { summariseMarkouts, MarkoutTrade } from '../analytics/markouts';
 import { descriptiveAudit, withComponentMeans } from '../services/auditText';
 import { EnrichedTrade } from '../types';
 import rateLimit from 'express-rate-limit';
-import { resolveAccount, resolveDownloadAccount, VALID_DEMO_USERS } from '../middleware/resolveAccount';
+import { resolveAccount, resolveDownloadAccount, VALID_DEMO_USERS, isHiddenDemo } from '../middleware/resolveAccount';
 import { ExchangeConnection } from '../models/ExchangeConnection';
 import { requireAuth } from '../middleware/requireAuth';
 import { signDownloadToken, DOWNLOAD_TOKEN_TTL_SECONDS } from '../utils/downloadToken';
@@ -58,6 +58,7 @@ export async function executeAuditPipeline(accountId: string) {
 
     const validTrades: EnrichedTrade[] = [];
     let tradesScored = 0;
+    const pipelineSkips: SkippedTrades = { count: 0, reasons: {} };
     for (const tData of trades) {
         try {
             const scores = scoreTrade(tData);
@@ -70,7 +71,7 @@ export async function executeAuditPipeline(accountId: string) {
             validTrades.push(tData);
             tradesScored++;
         } catch (e) {
-            // Skip
+            addSkip(pipelineSkips, skipReason(e));   // disclosed in the audit; scoring unchanged
         }
     }
 
@@ -102,7 +103,7 @@ export async function executeAuditPipeline(accountId: string) {
         })), { ordered: false });
     }
 
-    const summary = await computeAuditSummary(accountId, validTrades);
+    const summary = await computeAuditSummary(accountId, validTrades, pipelineSkips);
 
     const savedAudit = await Audit.findOneAndUpdate(
         { accountId },
@@ -206,7 +207,7 @@ auditRouter.get('/score', resolveAccount, async (req: Request, res: Response) =>
             return res.status(404).json({ error: 'No audit found for this user.' });
         }
 
-        return res.status(200).json(await descriptiveAudit(latestAudit, accountId));
+        return res.status(200).json(await withComponentMeans(await descriptiveAudit(latestAudit, accountId), accountId));
 
     } catch (error: any) {
         console.error('Error fetching score:', error);
@@ -322,6 +323,10 @@ auditRouter.get('/share/:userId', shareLimiter, async (req: Request, res: Respon
         const userId = req.params.userId;
         if (!userId) {
             return res.status(400).json({ error: 'Missing userId parameter' });
+        }
+
+        if (isHiddenDemo(userId)) {
+            return res.status(404).json({ error: 'demo_unavailable' });
         }
 
         if (!VALID_DEMO_USERS.has(userId)) {

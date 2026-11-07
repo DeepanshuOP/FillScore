@@ -33,6 +33,7 @@ const AuditSchema = new Schema<AuditSummaryDocument>(
             componentMeans: { type: mongoose.Schema.Types.Mixed },
         },
         recommendations: [{ type: String }],
+        skippedTrades: { type: mongoose.Schema.Types.Mixed },
         createdAt: { type: Date, default: Date.now },
     },
     {

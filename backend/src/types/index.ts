@@ -134,6 +134,8 @@ export interface AuditSummary {
         componentMeans?: { slippage: number | null; fees: number | null; timing: number | null; spread: number | null } | null;
     };
     recommendations: string[];
+    /** Trades the scorer refused, with reasons. Absent on audits stored before 4R-0b: read that as unknown, not 0. */
+    skippedTrades?: { count: number; reasons: Record<string, number> };
     createdAt: Date;
 }
 
