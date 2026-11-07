@@ -91,9 +91,36 @@ RE_ENV_READ_LINE="${SEP}(cat|tac|less|more|head|tail|bat|batcat|nl|od|xxd|hexdum
 [[ "$cmd" =~ $RE_GIT_ADD_GLOB ]] && deny "Glob staging is forbidden. Stage an explicit file list."
 
 # --- 3. Never run destructive data scripts --------------------------------------------------------
-[[ "$cmd" =~ $RE_SEED || "$cmd" =~ $RE_DESTRUCTIVE ]] && deny "Destructive against the locked demo dataset. This needs explicit written permission and a backup first."
-[[ "$cmd" =~ $RE_WHALE_SCRIPT && "$cmd" =~ $RE_PYTHON_RUN ]] && deny "whale enrich.py / regen_fills.py write to MongoDB Atlas. Not without explicit written permission."
-[[ "$cmd" =~ $RE_APPLY ]] && deny "Migration --apply is gated on review. Run the dry run, show the output, and wait."
+# 4R-0: judge each shell segment (split on && || ; | & and newlines) on its own. A segment whose command word is a
+# plain reader/searcher (cat, grep, sed, wc, ...) may MENTION a protected script (reading is allowed, spec D1); any
+# other command (node, npx, ts-node, python, npm run, bash -c, xargs, ...) that mentions a protected script, or
+# carries --apply, is an execution and is blocked. Bare `printenv` / `env` dump the environment and are blocked.
+RE_P_SEED='(^|[[:space:]])(npm|pnpm|yarn)([[:space:]]+[^;|&]*)?[[:space:]]+(run|run-script)[[:space:]]+seed([[:space:]"'"'"')]|$)'
+RE_P_DESTRUCTIVE='(seedDatabase|seedAudit|seedDemo|generateSyntheticTrades|purgeStale|fixUserIndex|fixConnectionIndex|backfillAccountId|backfillDataSource|freezeDemoAudits|dropDatabase|deleteMany\(\{\}\))'
+RE_P_WHALE='(^|[[:space:]/\.])(enrich|regen_fills)(\.py)?([[:space:]"'"'"';|&)]|$)'
+RE_READER_CMD='^(cat|tac|less|more|head|tail|nl|grep|egrep|fgrep|rg|sed|awk|wc|ls|stat|file|diff|echo|printf|test|\[|find|sort|uniq|cut|tr|jq|git|cd|pwd|true|false|export|which|type)$'
+check_segments() {
+  local text="$1" seg first base rest
+  text="${text//&&/$'\n'}"; text="${text//||/$'\n'}"; text="${text//;/$'\n'}"; text="${text//|/$'\n'}"; text="${text//&/$'\n'}"
+  while IFS= read -r seg; do
+    seg="${seg#"${seg%%[![:space:]]*}"}"
+    while [[ "$seg" =~ ^[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+(.*)$ ]]; do seg="${BASH_REMATCH[1]}"; done
+    seg="${seg#\(}"; seg="${seg#\{}"; seg="${seg#"${seg%%[![:space:]]*}"}"
+    [[ -z "$seg" ]] && continue
+    first="${seg%%[[:space:]]*}"; base="${first##*/}"; rest="${seg#"$first"}"; rest="${rest#"${rest%%[![:space:]]*}"}"
+    if [[ "$base" == printenv || ( "$base" == env && -z "$rest" ) ]]; then
+      deny "printenv / env would print the environment, which can hold secrets. Check env vars by key name or non-empty check only."
+    fi
+    [[ "$base" =~ $RE_READER_CMD ]] && continue
+    local s2="${seg//marketdata[.\/]enrich/}"        # ml-service/marketdata/enrich.py is a library module, not whale/enrich.py
+    if [[ "$s2" =~ $RE_P_SEED || "$s2" =~ $RE_P_DESTRUCTIVE ]]; then
+      deny "Destructive against the locked demo dataset: running this script needs explicit written permission and a backup first. (Reading it with cat/grep/sed/wc or the Read tool is allowed.)"
+    fi
+    [[ "$s2" =~ $RE_P_WHALE ]] && deny "whale enrich.py / regen_fills.py write to MongoDB Atlas: running them needs explicit written permission. (Reading them is allowed.)"
+    [[ "$seg" =~ $RE_APPLY ]] && deny "Migration --apply is gated on review. Run the dry run, show the output, and wait."
+  done <<<"$text"
+}
+check_segments "$cmd_joined"
 
 # --- 4. Guard the eval timing constant ------------------------------------------------------------
 [[ "$cmd" =~ run_consistency_eval && "$cmd" =~ $RE_SLEEP_LOW ]] && deny "Inter-run sleep below 65s causes 429 contamination. Keep it at 65."
