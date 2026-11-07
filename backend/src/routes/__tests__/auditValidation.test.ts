@@ -79,13 +79,13 @@ describe('audit route input validation', () => {
 
 describe('GET /api/audit/history', () => {
     it('returns an empty list rather than an error when an account has no history', async () => {
-        const res = await request(app).get('/api/audit/history?userId=demo-okx');
+        const res = await request(app).get('/api/audit/history?userId=demo-moderate');
         expect(res.status).toBe(200);
         expect(res.body).toEqual({ points: [] });
     });
 
     it.each(['0', '1000', 'abc'])('rejects limit=%s', async (v) => {
-        const res = await request(app).get(`/api/audit/history?userId=demo-okx&limit=${v}`);
+        const res = await request(app).get(`/api/audit/history?userId=demo-moderate&limit=${v}`);
         expect(res.status).toBe(400);
     });
 

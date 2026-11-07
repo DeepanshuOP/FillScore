@@ -43,11 +43,26 @@ describe('F-08 demo accounts are read-only', () => {
         await mongoose.disconnect();
     });
 
-    it.each(['demo-disciplined', 'demo-moderate', 'demo-aggressive', 'demo-bybit', 'demo-okx', 'demo-multi'])(
+    it.each(['demo-disciplined', 'demo-moderate', 'demo-aggressive'])(
         'POST /api/audit/run?userId=%s answers 403', async (id) => {
             const res = await request(app).post(`/api/audit/run?userId=${id}`);
             expect(res.status).toBe(403);
             expect(res.body.error).toBe('demo_read_only');
+        });
+
+    // 4R-0b: the rolling demos are hidden; a write attempt is refused with 404 before it can reach the audit run.
+    it.each(['demo-bybit', 'demo-okx', 'demo-multi'])(
+        'POST /api/audit/run?userId=%s answers 404 demo_unavailable', async (id) => {
+            const res = await request(app).post(`/api/audit/run?userId=${id}`);
+            expect(res.status).toBe(404);
+            expect(res.body.error).toBe('demo_unavailable');
+        });
+
+    it.each(['demo-bybit', 'demo-okx', 'demo-multi'])(
+        'GET /api/audit/share/%s answers 404 demo_unavailable', async (id) => {
+            const res = await request(app).get(`/api/audit/share/${id}`);
+            expect(res.status).toBe(404);
+            expect(res.body.error).toBe('demo_unavailable');
         });
 
     it('the locked demo audit is unchanged after a run attempt', async () => {
@@ -58,7 +73,7 @@ describe('F-08 demo accounts are read-only', () => {
     });
 
     it('a demo id passed in the body is refused too', async () => {
-        const res = await request(app).post('/api/audit/run').send({ userId: 'demo-okx' });
+        const res = await request(app).post('/api/audit/run').send({ userId: 'demo-moderate' });
         expect(res.status).toBe(403);
         expect(res.body.error).toBe('demo_read_only');
     });

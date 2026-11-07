@@ -122,7 +122,7 @@ describe('authenticated downloads', () => {
     });
 
     it('leaves the demo flow untouched', async () => {
-        const res = await request(app).get('/api/audit/trades/export?userId=demo-okx');
+        const res = await request(app).get('/api/audit/trades/export?userId=demo-moderate');
         expect(res.status).toBe(200);
     });
 });

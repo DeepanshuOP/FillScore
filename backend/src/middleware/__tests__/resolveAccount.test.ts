@@ -39,7 +39,8 @@ describe('resolveAccount middleware', () => {
     ];
 
     it('Rule 1: Resolves valid demo slug without auth header', async () => {
-        for (const demoUser of validDemoUsers) {
+        // 4R-0b: demo-bybit/okx/multi are hidden (404 demo_unavailable, see hiddenDemos.test.ts); only the rest resolve.
+        for (const demoUser of validDemoUsers.filter(u => !['demo-bybit', 'demo-okx', 'demo-multi'].includes(u))) {
             const res = await request(app).get(`/test?userId=${demoUser}`);
             expect(res.status).toBe(200);
             expect(res.body).toEqual({ accountId: demoUser, isDemo: true });

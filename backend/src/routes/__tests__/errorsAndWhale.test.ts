@@ -34,12 +34,12 @@ describe('500 responses do not echo internal error text', () => {
     };
 
     it.each([
-        ['GET', '/api/audit?userId=demo-okx'],
-        ['GET', '/api/audit/score?userId=demo-okx'],
-        ['GET', '/api/audit/coach?userId=demo-okx'],
-        ['GET', '/api/audit/analytics/whale-correlation?userId=demo-okx'],
-        ['GET', '/api/attribution?userId=demo-okx'],
-        // POST /api/audit/run?userId=demo-okx was here; since F-08 (item 1.4) a demo run is refused
+        ['GET', '/api/audit?userId=demo-disciplined'],
+        ['GET', '/api/audit/score?userId=demo-disciplined'],
+        ['GET', '/api/audit/coach?userId=demo-disciplined'],
+        ['GET', '/api/audit/analytics/whale-correlation?userId=demo-disciplined'],
+        ['GET', '/api/attribution?userId=demo-disciplined'],
+        // POST /api/audit/run?userId=demo-disciplined was here; since F-08 (item 1.4) a demo run is refused
         // with 403 before any database access, so it can no longer reach the failing query.
     ])('%s %s answers 500 with a generic body', async (method, url) => {
         failing();
