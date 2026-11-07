@@ -43,3 +43,31 @@ Findings, decisions and numbers, by topic. **Every number comes from a phase rep
 - Repeated "the bug is still there" reports were **stale deploys**: Render's GitHub App wasn't installed. The fix: commit-verified `/version` endpoints plus a smoke script with an expected SHA, and CI-gated deploys. [2b.4–3a]
 - **Observability leak:** the test suite sent about 2.5K fake spans to Langfuse while keys were in `.env`. Fixed with a tracing kill switch under pytest. [3c, 4a]
 - **Test infrastructure:** about 57 leftover `/tmp/fs-e2e-mongo-*` directories (~300 MB each) filled `/tmp` and broke mongodb-memory-server. Fix: teardown in the e2e config. [4a → 4b-1]
+
+## E. Audit 2026-11 [audit, 2026-11]
+Source for every line: `docs/research/AUDIT_2026-11.md` and the read-only scripts in `.work/audit_queries/` (2026-11-07). Limitation that applies throughout: the only trades are the 897 synthetic-demo trades. Atlas holds 0 real-user trades.
+
+- **2026-11-07, `spreadBps` collision.** The 4a backfill (`ml-service/marketdata/enrich.py:77`) wrote `spreadBps` as `{cs, ar, n_pairs}` on 897/897 demo trades. The scorer reads `spreadBps` as a number (`backend/src/scoring/engine.ts:243`). Effects: every trade now fails `scoreTrade`, spread cost renders $0, and the CSV prints `[object Object]`. Locked grades are intact only because the audits are frozen. Proposed fix: ADR-0009.
+- **2026-11-07, real spread on four real days.** Measured as the trade-sign spread from aggTrades. On every day it equals exactly one tick at both the median and p90: BTCUSDT 0.0023, ETHUSDT 0.0446, BNBUSDT 3.16, SOLUSDT 1.05 bps (full spread).
+  - Corwin–Schultz / Abdi–Ranaldo on the same days: 0.70/1.22, 0.81/1.52, 3.67/3.36 and 3.78/4.39 bps.
+  - The 1-min-range heuristic ×0.15: 0.58, 0.62, 1.88 and 2.18 bps.
+  - Limitation: one day per symbol, Jan 2024.
+- **2026-11-07, correction to §C "Backfill dry-run".** BNBUSDT's tick in Jan 2024 was 0.1 (about 3.16 bps at ~$316), not ~0.3 bps. The 4a BNB half-spread (1.05–1.58 bps) is therefore close to the real half-spread (1.58 bps), and the 1.0 bp cap *understates* BNB. The earlier sentence "likely overstate BNBUSDT's real quoted spread (about one tick, ~0.3 bps at $310)" is superseded (2026-11-07). The overstatement claim does hold for BTC and ETH.
+- **2026-11-07, arrival-price error.** The live arrival benchmark is the 1-min kline open. Against a 1 s benchmark (the last 1 s close before the fill), median |error| is BTC 1.97, ETH 2.14, BNB 3.23 and SOL 5.43 bps, with p99 18–44 bps. Measured at the 896 demo timestamps.
+- **2026-11-07, demo fills vs real 1 s bars.** 73.4% (658/896) of demo fill prices lie outside the real 1 s [low, high] at their second.
+  - Binance-trio LIMIT fills: 96.6–98.8% outside, by a median of about 2 bps.
+  - Binance-trio MARKET fills: 27–31% outside, mostly by under 1.1 bps.
+  - Rolling accounts (demo-bybit/okx/multi): 100% outside, by a median of 3,224–4,184 bps.
+- **2026-11-07, the rolling demo accounts have simulated prices.** `backend/src/scripts/seedDatabase.ts` draws BTC fills at $40–45k and ETH at $2.2–2.5k on 2026 timestamps, with random arrival, VWAP and spread from unseeded `Math.random`. Their stored 60 s markouts have a median of about +3,450 to +3,676 bps. This contradicts "all market data is real" (product rule 4) for these 190 trades.
+- **2026-11-07, demo LIMIT slippage is 0 by construction.** `whale/regen_fills.py:52-60` sets arrival = the fill price for LIMIT orders, so 380/380 Binance-trio LIMIT fills have exactly 0 bps. This strengthens ROADMAP §2.3.1: any whale ↔ slippage test on these trades is uninterpretable.
+- **2026-11-07, timing table vs real liquidity** (BTCUSDT, Jan 2024, 31 days of 1 s bars). Corr(engine timing score, median quote volume per minute) = 0.55 (SOL: 0.51). Peak volume falls at 14–16 UTC. Hours 07–08 score 95 but rank 16–18 of 24; hour 16 ranks 2nd but scores 70.
+- **2026-11-07, Binance public data inventory.**
+  - Spot (daily and monthly): only aggTrades, klines and trades.
+  - USD-M daily adds bookDepth (BTCUSDT 2023-01-01 → 2026-11-06), bookTicker (ends 2024-03-30) and metrics.
+  - bookDepth is cumulative depth in ±1…±5% bands at ~30 s, not L2. Historical spot OBI is impossible (ADR-0006).
+- **2026-11-07, whale "adverse" weights post-fill bursts.** `whale_score.py:156` decays on `abs(seconds)`, so bursts after the fill count toward "adverse".
+- **2026-11-07, packets.** `liquidity_packet` reversion reads fields nothing writes, so `has_reversion_data` is always False. The 4a markouts reach prompts only through the render namespaces. `regime="STABLE"` (`agents/council.py:574`) is injected into every specialist, synthesis and single-call prompt.
+- **2026-11-07, correction to three §E lines above (evidence withdrawn).** Some evidence was obtained after a FillScore guard had blocked the first attempt, so it is withdrawn.
+  - **`spreadBps` collision:** the "897/897" count and the `enrich.py:77` citation are withdrawn (superseded 2026-11-07). The finding stands: the Q1 query crashed on demo `spreadBps` with `TypeError: '<' not supported between instances of 'dict' and 'dict'`, `agents/render.py:226-227` reads it as an object, and `scripts/backfill_markouts.py:4` writes it.
+  - **Rolling demo accounts:** the price ranges ($40–45k, $2.2–2.5k) and the "unseeded `Math.random`" mechanism are withdrawn (superseded 2026-11-07). They came from a script file read after a guard block, and are UNVERIFIED pending permission. The data finding stands: 100% outside the real 1 s bar, median gap 3,224–4,184 bps (Q2), 60 s markouts at a median of +3,450 to +3,676 bps (Q3).
+  - Details: "Evidence withdrawn" table in `docs/research/AUDIT_2026-11.md`.
