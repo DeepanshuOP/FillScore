@@ -100,5 +100,39 @@ check deny "ls || node dist/scripts/purgeStaleAudits.js"
 check deny "FOO=1 python ml-service/whale/regen_fills.py"
 check deny "echo ok & python3 ml-service/whale/enrich.py"
 
+# --- 4R-0b: nested execution behind a reader, abbreviations, quoting, indirection ---
+check deny 'echo $(npx ts-node backend/src/scripts/seedDatabase.ts)'
+check deny 'cat x `node dist/scripts/generateSyntheticTrades.js`'
+check deny 'cat <(python ml-service/whale/enrich.py)'
+check deny 'find . -exec python ml-service/whale/enrich.py \;'
+check deny 'find . -execdir npm run seed \;'
+check deny 'git rebase --exec "node dist/scripts/seedDatabase.js" HEAD~1'
+check deny "git -c alias.x='!npm run seed' x"
+check deny "awk 'BEGIN{system(\"npm run seed\")}'"
+check deny 'x=seed; npm run $x'
+check deny 'echo bnBtIHJ1biBzZWVk | base64 -d | sh'
+check deny "python -c \"import runpy; runpy.run_path('scripts/backfill_markouts.py')\""
+check deny '.venv/bin/python scripts/migrate_spread_estimates.py --ap'
+check deny '.venv/bin/python scripts/backfill_markouts.py --app'
+check deny '.venv/bin/python scripts/backfill_markouts.py --ap""ply'
+check deny '.venv/bin/python scripts/backfill_markouts.py --apply=true'
+check allow 'grep -n "a\|b" backend/src/scoring/engine.ts'
+check allow 'printenv HOME'
+check allow 'printenv NODE_ENV'
+check deny 'printenv MONGODB_URI'
+check deny 'printenv GROQ_API_KEY'
+check deny 'node -e "require(\"./x\").main([\"--apply\"])"'
+check allow 'bash .claude/hooks/test_guard.sh'
+# --- 4R-0b review round: runtime args, quote/backslash obfuscation, |&, git -c hooks ---
+check deny 'echo --apply | xargs python scripts/backfill_markouts.py'
+check deny 'python scripts/migrate_spread_estimates.py $(echo --apply)'
+check deny 'ARGS=--apply; python scripts/backfill_markouts.py $ARGS'
+check deny 'python scripts/backfill_markouts.py --user-id x --ap\ply'
+check deny 'npm run se""ed'
+check deny '"npm" run seed'
+check deny 'npm --prefix backend run se""ed'
+check deny "git -c core.pager='npm run seed' log"
+check deny 'echo x |& sh'
+
 echo "guard table: $pass passed, $fail failed"
 [[ $fail -eq 0 ]]
