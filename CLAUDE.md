@@ -76,3 +76,9 @@ Start every session by reading docs/HANDOFF.md. Findings, experiments and decisi
 
 ## Research record
 Start every session by reading docs/HANDOFF.md. Findings, experiments and decisions live in docs/research/ (append-only; see its README). Every phase report ends by appending its research notes to docs/research/LOG.md.
+
+## Research record
+Start every session by reading docs/HANDOFF.md. Findings, experiments and decisions live in docs/research/ (append-only; see its README). Every phase report ends by appending its research notes to docs/research/LOG.md.
+
+## Research record
+Start every session by reading docs/HANDOFF.md. Findings, experiments and decisions live in docs/research/ (append-only; see its README). Every phase report ends by appending its research notes to docs/research/LOG.md.
