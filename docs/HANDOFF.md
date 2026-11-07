@@ -17,10 +17,12 @@ An open-source crypto Transaction Cost Analysis SaaS. It **grades past execution
 
 ## Now (update every phase)
 - Last completed: Phase 4a (markouts at 1/5/30/60/300 s, Corwin–Schultz + Abdi–Ranaldo spreads, spread-aware counterfactual). Demo backfill dry-run: 897/897 priced, 0 errors.
-- In progress: demo backfill `--apply`; deep audit (`BRIEF_audit_opus.md`) before Phase 4b-1.
+- 4R-0 and 4R-0b: partial (see `.work/REPORT_phase4r0b.md`). Done in 4R-0b: guard hardening, migration/registry hardening, dashboard/copy/coach fixes, skipped-trade disclosure, hidden demos at the API (404 `demo_unavailable`). Not done: frontend picker/sitemap/comparison-card message and the Playwright check for hidden demos.
+- In progress: migration dry-run against Atlas (Deepanshu's call, then `--apply`).
 - Known issues: the bar-based spread estimators overstate liquid-pair spreads (BNBUSDT 1.05–1.58 bps half-spread vs ~0.3 bps tick), so the 1.0 bp cap binds.
 
 ## Next
+0. 4R-0c: finish the hidden-demo frontend work, Council regime/reversion, and the roadmap merge.
 1. Audit report → revise `BRIEF_phase4b1.md` from its findings.
 2. Phase 4b-1 (fee snapshots, Parquet/DuckDB lake, order reconstruction, provenance).
 3. Phase 4b-2 (cost-vs-expected model with conformal intervals; Quick/Deep audit).

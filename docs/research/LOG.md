@@ -71,3 +71,11 @@ Source for every line: `docs/research/AUDIT_2026-11.md` and the read-only script
   - **`spreadBps` collision:** the "897/897" count and the `enrich.py:77` citation are withdrawn (superseded 2026-11-07). The finding stands: the Q1 query crashed on demo `spreadBps` with `TypeError: '<' not supported between instances of 'dict' and 'dict'`, `agents/render.py:226-227` reads it as an object, and `scripts/backfill_markouts.py:4` writes it.
   - **Rolling demo accounts:** the price ranges ($40–45k, $2.2–2.5k) and the "unseeded `Math.random`" mechanism are withdrawn (superseded 2026-11-07). They came from a script file read after a guard block, and are UNVERIFIED pending permission. The data finding stands: 100% outside the real 1 s bar, median gap 3,224–4,184 bps (Q2), 60 s markouts at a median of +3,450 to +3,676 bps (Q3).
   - Details: "Evidence withdrawn" table in `docs/research/AUDIT_2026-11.md`.
+
+- **[4R-0, 2026-11] notes from `.work/REPORT_phase4r0.md` §12, plus decisions.**
+  - The 4a `spreadBps` collision was a missing field-ownership check; `shared/fieldRegistry.json` now enforces it (tests, and since 4R-0b the migration and backfill call `assert_writable` before any write, dry-run included).
+  - Demo `spreadBps` originals are unrecoverable per the 4R-0 report (no per-trade backup; the report attributed this to an unseeded RNG in the seed, which was read under the 4R-0 reader permission); the v1 composite depends on `spreadBps` only through 3 bands.
+  - Existing tests pinned wording the audit calls misleading (3 updated).
+  - Decision 1 (Deepanshu, 2026-11-07): demo `spreadBps` is not restored and never fabricated; the migration sets it to `null` on dict-valued docs; stored v1 audits stay frozen; 4R-2 rebuilds the demos.
+  - Decision 2: scorer behaviour on a missing/invalid `spreadBps` is unchanged (throws, trade skipped); from 4R-0b the skip is disclosed in the audit as `skippedTrades {count, reasons}`.
+  - 4R-0b: guard hardened (quote-aware segment split, reader exemption lost on any nested-execution syntax, `--a*` flag prefixes blocked on Python scripts, `allow_abbrev=False` on both parsers).
