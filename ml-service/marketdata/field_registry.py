@@ -28,8 +28,11 @@ def assert_writable(collection: str, field: str, value: Any, writer: str) -> Non
     spec = load_registry().get(collection, {}).get(field)
     if spec is None:
         raise FieldOwnershipError(f"{collection}.{field} is not in the field registry")
-    if spec["owner"] != writer:
-        raise FieldOwnershipError(f"{collection}.{field} is owned by {spec['owner']}, not {writer}")
+    if spec["owner"] != writer and writer not in spec.get("coOwners", []):
+        if writer not in spec.get("repair", []):
+            raise FieldOwnershipError(f"{collection}.{field} is owned by {spec['owner']}, not {writer}")
+        if value is not None:
+            raise FieldOwnershipError(f"{collection}.{field}: repair writer {writer} may only set null")
     if value is None:
         if not spec["nullable"]:
             raise FieldOwnershipError(f"{collection}.{field} is not nullable")

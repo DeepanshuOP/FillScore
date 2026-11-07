@@ -11,6 +11,7 @@ from datetime import datetime, timedelta, timezone
 from agents.metrics.spread_estimators import estimate_spread_window
 from marketdata.price_path import HORIZONS_S, aggregate_minutes, post_prices
 
+WRITER = "ml-service/scripts/backfill_markouts.py"
 ENRICH_VERSION = 1
 FIELDS = ("postPrices", "spreadEstimates", "halfSpreadBps", "markoutVersion")
 
@@ -82,6 +83,9 @@ def enrich_trade(doc: dict, bars: _Bars) -> dict:
 
 def run_backfill(col, fetch_day, apply: bool = False, cache_dir=None, include_demo: bool = False,
                  user_id: str | None = None) -> dict:
+    from marketdata.field_registry import assert_writable
+    for f in FIELDS:                                   # ownership check before any write is queued (dry-run too)
+        assert_writable("Trade", f, None, WRITER)
     query: dict = {}
     if user_id:
         if user_id.startswith("demo-") and not include_demo:

@@ -26,7 +26,8 @@ DEFAULT_CACHE = ROOT.parent / ".work" / "marketcache"
 
 
 def main(argv=None) -> int:
-    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 allow_abbrev=False)
     ap.add_argument("--apply", action="store_true", help="write the new fields (default is a dry run)")
     ap.add_argument("--user-id")
     ap.add_argument("--include-demo", action="store_true")
