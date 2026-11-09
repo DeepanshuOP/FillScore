@@ -37,14 +37,8 @@ def edge_trades() -> dict[str, list[dict]]:
 
 
 def main() -> None:
-    os.makedirs(GOLDEN, exist_ok=True)
-    for name, trades in edge_trades().items():
-        ctx = packet_ctx(*build_all_packets(trades, name, "BTCUSDT"))
-        with open(os.path.join(GOLDEN, f"{name}.json"), "w") as f:
-            json.dump({"id": name, "kind": "edge", "symbol": "BTCUSDT", "n_trades": len(trades), "packet": ctx,
-                       "required_evidence": REQUIRED_EVIDENCE},
-                      f, indent=1, sort_keys=True, default=str)
-        print(name, len(trades))
+    raise SystemExit("edge goldens are written per set now: python -m evals.dump_golden_packets --set <set> "
+                     "(a recorded set is refused)")
 
 
 if __name__ == "__main__":

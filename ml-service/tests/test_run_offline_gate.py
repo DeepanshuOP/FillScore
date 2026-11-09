@@ -10,8 +10,9 @@ def bad():
 
 
 def run_with(monkeypatch, runs):
-    monkeypatch.setattr(run_offline, "load_golden", lambda: {"t": GOLDEN})
-    monkeypatch.setattr(run_offline, "collect_runs", lambda golden, recordings=True: runs)
+    monkeypatch.setattr(run_offline, "load_golden", lambda *a, **k: {"t": GOLDEN})
+    monkeypatch.setattr(run_offline, "collect_runs", lambda golden, recordings=True, *a, **k: runs)
+    monkeypatch.setattr(run_offline, "orphan_recordings", lambda *a, **k: [])
     return run_offline.main()
 
 

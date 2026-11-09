@@ -91,7 +91,7 @@ def test_every_invariant_has_a_mutation_that_fails_only_it():
 
 
 def test_random_integer_probe_rarely_passes_on_a_real_packet():
-    path = os.path.join(os.path.dirname(__file__), "..", "evals", "golden", "demo-moderate.json")
+    path = os.path.join(os.path.dirname(__file__), "..", "evals", "golden", "v1", "demo-moderate.json")
     g = json.load(open(path))
     ints = random.Random(7).sample(range(1, 201), 200)
 

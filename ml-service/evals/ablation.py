@@ -22,6 +22,7 @@ ROOT = os.path.dirname(HERE)
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+from evals import golden_sets  # noqa: E402
 from evals.invariants import NAMES, agent_evidence, check_all  # noqa: E402
 from evals.run_offline import load_golden  # noqa: E402
 
@@ -165,15 +166,56 @@ def render(runs: list[dict], golden: dict[str, dict], notes: str) -> str:
     ])
 
 
-def generate(directory: str | None = None, notes_path: str | None = None) -> str:
+def generate(directory: str | None = None, notes_path: str | None = None, set_name: str = "v1",
+             root: str | None = None) -> str:
+    """The table for one golden set: only recordings stamped with that set's versions, scored against its packets."""
+    manifest = golden_sets.read_manifest(set_name, root)
+    runs = [r for r in load_recordings(directory or os.path.join(HERE, "recordings"))
+            if golden_sets.stamp_matches(r["res"], manifest)]
     notes = open(notes_path or NOTES).read() if os.path.exists(notes_path or NOTES) else ""
-    return render(load_recordings(directory or os.path.join(HERE, "recordings")), load_golden(), notes)
+    return render(runs, load_golden(set_name, root), notes)
+
+
+def out_path(set_name: str) -> str:
+    """v1's table is the committed ablation_results.md; later recorded sets get ablation_results_<set>.md."""
+    return OUT if set_name == "v1" else os.path.join(HERE, f"ablation_results_{set_name}.md")
+
+
+def notes_path_for(set_name: str) -> str:
+    return NOTES if set_name == "v1" else os.path.join(HERE, f"ablation_notes_{set_name}.md")
+
+
+def check(root: str | None = None, directory: str | None = None) -> list[str]:
+    """Problems found, [] when clean. Every recorded set must have recordings and an up-to-date table, and no
+    recording may fall outside every set. Unrecorded sets are not an ablation input."""
+    problems = []
+    names = golden_sets.recorded_sets(root)
+    if not names:
+        problems.append("no recorded golden set")
+    for name in names:
+        manifest = golden_sets.read_manifest(name, root)
+        runs = [r for r in load_recordings(directory or os.path.join(HERE, "recordings"))
+                if golden_sets.stamp_matches(r["res"], manifest)]
+        if not runs:
+            problems.append(f"[{name}] recorded set has no recordings stamped with its versions")
+            continue
+        path = out_path(name)
+        text = generate(directory, notes_path_for(name), name, root)
+        if not os.path.exists(path) or open(path).read() != text:
+            problems.append(f"[{name}] {os.path.basename(path)} is stale: run python evals/ablation.py")
+    for r in load_recordings(directory or os.path.join(HERE, "recordings")):
+        if not golden_sets.owning_sets(r["res"], root):
+            problems.append(f"{r['file']}: recording matches no golden set")
+    return problems
 
 
 if __name__ == "__main__":
-    text = generate()
     if "--check" in sys.argv:
-        sys.exit(0 if os.path.exists(OUT) and open(OUT).read() == text else 1)
-    with open(OUT, "w") as f:
-        f.write(text)
-    print(f"wrote {OUT}")
+        issues = check()
+        for i in issues:
+            print(i)
+        sys.exit(1 if issues else 0)
+    for name in golden_sets.recorded_sets():
+        with open(out_path(name), "w") as f:
+            f.write(generate(None, notes_path_for(name), name))
+        print(f"wrote {out_path(name)}")
