@@ -26,10 +26,11 @@ def test_demo_packets_match_the_stored_fixture_hashes():
     import json, os
     for u in ("demo-disciplined", "demo-moderate", "demo-aggressive"):
         res = json.load(open(os.path.join(run_offline.ROOT, "demo_runs", f"{u}.json")))["council_result"]
-        pk = run_offline.load_golden()[u]["packet"]
+        pk = run_offline.load_golden("v2")[u]["packet"]   # 4R-0e: demo_runs re-recorded on the v2 (metrics 1.2.0) packets
         assert res["tradeContext"]["fee_packet_hash"] == pk["fee"]["content_hash"]
 
 
 def test_offline_runner_is_green_on_fixtures():
-    # fixtures only: live recordings are real model output and may legitimately violate (CI gates on them)
-    assert run_offline.main(recordings=False) == 0
+    # 4R-0e: the demo_runs fixtures are now stamped with the unrecorded v2 set (determinism check only), so a
+    # fixtures-only run checks zero runs and main() rightly returns 1. The v1 recordings are the checked set.
+    assert run_offline.main(recordings=True) == 0
