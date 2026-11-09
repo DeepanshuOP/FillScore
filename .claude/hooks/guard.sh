@@ -102,6 +102,10 @@ RE_READER_CMD='^(cat|tac|less|more|head|tail|nl|grep|egrep|fgrep|rg|sed|awk|wc|l
 RE_P_GUARDED='(backfill_markouts|migrate_spread_estimates|regen_fills|whale/enrich|runpy|run_path|main\(|--apply|seedDatabase|generateSyntheticTrades)'
 # A reader segment is exempt only if nothing in it can execute something else.
 RE_READER_DANGER='\$\(|`|<\(|>\(|-exec|-execdir|-ok|--exec|-c[[:space:]]+alias|system\('
+# sed executes shell via the s///e flag (delimiter, optional flags, e, then end of script/space/quote) or via the
+# `e` command (script or command start, or after ; { or an address like /x/ or 3, then e plus space or end).
+RE_SED_EXEC_FLAG='[/|#,:@!%][gpiImM0-9]*e[gpiImM0-9]*(["'"'"'[:space:];}]|$)'
+RE_SED_EXEC_CMD='([[:space:]"'"'"'=;{}]|/[gIM]*)e([[:space:]"'"'"';}]|$)'
 RE_SECRET_NAME='KEY|SECRET|TOKEN|PASSWORD|URI|DSN'
 # Quote-aware split on ; & | newline. A segment that follows a single pipe is prefixed with \001.
 split_segments() {
@@ -125,8 +129,35 @@ split_segments() {
     print out
   }' <<<"$1"
 }
+# Generic sed check. sed_command_args prints the text after the sed command word (skipping wrappers, options,
+# VAR=val, numeric args and path prefixes; gsed counts as sed) and fails if the command word is not sed.
+sed_command_args() {
+  local t="$1" tok b
+  while [[ -n "$t" ]]; do
+    tok="${t%%[[:space:]]*}"; t="${t#"$tok"}"; t="${t#"${t%%[![:space:]]*}"}"
+    tok="${tok//[\"\']/}"; b="${tok##*/}"
+    case "$b" in
+      env|command|nice|xargs|busybox|time|exec|nohup|-*|*=*|[0-9]*) continue ;;
+      sed|gsed) printf '%s' "$t"; return 0 ;;
+      *) return 1 ;;
+    esac
+  done
+  return 1
+}
+# True (0) if the sed argument text could execute shell or write a file: -f/--file, an s command whose flags end
+# in e or w (any delimiter, via backreference), or a bare e/w/W command after an optional address. Over-blocks on purpose.
+RE_SED_FILE_OPT='[[:space:]](-[a-zA-Z]*f|--file)'
+RE_SED_S_FLAG='(^|[[:space:]"'"'"';{}!/0-9$,+~])s(.).*\2[gpiImM0-9]*[ew]'
+RE_SED_BARE_CMD='(^|[[:space:]"'"'"';{}!/0-9$,+~=])[ewW]([[:space:]"'"'"';}]|$)'
+sed_unsafe() {
+  local a=" $1"
+  [[ "$a" =~ $RE_SED_FILE_OPT ]] && return 0
+  [[ "$1" =~ $RE_SED_S_FLAG ]] && return 0
+  [[ "$1" =~ $RE_SED_BARE_CMD ]] && return 0
+  return 1
+}
 check_segments() {
-  local text="$1" seg first base rest piped s3 a
+  local text="$1" seg first base rest piped s3 a sed_args
   while IFS= read -r seg; do
     piped=0
     if [[ "$seg" == $'\001'* ]]; then piped=1; seg="${seg#$'\001'}"; fi
@@ -149,6 +180,12 @@ check_segments() {
       deny "Piping into a shell executes text the guard cannot see."
     fi
     [[ "$base" == git && "$seg" =~ [[:space:]]-c[[:space:]] ]] && deny "git -c can set hooks (core.pager, core.sshCommand, alias.*) that execute commands."
+    if [[ "$base" == sed ]] && { [[ "$seg" =~ $RE_SED_EXEC_FLAG ]] || [[ "$seg" =~ $RE_SED_EXEC_CMD ]]; }; then
+      deny "sed with the e flag or e command executes shell. Spell the work out with real commands."
+    fi
+    if sed_args="$(sed_command_args "$seg")"; then
+      sed_unsafe "$sed_args" && deny "sed -f/--file, the e/w/W commands and the s///e and s///w flags execute shell or write files. Spell the work out with real commands and the Write/Edit tools."
+    fi
     if [[ "$base" =~ $RE_READER_CMD && ! "$seg" =~ $RE_READER_DANGER ]]; then continue; fi
     if [[ "$seg" =~ (backfill_markouts|migrate_spread_estimates) && "$seg" =~ (\$|\`) ]]; then
       deny "Runtime-built arguments to a guarded script could carry --apply. Spell the arguments out."
