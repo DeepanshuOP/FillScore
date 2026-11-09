@@ -350,7 +350,8 @@ Legend: ✅ built · 🟨 partial · 🟥 not built · 🧊 deferred · ⛔ cut 
 LSTM forecasting and pre-trade estimates (they predict); RL execution; chart-image/voice/generative features; GNN; swarm simulation (herd bias, cost); RAG over literature; local LLMs (hardware); live L2/Kafka/InfluxDB before there's a collector need; mobile, extension and TradingView before real users; **synthetic OBI or synthetic spreads of any kind**; editing recorded LLM outputs.
 
 ## §7 Verification discipline
-- **"No crash" is not proof.** For live Council runs: a failure-string sweep (`failed:`, `Max retries`, `_default_`, `429`, `rate limit`), `n_calls == 9`, freshness (`user_id`, `created_at` prefix), and reading the text.
+- **"No crash" is not proof.** For live Council runs: a failure-string sweep (`failed:`, `Max retries`, `_default_`, `429`, `rate limit`, `RouterExhausted`, `REJECTED`, `fell back`), `n_calls == 9`, freshness (`user_id`, `created_at` prefix), and reading the text.
+- The v2 golden demo-packet determinism check (`python -m evals.dump_golden_packets --check v2`) needs Atlas data, so CI skips it; run it locally at the close of any phase that touches packets.
 - **Read raw logs, not summaries.** Every agent run states a red phase; dry-run before any `--apply`; Deepanshu runs all Atlas writes.
 - **Never print `.env`;** check by key name only.
 - **Always `tsc --noEmit` and `npm run build`.**
