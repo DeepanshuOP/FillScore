@@ -38,8 +38,6 @@ def build_user_prompt(context: TradeContext, packet: RiskMetricsPacket, ctx: dic
     return f"""RiskMetricsPacket:
 {packet_values(ctx, [NAMESPACE])}
 
-Regime: {context.regime}
-
 Assign riskLevel, list cited_evidence keys.
 Schema: riskLevel (LOW/MEDIUM/HIGH/CRITICAL), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""
 

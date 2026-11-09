@@ -39,4 +39,4 @@ def test_string_between_unchanged():
 
 
 def test_prompt_version_bumped_for_the_between_example():
-    assert PROMPT_VERSION == "1.5.0"
+    assert PROMPT_VERSION == "1.6.0"

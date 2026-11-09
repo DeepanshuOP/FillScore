@@ -1,8 +1,7 @@
 """Synthesis Agent (the judge) — conflict resolution and the overall audit finding.
 
 The model is chosen by the router (config/llm_routes.yaml, role "synthesis": strongest first).
-Priority in volatile regimes: Risk > Liquidity > Fee > Alpha.
-Priority in stable regimes:  Liquidity > Alpha > Fee > Risk.
+Conflict priority (one rule): Fee > Risk > Liquidity > Alpha.
 
 Phase 1c: the model writes values only as {{ns.key}} placeholders and proposes structured
 recommendations {action_type, params, rationale_text}. It never writes an effect: code replays the
@@ -50,9 +49,7 @@ You receive:
 
 Your job:
 - Weigh the specialist verdicts and the debate transcript
-""" + SYNTH_WRITING_RULES + """- Resolve any conflicts using the regime priority matrix:
-  STABLE regime: Fee > Risk > Liquidity > Alpha
-  VOLATILE regime: Liquidity > Risk > Fee > Alpha
+""" + SYNTH_WRITING_RULES + """- Resolve any conflicts using this priority order: Fee > Risk > Liquidity > Alpha
 - Fill conflictLedger with one entry per resolved conflict
 """ + SYNTH_COST_RULE + """
 CRITICAL — Anti-fence-sitting rule:
@@ -148,8 +145,6 @@ EXECUTION TRIAL (model-written, untrusted):
 {packet_values(ctx, NAMESPACES)}
 
 {action_menu(trades)}
-
-Regime: {context.regime}
 
 Produce the judge verdict. conflictLedger must have one entry if any two specialists disagreed.
 Schema fields: headline, narrative, recommendations (one to three {{action_type, params, rationale_text}}), conflictLedger (list of {{between, rule_applied, winner}}; each is ONE string, e.g. "between": "fee_optimizer vs risk_auditor", never a list), overallRating"""

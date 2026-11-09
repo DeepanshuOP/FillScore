@@ -75,7 +75,7 @@ class FeeVerdict(BaseModel):
 
 class ConflictEntry(BaseModel):
     between: str = Field(description="Two agents that disagreed, e.g. 'fee_optimizer vs risk_auditor'")
-    rule_applied: str = Field(description="The regime rule used to resolve, e.g. 'STABLE: Fee > Risk'")
+    rule_applied: str = Field(description="The priority rule used to resolve, e.g. 'Fee > Risk'")
     winner: str = Field(description="Which agent's recommendation was prioritised")
 
     @field_validator("between", mode="before")
@@ -181,7 +181,7 @@ class TradeContext(BaseModel):
     """Thin context passed to each agent alongside their MetricsPacket."""
     userId: str
     symbol: str
-    regime: str = "STABLE"
+    regime: Optional[str] = None   # legacy: kept so persisted runs still load; never set or rendered
     trade_count: int | None = None   # trades in this Council's packet (code-set; the panel's scope label)
     # packet hashes for integrity verification
     fee_packet_hash: str = ""

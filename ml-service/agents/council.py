@@ -571,7 +571,6 @@ async def _run_council_pipeline(
     context = TradeContext(
         userId=user_id,
         symbol=symbol,
-        regime="STABLE",  # placeholder until HMM; disclose in paper
         trade_count=fee_pkt.trade_count,
         fee_packet_hash=fee_pkt.content_hash,
         risk_packet_hash=risk_pkt.content_hash,

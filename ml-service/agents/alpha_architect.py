@@ -39,8 +39,6 @@ def build_user_prompt(context: TradeContext, packet: AlphaMetricsPacket, ctx: di
     return f"""AlphaMetricsPacket:
 {packet_values(ctx, [NAMESPACE])}
 
-Regime: {context.regime}
-
 Assign alphaRating, write bestAlternative, list cited_evidence keys.
 Schema: alphaRating (POSITIVE/NEUTRAL/NEGATIVE/SEVERELY_NEGATIVE), bestAlternative (str), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""
 

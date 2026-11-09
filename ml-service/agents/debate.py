@@ -9,7 +9,7 @@ Prosecutor: argues costs were avoidable (worst trades, taker streaks,
   bad-hour clusters, high maker-ratio opportunity cost).
 Defense: argues mitigation (whale adversity was exogenous per
   Cont-Kukanov-Stoikov order-flow theory, negative-slippage fills,
-  regime constraints, market conditions).
+  market conditions).
 
 Bounded at MAX_ROUNDS=2. Each side emits structured claims with
 evidence keys — no free-form essays. Values appear only as {{ns.key}} placeholders; every claim and
@@ -164,8 +164,7 @@ Question: Were this trader's past executions reasonable given the market they ac
 Your job: Build the strongest mitigating case. Key defense arguments:
 1. Whale adversity was exogenous (Cont-Kukanov-Stoikov: large order flow causes unavoidable adverse selection)
 2. Negative slippage fills show the trader sometimes got BETTER than arrival price
-3. Regime constraints (STABLE regime means different benchmarks apply)
-4. Some costs are market-structure costs, not execution errors
+3. Some costs are market-structure costs, not execution errors
 
 Evidence available:
 {packet_values(_ctx(liquidity_packet, risk_packet, fee_packet, alpha_packet), NAMESPACES)}

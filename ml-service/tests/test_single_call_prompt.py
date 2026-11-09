@@ -15,9 +15,10 @@ FORBIDDEN = ("specialist", "judge", "council", "debate", "ledger", "conflict", "
 
 
 def test_council_prompt_is_unchanged_by_the_refactor():
-    # sha256 of SYNTHESIS_SYSTEM_PROMPT before the shared parts were extracted: if this changes, bump PROMPT_VERSION
+    # sha256 of SYNTHESIS_SYSTEM_PROMPT: if this changes, bump PROMPT_VERSION
+    # 4R-0c: regime matrix replaced by one priority line (was 161856d4...)
     got = hashlib.sha256(synthesis.SYNTHESIS_SYSTEM_PROMPT.encode()).hexdigest()
-    assert got == "161856d464391bff39d6fc3977eacbc63a17e65725e02137f02726ba09991094"
+    assert got == "10fd1ee8d67f0de34356b1719b4778aaee3bf18edd1dbd84e67c0c15dae1c4a2"
 
 
 def test_single_prompt_has_no_specialist_or_ledger_terms():
@@ -41,7 +42,7 @@ def test_single_prompt_user_content_has_same_packet_actions_and_schema_fields():
     single = build_single_user_prompt(ctx, fee, risk, liq, alpha, [])
     council = synthesis.build_user_prompt(ctx, {}, fee, risk, liq, alpha, None, [])
     packet = lambda s: s[s.index("PACKET VALUES"):s.index("ACTIONS")]
-    actions = lambda s: s[s.index("ACTIONS"):s.index("Regime:")]
+    actions = lambda s: s[s.index("ACTIONS"):s.index("Produce the")]
     assert packet(single) == packet(council) and actions(single) == actions(council)
     for field in ("headline", "narrative", "recommendations", "overallRating"):
         assert field in single

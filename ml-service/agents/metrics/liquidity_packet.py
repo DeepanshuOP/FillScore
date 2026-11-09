@@ -13,6 +13,7 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from config.versions import METRICS_VERSION
 from agents.metrics.time_utils import utc_hour_key
+from agents.metrics.markout_packet import fill_markout_bps
 
 
 @dataclass
@@ -121,8 +122,8 @@ def build_liquidity_packet(trades: list[dict], user_id: str, symbol: str) -> Liq
       - executedAt (str): ISO-8601 UTC timestamp
     Optional:
       - whale_adverse (bool): from whale scorer
-      - reversion_30s_bps (float): post-fill 30s price drift in bps
-      - reversion_60s_bps (float): post-fill 60s price drift in bps
+      - side, executionPrice, notionalValue, postPrices ({"30": price, "60": price}): reversion is
+        derived as -markout (agents.metrics.markout_packet), notional-weighted
     """
     if not trades:
         pkt = LiquidityMetricsPacket(
@@ -202,15 +203,27 @@ def build_liquidity_packet(trades: list[dict], user_id: str, symbol: str) -> Liq
     diff = round(adv_avg - clean_avg, 6)
 
     # ── reversion metrics ─────────────────────────────────────────────────────
-    rev30_vals, rev60_vals, rev_ids = [], [], []
+    # reversion = -markout (markout_packet sign convention), notional-weighted over market fills that
+    # have a postPrices horizon price; a horizon with no price for a fill excludes that fill from that horizon
+    rev_ids = []
+    rev_rows: dict[str, list[tuple[float, float]]] = {"30": [], "60": []}
     for t in market_trades:
-        r30 = t.get("reversion_30s_bps")
-        r60 = t.get("reversion_60s_bps")
-        if r30 is not None and r60 is not None:
-            rev30_vals.append(float(r30))
-            rev60_vals.append(float(r60))
+        post = t.get("postPrices") or {}
+        got = False
+        for h in ("30", "60"):
+            m = fill_markout_bps(t.get("side", "BUY"), t.get("executionPrice"), post.get(h))
+            if m is not None:
+                rev_rows[h].append((-m, float(t.get("notionalValue") or 0.0)))
+                got = True
+        if got:
             rev_ids.append(str(t.get("_id") or t.get("id", "")))
-    has_rev = len(rev30_vals) > 0
+    has_rev = len(rev_ids) > 0
+
+    def _wavg(rows: list[tuple[float, float]]) -> float:
+        wsum = sum(w for _, w in rows)
+        if wsum > 0:
+            return sum(v * w for v, w in rows) / wsum
+        return _avg([v for v, _ in rows])
 
     evidence = {
         "all_trades": all_ids,
@@ -243,9 +256,9 @@ def build_liquidity_packet(trades: list[dict], user_id: str, symbol: str) -> Liq
         adverse_market_count=len(adverse_slips),
         clean_market_count=len(clean_slips),
         has_reversion_data=has_rev,
-        reversion_30s_avg_bps=round(_avg(rev30_vals), 6),
-        reversion_60s_avg_bps=round(_avg(rev60_vals), 6),
-        reversion_trade_count=len(rev30_vals),
+        reversion_30s_avg_bps=round(_wavg(rev_rows["30"]), 6),
+        reversion_60s_avg_bps=round(_wavg(rev_rows["60"]), 6),
+        reversion_trade_count=len(rev_ids),
         evidence_index=evidence,
     )
     pkt.content_hash = pkt.compute_hash()

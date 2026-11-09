@@ -39,8 +39,6 @@ def build_user_prompt(context: TradeContext, packet: FeeMetricsPacket, ctx: dict
     return f"""FeeMetricsPacket:
 {packet_values(ctx, [NAMESPACE])}
 
-Regime: {context.regime}
-
 Assign feeRating, write recommendedAction, list cited_evidence keys.
 Schema: feeRating (OPTIMAL/MODERATE/WASTEFUL/SEVERELY_WASTEFUL), recommendedAction (str), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""
 

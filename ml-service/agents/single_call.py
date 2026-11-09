@@ -43,8 +43,6 @@ def build_single_user_prompt(context: TradeContext, fee_pkt, risk_pkt, liquidity
 
 {synthesis.action_menu(trades)}
 
-Regime: {context.regime}
-
 Produce the audit.
 Schema fields: headline, narrative, recommendations (one to three {{action_type, params, rationale_text}}), overallRating"""
 
@@ -61,7 +59,7 @@ async def _run_single_call(account_id: str, symbol: str, fee_pkt, risk_pkt, liqu
                            trades: list[dict] | None) -> dict:
     trace_id = tracing.start_run(account_id)
     start = _clock()
-    context = TradeContext(userId=account_id, symbol=symbol, regime="STABLE", trade_count=fee_pkt.trade_count,
+    context = TradeContext(userId=account_id, symbol=symbol, trade_count=fee_pkt.trade_count,
                            fee_packet_hash=fee_pkt.content_hash, risk_packet_hash=risk_pkt.content_hash,
                            liquidity_packet_hash=liquidity_pkt.content_hash, alpha_packet_hash=alpha_pkt.content_hash)
     run = RunCollector(llm=llm, ctx=packet_ctx(fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt, trades))

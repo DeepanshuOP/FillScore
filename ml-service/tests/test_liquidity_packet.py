@@ -35,19 +35,28 @@ from agents.metrics.liquidity_packet import build_liquidity_packet, _avg, _perce
 # rev30 avg = (2+8-1+15)/4 = 24/4 = 6.0
 # rev60 avg = (3+10-2+18)/4 = 29/4 = 7.25
 
+def _rev(r30, r60):
+    """Fields for a BUY filled at 100.00, notional 1000, whose post-fill prices give reversion r30/r60 bps.
+    Reversion = -markout and markout(BUY) = (P-100)/100*1e4, so P = 100 * (1 - r/1e4):
+    r=2.0 -> 99.98, 3.0 -> 99.97, 8.0 -> 99.92, 10.0 -> 99.90, -1.0 -> 100.01, -2.0 -> 100.02,
+    15.0 -> 99.85, 18.0 -> 99.82. Equal notional, so the weighted means equal the plain means above."""
+    return {"side": "BUY", "executionPrice": 100.0, "notionalValue": 1000.0,
+            "postPrices": {"30": round(100 * (1 - r30 / 1e4), 4), "60": round(100 * (1 - r60 / 1e4), 4)}}
+
+
 FIXTURE_TRADES = [
     {"id":"t1","orderType":"MARKET","isMaker":False,"arrivalSlippageBps":5.0,
      "executedAt":"2024-01-15T08:30:00Z","whaleAdverse":False,
-     "reversion_30s_bps":2.0,"reversion_60s_bps":3.0},
+     **_rev(2.0, 3.0)},
     {"id":"t2","orderType":"MARKET","isMaker":False,"arrivalSlippageBps":12.0,
      "executedAt":"2024-01-15T14:10:00Z","whaleAdverse":True,
-     "reversion_30s_bps":8.0,"reversion_60s_bps":10.0},
+     **_rev(8.0, 10.0)},
     {"id":"t3","orderType":"MARKET","isMaker":False,"arrivalSlippageBps":-3.0,
      "executedAt":"2024-01-15T08:45:00Z","whaleAdverse":False,
-     "reversion_30s_bps":-1.0,"reversion_60s_bps":-2.0},
+     **_rev(-1.0, -2.0)},
     {"id":"t4","orderType":"MARKET","isMaker":False,"arrivalSlippageBps":20.0,
      "executedAt":"2024-01-15T14:30:00Z","whaleAdverse":True,
-     "reversion_30s_bps":15.0,"reversion_60s_bps":18.0},
+     **_rev(15.0, 18.0)},
     {"id":"t5","orderType":"MARKET","isMaker":True, "arrivalSlippageBps":1.0,
      "executedAt":"2024-01-15T10:00:00Z","whaleAdverse":False},
     {"id":"t6","orderType":"LIMIT", "isMaker":False,"arrivalSlippageBps":0.5,

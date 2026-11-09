@@ -43,8 +43,6 @@ def build_user_prompt(context: TradeContext, packet: LiquidityMetricsPacket, ctx
     return f"""LiquidityMetricsPacket:
 {packet_values(ctx, [NAMESPACE])}
 
-Regime: {context.regime}
-
 Assign liquidityRating, write slippageRoot citing packet keys, list cited_evidence keys.
 Schema: liquidityRating (GOOD/MODERATE/POOR/CRITICAL), slippageRoot (str), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""
 
