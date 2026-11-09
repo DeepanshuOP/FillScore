@@ -173,6 +173,10 @@ describe('flagLabel', () => {
         expect(flagLabel('high_taker_streak')).toBe('High Taker Streak');
         expect(flagLabel('Adverse selection occurred.')).toBe('Adverse selection occurred.');
     });
+
+    it('has no "Stable regime" label (the Council no longer has a regime)', () => {
+        expect(flagLabel('stable_regime')).not.toBe('Stable regime');
+    });
 });
 
 describe('councilScopeLabel', () => {

@@ -1,4 +1,4 @@
-import { resolveDashboardMode } from './dashboardMode';
+import { resolveDashboardMode, isAllowedDemoId } from './dashboardMode';
 
 export interface IdentityState {
   mode: 'demo' | 'real' | 'redirect';
@@ -25,7 +25,8 @@ export function resolveIdentityState(
   }
   
   if (mode === 'demo') {
-    const effectiveUserId = urlUserId || storageUserId || 'demo-disciplined';
+    // Only allowed ids may become effective (and be persisted); skip hidden/unknown ones.
+    const effectiveUserId = [urlUserId, storageUserId].find(isAllowedDemoId) ?? 'demo-disciplined';
     return {
       mode: 'demo',
       effectiveUserId,

@@ -67,7 +67,6 @@ export function councilVerdictView(synthesis: {
 const TAG_LABELS: Record<string, string> = {
     zero_market_orders: 'No market orders',
     single_symbol_concentration: 'Single-symbol concentration',
-    stable_regime: 'Stable regime',
     agent_failed: 'Agent unavailable',
 };
 

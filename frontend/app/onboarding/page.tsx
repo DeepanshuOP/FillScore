@@ -9,6 +9,7 @@ import { mapOnboardingError } from '../utils/errorMapping';
 import { getGradeColor } from '../utils/gradeColor';
 import { EXCHANGES, getExchange, ExchangeId } from '../utils/exchanges';
 import { apiBase } from '../lib/apiBase';
+import { skippedNotice } from '../dashboard/skipped';
 import { pollSyncStatus, progressText, SyncStatus } from '../utils/syncPolling';
 
 export default function OnboardingPage() {
@@ -131,6 +132,7 @@ export default function OnboardingPage() {
     if (s.lookbackDays) setUsedLookback(s.lookbackDays);
     if (s.state === 'failed') { setErrorMsg(mapOnboardingError('unknown', 500)); return; }
     if (s.state === 'needs_attention') { setErrorMsg(mapOnboardingError(r.error || 'key_not_read_only', undefined, undefined, { disable: r.disable, enable: r.enable })); return; }
+    if (r.noScorableTrades) { setErrorMsg(`None of your trades could be scored: ${skippedNotice(r.skippedTrades) ?? 'no reasons recorded'}.`); return; }
     if (r.noTrades) { setNoTrades(true); return; }
     setSyncResult({ fillScore: r.fillScore ?? 0, grade: r.grade ?? '-', tradesIngested: r.tradesIngested ?? 0, tradesScored: r.tradesScored ?? 0 });
     // A complete sync goes straight to the dashboard; a partial one stays so the note is read first.

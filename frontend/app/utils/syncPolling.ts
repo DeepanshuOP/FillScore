@@ -9,7 +9,8 @@ export interface SyncStatus {
   error?: string;
   result?: {
     tradesIngested?: number; tradesScored?: number; fillScore?: number; grade?: string;
-    noTrades?: boolean; invalidSymbols?: string[]; error?: string; disable?: string[]; enable?: string[];
+    noTrades?: boolean; noScorableTrades?: boolean; skippedTrades?: { count: number; reasons: Record<string, number> };
+    invalidSymbols?: string[]; error?: string; disable?: string[]; enable?: string[];
   };
 }
 

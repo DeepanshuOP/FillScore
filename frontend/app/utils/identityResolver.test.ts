@@ -42,6 +42,19 @@ describe('resolveIdentityState', () => {
     });
   });
 
+  it('M3: url hidden + storage visible -> effective id is the storage id, never the hidden one', () => {
+    const r = resolveIdentityState('demo-multi', 'demo-disciplined', null);
+    expect(r.mode).toBe('demo');
+    expect(r.effectiveUserId).toBe('demo-disciplined');
+    expect(r.effectiveUserId).not.toBe('demo-multi');
+  });
+
+  it.each(['demo-bybit', 'demo-okx', 'demo-multi'])('M3: %s in url and storage -> redirect, nothing persisted', (id) => {
+    expect(resolveIdentityState(id, id, null)).toEqual({
+      mode: 'redirect', effectiveUserId: null, shouldClearStorage: false, shouldSetStorage: false,
+    });
+  });
+
   it('should return redirect mode state for invalid URL param', () => {
     const result = resolveIdentityState('invalid-user', null, null);
     expect(result).toEqual({

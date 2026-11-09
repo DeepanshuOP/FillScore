@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveDashboardMode } from './dashboardMode';
+import { HIDDEN_DEMO_IDS } from './hiddenDemos';
 
 describe('resolveDashboardMode', () => {
   it('urlUserId=demo-disciplined, no token, no storage -> demo', () => {
@@ -40,6 +41,11 @@ describe('resolveDashboardMode', () => {
   
   it('urlUserId=some-real-id, NO token -> redirect', () => {
     expect(resolveDashboardMode({ urlUserId: 'some-real-id', storageUserId: null, accessToken: null })).toBe('redirect');
+  });
+
+  it.each([...HIDDEN_DEMO_IDS])('M3: guest with hidden id %s (url or storage) -> redirect', (id) => {
+    expect(resolveDashboardMode({ urlUserId: id, storageUserId: null, accessToken: null })).toBe('redirect');
+    expect(resolveDashboardMode({ urlUserId: null, storageUserId: id, accessToken: null })).toBe('redirect');
   });
 
   it('urlUserId=DEMO-disciplined or demo-fake (not in allowlist), no token -> redirect (strict allowlist)', () => {

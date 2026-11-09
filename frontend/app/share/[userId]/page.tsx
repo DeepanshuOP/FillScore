@@ -38,9 +38,13 @@ export default async function SharePage({ params }: Props) {
   const res = await fetch(`${serverApiBase()}/audit/share/${userId}`, { next: { revalidate: 60 } });
   
   if (!res.ok) {
+    let unavailable = false;
+    if (res.status === 404) {
+      try { unavailable = (await res.json())?.error === 'demo_unavailable'; } catch { /* not JSON */ }
+    }
     return (
       <div style={{ minHeight: '100vh', background: 'var(--bg-base, #0f0f0f)', color: '#ede8e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ fontFamily: 'var(--font-mono)' }}>This score card is no longer available.</p>
+        <p style={{ fontFamily: 'var(--font-mono)' }}>{unavailable ? 'This demo is temporarily unavailable' : 'This score card is no longer available.'}</p>
       </div>
     );
   }

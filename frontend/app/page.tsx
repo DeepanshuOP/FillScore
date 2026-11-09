@@ -5,6 +5,7 @@ import WaveBackground from '../components/ui/wave-background';
 import Navbar from './components/Navbar';
 import { DEMO_PROFILES, gradeFromScore } from './utils/demoProfiles';
 import { apiBase } from './lib/apiBase';
+import { visibleDemoProfiles } from './utils/hiddenDemos';
 
 export default function Home() {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -28,7 +29,7 @@ export default function Home() {
     let cancelled = false;
 
     Promise.all(
-      DEMO_PROFILES.map(async (p) => {
+      visibleDemoProfiles(DEMO_PROFILES).map(async (p) => {
         try {
           const res = await fetch(`${baseUrl}/audit/score?userId=${p.id}`);
           if (!res.ok) return null;
@@ -50,7 +51,7 @@ export default function Home() {
     return () => { cancelled = true; };
   }, []);
 
-  const demoProfiles = DEMO_PROFILES.map((p) => {
+  const demoProfiles = visibleDemoProfiles(DEMO_PROFILES).map((p) => {
     const live = liveStats[p.id];
     const score = live?.score ?? p.score;
     return {

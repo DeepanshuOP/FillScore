@@ -22,6 +22,7 @@ import { venueComparisonNote } from '../utils/navLinks';
 import { apiBase } from '../lib/apiBase';
 import { buildComponentCards, cardVisual, type ComponentMeans } from './componentCards';
 import { skippedNotice, type SkippedTrades } from './skipped';
+import { isHiddenDemo, multiVenueNotice } from '../utils/hiddenDemos';
 
 interface CostAttribution {
   slippageCost: number;
@@ -237,7 +238,9 @@ function DashboardContent() {
         fetchFn(`${baseUrl}/audit/score${query}`),
         fetchFn(`${baseUrl}/attribution${query}`),
         fetchFn(`${baseUrl}/audit/analytics${query}`),
-        fetchFn(`${baseUrl}/audit/analytics/exchange-comparison${query}`),
+        isHiddenDemo(effectiveUserId)
+          ? Promise.resolve(new Response(null, { status: 404 }))
+          : fetchFn(`${baseUrl}/audit/analytics/exchange-comparison${query}`),
         fetchFn(`${baseUrl}/audit/coach${query}`),
         fetchFn(`${baseUrl}/audit/history${query}`)
       ]);
@@ -949,6 +952,11 @@ function DashboardContent() {
               </div>
 
               {/* EXCHANGE COMPARISON */}
+              {multiVenueNotice(resolvedUserId) && (
+                <div style={{ marginBottom: '2.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#a09890' }}>
+                  {multiVenueNotice(resolvedUserId)}
+                </div>
+              )}
               {exchangeComparison && (
                 <div style={{ marginBottom: '2.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>

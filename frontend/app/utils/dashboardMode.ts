@@ -1,11 +1,12 @@
 const DEMO_ALLOWLIST = new Set([
   'demo-disciplined',
   'demo-moderate',
-  'demo-aggressive',
-  'demo-bybit',
-  'demo-okx',
-  'demo-multi'
+  'demo-aggressive'
 ]);
+
+/** True only for the visible demo ids; hidden demos (bybit/okx/multi) are never allowed. */
+export const isAllowedDemoId = (id: string | null): id is string =>
+  !!id && DEMO_ALLOWLIST.has(id);
 
 export function resolveDashboardMode({
   urlUserId,
