@@ -1,3 +1,5 @@
+import { tradeFeeUsdOrNull } from './fees';
+
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 export interface HourSummary {
@@ -10,6 +12,8 @@ interface ScoredTrade {
     fillScore?: number | null;
     isMaker?: boolean;
     feeUsd?: number | null;
+    fee?: number | null;
+    feeAsset?: string | null;
 }
 
 /** Average fill score of the scored trades executed in one UTC hour, or null if there are none. */
@@ -102,11 +106,18 @@ export function buildCoach(input: CoachInput): { headline: string; actions: Coac
 
     if (b.makerRatio != null && b.makerRatio < 0.7 && attribution && attribution.feeCost > 0) {
         // Measured: fees actually paid on taker fills (feeUsd), not a hypothetical maker-share gap.
-        const taker = trades.reduce((s, t) => s + (t.isMaker === false ? (t.feeUsd ?? 0) : 0), 0);
+        // A null feeUsd uses the native-fee fallback (fees.ts); an unpriceable fee is excluded and counted.
+        let taker = 0; let excluded = 0;
+        for (const t of trades) {
+            if (t.isMaker !== false) continue;
+            const v = tradeFeeUsdOrNull(t);
+            if (v == null) excluded++; else taker += v;
+        }
+        const excludedNote = excluded > 0 ? ` ${excluded} taker ${excluded === 1 ? 'fill' : 'fills'} with a fee in a non-USD asset excluded.` : '';
         actions.push({
             category: 'ORDER_TYPE',
             title: `Maker share of fills: ${Math.round(b.makerRatio * 100)}%`,
-            detail: `${Math.round(b.makerRatio * 100)}% of your fills were maker; the rest paid taker fees.`,
+            detail: `${Math.round(b.makerRatio * 100)}% of your fills were maker; the rest paid taker fees.${excludedNote}`,
             estimatedImpact: `$${taker.toFixed(2)} fees paid on taker fills${overPeriod}`,
             impactValue: taker,
             icon: 'tag',

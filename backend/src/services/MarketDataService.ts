@@ -116,14 +116,28 @@ export class MarketDataService {
         });
     }
 
+    /** Recomputes only spreadBps (v1 estimator) for a trade that already has its arrival price. */
+    private async repairSpread(trade: EnrichedTradeDocument): Promise<void> {
+        const timestampMs = trade.executedAt.getTime();
+        const klines = await this.getKlineData(trade.symbol, timestampMs - 60000, timestampMs, 1);
+        if (!klines || klines.length === 0) {
+            throw new Error(`Could not find kline to compute spread for trade ${trade.tradeId}`);
+        }
+        const spreadBps = this.estimateSpreadBps(parseFloat(klines[0][2] as string), parseFloat(klines[0][3] as string));
+        await Trade.findByIdAndUpdate(trade._id, { $set: { spreadBps } });
+    }
+
     public async enrichAllPendingTrades(userId: string, deadlineMs?: number): Promise<{ enriched: number; failed: number }> {
-        const pendingTrades = await Trade.find({
-            userId,
-            $or: [
-                { arrivalPriceProxy: { $exists: false } },
-                { arrivalPriceProxy: null }
-            ]
-        });
+        // Repair path (4R-0c): a real-user trade whose spreadBps is missing, null or not a number is
+        // re-selected so v1 estimateSpreadBps can recompute it. Demo accounts are frozen v1 data.
+        const pendingClauses: Record<string, unknown>[] = [
+            { arrivalPriceProxy: { $exists: false } },
+            { arrivalPriceProxy: null }
+        ];
+        if (!userId.startsWith('demo-')) {
+            pendingClauses.push({ spreadBps: null }, { spreadBps: { $not: { $type: 'number' } } });
+        }
+        const pendingTrades = await Trade.find({ userId, $or: pendingClauses });
 
         let enriched = 0;
         let failed = 0;
@@ -144,7 +158,8 @@ export class MarketDataService {
 
             await Promise.all(batch.map(async (trade) => {
                 try {
-                    await this.enrichTrade(trade);
+                    if (trade.arrivalPriceProxy != null) await this.repairSpread(trade);
+                    else await this.enrichTrade(trade);
                     batchEnriched++;
                 } catch (error) {
                     console.error(`Failed to enrich trade ${trade.tradeId}:`, error);

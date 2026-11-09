@@ -54,6 +54,15 @@ export function tradeFeeUsd(t: { fee?: number | null; feeUsd?: number | null; fe
     return isUsdAsset(t.feeAsset) ? (t.fee ?? 0) : 0;
 }
 
+/**
+ * Like tradeFeeUsd but distinguishes "unpriced" from zero: null when feeUsd is absent and the native
+ * fee is in a non-USD asset, so a reader can exclude and count the trade instead of adding $0.
+ */
+export function tradeFeeUsdOrNull(t: { fee?: number | null; feeUsd?: number | null; feeAsset?: string | null }): number | null {
+    if (t.feeUsd != null) return t.feeUsd;
+    return isUsdAsset(t.feeAsset) ? (t.fee ?? 0) : null;
+}
+
 /** Mongo aggregation expression equivalent of tradeFeeUsd. */
 export const FEE_USD_EXPR = {
     $ifNull: ['$feeUsd', { $cond: [{ $in: [{ $toUpper: { $ifNull: ['$feeAsset', 'USDT'] } }, USD_QUOTES] }, '$fee', 0] }],

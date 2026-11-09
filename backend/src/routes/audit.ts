@@ -46,6 +46,11 @@ export function perTradeFields(t: EnrichedTrade) {
     };
 }
 
+/** Every ingested trade was refused by the scorer; carries the disclosure so the route can show why. */
+export class NoScorableTradesError extends Error {
+    constructor(public skippedTrades: SkippedTrades) { super('no_scorable_trades'); }
+}
+
 export async function executeAuditPipeline(accountId: string) {
     const tradeDocs = await Trade.find({ accountId }).lean();
 
@@ -76,6 +81,7 @@ export async function executeAuditPipeline(accountId: string) {
     }
 
     if (validTrades.length === 0) {
+        if (pipelineSkips.count > 0) throw new NoScorableTradesError(pipelineSkips);
         throw new Error('no_trades_found');
     }
 
@@ -185,6 +191,9 @@ auditRouter.post('/run', auditRunLimiter, resolveAccount, async (req: Request, r
             const { savedAudit } = await executeAuditPipeline(accountId);
             return res.status(200).json(savedAudit);
         } catch (e: any) {
+            if (e instanceof NoScorableTradesError) {
+                return res.status(422).json({ error: 'no_scorable_trades', skippedTrades: e.skippedTrades });
+            }
             if (e.message === 'no_trades_found') {
                 return res.status(400).json({ error: 'No scoreable trades found to audit.' });
             }

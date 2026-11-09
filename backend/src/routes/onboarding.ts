@@ -8,7 +8,7 @@ import { syncAccountTrades } from '../services/SyncService';
 import { acquireSyncLock, runSyncJob, getSyncStatus, JobControl, JobOutcome } from '../services/SyncJobService';
 import { parseOrReject, connectBodySchema, syncBodySchema } from '../validation/schemas';
 import { MarketDataService } from '../services/MarketDataService';
-import { executeAuditPipeline } from './audit';
+import { executeAuditPipeline, NoScorableTradesError } from './audit';
 import { INGEST_DAYS_BACK } from '../config/ingestion';
 import { User } from '../models/User';
 import mongoose from 'mongoose';
@@ -139,6 +139,7 @@ async function performSync(accountId: string, ctl: JobControl): Promise<JobOutco
         const { savedAudit, tradesScored, totalIngested } = await executeAuditPipeline(accountId);
         return { state, ...partial, result: { ...base, tradesIngested: totalIngested, tradesScored, fillScore: savedAudit.avgFillScore, grade: savedAudit.fillGrade } };
     } catch (e: any) {
+        if (e instanceof NoScorableTradesError) return { state, ...partial, result: { ...base, noScorableTrades: true, skippedTrades: e.skippedTrades } };
         if (e.message === 'no_trades_found') return { state, ...partial, result: { ...base, noTrades: true } };
         throw e;
     }

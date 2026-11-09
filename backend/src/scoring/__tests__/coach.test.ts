@@ -84,6 +84,29 @@ describe('buildCoach ORDER_TYPE (4R-0b: fees actually paid on taker fills)', () 
     });
 });
 
+describe('buildCoach ORDER_TYPE taker fees with null feeUsd (4R-0c B4)', () => {
+    const t = (isMaker: boolean, feeUsd: number | null, fee: number, feeAsset: string) =>
+        ({ executedAt: new Date('2026-01-05T09:00:00Z'), fillScore: 70, isMaker, feeUsd, fee, feeAsset });
+    it('USDT native fee counts at face value; other assets are excluded and counted', () => {
+        // taker A: feeUsd null, 2.5 USDT -> 2.5 (native fallback, same as tradeFeeUsd)
+        // taker B: feeUsd null, 0.001 BNB -> unpriced, excluded, counted (1)
+        // taker C: feeUsd 4 -> 4
+        // maker D: feeUsd null, 1 USDT -> not a taker, ignored
+        // total = 2.5 + 4 = 6.5
+        const out = buildCoach({
+            breakdown: { bestHour: null, worstHour: null, makerRatio: 0.25 },
+            periodText: '31 days',
+            trades: [t(false, null, 2.5, 'USDT'), t(false, null, 0.001, 'BNB'), t(false, 4, 4, 'USDT'), t(true, null, 1, 'USDT')] as any,
+            attribution: { timingCost: 0, feeCost: 7.5, totalNotional: 4000 },
+            venue: null,
+        });
+        const a = out.actions.find(x => x.category === 'ORDER_TYPE')!;
+        expect(a.impactValue).toBe(6.5);
+        expect(a.estimatedImpact).toBe('$6.50 fees paid on taker fills over 31 days');
+        expect(a.detail).toContain('1 taker fill with a fee in a non-USD asset excluded');
+    });
+});
+
 describe('buildCoach headline (2c.2 C3)', () => {
     it('reads "driver, ~$N over period" with no nested parentheses; the badge keeps (modelled)', () => {
         // timingCost 1.4 -> Math.round = 1 -> "~$1"; periodText "31 days" -> " over 31 days"
