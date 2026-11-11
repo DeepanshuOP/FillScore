@@ -6,17 +6,18 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 **M1. Measurement v2 and Scoring v2** — in progress. Plan: `docs/superpowers/plans/2026-11-11-m1-measurement-and-scoring-v2.md` (it builds on `docs/superpowers/plans/2026-11-09-phase-4r1a.md`).
 
-**Next concrete action:**
-1. Part A, Task 1 (metric registry). The test file `ml-service/tests/measure/test_registry.py` exists and is red: `ImportError: cannot import name 'MEASURE_VERSION' from 'config.versions'`. Add `MEASURE_VERSION = "1.0.0"` to `ml-service/config/versions.py`, write `ml-service/measure/registry.py`, and make the tests green. The last test in that file needs `measure/metrics.py` (Task 4).
-2. Then Task 2 (market-data loaders and the committed 2-minute fixtures), Task 3 (benchmarks), Task 4 (fill metrics), and on through the plan.
+**Done in M1 so far (Part A, Tasks 1–4; 73 tests in `ml-service/tests/measure/`, all green):** metric registry; real 2-minute fixtures with `SOURCE.md`; data layer (`measure/data/`: window type, data.binance.vision loader with mandatory checksum, REST window with paging and gap check, Parquet cache, price step); benchmarks (`measure/benchmarks.py`); fill metrics with the runtime identity (`measure/metrics.py`). Red phases seen: `ImportError: cannot import name 'MEASURE_VERSION'`, `ModuleNotFoundError: No module named 'measure.data'`, `No module named 'measure.metrics'`. Two defects found by the tests and fixed in code: the price step kept float noise at 12 decimals (now 8, the exchange precision), and the header-row skip dropped a data row.
 
-**Uncommitted Milestone 1 files:** `ml-service/tests/measure/` (new), `ml-service/requirements.txt` and `ml-service/requirements.lock` (adds `hypothesis==6.170.15` for property tests; it is installed in `ml-service/.venv`).
+**Next concrete action:**
+1. Part A, Task 5: write `tests/measure/test_enrich_fill.py` (red), then `measure/enrich_fill.py` (`FillInput`, `measure_fill`). Hand values for the real-data test, read from the raw BTCUSDT 2024-01-15 fixture with awk: pretend buy fill = aggregate id 2830846703, price 42864.25, t = 1705327260000. Strictly before t: ask proxy 42864.25 (id 2830846701, ts …259998), bid proxy 42864.24 (id 2830846700, ts …259998), so mid = 42864.245, two-sided, effective half-spread = 0.005/42864.245 × 1e4 = 0.0011665 bps (half a tick). Mid at +1 s = (42864.25 + 42864.24)/2 = 42864.245; at +15 s = (42841.38 + 42841.37)/2 = 42841.375; at +60 s (t = …320000) = (42824.72 + 42824.71)/2 = 42824.715; at +300 s there is no data in the slice, so `None`. For BNBUSDT the tick is 0.1.
+2. Task 6: write the generated `docs/methodology/measurement-v1.0.0.md` with a drift test; run the flaky-test loop from the 4R-1a plan.
+3. Then Part B (orders, fee snapshots, order-level shortfall, persistence, job), Part C (Scoring v2) and Part D, as in the M1 plan.
 
 ## Milestone status
 
 | Milestone | Status | Report | Commit |
 |---|---|---|---|
-| M0 Orientation, research and hygiene | done | `docs/milestones/M0.md` | see "Done" |
+| M0 Orientation, research and hygiene | done | `docs/milestones/M0.md` | `ff681be` |
 | M1 Measurement v2 and Scoring v2 | in progress (Part A, Task 1) | | |
 | M2 Real demos | not started | | |
 | M3 Cost against expectation, AI layer quality | not started | | |
@@ -46,7 +47,7 @@ The M0 ml-service run used `--ignore=tests/measure`, because that folder holds t
 
 ## Done
 
-- **M0** (2026-11-11): baseline; Dependabot alerts #265 and #270 fixed in the frontend; market research `docs/research/MARKET_2026-11.md`; roadmap §3a; instruction cleanup; M1 plan; reviewer findings fixed. Report: `docs/milestones/M0.md`. Commit: the commit with the message "m0: baseline, market research, roadmap additions, instruction cleanup" (hash recorded here in the next commit).
+- **M0** (2026-11-11): baseline; Dependabot alerts #265 and #270 fixed in the frontend; market research `docs/research/MARKET_2026-11.md`; roadmap §3a; instruction cleanup; M1 plan; reviewer findings fixed. Report: `docs/milestones/M0.md`. Commit: `ff681be`.
 
 ## Waiting for Deepanshu
 

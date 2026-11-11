@@ -13,6 +13,7 @@ httpx==0.28.1
 pytest==9.2.0
 pytest-asyncio==1.4.1.post1
 mongomock-motor==0.0.36
+hypothesis==6.170.15
 openai==3.45.0
 certifi==2026.10.23
 groq==1.7.0
