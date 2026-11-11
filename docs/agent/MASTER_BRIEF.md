@@ -79,7 +79,7 @@ AI agents then explain the findings in plain language, but every number in an ex
 - signing up for, or spending money on, any external service, or adding a paid dependency;
 - live LLM calls beyond the budget below;
 - creating or rotating real credentials;
-- loosening the guard hook or a security check (tightening needs no approval).
+- any change to the guard hook, `.claude/settings*.json` or a security check (propose it as a file under `.work/proposed/`; never edit those files yourself).
 
 **These need no approval. Do them freely:**
 - reading any file in the repo;
@@ -93,8 +93,8 @@ AI agents then explain the findings in plain language, but every number in an ex
 - **committing locally at the end of each milestone** (rules below).
 
 **Written permission from Deepanshu for this run:**
-1. **Local commits.** In Milestone 0, change `.claude/hooks/guard.sh` so `git add` and `git commit` are allowed while push, history rewrites and force operations stay blocked (add test rows for both).
-2. **Attribution.** Set `"attribution": false` in `.claude/settings.json` (hides commit attribution; requires Claude Code v2.1.281+. On older versions, set `commit` and `pr` to "" and `sessionUrl` to false).
+1. **Local commits.** Deepanshu has applied the guard change himself (2026-11-11): `git add <explicit files>` and `git commit` are allowed; push, history rewrites, force flags, `--no-verify`, `commit -a`, staging `.env` files and git config writes stay blocked. Commit attribution is already off in `.claude/settings.json` (empty `commit`/`pr`, `sessionUrl` false).
+2. **Never edit `.claude/hooks/*` or `.claude/settings*.json` yourself.** Auto mode refuses self-modification, and a half-applied edit once locked every tool. If you need a hook or settings change, write the full proposed file under `.work/proposed/`, with its tests and a diff, and add it to "Waiting for Deepanshu".
 3. **Commit rules:**
    - Commits carry only Deepanshu's git identity.
    - No AI co-author trailers, no "generated with" lines, and never the word "claude" in a message (a commit-msg hook enforces this).
@@ -116,7 +116,6 @@ The milestones below are a direction, not a cage. Research first, then reorder w
 - **Market and technical research:** the current TCA landscape (Bloomberg BTCA public materials, Talos, CoinRoutes, Kaiko, Botminds, open-source tools such as tcapy), crypto-specific execution research, MiCA Art. 78 and SEC Rule 605 practice, retail cost studies, what traders actually complain about, and what would make FillScore clearly better. Write it up in `docs/research/MARKET_2026-11.md`, with sources.
 - **Propose improvements and new features** grounded in that research. Update `docs/ROADMAP.md` with what you'll add, change or drop, and why.
 - **Clean up accumulated instructions.** Review `CLAUDE.md`, the agent notes and the memory or instruction files for cautions whose reason no longer holds. Rewrite absolute rules so they state their scope and reason (the guard and the invariants stay).
-- **Make the guard change** above.
 - **Create `docs/PROGRESS.md`.**
 
 **M1. Measurement v2 and Scoring v2 (the core)**
