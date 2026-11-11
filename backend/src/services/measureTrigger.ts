@@ -34,6 +34,31 @@ export type MeasureResult =
     | { status: 'done'; calls: number; measured: number; pending: number }
     | { status: 'dead'; calls: number; measured: number; reason: string };
 
+/** One POST to an ml-service /internal/* route for `accountId`, with a fresh measure token. Throws when not
+ *  configured (`ml_not_configured`) or unreachable; returns the Response otherwise. */
+export async function callMlInternal(path: string, accountId: string, opts: { baseUrl?: string; secret: string; fetchImpl?: typeof fetch }): Promise<Response> {
+    if (!opts.baseUrl) throw new Error('ml_not_configured');
+    return (opts.fetchImpl ?? fetch)(`${opts.baseUrl.replace(/\/+$/, '')}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mintMeasureToken(accountId, opts.secret)}` },
+        body: JSON.stringify({ accountId }),
+    });
+}
+
+/** After measurement: score the account under Scoring v2. Never rejects; a failure is reported and the next sync
+ *  scores again. */
+export async function requestScore(accountId: string, opts: MeasureOptions): Promise<'skipped' | 'done' | 'failed'> {
+    if (!opts.baseUrl) return 'skipped';
+    try {
+        const res = await callMlInternal('/internal/score-v2', accountId, opts);
+        if (!res.ok) throw new Error(`ml_http_${res.status}`);
+        return 'done';
+    } catch (e) {
+        (opts.report ?? (err => Sentry.captureException(err, { tags: { job: 'score_v2' } })))(e);
+        return 'failed';
+    }
+}
+
 /** Never rejects: it runs unawaited after a sync, and an unhandled rejection would kill Node 20. */
 export async function requestMeasurement(accountId: string, opts: MeasureOptions): Promise<MeasureResult> {
     if (!opts.baseUrl) return { status: 'skipped', calls: 0 };

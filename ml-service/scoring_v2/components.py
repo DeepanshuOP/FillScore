@@ -15,6 +15,23 @@ from .anchors import check_anchors, score_from_anchors
 
 WEIGHTS = {"slippage": 0.35, "fees": 0.25, "timing": 0.25, "spread": 0.15}
 
+# Plain-language description of each component, published on /methodology through the generated JSON.
+COMPONENT_DOCS = {
+    "slippage": "How far the mid moved against the order between the order's arrival and its fills, with the spread "
+                "taken out (impact/timing, bps of the intended notional). Mapped through anchors from the signed mid "
+                "drift of a random-side entry over the same duration, so 75 is the market median. For fast fills this "
+                "is mostly market movement during the order, not a choice the trader made.",
+    "fees": "The fee paid (bps of notional) against the lowest rate the account had for that fill, from the account's "
+            "own commission snapshot: 100 at or below that rate, falling linearly to 0 at twice it. A snapshot is "
+            "the rate when it was fetched, so it is applied only to fills within 30 days of it; other fills read "
+            "\"not measured\". On a zero-fee pair the reference is the exchange's published taker rate.",
+    "timing": "Where the fill's UTC hour ranks in the symbol's hour profile (median quoted half-spread plus median "
+              "absolute 1-minute move, from the calibration days): 100 x (1 - hours with a lower index / 23).",
+    "spread": "The effective half-spread the fill paid (bps), mapped through anchors from the effective half-spread "
+              "of public taker prints of a similar size against the same mid. Half a tick or less scores 100.",
+}
+ANCHOR_RULE = "Anchors are the 10th, 50th, 90th and 99th percentiles of a public-market baseline; they score 100, 75, 40 and 0, linear in between."
+
 DURATION_BUCKETS = ((1_000, "lt1s"), (10_000, "1s-10s"), (60_000, "10s-1m"), (600_000, "1m-10m"), (3_600_000, "10m-1h"))
 NOTIONAL_BUCKETS = ((1_000, "lt1k"), (10_000, "1k-10k"), (100_000, "10k-100k"))
 

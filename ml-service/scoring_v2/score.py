@@ -17,9 +17,10 @@ from measure.fees import effective_rate
 
 from .aggregate import score_account
 from .components import duration_bucket, fee_score, notional_bucket, slippage_score, spread_score, timing_score
-from .integrity import integrity_hash
+from .integrity import canonical_json, integrity_hash
 
 USD_PEGGED_QUOTES = ("USDT", "USDC", "FDUSD")
+SNAPSHOT_MAX_GAP_MS = 30 * 86_400_000
 
 
 def _plain(v):
@@ -60,13 +61,24 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None):
     trades = [t for t in db.trades.find(q) if keys is None or f"fill:{t['symbol']}:{t['tradeId']}" in keys]
     symbols = sorted({t["symbol"] for t in trades})
 
-    snaps: dict[str, dict] = {}
+    snaps_by_symbol: dict[str, list[dict]] = {}
     for s in symbols:
         cands = list(db.fee_snapshots.find({"accountId": account_id, "symbol": s}))
         if keys is not None:
             cands = [c for c in cands if f"fee:{s}:{_plain(c['fetchedAt'])}" in keys]
-        if cands:
-            snaps[s] = max(cands, key=lambda c: _ms(c["fetchedAt"]))
+        snaps_by_symbol[s] = cands
+    used_snaps: dict[str, dict] = {}
+
+    def snap_for(t: dict) -> dict | None:
+        """The snapshot nearest in time to the fill, if one is within SNAPSHOT_MAX_GAP_MS. A snapshot is the rate
+        when it was fetched; a VIP tier or a discount can change, so a far snapshot is not applied (review M1-3)."""
+        ts = _ms(t["executedAt"])
+        cands = [c for c in snaps_by_symbol.get(t["symbol"], []) if abs(_ms(c["fetchedAt"]) - ts) <= SNAPSHOT_MAX_GAP_MS]
+        if not cands:
+            return None
+        best = min(cands, key=lambda c: (abs(_ms(c["fetchedAt"]) - ts), _ms(c["fetchedAt"])))
+        used_snaps[f"fee:{t['symbol']}:{_plain(best['fetchedAt'])}"] = best
+        return best
 
     oms = {}
     for om in db.order_measurements.find({"accountId": account_id, "version": MEASURE_VERSION}):
@@ -90,7 +102,7 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None):
             spread = spread_score(eff, tick / 2 / mid * 1e4, (sym_anchors.get("spread") or {}).get(notional_bucket(notional)))
         prof = profiles.get(sym)
         timing = timing_score(t["executedAt"].hour, prof) if prof else None
-        o["fills"].append({"notional": notional, "spread": spread, "timing": timing, "fees": _fee_unit(t, snaps.get(sym), version)})
+        o["fills"].append({"notional": notional, "spread": spread, "timing": timing, "fees": _fee_unit(t, snap_for(t), version)})
 
     for key, o in orders.items():
         om = oms.get(key)
@@ -111,8 +123,8 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None):
         if (sym, oid) in orders:
             entries.append((f"order:{sym}:{oid}", _plain(om)))
             shas.update(r["sha256"] for r in om.get("marketDataRefs", []) if r.get("sha256"))
-    for s, snap in snaps.items():
-        entries.append((f"fee:{s}:{_plain(snap['fetchedAt'])}", _plain(snap)))
+    for k, snap in sorted(used_snaps.items()):
+        entries.append((k, _plain(snap)))
     return list(orders.values()), entries, shas
 
 
@@ -134,7 +146,11 @@ def verify_account_v2(db, account_id: str, version: dict, version_sha256: str) -
     stored = db.scores_v2.find_one({"accountId": account_id, "scoringVersion": version["id"]}, sort=[("computedAt", -1)])
     if stored is None:
         return None
-    _, entries, shas = _collect(db, account_id, version, keys=set(stored.get("inputKeys", [])))
+    orders, entries, shas = _collect(db, account_id, version, keys=set(stored.get("inputKeys", [])))
     recomputed = integrity_hash(version["id"], version_sha256, entries, shas)
-    return {"match": recomputed == stored["integrityHash"], "storedHash": stored["integrityHash"],
-            "recomputedHash": recomputed, "scoringVersion": version["id"]}
+    # The hash covers the inputs; the stored result is checked by recomputing it from those inputs (deterministic:
+    # fixed bootstrap seed), so an edited grade or composite is caught too (review M1-1).
+    result_match = canonical_json(_plain(stored.get("result"))) == canonical_json(score_account(orders))
+    hash_match = recomputed == stored["integrityHash"]
+    return {"match": hash_match and result_match, "storedHash": stored["integrityHash"],
+            "recomputedHash": recomputed, "resultMatch": result_match, "scoringVersion": version["id"]}

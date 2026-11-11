@@ -4,25 +4,32 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Current milestone
 
-**M1. Measurement v2 and Scoring v2** — in progress. Plan: `docs/superpowers/plans/2026-11-11-m1-measurement-and-scoring-v2.md` (it builds on `docs/superpowers/plans/2026-11-09-phase-4r1a.md`).
+**M2. Real demos** — starting. M1 is done (report `docs/milestones/M1.md`).
+
+**Next concrete action (M2):**
+1. Write `docs/superpowers/plans/2026-11-1x-m2-real-demos.md`. Read the demo generator (`backend/src/scripts/generateSyntheticTrades.ts`, `seedDatabase.ts`, `seedAudit.ts`), `ml-service/whale/*.py` and `docs/ROADMAP.md` §4R-2 first. Design: a generator with a fixed seed that writes demo trades and orders to local files (not Atlas). Taker fills walk real aggressor-side prints; maker fills come from real prints that reach the limit price. It grades the result under v1 and v2 offline and prints old vs new grades side by side.
+2. Any seed into Atlas, and any change to a locked v1 demo grade, needs Deepanshu: prepare the exact commands with a dry run and list them under "Waiting for Deepanshu". v1 must stay reproducible for the old locked grades (`gradeInvariance.test.ts`).
+3. Bybit and OKX demos: check each venue's public trade archive (Bybit `public.bybit.com`; OKX unknown). Rebuild where verified, otherwise propose removing them.
+4. Whale study re-run with only pre-fill bursts counted as adverse. Never run `whale/enrich.py` (CLAUDE.md); do the analysis offline from public data in a new script. Report the result whichever way it comes out.
+5. Prepare the full ablation re-record on golden set v2 as a dry-run script for Deepanshu.
+
+## M1 (done, 2026-11-11)
+
+Plan: `docs/superpowers/plans/2026-11-11-m1-measurement-and-scoring-v2.md` (it builds on `docs/superpowers/plans/2026-11-09-phase-4r1a.md`). Report: `docs/milestones/M1.md`.
 
 **Done in M1 so far (Part A complete, Tasks 1–6; 89 tests in `ml-service/tests/measure/`, all green; ml suite 949 passed, 1 skipped):** metric registry; real 2-minute fixtures with `SOURCE.md`; data layer (`measure/data/`: window type, data.binance.vision loader with mandatory checksum, REST window with paging and gap check, Parquet cache, price step); benchmarks (`measure/benchmarks.py`); fill metrics with the runtime identity (`measure/metrics.py`); `measure/enrich_fill.py` (`FillInput`, `measure_fill`), checked on real BTCUSDT and BNBUSDT slices; the generated method page `docs/methodology/measurement-v1.0.0.md` (`ml-service/scripts/gen_methodology.py`, with a drift test). Red phases seen: `ImportError: cannot import name 'MEASURE_VERSION'`, `ModuleNotFoundError: No module named 'measure.data'`, `No module named 'measure.metrics'`, `No module named 'measure.enrich_fill'`, `AssertionError: missing .../measurement-v1.0.0.md`. Two defects found by the tests and fixed in code: the price step kept float noise at 12 decimals (now 8, the exchange precision), and the header-row skip dropped a data row. The flaky router test passed 30 of 30 runs and in the full suite; no fix was needed. Commits: `0aa0603` (Tasks 1–4), then the Tasks 5–6 commit. Research notes: `docs/research/LOG.md` §G.
 
 **Part B done (Tasks 7–10, Binance only):** `measure/orders.py` (order shortfall, including orders that never filled), `measure/fees.py` (Commission FAQ formula, the FAQ example reproduced), `measure/service.py` (the job; trade rows are the outbox), `POST /internal/measure` (service token `typ: measure`), backend `Order`/`FeeSnapshot`/`OrderMeasurement` models, `services/orders/binanceOrders.ts` (allOrders + commission in the history sync), `services/measureTrigger.ts` (called after each sync), field registry rows for the new collections. Decisions: ADR-0011. Research: `docs/research/LOG.md` §H. TDD note: `binanceOrders.ts` and `measure/service.py` were written before their tests (no red phase seen); the C2 component tests were written first but not run red. Every other module showed its red phase.
 
-**Next concrete action:**
-1. Part C: the calibration run `scripts/calibrate_v2.py` (BTC/ETH/BNB/SOL USDT, every 7th day from 2025-10-01 to 2025-10-29) produces `scoring_v2/versions/v2.0.0.json`. Then add `tests/scoring_v2/test_version.py` (pin the file's SHA-256), write ADR-0010, and commit Part C. Done so far in Part C (94 tests): anchors, components, aggregate, bootstrap, integrity, calibrate, version, score (`score_account_v2`, `verify_account_v2`).
-2. Part D: `/internal/score-v2` and `/internal/verify-v2`; backend `GET /api/audit/v2` and `GET /api/audit/verify`; frontend v1/v2 side by side and the `/methodology` page; the validation harness `scripts/validate_real_account.py`.
-3. One `reviewer` pass on the whole M1 diff, fix high and medium findings, `docs/milestones/M1.md`, milestone commit.
-4. Bybit and OKX orders are not built (OKX order-history facts unconfirmed; Bybit keeps only filled orders older than 7 days). Their fills get an `unmeasuredReason` in this version.
+**Part C done:** Scoring v2 (`ml-service/scoring_v2/`), calibrated version `v2.0.0` from 20 real daily files, ADR-0010. **Part D done:** `/internal/score-v2` and `/internal/verify-v2`; backend `GET /api/audit/v2` and `GET /api/audit/verify`; the dashboard shows v1 (rule-based) and v2 (measured) side by side; `/methodology` generated from the code; the validation harness `ml-service/scripts/validate_real_account.py`. Review: 3 medium and 4 low findings, all fixed with tests (listed in the M1 report). Not built: Bybit and OKX orders (OKX order-history facts unconfirmed; Bybit keeps only filled orders older than 7 days); their fills carry an `unmeasuredReason`.
 
 ## Milestone status
 
 | Milestone | Status | Report | Commit |
 |---|---|---|---|
 | M0 Orientation, research and hygiene | done | `docs/milestones/M0.md` | `ff681be` |
-| M1 Measurement v2 and Scoring v2 | in progress (Parts A–B done; Part C next) | | |
-| M2 Real demos | not started | | |
+| M1 Measurement v2 and Scoring v2 | done (real-account check open until real trades exist) | `docs/milestones/M1.md` | `0aa0603`, `5d43067`, `6ab568e`, `46e08f3`, closing commit |
+| M2 Real demos | in progress (planning) | | |
 | M3 Cost against expectation, AI layer quality | not started | | |
 | M4 Explain and act | not started | | |
 | M5 Trust and reach | not started | | |
@@ -32,6 +39,8 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 | M9 Launch readiness | not started | | |
 
 ## Suite results
+
+**End of M1 (2026-11-11):** ml-service 1115 passed, 1 skipped; offline evals 0 gated violations; ablation --check exit 0; guard 214 passed; roadmap IDs OK; backend 93 files, 742 passed, tsc 0; frontend 39 files, 263 passed, tsc 0, lint 0 errors (89 warnings), build exit 0; e2e 16 passed. `dump_golden_packets --check v2` was not run: it needs a local mongod, and no packet code changed.
 
 Baseline at commit e43c493, and the same at the end of M0 (2026-11-11). M0 added no code.
 

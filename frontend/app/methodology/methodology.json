@@ -1,0 +1,141 @@
+{
+  "benchmarks": {
+    "horizonsS": [
+      1,
+      15,
+      60,
+      300
+    ],
+    "maxQuoteAgeMs": 5000
+  },
+  "generatedBy": "ml-service/scripts/gen_methodology.py",
+  "measureVersion": "1.0.0",
+  "metrics": [
+    {
+      "doc": "(standard[maker|taker] + standard[buyer|seller]) x discount + (tax[...] + tax[...]) + (special[...] + special[...]). The discount multiplier applies only when the account and the symbol have it enabled and the fee was paid in the discount asset; it never applies to tax or special commissions (Binance Commission FAQ). Example from the FAQ: taker sell, standard 0.0000002 + 0.0000004, tax 0.00000114 + 0.00000116, special 0.02 + 0.04, discount 0.25 gives 0.06000245.",
+      "id": "fee.effective_rate",
+      "inputs": [
+        "commission snapshot (standard, tax, special, discount)",
+        "side",
+        "maker or taker",
+        "paid in discount asset"
+      ],
+      "unit": "fraction of notional"
+    },
+    {
+      "doc": "D x (fill - mid) / mid x 10,000. The distance from the mid that the fill paid. A taker normally pays about half the quoted spread. A negative value means price improvement, or a maker fill that earned the spread. Example: buy at 100.02 with mid 100.01 gives 0.9999 bps.",
+      "id": "fill.effective_half_spread_bps",
+      "inputs": [
+        "side",
+        "fill price",
+        "mid at fill time"
+      ],
+      "unit": "bps of mid"
+    },
+    {
+      "doc": "Effective half-spread divided by the quoted half-spread, where the quoted half-spread is (quoted spread / 2) / mid x 10,000 and the quoted spread is max(ask proxy - bid proxy, one tick). 1.0 means the fill paid exactly the quoted half-spread; below 1.0 is price improvement. Not available when the quote is not two-sided.",
+      "id": "fill.eq_ratio",
+      "inputs": [
+        "effective half-spread (bps)",
+        "quoted spread (price units)",
+        "mid at fill time"
+      ],
+      "unit": "ratio"
+    },
+    {
+      "doc": "D x (mid after h - mid at fill) / mid at fill x 10,000. How far the mid moved in the direction of the trade within h seconds. It coincided with the trade; the measurement does not show causation. Example: buy, mid 100.01, mid 15 s later 100.04 gives 2.9997 bps.",
+      "id": "fill.price_impact_bps",
+      "inputs": [
+        "side",
+        "mid at fill time",
+        "mid at fill time + h"
+      ],
+      "unit": "bps of mid"
+    },
+    {
+      "doc": "D x (fill - mid after h) / mid at fill x 10,000, for h = 1, 15, 60 and 300 seconds. The part of the effective half-spread that was still a cost after the market had h seconds to move. Example: buy at 100.02, mid 100.01, mid 15 s later 100.04 gives -1.9998 bps.",
+      "id": "fill.realized_half_spread_bps",
+      "inputs": [
+        "side",
+        "fill price",
+        "mid at fill time",
+        "mid at fill time + h"
+      ],
+      "unit": "bps of mid"
+    },
+    {
+      "doc": "Execution + unfilled cost + fees, each divided by ordered quantity x arrival mid, x 10,000 (Perold 1988). Execution = sum D (fill - arrival mid) x qty, split into spread = sum D (fill - mid at fill) x qty and impact/timing = sum D (mid at fill - arrival mid) x qty. Unfilled cost = D (end mid - arrival mid) x unfilled qty: 0 for a fully filled order, unknown without an order record. Delay cost is not computed (no decision time). Example: buy 2.0 at arrival 100.00, fills 1.0 at 100.02 and 0.5 at 100.04, end mid 100.10, fees 0.15 gives execution 2.0, unfilled cost 2.5, fees 7.5, total 12.0 bps.",
+      "id": "order.implementation_shortfall_bps",
+      "inputs": [
+        "side",
+        "ordered quantity",
+        "fills (price, quantity, mid at fill)",
+        "arrival mid",
+        "end mid",
+        "fees"
+      ],
+      "unit": "bps of intended notional"
+    }
+  ],
+  "scoring": {
+    "anchorRule": "Anchors are the 10th, 50th, 90th and 99th percentiles of a public-market baseline; they score 100, 75, 40 and 0, linear in between.",
+    "bands": [
+      [
+        90.0,
+        "A"
+      ],
+      [
+        75.0,
+        "B"
+      ],
+      [
+        60.0,
+        "C"
+      ],
+      [
+        40.0,
+        "D"
+      ]
+    ],
+    "calibrationFiles": 20,
+    "calibrationWindow": {
+      "days": [
+        "2025-10-01",
+        "2025-10-08",
+        "2025-10-15",
+        "2025-10-22",
+        "2025-10-29"
+      ],
+      "end": "2025-10-29",
+      "rule": "every 7 days",
+      "start": "2025-10-01"
+    },
+    "components": {
+      "fees": "The fee paid (bps of notional) against the lowest rate the account had for that fill, from the account's own commission snapshot: 100 at or below that rate, falling linearly to 0 at twice it. A snapshot is the rate when it was fetched, so it is applied only to fills within 30 days of it; other fills read \"not measured\". On a zero-fee pair the reference is the exchange's published taker rate.",
+      "slippage": "How far the mid moved against the order between the order's arrival and its fills, with the spread taken out (impact/timing, bps of the intended notional). Mapped through anchors from the signed mid drift of a random-side entry over the same duration, so 75 is the market median. For fast fills this is mostly market movement during the order, not a choice the trader made.",
+      "spread": "The effective half-spread the fill paid (bps), mapped through anchors from the effective half-spread of public taker prints of a similar size against the same mid. Half a tick or less scores 100.",
+      "timing": "Where the fill's UTC hour ranks in the symbol's hour profile (median quoted half-spread plus median absolute 1-minute move, from the calibration days): 100 x (1 - hours with a lower index / 23)."
+    },
+    "feeTable": {
+      "publishedTakerBps": {
+        "binance": 10.0
+      },
+      "source": "https://www.binance.com/en/fee/schedule (searched 2026-11-11)"
+    },
+    "minFills": 20,
+    "symbols": [
+      "BNBUSDT",
+      "BTCUSDT",
+      "ETHUSDT",
+      "SOLUSDT"
+    ],
+    "version": "v2.0.0",
+    "versionFileSha256": "f2fb091f77d608f7b896398cf1822f13e91cbea0d3d4e57b33a697c3d59d562d",
+    "weights": {
+      "fees": 0.25,
+      "slippage": 0.35,
+      "spread": 0.15,
+      "timing": 0.25
+    }
+  }
+}

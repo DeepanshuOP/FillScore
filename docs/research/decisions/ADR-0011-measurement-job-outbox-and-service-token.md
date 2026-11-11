@@ -27,3 +27,9 @@
 - Deepanshu must set `ML_SERVICE_URL` on the backend service on Render before measurement runs in production (listed in `docs/PROGRESS.md`).
 - An order whose status changes after it was measured (an open order later cancelled) is measured again only when one of its fills is newly measured. Open orders are measured only after creation + 1 h, and labelled so.
 - The commission snapshot is the rate when fetched, not necessarily the rate when an older trade happened. The fee component says so.
+
+## Update (M1 review, 2026-11-11)
+- Open orders are now measured again once the exchange reports them final, so the consequence above about open orders no longer holds.
+- A fee snapshot applies only to fills within 30 days of it; other fills read "not measured" for fees. This is published on `/methodology`.
+- An oversized merged REST window falls back to one window per fill. Fills too recent to measure are counted but no longer take up the 500-fill batch.
+- Verification also recomputes the stored result from the stored inputs, so an edited grade fails the check.

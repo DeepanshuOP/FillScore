@@ -113,13 +113,35 @@ def test_verify_matches_then_detects_a_changed_measurement():
     r = score_account_v2(db, ACC, VERSION, "ff" * 32, now_ms=0)
     db.scores_v2.insert_one(dict(r))
     v = verify_account_v2(db, ACC, VERSION, "ff" * 32)
-    assert v == {"match": True, "storedHash": r["integrityHash"], "recomputedHash": r["integrityHash"], "scoringVersion": "v2.0.0"}
+    assert v == {"match": True, "storedHash": r["integrityHash"], "recomputedHash": r["integrityHash"], "resultMatch": True,
+                 "scoringVersion": "v2.0.0"}
     # a trade measured later does not break verification (the stored input keys are used) ...
     db.trades.insert_one({**db.trades.find_one({"tradeId": "0"}, {"_id": 0}), "tradeId": "999"})
     assert verify_account_v2(db, ACC, VERSION, "ff" * 32)["match"] is True
     # ... but a changed stored number does
     db.trades.update_one({"tradeId": "3"}, {"$set": {"measurement.effHalfBps": 0.5}})
     assert verify_account_v2(db, ACC, VERSION, "ff" * 32)["match"] is False
+
+
+def test_verify_detects_an_edited_result():
+    # Review finding M1-1: the hash covered the inputs only, so an edited grade still "matched".
+    db = make_db(20)
+    db.scores_v2.insert_one(dict(score_account_v2(db, ACC, VERSION, "ff" * 32, now_ms=0)))
+    assert verify_account_v2(db, ACC, VERSION, "ff" * 32)["match"] is True
+    db.scores_v2.update_one({}, {"$set": {"result.grade": "A"}})
+    v = verify_account_v2(db, ACC, VERSION, "ff" * 32)
+    assert v["match"] is False and v["resultMatch"] is False
+
+
+def test_fee_snapshot_far_from_the_fill_is_not_used():
+    # Review finding M1-3: a snapshot is the rate when fetched. Fills more than 30 days from every snapshot get no fee
+    # score; fills within 30 days use the nearest snapshot.
+    db = make_db(20)
+    db.fee_snapshots.update_one({}, {"$set": {"fetchedAt": datetime(2026, 12, 15)}})     # 75 days after the fills
+    c = score_account_v2(db, ACC, VERSION, "ff" * 32, now_ms=0)["result"]["components"]
+    assert c["fees"]["score"] is None and c["fees"]["unmeasured"] == 20
+    db.fee_snapshots.update_one({}, {"$set": {"fetchedAt": datetime(2026, 10, 20)}})     # 19 days after
+    assert score_account_v2(db, ACC, VERSION, "ff" * 32, now_ms=0)["result"]["components"]["fees"]["score"] == pytest.approx(66.66666667, abs=1e-6)
 
 
 def test_verify_with_another_version_file_does_not_match():

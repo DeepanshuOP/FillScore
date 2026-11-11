@@ -54,7 +54,7 @@ def realized_half_spread_bps(side: int, fill: float, mid_t: float, mid_th: float
 @metric(
     id="fill.price_impact_bps", unit="bps of mid", inputs=["side", "mid at fill time", "mid at fill time + h"],
     doc="D x (mid after h - mid at fill) / mid at fill x 10,000. How far the mid moved in the direction of the "
-        "trade within h seconds. It coincided with the trade; it is not shown to be caused by it. "
+        "trade within h seconds. It coincided with the trade; the measurement does not show causation. "
         "Example: buy, mid 100.01, mid 15 s later 100.04 gives 2.9997 bps.",
 )
 def price_impact_bps(side: int, mid_t: float, mid_th: float) -> float:

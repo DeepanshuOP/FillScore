@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import jwt from 'jsonwebtoken';
-import { mintMeasureToken, requestMeasurement, MEASURE_TOKEN_TTL_S } from '../measureTrigger';
+import { mintMeasureToken, requestMeasurement, requestScore, MEASURE_TOKEN_TTL_S } from '../measureTrigger';
 
 const SECRET = 'test-secret';
 const ok = (body: Record<string, unknown>) => new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
@@ -15,6 +15,20 @@ describe('measure token', () => {
         expect(p.exp - p.iat).toBe(MEASURE_TOKEN_TTL_S);
         expect(MEASURE_TOKEN_TTL_S).toBeLessThanOrEqual(300);
         expect(p.userId).toBeUndefined();     // never usable as a user token
+    });
+});
+
+describe('requestScore', () => {
+    it('posts to /internal/score-v2, reports a failure without throwing, and skips when unconfigured', async () => {
+        const urls: string[] = [];
+        const okFetch = (async (url: string) => { urls.push(url); return ok({}); }) as any;
+        expect(await requestScore('acct-1', { baseUrl: 'http://ml', secret: SECRET, fetchImpl: okFetch })).toBe('done');
+        expect(urls).toEqual(['http://ml/internal/score-v2']);
+        const reported: unknown[] = [];
+        const bad = (async () => new Response('x', { status: 500 })) as any;
+        expect(await requestScore('acct-1', { baseUrl: 'http://ml', secret: SECRET, fetchImpl: bad, report: e => reported.push(e) })).toBe('failed');
+        expect(reported).toHaveLength(1);
+        expect(await requestScore('acct-1', { baseUrl: undefined, secret: SECRET })).toBe('skipped');
     });
 });
 

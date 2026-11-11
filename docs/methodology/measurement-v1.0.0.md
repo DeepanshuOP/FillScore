@@ -56,7 +56,7 @@ Effective half-spread divided by the quoted half-spread, where the quoted half-s
 - Unit: bps of mid
 - Inputs: side, mid at fill time, mid at fill time + h
 
-D x (mid after h - mid at fill) / mid at fill x 10,000. How far the mid moved in the direction of the trade within h seconds. It coincided with the trade; it is not shown to be caused by it. Example: buy, mid 100.01, mid 15 s later 100.04 gives 2.9997 bps.
+D x (mid after h - mid at fill) / mid at fill x 10,000. How far the mid moved in the direction of the trade within h seconds. It coincided with the trade; the measurement does not show causation. Example: buy, mid 100.01, mid 15 s later 100.04 gives 2.9997 bps.
 
 ### `fill.realized_half_spread_bps`
 
@@ -70,4 +70,4 @@ D x (fill - mid after h) / mid at fill x 10,000, for h = 1, 15, 60 and 300 secon
 - Unit: bps of intended notional
 - Inputs: side, ordered quantity, fills (price, quantity, mid at fill), arrival mid, end mid, fees
 
-Execution + opportunity + fees, each divided by ordered quantity x arrival mid, x 10,000. Execution = sum D (fill - arrival mid) x qty, split into spread = sum D (fill - mid at fill) x qty and impact/timing = sum D (mid at fill - arrival mid) x qty. Opportunity = D (end mid - arrival mid) x unfilled qty; 0 for a fully filled order; unknown without an order record. Delay cost is not computed (no decision time). Example: buy 2.0 at arrival 100.00, fills 1.0 at 100.02 and 0.5 at 100.04, end mid 100.10, fees 0.15 gives execution 2.0, opportunity 2.5, fees 7.5, total 12.0 bps.
+Execution + unfilled cost + fees, each divided by ordered quantity x arrival mid, x 10,000 (Perold 1988). Execution = sum D (fill - arrival mid) x qty, split into spread = sum D (fill - mid at fill) x qty and impact/timing = sum D (mid at fill - arrival mid) x qty. Unfilled cost = D (end mid - arrival mid) x unfilled qty: 0 for a fully filled order, unknown without an order record. Delay cost is not computed (no decision time). Example: buy 2.0 at arrival 100.00, fills 1.0 at 100.02 and 0.5 at 100.04, end mid 100.10, fees 0.15 gives execution 2.0, unfilled cost 2.5, fees 7.5, total 12.0 bps.

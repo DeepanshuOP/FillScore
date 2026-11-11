@@ -46,12 +46,12 @@ def _identity(name: str, lhs: float, parts: Sequence[float]) -> None:
 @metric(
     id="order.implementation_shortfall_bps", unit="bps of intended notional",
     inputs=["side", "ordered quantity", "fills (price, quantity, mid at fill)", "arrival mid", "end mid", "fees"],
-    doc="Execution + opportunity + fees, each divided by ordered quantity x arrival mid, x 10,000. Execution = "
-        "sum D (fill - arrival mid) x qty, split into spread = sum D (fill - mid at fill) x qty and impact/timing = "
-        "sum D (mid at fill - arrival mid) x qty. Opportunity = D (end mid - arrival mid) x unfilled qty; 0 for a "
-        "fully filled order; unknown without an order record. Delay cost is not computed (no decision time). "
-        "Example: buy 2.0 at arrival 100.00, fills 1.0 at 100.02 and 0.5 at 100.04, end mid 100.10, fees 0.15 "
-        "gives execution 2.0, opportunity 2.5, fees 7.5, total 12.0 bps.",
+    doc="Execution + unfilled cost + fees, each divided by ordered quantity x arrival mid, x 10,000 (Perold 1988). "
+        "Execution = sum D (fill - arrival mid) x qty, split into spread = sum D (fill - mid at fill) x qty and "
+        "impact/timing = sum D (mid at fill - arrival mid) x qty. Unfilled cost = D (end mid - arrival mid) x unfilled "
+        "qty: 0 for a fully filled order, unknown without an order record. Delay cost is not computed (no decision "
+        "time). Example: buy 2.0 at arrival 100.00, fills 1.0 at 100.02 and 0.5 at 100.04, end mid 100.10, fees 0.15 "
+        "gives execution 2.0, unfilled cost 2.5, fees 7.5, total 12.0 bps.",
 )
 def order_is(side: int, ordered_qty: float | None, fills: Sequence[tuple[float, float, float | None]],
              arrival_mid: float, end_mid: float | None, fees_quote: float | None,

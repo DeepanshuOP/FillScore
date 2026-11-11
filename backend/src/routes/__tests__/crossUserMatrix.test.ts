@@ -16,7 +16,7 @@ const app = createApp();
 const GET_ENDPOINTS = [
     '/api/audit/score', '/api/audit/history', '/api/audit/trades', '/api/audit/analytics',
     '/api/audit/analytics/exchange-comparison', '/api/audit/coach', '/api/audit/analytics/whale-correlation',
-    '/api/attribution', '/api/audit/report', '/api/audit',
+    '/api/attribution', '/api/audit/report', '/api/audit', '/api/audit/v2', '/api/audit/verify',
 ];
 
 describe('cross-user read matrix', () => {

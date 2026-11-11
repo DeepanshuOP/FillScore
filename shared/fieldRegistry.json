@@ -81,6 +81,16 @@
     "source": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
     "fetchedAt": {"type": "datetime", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"}
   },
+  "ScoreV2": {
+    "accountId": {"type": "string", "nullable": false, "owner": "ml-service/main.py"},
+    "scoringVersion": {"type": "string", "nullable": false, "owner": "ml-service/main.py"},
+    "versionFileSha256": {"type": "string", "nullable": false, "owner": "ml-service/main.py"},
+    "measureVersion": {"type": "string", "nullable": false, "owner": "ml-service/main.py"},
+    "integrityHash": {"type": "string", "nullable": false, "owner": "ml-service/main.py"},
+    "inputKeys": {"type": "array", "nullable": false, "owner": "ml-service/main.py"},
+    "computedAt": {"type": "datetime", "nullable": false, "owner": "ml-service/main.py"},
+    "result": {"type": "object", "nullable": false, "owner": "ml-service/main.py", "keys": ["components", "composite", "grade", "band", "reason", "orders", "fills"]}
+  },
   "OrderMeasurement": {
     "accountId": {"type": "string", "nullable": false, "owner": "ml-service/measure/service.py"},
     "exchange": {"type": "string", "nullable": false, "owner": "ml-service/measure/service.py"},

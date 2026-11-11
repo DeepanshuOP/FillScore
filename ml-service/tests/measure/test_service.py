@@ -177,6 +177,52 @@ def test_non_usd_quote_leaves_fees_unknown():
     assert s["feesBps"] is None
 
 
+class TooLargeOnMerged(Source):
+    """Raises WindowTooLargeError for any window longer than one fill's span (305 s), like a busy hour on REST."""
+    def __call__(self, symbol, start, end):
+        from measure.data.rest import WindowTooLargeError
+        if end - start > 305_000:
+            self.calls.append((symbol, start, end))
+            raise WindowTooLargeError("too many pages")
+        return super().__call__(symbol, start, end)
+
+
+def test_oversized_merged_window_falls_back_to_one_window_per_fill(db):
+    # Review M1-2: the two fills (10 s apart) merge into one window; when it is too large, each fill is fetched alone.
+    src = TooLargeOnMerged()
+    r = measure_account(db, ACC, src, NOW)
+    assert r["measured"] == 2 and "market_data" not in r["skipped"]
+    assert db.trades.find_one({"_id": 1})["measurement"]["effHalfBps"] == pytest.approx(0.99990001, abs=1e-8)
+
+
+def test_order_whose_stored_fills_do_not_add_up_is_not_measured():
+    # Review M1-6: executedQty 1.5 but only 1.0 is stored (the other fill is outside the synced history). The unfilled
+    # part would be overstated, so the order gets a reason, not a number.
+    d = mongomock.MongoClient().db
+    d.trades.insert_one(trade(1, 20000, 100.02, 1.0, "7", 0.10))
+    d.orders.insert_one(order("7", 10000, 40000, 2.0, 1.5))
+    measure_account(d, ACC, Source(), NOW)
+    om = d.order_measurements.find_one({"orderId": "7"})
+    assert om["shortfall"] is None
+    assert om["unmeasuredReason"] == "stored fills do not add up to the order's executed quantity"
+
+
+def test_open_order_is_measured_again_once_final():
+    # Review M1-5: measured while open (end = creation + 1 h), later cancelled with no new fill -> measured again.
+    d = mongomock.MongoClient().db
+    d.trades.insert_one(trade(1, 20000, 100.02, 1.0, "7", 0.10))
+    d.orders.insert_one(order("7", 10000, 40000, 2.0, 1.0, status="PARTIALLY_FILLED"))
+    tape = AggTradeWindow.from_rows("XUSDT", [(i + 1, p, 1.0, B + off, m) for i, (off, p, m) in enumerate(
+        TAPE + [(3_607_000, 100.05, True), (3_608_000, 100.07, False)])], [REF])
+    measure_account(d, ACC, Source(tape), B + 2 * 3600_000)
+    assert d.order_measurements.find_one({"orderId": "7"})["endBasis"] == "order still open: creation + 1 h"
+    d.orders.update_one({"orderId": "7"}, {"$set": {"status": "CANCELED"}})
+    r = measure_account(d, ACC, Source(tape), B + 2 * 3600_000)
+    om = d.order_measurements.find_one({"orderId": "7"})
+    assert r["orders"] == 1 and om["endBasis"] == "order canceled"
+    assert om["endMid"] == pytest.approx(100.10, abs=1e-12)
+
+
 def test_writes_only_registry_owned_fields(db):
     measure_account(db, ACC, Source(), NOW)
     for t in db.trades.find():

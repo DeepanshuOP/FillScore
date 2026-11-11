@@ -19,6 +19,13 @@ def test_methodology_doc_is_current():
     assert path.read_text(encoding="utf-8") == gen.render(), "stale methodology doc: run scripts/gen_methodology.py"
 
 
+def test_methodology_json_is_current():
+    gen = _gen()
+    path = gen.json_path()
+    assert path.exists(), f"missing {path}: run scripts/gen_methodology.py"
+    assert path.read_text(encoding="utf-8") == gen.render_json(), "stale methodology.json: run scripts/gen_methodology.py"
+
+
 def test_methodology_doc_lists_fill_metrics():
     text = _gen().render()
     for mid in ("fill.effective_half_spread_bps", "fill.realized_half_spread_bps", "fill.price_impact_bps", "fill.eq_ratio"):

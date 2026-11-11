@@ -41,15 +41,50 @@ def render() -> str:
     ])
 
 
+def json_path() -> Path:
+    return ROOT.parent / "frontend" / "app" / "methodology" / "methodology.json"
+
+
+def render_json() -> str:
+    """The data behind the /methodology page: metric registry + benchmark rules + the current scoring version."""
+    import json
+
+    import measure.benchmarks as benchmarks
+    import measure.enrich_fill as enrich_fill
+    import measure.fees  # noqa: F401
+    import measure.metrics  # noqa: F401
+    import measure.orders  # noqa: F401
+    from config.versions import SCORING_V2_VERSION
+    from measure.registry import REGISTRY
+    from scoring_v2.components import ANCHOR_RULE, COMPONENT_DOCS
+    from scoring_v2.version import load_version, version_file_sha256
+
+    v = load_version(SCORING_V2_VERSION)
+    data = {
+        "generatedBy": "ml-service/scripts/gen_methodology.py",
+        "measureVersion": MEASURE_VERSION,
+        "benchmarks": {"maxQuoteAgeMs": benchmarks.MAX_QUOTE_AGE_MS, "horizonsS": list(enrich_fill.HORIZONS_S)},
+        "metrics": [{"id": s.id, "unit": s.unit, "inputs": s.inputs, "doc": s.doc} for s in (REGISTRY[k] for k in sorted(REGISTRY))],
+        "scoring": {
+            "version": v["id"], "versionFileSha256": version_file_sha256(v["id"]), "weights": v["weights"],
+            "bands": v["bands"], "minFills": v["minFills"], "calibrationWindow": v["calibrationWindow"],
+            "symbols": sorted(v["anchors"]), "calibrationFiles": len(v["calibrationRefs"]), "feeTable": v["feeTable"],
+            "components": COMPONENT_DOCS, "anchorRule": ANCHOR_RULE,
+        },
+    }
+    return json.dumps(data, indent=2, sort_keys=True) + "\n"
+
+
 def main(argv: list[str]) -> int:
-    path, text = doc_path(), render()
+    targets = [(doc_path(), render()), (json_path(), render_json())]
     if "--check" in argv:
-        ok = path.exists() and path.read_text(encoding="utf-8") == text
-        print("methodology doc up to date" if ok else f"STALE: regenerate {path}")
-        return 0 if ok else 1
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
-    print(f"wrote {path}")
+        stale = [p for p, t in targets if not p.exists() or p.read_text(encoding="utf-8") != t]
+        print("methodology files up to date" if not stale else f"STALE: regenerate {', '.join(map(str, stale))}")
+        return 0 if not stale else 1
+    for p, t in targets:
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(t, encoding="utf-8")
+        print(f"wrote {p}")
     return 0
 
 

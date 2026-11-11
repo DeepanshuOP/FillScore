@@ -12,6 +12,7 @@ export default function SiteFooter() {
       fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.08em', color: '#6a6560',
     }}>
       <span title={`build ${frontendCommit().slice(0, 7)}`}>FillScore audits past execution. Not financial advice.</span>
+      <Link href="/methodology" style={linkStyle}>Methodology</Link>
       <Link href="/terms" style={linkStyle}>Terms</Link>
       <Link href="/privacy" style={linkStyle}>Privacy</Link>
     </footer>

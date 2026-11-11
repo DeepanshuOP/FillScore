@@ -17,9 +17,10 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - The agent asks Deepanshu before any Atlas write, `--apply`, push, history rewrite, paid service, new credential, or change to the guard hook or settings. Requests are listed in `docs/PROGRESS.md` under "Waiting for Deepanshu".
 
 ## Now
-- **Scoring v1** is frozen and labelled rule-based. The audit of 2026-11 found its inputs weak (a 1-minute arrival proxy, a high–low spread heuristic, hand-picked hours). Phase 4R-0 fixed the misleading displays and is complete.
-- **Demo data:** the three Binance demos have real prices for MARKET fills only; LIMIT slippage is forced to 0. The demos demo-bybit, demo-okx and demo-multi had simulated prices and are hidden.
-- **No real user trade has been scored yet.**
+- **Two scores.** v1 (rule-based, frozen, locked demo grades) and v2 (measured, M1). v2 measures each Binance fill against real public prints (`ml-service/measure/`), measures order shortfall and the account's real fee rates, and scores under the committed version `ml-service/scoring_v2/versions/v2.0.0.json`, with an integrity hash and a verify route. Report: `docs/milestones/M1.md`.
+- **Measurement in production** needs `ML_SERVICE_URL` on the backend (listed in `docs/PROGRESS.md`). Until then, sync works as before and v2 is skipped.
+- **Demo data:** the three Binance demos have real prices for MARKET fills only; LIMIT slippage is forced to 0. demo-bybit, demo-okx and demo-multi are hidden. Demos show "v2 not available yet" until M2 rebuilds them.
+- **No real user trade has been scored yet.** `ml-service/scripts/validate_real_account.py --account <id>` is the one-command check for the first real trades.
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next

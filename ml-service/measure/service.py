@@ -55,6 +55,7 @@ class Batch:
     start_ms: int
     end_ms: int
     keys: list = field(default_factory=list)
+    needs: list = field(default_factory=list)
 
 
 def rest_source(symbol: str, start_ms: int, end_ms: int) -> AggTradeWindow:
@@ -80,8 +81,9 @@ def plan_windows(needs: Iterable[Need], max_window_ms: int = MAX_WINDOW_MS) -> l
             if cur and n.start_ms <= cur.end_ms + 1 and max(cur.end_ms, n.end_ms) - cur.start_ms <= max_window_ms:
                 cur.end_ms = max(cur.end_ms, n.end_ms)
                 cur.keys.append(n.key)
+                cur.needs.append(n)
             else:
-                cur = Batch(symbol, n.start_ms, n.end_ms, [n.key])
+                cur = Batch(symbol, n.start_ms, n.end_ms, [n.key], [n])
                 out.append(cur)
     return out
 
@@ -100,11 +102,22 @@ def _iso(now_ms: int) -> str:
 
 
 def _fetch(source: MarketSource, batches: list[Batch], skipped: dict) -> list[tuple[Batch, AggTradeWindow]]:
+    from .data.rest import WindowTooLargeError
+
     got = []
-    for b in batches:
+    queue = list(batches)
+    while queue:
+        b = queue.pop(0)
         try:
             got.append((b, source(b.symbol, b.start_ms, b.end_ms)))
-        except Exception as e:                       # network, gap, oversized: transient, stays pending
+        except WindowTooLargeError:
+            if len(b.needs) > 1:
+                # A busy stretch merged into too many prints for one request chain: fetch each span alone (review M1-2).
+                queue[:0] = [Batch(b.symbol, n.start_ms, n.end_ms, [n.key], [n]) for n in b.needs]
+                continue
+            skipped["market_data"] = skipped.get("market_data", 0) + len(b.keys)
+            print(f"[measure] market data window too large for {b.symbol} {b.start_ms}-{b.end_ms}")
+        except Exception as e:                       # network, gap: transient, stays pending
             skipped["market_data"] = skipped.get("market_data", 0) + len(b.keys)
             print(f"[measure] market data failed for {b.symbol} {b.start_ms}-{b.end_ms}: {type(e).__name__}")
     return got
@@ -138,7 +151,13 @@ def measure_account(db, account_id: str, source: MarketSource, now_ms: int, limi
         skipped["demo"] = 1
         return report
     pending_q = {"accountId": account_id, "dataSource": "real-user", "measurement.version": {"$ne": MEASURE_VERSION}}
-    trades = list(db.trades.find(pending_q).sort("executedAt", 1).limit(limit))
+    # Fills younger than their last horizon are counted but not fetched, so they never fill the batch (review M1-2).
+    cutoff = datetime.fromtimestamp((now_ms - POST_MS - PRE_MS) / 1000, tz=timezone.utc).replace(tzinfo=None)
+    recent = db.trades.count_documents({**pending_q, "exchange": "binance", "executedAt": {"$gt": cutoff}})
+    if recent:
+        skipped["too_recent"] = recent
+    trades = list(db.trades.find({"$and": [pending_q, {"$or": [{"exchange": {"$ne": "binance"}}, {"executedAt": {"$lte": cutoff}}]}]})
+                  .sort("executedAt", 1).limit(limit))
 
     needs: list[Need] = []
     for t in trades:
@@ -232,7 +251,13 @@ def _measure_orders(db, account_id: str, source: MarketSource, now_ms: int, touc
         done = db.order_measurements.find_one({"accountId": account_id, "exchange": "binance", "symbol": o["symbol"], "orderId": o["orderId"], "version": MEASURE_VERSION})
         if done is None:
             keys.add((o["symbol"], str(o["orderId"])))
-    plans = [p for p in (_order_plan(db, account_id, s, oid, now_ms, skipped) for s, oid in sorted(keys)) if p]
+    # Orders measured while still open are measured again once the exchange reports them final (review M1-5).
+    for om in db.order_measurements.find({"accountId": account_id, "exchange": "binance", "version": MEASURE_VERSION,
+                                          "endBasis": {"$regex": "^order still open"}}):
+        o = db.orders.find_one({"accountId": account_id, "exchange": "binance", "symbol": om["symbol"], "orderId": om["orderId"]})
+        if o is not None and (o["status"] == "FILLED" or o["status"] in FINAL_UNFILLED):
+            keys.add((om["symbol"], str(om["orderId"])))
+    plans =[p for p in (_order_plan(db, account_id, s, oid, now_ms, skipped) for s, oid in sorted(keys)) if p]
     needs = []
     for i, p in enumerate(plans):
         if p["order"] is not None:
@@ -266,6 +291,9 @@ def _measure_orders(db, account_id: str, source: MarketSource, now_ms: int, touc
             doc["unmeasuredReason"] = "no fresh print before the order's arrival time"
         elif basis == "order" and float(p["order"]["executedQty"]) > 0 and not fills:
             doc["unmeasuredReason"] = "order has executed quantity but no stored fills"
+        elif basis == "order" and abs(float(p["order"]["executedQty"]) - sum(q for _, q, _ in fill_rows)) > 1e-9 * max(1.0, float(p["order"]["executedQty"])):
+            # Some fills are outside the synced history: the unfilled part would be overstated (review M1-6).
+            doc["unmeasuredReason"] = "stored fills do not add up to the order's executed quantity"
         else:
             try:
                 doc["shortfall"] = order_is(p["side"], ordered, fill_rows, arrival, end_mid, _fees_quote(p["symbol"], fills), basis)

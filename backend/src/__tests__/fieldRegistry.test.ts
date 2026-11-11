@@ -6,6 +6,7 @@ import { Trade } from '../models/Trade';
 import { Order } from '../models/Order';
 import { FeeSnapshot } from '../models/FeeSnapshot';
 import { OrderMeasurement } from '../models/OrderMeasurement';
+import { ScoreV2 } from '../models/ScoreV2';
 
 // Registry is read by tests/scripts only, never at service runtime (Docker contexts lack shared/).
 const REGISTRY = JSON.parse(
@@ -43,7 +44,7 @@ function pathsOf(schema: mongoose.Schema): Record<string, string> {
 }
 
 describe.each([
-    ['Order', Order.schema], ['FeeSnapshot', FeeSnapshot.schema], ['OrderMeasurement', OrderMeasurement.schema],
+    ['Order', Order.schema], ['FeeSnapshot', FeeSnapshot.schema], ['OrderMeasurement', OrderMeasurement.schema], ['ScoreV2', ScoreV2.schema],
 ] as const)('%s field registry (M1)', (name, schema) => {
     it('schema and registry list the same fields with the same types and an owner', () => {
         const s = pathsOf(schema);

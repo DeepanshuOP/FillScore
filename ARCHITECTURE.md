@@ -102,6 +102,8 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/api/audit/trades` |
 | PATCH | `/api/audit/trades/:tradeId/note` |
 | GET | `/api/audit/trades/export` |
+| GET | `/api/audit/v2` |
+| GET | `/api/audit/verify` |
 | POST | `/api/auth/forgot-password` |
 | GET | `/api/auth/github` |
 | GET | `/api/auth/github/callback` |
@@ -142,6 +144,8 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/ml/agents/council/runs/{run_id}` | One persisted run |
 | GET | `/ml/agents/council/telemetry` | Token and latency summary |
 | POST | `/internal/measure` | Measurement v2 of the account's pending fills and orders (service token `typ: measure` from the backend only; ADR-0011) |
+| POST | `/internal/score-v2` | Score the account under the current Scoring v2 version and store it in `scores_v2` (same service token) |
+| POST | `/internal/verify-v2` | Recompute the stored v2 score's integrity hash from its stored inputs and the version file (same service token) |
 
 Pipeline: deterministic metric packets (`agents/metrics`) → four specialists (liquidity, fee, alpha,
 risk) → bounded two-round prosecution/defense debate → synthesis (structured recommendations) →

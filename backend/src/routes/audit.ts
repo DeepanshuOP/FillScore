@@ -20,6 +20,9 @@ import { requireAuth } from '../middleware/requireAuth';
 import { signDownloadToken, DOWNLOAD_TOKEN_TTL_SECONDS } from '../utils/downloadToken';
 import { INGEST_DAYS_BACK } from '../config/ingestion';
 import { auditRunLimiter } from '../middleware/security';
+import { ScoreV2 } from '../models/ScoreV2';
+import { callMlInternal } from '../services/measureTrigger';
+import { loadEnv } from '../config/env';
 import {
     parseOrReject,
     runAuditQuerySchema,
@@ -221,6 +224,45 @@ auditRouter.get('/score', resolveAccount, async (req: Request, res: Response) =>
     } catch (error: any) {
         console.error('Error fetching score:', error);
         return res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+/**
+ * Scoring v2 ("measured"), beside v1 ("rule-based", /score). Read from `scores_v2`, written by the ml-service.
+ * Demo accounts have no v2 score until M2 rebuilds them from real prints.
+ */
+const DEMO_V2 = { error: 'v2_not_available_for_demo', message: 'The measured score (v2) is not available for demo accounts yet. They are being rebuilt from real market prints.' };
+
+auditRouter.get('/v2', resolveAccount, async (req: Request, res: Response) => {
+    try {
+        const accountId = req.accountId!;
+        if (VALID_DEMO_USERS.has(accountId)) return res.status(404).json(DEMO_V2);
+        const s = await ScoreV2.findOne({ accountId }).sort({ computedAt: -1 }).lean();
+        if (!s) return res.status(404).json({ error: 'no_v2_score', message: 'No measured score yet. It is computed after your trades are synced and measured.' });
+        return res.status(200).json({
+            label: 'v2 (measured)', scoringVersion: s.scoringVersion, versionFileSha256: s.versionFileSha256,
+            measureVersion: s.measureVersion, integrityHash: s.integrityHash, computedAt: s.computedAt, result: s.result,
+        });
+    } catch (error: any) {
+        console.error('Error fetching v2 score:', error?.name);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+const verifyLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30, message: { error: 'Too many verification requests. Try again later.' } });
+
+auditRouter.get('/verify', verifyLimiter, resolveAccount, async (req: Request, res: Response) => {
+    const accountId = req.accountId!;
+    if (VALID_DEMO_USERS.has(accountId)) return res.status(404).json(DEMO_V2);
+    try {
+        const r = await callMlInternal('/internal/verify-v2', accountId, { baseUrl: process.env.ML_SERVICE_URL, secret: loadEnv().JWT_ACCESS_SECRET });
+        if (r.status === 404) return res.status(404).json({ error: 'no_v2_score' });
+        if (!r.ok) return res.status(503).json({ error: 'verification_unavailable' });
+        const b = await r.json() as { match: boolean; storedHash: string; recomputedHash: string; scoringVersion: string };
+        return res.status(200).json({ match: !!b.match, storedHash: b.storedHash, recomputedHash: b.recomputedHash, scoringVersion: b.scoringVersion });
+    } catch (e: any) {
+        console.error('[verify] ml-service unavailable:', e?.message === 'ml_not_configured' ? 'not configured' : e?.name);
+        return res.status(503).json({ error: 'verification_unavailable' });
     }
 });
 

@@ -5,7 +5,8 @@ import { findAdviceTerms, KNOWN_BAD_STRINGS } from '../../../backend/src/constan
 
 // Scans the user-visible text (JSX text nodes and string literals) of the pages that render audit copy:
 // dashboard coach/insights, Trade Journal (trades page) and the share card.
-const FILES = ['app/dashboard/page.tsx', 'app/trades/page.tsx', 'app/share/[userId]/page.tsx', 'app/components/ConnectPrompt.tsx', 'app/utils/makerAdvice.ts'];
+const FILES = ['app/dashboard/page.tsx', 'app/trades/page.tsx', 'app/share/[userId]/page.tsx', 'app/components/ConnectPrompt.tsx', 'app/utils/makerAdvice.ts',
+  'app/dashboard/ScoreV2Panel.tsx', 'app/dashboard/scoreV2.ts', 'app/methodology/page.tsx'];
 
 function visibleText(src: string): string[] {
   const out: string[] = [];

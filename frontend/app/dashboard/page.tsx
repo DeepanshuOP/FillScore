@@ -22,6 +22,7 @@ import { venueComparisonNote } from '../utils/navLinks';
 import { apiBase } from '../lib/apiBase';
 import { buildComponentCards, cardVisual, type ComponentMeans } from './componentCards';
 import { skippedNotice, type SkippedTrades } from './skipped';
+import ScoreV2Panel from './ScoreV2Panel';
 import { isHiddenDemo, multiVenueNotice } from '../utils/hiddenDemos';
 
 interface CostAttribution {
@@ -179,6 +180,7 @@ function DashboardContent() {
   const [exchangeComparison, setExchangeComparison] = useState<any>(null);
   const [coach, setCoach] = useState<any>(null);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
+  const [scoreV2, setScoreV2] = useState<{ status: number | null; body: unknown }>({ status: null, body: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
@@ -273,6 +275,13 @@ function DashboardContent() {
       if (historyRes.ok) {
         const historyData = await historyRes.json();
         setHistory(historyData.points ?? []);
+      }
+      // Scoring v2 (measured), shown beside the v1 rule-based grade. A failure here never blocks the dashboard.
+      try {
+        const v2 = await fetchFn(`${baseUrl}/audit/v2${query}`);
+        setScoreV2({ status: v2.status, body: await v2.json().catch(() => null) });
+      } catch {
+        setScoreV2({ status: 500, body: null });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -580,6 +589,9 @@ function DashboardContent() {
                   }}>
                     {cfg.label.toUpperCase()}
                   </div>
+                  <div data-testid="score-v1-label" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.18em', color: '#888078' }}>
+                    V1 · RULE-BASED
+                  </div>
                 </div>
 
                 {/* RIGHT COLUMN — Three hero stats */}
@@ -682,6 +694,17 @@ function DashboardContent() {
                   <span>EXCHANGE  ·  {audit.exchange.toUpperCase()}</span>
                   <span>MAKER RATIO  ·  {Math.round(audit.breakdown.makerRatio * 100)}%</span>
                 </div>
+              </div>
+
+              <div style={{ marginBottom: '2rem' }}>
+                <ScoreV2Panel
+                  status={scoreV2.status}
+                  body={scoreV2.body}
+                  onVerify={dashboardMode === 'real' ? async () => {
+                    const r = await authFetch(`${apiBase()}/audit/verify`, {}, { accessToken, refreshAccessToken });
+                    return { status: r.status, body: await r.json().catch(() => null) };
+                  } : undefined}
+                />
               </div>
 
               <div style={{ marginBottom: '2.5rem' }}>
