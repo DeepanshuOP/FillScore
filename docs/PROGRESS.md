@@ -8,17 +8,20 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 **Done in M1 so far (Part A complete, Tasks 1–6; 89 tests in `ml-service/tests/measure/`, all green; ml suite 949 passed, 1 skipped):** metric registry; real 2-minute fixtures with `SOURCE.md`; data layer (`measure/data/`: window type, data.binance.vision loader with mandatory checksum, REST window with paging and gap check, Parquet cache, price step); benchmarks (`measure/benchmarks.py`); fill metrics with the runtime identity (`measure/metrics.py`); `measure/enrich_fill.py` (`FillInput`, `measure_fill`), checked on real BTCUSDT and BNBUSDT slices; the generated method page `docs/methodology/measurement-v1.0.0.md` (`ml-service/scripts/gen_methodology.py`, with a drift test). Red phases seen: `ImportError: cannot import name 'MEASURE_VERSION'`, `ModuleNotFoundError: No module named 'measure.data'`, `No module named 'measure.metrics'`, `No module named 'measure.enrich_fill'`, `AssertionError: missing .../measurement-v1.0.0.md`. Two defects found by the tests and fixed in code: the price step kept float noise at 12 decimals (now 8, the exchange precision), and the header-row skip dropped a data row. The flaky router test passed 30 of 30 runs and in the full suite; no fix was needed. Commits: `0aa0603` (Tasks 1–4), then the Tasks 5–6 commit. Research notes: `docs/research/LOG.md` §G.
 
+**Part B done (Tasks 7–10, Binance only):** `measure/orders.py` (order shortfall, including orders that never filled), `measure/fees.py` (Commission FAQ formula, the FAQ example reproduced), `measure/service.py` (the job; trade rows are the outbox), `POST /internal/measure` (service token `typ: measure`), backend `Order`/`FeeSnapshot`/`OrderMeasurement` models, `services/orders/binanceOrders.ts` (allOrders + commission in the history sync), `services/measureTrigger.ts` (called after each sync), field registry rows for the new collections. Decisions: ADR-0011. Research: `docs/research/LOG.md` §H. TDD note: `binanceOrders.ts` and `measure/service.py` were written before their tests (no red phase seen); the C2 component tests were written first but not run red. Every other module showed its red phase.
+
 **Next concrete action:**
-1. Part B, Task 9 first (pure ml, no external facts needed): `ml-service/measure/orders.py`, `order_is(...)`, with the hand case from the 4R-1a plan (intended 200.00; execution 2.0; spread 0.75; impact/timing 1.25; opportunity 2.5; fees 7.5; total 12.0 bps).
-2. Then Tasks 7–8 (backend orders and fee snapshots). Get the cited exchange facts first (`docs-researcher`: Binance `allOrders` and `account/commission`, and the Bybit and OKX equivalents).
-3. Then Task 10 (persistence, `/internal/measure`, the job with an outbox) and Task 11; then Part C (Scoring v2) and Part D, as in the M1 plan. One `reviewer` pass runs on the whole M1 diff before the milestone commit.
+1. Part C: the calibration run `scripts/calibrate_v2.py` (BTC/ETH/BNB/SOL USDT, every 7th day from 2025-10-01 to 2025-10-29) produces `scoring_v2/versions/v2.0.0.json`. Then add `tests/scoring_v2/test_version.py` (pin the file's SHA-256), write ADR-0010, and commit Part C. Done so far in Part C (94 tests): anchors, components, aggregate, bootstrap, integrity, calibrate, version, score (`score_account_v2`, `verify_account_v2`).
+2. Part D: `/internal/score-v2` and `/internal/verify-v2`; backend `GET /api/audit/v2` and `GET /api/audit/verify`; frontend v1/v2 side by side and the `/methodology` page; the validation harness `scripts/validate_real_account.py`.
+3. One `reviewer` pass on the whole M1 diff, fix high and medium findings, `docs/milestones/M1.md`, milestone commit.
+4. Bybit and OKX orders are not built (OKX order-history facts unconfirmed; Bybit keeps only filled orders older than 7 days). Their fills get an `unmeasuredReason` in this version.
 
 ## Milestone status
 
 | Milestone | Status | Report | Commit |
 |---|---|---|---|
 | M0 Orientation, research and hygiene | done | `docs/milestones/M0.md` | `ff681be` |
-| M1 Measurement v2 and Scoring v2 | in progress (Part A done; Part B next) | | |
+| M1 Measurement v2 and Scoring v2 | in progress (Parts A–B done; Part C next) | | |
 | M2 Real demos | not started | | |
 | M3 Cost against expectation, AI layer quality | not started | | |
 | M4 Explain and act | not started | | |
@@ -59,6 +62,7 @@ Nothing here blocks the current work.
    - Unblocks: closing R6-G13 before launch (M9 security review).
 2. **Leftover graphify files (information).** `.claude/settings.json.graphify-bak` and `.agents/rules/graphify.md` refer to a `graphify-out/` folder that does not exist. Delete them if graphify is no longer used. I do not edit settings files.
 3. **Pushing.** Local commits are not pushed. A push deploys through CI, so it is yours: `git push origin main` when you have reviewed the commits.
+4. **Set `ML_SERVICE_URL` on the backend service (Render), before or with the push of M1.** Value: the ml-service's base URL (for example `https://fillscore-ml.onrender.com`). Without it the backend skips measurement after a sync (it logs nothing and fails nothing). No new secret is needed: the service token is signed with the existing `JWT_ACCESS_SECRET`. Unblocks: measurement v2 in production (ADR-0011).
 
 ## Decisions since the last report
 

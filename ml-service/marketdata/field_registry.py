@@ -17,7 +17,7 @@ class FieldOwnershipError(Exception):
     pass
 
 
-_PY_TYPES = {"number": (int, float), "string": (str,), "bool": (bool,), "object": (dict,), "datetime": (datetime, str)}
+_PY_TYPES = {"number": (int, float), "string": (str,), "bool": (bool,), "object": (dict,), "array": (list, tuple), "datetime": (datetime, str)}
 
 
 def load_registry() -> dict:

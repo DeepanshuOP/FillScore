@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { Trade } from '../models/Trade';
 import { BinanceRawTrade } from '../types';
 import { TradeIngestionService } from './TradeIngestionService';
+import { SignedCall, syncBinanceOrders, syncBinanceCommission } from './orders/binanceOrders';
 
 /**
  * Full-history Binance spot sync.
@@ -46,6 +47,10 @@ export interface HistorySyncResult {
     message?: string;
     /** Updated per-symbol coverage; persist it on the connection. */
     coverage?: Record<string, number>;
+    /** M1 Part B: orders upserted, commission snapshots fetched, and per-symbol failures of either (trades are kept). */
+    ordersUpserted?: number;
+    feeSnapshots?: number;
+    auxFailures?: Array<{ symbol: string; what: 'orders' | 'commission'; reason: string }>;
 }
 
 class StopSync extends Error {
@@ -63,6 +68,26 @@ export class BinanceHistorySync {
     private maxRequests: number;
     private ingestion = new TradeIngestionService();
     private coverage: Record<string, number>;
+    private aux: { ordersUpserted: number; feeSnapshots: number; auxFailures: NonNullable<HistorySyncResult['auxFailures']> } = { ordersUpserted: 0, feeSnapshots: 0, auxFailures: [] };
+
+    /** Orders and the commission snapshot for one symbol. A rate-limit stop still ends the sync (partial), but any
+     *  other failure is recorded and the sync goes on: the trades of this symbol are already stored. */
+    private async ordersAndFees(symbol: string): Promise<void> {
+        const signed: SignedCall = (path, params, weight) => this.call(path, params, true, weight);
+        try {
+            const r = await syncBinanceOrders(signed, this.userId, symbol);
+            this.aux.ordersUpserted += r.upserted;
+        } catch (e: any) {
+            if (e instanceof StopSync) throw e;
+            this.aux.auxFailures.push({ symbol, what: 'orders', reason: String(e?.message ?? e) });
+        }
+        try {
+            if (await syncBinanceCommission(signed, this.userId, symbol, this.now())) this.aux.feeSnapshots++;
+        } catch (e: any) {
+            if (e instanceof StopSync) throw e;
+            this.aux.auxFailures.push({ symbol, what: 'commission', reason: String(e?.message ?? e) });
+        }
+    }
 
     constructor(private apiKey: string, private apiSecret: string, private userId: string, private opts: HistorySyncOptions) {
         this.sleep = opts.sleep ?? (ms => new Promise(r => setTimeout(r, ms)));
@@ -193,6 +218,7 @@ export class BinanceHistorySync {
             this.opts.onProgress?.({ done: 0, total: found.symbols.length, inserted: 0 });
             for (const symbol of found.symbols) {
                 await this.pageSymbol(symbol, cutoffMs, acc);
+                await this.ordersAndFees(symbol);
                 scanned++;
                 this.opts.onProgress?.({ done: scanned, total: found.symbols.length, inserted: acc.inserted });
             }
@@ -204,10 +230,10 @@ export class BinanceHistorySync {
                     time_cap: 'The sync reached its time limit, so only part of your history was fetched. Sync again to continue where it stopped.',
                     banned: 'Binance temporarily blocked this IP for too many requests, so the sync stopped early. Sync again later.',
                 };
-                return { ...acc, symbolsScanned: scanned, invalidSymbols: invalid, requests: this.requests, partial: true, partialReason: e.reason, message: msg[e.reason], coverage: this.coverage };
+                return { ...acc, symbolsScanned: scanned, invalidSymbols: invalid, requests: this.requests, partial: true, partialReason: e.reason, message: msg[e.reason], coverage: this.coverage, ...this.aux };
             }
             throw e;
         }
-        return { ...acc, symbolsScanned: scanned, invalidSymbols: invalid, requests: this.requests, partial: false, coverage: this.coverage };
+        return { ...acc, symbolsScanned: scanned, invalidSymbols: invalid, requests: this.requests, partial: false, coverage: this.coverage, ...this.aux };
     }
 }

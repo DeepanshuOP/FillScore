@@ -30,6 +30,13 @@ Horizons for realized spread and price impact: 1 s, 15 s, 60 s, 300 s.
 
 ## Metrics
 
+### `fee.effective_rate`
+
+- Unit: fraction of notional
+- Inputs: commission snapshot (standard, tax, special, discount), side, maker or taker, paid in discount asset
+
+(standard[maker|taker] + standard[buyer|seller]) x discount + (tax[...] + tax[...]) + (special[...] + special[...]). The discount multiplier applies only when the account and the symbol have it enabled and the fee was paid in the discount asset; it never applies to tax or special commissions (Binance Commission FAQ). Example from the FAQ: taker sell, standard 0.0000002 + 0.0000004, tax 0.00000114 + 0.00000116, special 0.02 + 0.04, discount 0.25 gives 0.06000245.
+
 ### `fill.effective_half_spread_bps`
 
 - Unit: bps of mid
@@ -57,3 +64,10 @@ D x (mid after h - mid at fill) / mid at fill x 10,000. How far the mid moved in
 - Inputs: side, fill price, mid at fill time, mid at fill time + h
 
 D x (fill - mid after h) / mid at fill x 10,000, for h = 1, 15, 60 and 300 seconds. The part of the effective half-spread that was still a cost after the market had h seconds to move. Example: buy at 100.02, mid 100.01, mid 15 s later 100.04 gives -1.9998 bps.
+
+### `order.implementation_shortfall_bps`
+
+- Unit: bps of intended notional
+- Inputs: side, ordered quantity, fills (price, quantity, mid at fill), arrival mid, end mid, fees
+
+Execution + opportunity + fees, each divided by ordered quantity x arrival mid, x 10,000. Execution = sum D (fill - arrival mid) x qty, split into spread = sum D (fill - mid at fill) x qty and impact/timing = sum D (mid at fill - arrival mid) x qty. Opportunity = D (end mid - arrival mid) x unfilled qty; 0 for a fully filled order; unknown without an order record. Delay cost is not computed (no decision time). Example: buy 2.0 at arrival 100.00, fills 1.0 at 100.02 and 0.5 at 100.04, end mid 100.10, fees 0.15 gives execution 2.0, opportunity 2.5, fees 7.5, total 12.0 bps.

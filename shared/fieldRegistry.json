@@ -48,6 +48,55 @@
     "whaleEnrichedAt": {"type": "datetime", "nullable": true, "owner": "ml-service/whale/enrich.py"},
     "note": {"type": "string", "nullable": true, "owner": "backend/src/routes/trades.ts"},
     "createdAt": {"type": "datetime", "nullable": false, "owner": "mongoose timestamps"},
-    "updatedAt": {"type": "datetime", "nullable": false, "owner": "mongoose timestamps"}
+    "updatedAt": {"type": "datetime", "nullable": false, "owner": "mongoose timestamps"},
+    "measurement": {"type": "object", "nullable": true, "owner": "ml-service/measure/service.py", "keys": ["version", "tradeId", "symbol", "side", "mid", "quoteQuality", "quoteAgesMs", "effHalfBps", "eq", "realized", "impact", "tickSize", "marketDataRefs", "unmeasuredReason", "measuredAt"]}
+  },
+  "Order": {
+    "accountId": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "exchange": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "symbol": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "orderId": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "clientOrderId": {"type": "string", "nullable": true, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "side": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "type": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "timeInForce": {"type": "string", "nullable": true, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "price": {"type": "number", "nullable": true, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "origQty": {"type": "number", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "executedQty": {"type": "number", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "cummulativeQuoteQty": {"type": "number", "nullable": true, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "status": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "createdAt": {"type": "datetime", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "updatedAt": {"type": "datetime", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "restingMs": {"type": "number", "nullable": true, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "dataSource": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"}
+  },
+  "FeeSnapshot": {
+    "accountId": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "exchange": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "symbol": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "standard": {"type": "object", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts", "keys": ["maker", "taker", "buyer", "seller"]},
+    "tax": {"type": "object", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts", "keys": ["maker", "taker", "buyer", "seller"]},
+    "special": {"type": "object", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts", "keys": ["maker", "taker", "buyer", "seller"]},
+    "discount": {"type": "object", "nullable": true, "owner": "backend/src/services/orders/binanceOrders.ts", "keys": ["enabledForAccount", "enabledForSymbol", "asset", "rate"]},
+    "source": {"type": "string", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"},
+    "fetchedAt": {"type": "datetime", "nullable": false, "owner": "backend/src/services/orders/binanceOrders.ts"}
+  },
+  "OrderMeasurement": {
+    "accountId": {"type": "string", "nullable": false, "owner": "ml-service/measure/service.py"},
+    "exchange": {"type": "string", "nullable": false, "owner": "ml-service/measure/service.py"},
+    "symbol": {"type": "string", "nullable": false, "owner": "ml-service/measure/service.py"},
+    "orderId": {"type": "string", "nullable": false, "owner": "ml-service/measure/service.py"},
+    "version": {"type": "string", "nullable": false, "owner": "ml-service/measure/service.py"},
+    "side": {"type": "number", "nullable": false, "owner": "ml-service/measure/service.py"},
+    "tradeIds": {"type": "array", "nullable": false, "owner": "ml-service/measure/service.py"},
+    "arrivalMs": {"type": "number", "nullable": false, "owner": "ml-service/measure/service.py"},
+    "endMs": {"type": "number", "nullable": true, "owner": "ml-service/measure/service.py"},
+    "endBasis": {"type": "string", "nullable": true, "owner": "ml-service/measure/service.py"},
+    "arrivalMid": {"type": "number", "nullable": true, "owner": "ml-service/measure/service.py"},
+    "endMid": {"type": "number", "nullable": true, "owner": "ml-service/measure/service.py"},
+    "shortfall": {"type": "object", "nullable": true, "owner": "ml-service/measure/service.py"},
+    "unmeasuredReason": {"type": "string", "nullable": true, "owner": "ml-service/measure/service.py"},
+    "marketDataRefs": {"type": "array", "nullable": false, "owner": "ml-service/measure/service.py"},
+    "measuredAt": {"type": "datetime", "nullable": false, "owner": "ml-service/measure/service.py"}
   }
 }

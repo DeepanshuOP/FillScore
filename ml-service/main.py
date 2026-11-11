@@ -162,6 +162,48 @@ app.add_middleware(
 # Request / Response models
 # ---------------------------------------------------------------------------
 
+MEASURE_TOKEN_MAX_TTL_S = 300
+
+
+def get_measure_account(req: Request) -> str:
+    """Service-to-service auth for /internal/*: a token the backend signs on the shared JWT_ACCESS_SECRET with
+    typ "measure", an accountId, and an expiry at most 5 minutes after issue. User tokens are refused here, and
+    measure tokens are refused by get_account_id (it accepts typ "access" only). ADR-0011."""
+    auth_header = req.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    try:
+        payload = jwt.decode(auth_header.split(" ", 1)[1], JWT_ACCESS_SECRET, algorithms=["HS256"],
+                             options={"require": ["exp"]})
+        if payload.get("typ") != "measure" or not isinstance(payload.get("accountId"), str):
+            raise ValueError("wrong token type")
+        iat = payload.get("iat")
+        import time as _time
+        start = iat if isinstance(iat, (int, float)) else _time.time()
+        if payload["exp"] - start > MEASURE_TOKEN_MAX_TTL_S:
+            raise ValueError("token lives too long")
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid service token")
+    return payload["accountId"]
+
+
+class MeasureRequest(BaseModel):
+    accountId: str
+
+
+@app.post("/internal/measure")
+async def internal_measure(body: MeasureRequest, request: Request) -> dict:
+    """Measure the account's pending fills and orders (measurement v2). Called by the backend after a sync."""
+    account_id = get_measure_account(request)
+    if body.accountId != account_id:
+        raise HTTPException(status_code=403, detail="Token is for another account")
+    request.state.account_id = account_id
+    import time as _time
+    from starlette.concurrency import run_in_threadpool
+    import measure.service as svc
+    return await run_in_threadpool(svc.measure_account, _get_db(), account_id, svc.rest_source, int(_time.time() * 1000))
+
+
 class CouncilRequest(BaseModel):
     userId: str | None = None
     symbol: str

@@ -35,6 +35,9 @@ describe('Binance lookback backfill', () => {
             const u = new URL(url);
             if (u.pathname === '/api/v3/exchangeInfo') return json(INFO);
             if (u.pathname === '/api/v3/account') return json({ balances: [] });
+            // M1 Part B: orders and commission are fetched after each symbol; this file counts myTrades calls only.
+            if (u.pathname === '/api/v3/allOrders') return json([]);
+            if (u.pathname === '/api/v3/account/commission') return new Response('{}', { status: 400 });
             calls.push(u.searchParams);
             const q = u.searchParams;
             const from = q.get('fromId') ? Number(q.get('fromId')) : 0;

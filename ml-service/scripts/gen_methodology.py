@@ -23,7 +23,10 @@ def doc_path() -> Path:
 
 def render() -> str:
     import measure.benchmarks as benchmarks
-    import measure.enrich_fill as enrich_fill  # imports every module that registers metrics
+    import measure.enrich_fill as enrich_fill
+    import measure.metrics  # noqa: F401  every module that registers a metric is imported here,
+    import measure.orders  # noqa: F401   so the output does not depend on what was imported before
+    import measure.fees  # noqa: F401
     from measure.registry import methodology_markdown
 
     head, _, metrics = methodology_markdown().partition("\n\n")

@@ -5,6 +5,8 @@ export interface EnrichedTradeDocument extends Omit<EnrichedTrade, 'tradeId' | '
     tradeId: string;
     orderId: string;
     note?: string;
+    /** M1 measurement v2, written by ml-service/measure/service.py. */
+    measurement?: Record<string, unknown> | null;
     accountId: string;
     dataSource: 'synthetic-demo' | 'real-user';
 }
@@ -72,6 +74,8 @@ const TradeSchema = new Schema<EnrichedTradeDocument>(
             secondsFromTrade: { type: Number }
         },
         whaleEnrichedAt: { type: Date },
+        // M1 measurement v2 (owner: ml-service/measure/service.py; shape: measure/enrich_fill.py). Read-only here.
+        measurement: { type: Schema.Types.Mixed },
         // User Annotations
         note: { type: String, default: '', maxlength: 500 },
     },

@@ -141,6 +141,7 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/ml/agents/council/runs` | Past runs for the account |
 | GET | `/ml/agents/council/runs/{run_id}` | One persisted run |
 | GET | `/ml/agents/council/telemetry` | Token and latency summary |
+| POST | `/internal/measure` | Measurement v2 of the account's pending fills and orders (service token `typ: measure` from the backend only; ADR-0011) |
 
 Pipeline: deterministic metric packets (`agents/metrics`) → four specialists (liquidity, fee, alpha,
 risk) → bounded two-round prosecution/defense debate → synthesis (structured recommendations) →
