@@ -204,6 +204,52 @@ async def internal_measure(body: MeasureRequest, request: Request) -> dict:
     return await run_in_threadpool(svc.measure_account, _get_db(), account_id, svc.rest_source, int(_time.time() * 1000))
 
 
+def _service_account(body: MeasureRequest, request: Request) -> str:
+    account_id = get_measure_account(request)
+    if body.accountId != account_id:
+        raise HTTPException(status_code=403, detail="Token is for another account")
+    if account_id.startswith("demo-"):
+        raise HTTPException(status_code=400, detail="Demo accounts are not scored under v2")
+    request.state.account_id = account_id
+    return account_id
+
+
+@app.post("/internal/score-v2")
+async def internal_score_v2(body: MeasureRequest, request: Request) -> dict:
+    """Score the account under the current ScoringVersion from its stored measurements; store and return it."""
+    account_id = _service_account(body, request)
+    import time as _time
+    from starlette.concurrency import run_in_threadpool
+    from config.versions import SCORING_V2_VERSION
+    import scoring_v2.version as ver
+    from scoring_v2.score import score_account_v2
+
+    def run():
+        doc = score_account_v2(_get_db(), account_id, ver.load_version(SCORING_V2_VERSION),
+                               ver.version_file_sha256(SCORING_V2_VERSION), int(_time.time() * 1000))
+        _get_db().scores_v2.insert_one(dict(doc))
+        doc["computedAt"] = doc["computedAt"].isoformat()
+        return doc
+
+    return await run_in_threadpool(run)
+
+
+@app.post("/internal/verify-v2")
+async def internal_verify_v2(body: MeasureRequest, request: Request) -> dict:
+    """Recompute the latest stored v2 score's integrity hash from the stored inputs and the version file."""
+    account_id = _service_account(body, request)
+    from starlette.concurrency import run_in_threadpool
+    from config.versions import SCORING_V2_VERSION
+    import scoring_v2.version as ver
+    from scoring_v2.score import verify_account_v2
+
+    out = await run_in_threadpool(lambda: verify_account_v2(_get_db(), account_id, ver.load_version(SCORING_V2_VERSION),
+                                                            ver.version_file_sha256(SCORING_V2_VERSION)))
+    if out is None:
+        raise HTTPException(status_code=404, detail="No v2 score stored for this account")
+    return out
+
+
 class CouncilRequest(BaseModel):
     userId: str | None = None
     symbol: str
