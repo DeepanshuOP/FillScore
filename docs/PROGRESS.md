@@ -6,12 +6,15 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 **M2. Real demos** — starting. M1 is done (report `docs/milestones/M1.md`).
 
-**Next concrete action (M2):**
-1. Write `docs/superpowers/plans/2026-11-1x-m2-real-demos.md`. Read the demo generator (`backend/src/scripts/generateSyntheticTrades.ts`, `seedDatabase.ts`, `seedAudit.ts`), `ml-service/whale/*.py` and `docs/ROADMAP.md` §4R-2 first. Design: a generator with a fixed seed that writes demo trades and orders to local files (not Atlas). Taker fills walk real aggressor-side prints; maker fills come from real prints that reach the limit price. It grades the result under v1 and v2 offline and prints old vs new grades side by side.
-2. Any seed into Atlas, and any change to a locked v1 demo grade, needs Deepanshu: prepare the exact commands with a dry run and list them under "Waiting for Deepanshu". v1 must stay reproducible for the old locked grades (`gradeInvariance.test.ts`).
-3. Bybit and OKX demos: check each venue's public trade archive (Bybit `public.bybit.com`; OKX unknown). Rebuild where verified, otherwise propose removing them.
-4. Whale study re-run with only pre-fill bursts counted as adverse. Never run `whale/enrich.py` (CLAUDE.md); do the analysis offline from public data in a new script. Report the result whichever way it comes out.
-5. Prepare the full ablation re-record on golden set v2 as a dry-run script for Deepanshu.
+**Plan written:** `docs/superpowers/plans/2026-11-11-m2-real-demos.md`. The venue archives are verified (`docs/research/LOG.md` §J): Bybit and OKX both publish daily spot trade files whose `side` is the aggressor. OKX days are UTC+8. Neither publishes a checksum.
+
+**Next concrete action (M2), in order:**
+1. `ml-service/demo_v2/prng.py` (exact mulberry32 port; test literals from node) and `decisions.py` (same PRNG call sequence as `generateSyntheticTrades.ts`). Prove the port: the regenerated decisions equal every (executedAt, symbol, side, orderType, quantity) in `backend/src/data/synthetic/*-trades.json`.
+2. `simulate.py` with the hand cases of plan §3 (tape T), then `tapes.py` (Bybit and OKX loaders, plus 2-minute committed fixtures with `SOURCE.md`).
+3. `build.py` → `ml-service/demo_v2/out/` plus the manifest; offline v2 grades (Python) and v1 grades (`backend/src/scripts/gradeDemoFiles.ts`, writes nothing); the old vs new grade table.
+4. Cite the Bybit and OKX regular spot fee rates (`docs-researcher`) before using them.
+5. `seedDemoV2.ts` (dry run by default) and the re-lock patch under `.work/proposed/`; both go to "Waiting for Deepanshu".
+6. Whale pre-fill study (new offline script; never `whale/enrich.py`), and the ablation re-record script (dry run) for Deepanshu.
 
 ## M1 (done, 2026-11-11)
 
@@ -28,7 +31,7 @@ Plan: `docs/superpowers/plans/2026-11-11-m1-measurement-and-scoring-v2.md` (it b
 | Milestone | Status | Report | Commit |
 |---|---|---|---|
 | M0 Orientation, research and hygiene | done | `docs/milestones/M0.md` | `ff681be` |
-| M1 Measurement v2 and Scoring v2 | done (real-account check open until real trades exist) | `docs/milestones/M1.md` | `0aa0603`, `5d43067`, `6ab568e`, `46e08f3`, closing commit |
+| M1 Measurement v2 and Scoring v2 | done (real-account check open until real trades exist) | `docs/milestones/M1.md` | `0aa0603`, `5d43067`, `6ab568e`, `46e08f3`, `20d0e17` |
 | M2 Real demos | in progress (planning) | | |
 | M3 Cost against expectation, AI layer quality | not started | | |
 | M4 Explain and act | not started | | |
