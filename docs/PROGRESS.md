@@ -8,9 +8,18 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 **Plan written:** `docs/superpowers/plans/2026-11-11-m2-real-demos.md`. The venue archives are verified (`docs/research/LOG.md` §J): Bybit and OKX both publish daily spot trade files whose `side` is the aggressor. OKX days are UTC+8. Neither publishes a checksum.
 
+**Done in M2 so far (commit `af3b737`, plan commit `a3d85da`):**
+- `ml-service/demo_v2/prng.py`: an exact mulberry32 port, matching node values.
+- `decisions.py`: a line-by-line port of the current `generateSyntheticTrades.ts`, with the same PRNG call order. It gives 313 / 248 / 145 decisions.
+- `simulate.py`: taker orders walk prints; maker orders fill only when a print trades through the limit; a 30 min TTL. All 9 hand cases of plan §3 pass.
+- Finding: the committed `backend/src/data/synthetic/*.json` files come from an older generator and cannot be reproduced (`test_committed_old_files_come_from_an_older_generator`). A read-only Atlas count check is listed below.
+
 **Next concrete action (M2), in order:**
-1. `ml-service/demo_v2/prng.py` (exact mulberry32 port; test literals from node) and `decisions.py` (same PRNG call sequence as `generateSyntheticTrades.ts`). Prove the port: the regenerated decisions equal every (executedAt, symbol, side, orderType, quantity) in `backend/src/data/synthetic/*-trades.json`.
-2. `simulate.py` with the hand cases of plan §3 (tape T), then `tapes.py` (Bybit and OKX loaders, plus 2-minute committed fixtures with `SOURCE.md`).
+1. (done) prng and decisions. (done) simulate.
+2. `ml-service/demo_v2/tapes.py`. Binance uses `measure.data.vision.load_day`. Bybit and OKX are new loaders into `AggTradeWindow`:
+   - Bybit: `is_buyer_maker = side == "sell"`; ids are made unique as day index × 10⁹ + id.
+   - OKX: a UTC day needs two UTC+8 files, filtered to the UTC day; sizes can be in scientific notation.
+   - Cut 2-minute committed fixtures for Bybit and OKX with `SOURCE.md` (our own SHA-256, because neither venue publishes one). Test the first rows and the side mapping.
 3. `build.py` → `ml-service/demo_v2/out/` plus the manifest; offline v2 grades (Python) and v1 grades (`backend/src/scripts/gradeDemoFiles.ts`, writes nothing); the old vs new grade table.
 4. Cite the Bybit and OKX regular spot fee rates (`docs-researcher`) before using them.
 5. `seedDemoV2.ts` (dry run by default) and the re-lock patch under `.work/proposed/`; both go to "Waiting for Deepanshu".
@@ -86,6 +95,9 @@ Nothing here blocks the current work.
 - DuckDB is not added for now. pandas and pyarrow, which are already installed, cover the as-of lookups M1 needs. Revisit if the calibration script is too slow.
 
 ## Known problems
+
+- The guard blocks running `backend/src/scripts/generateSyntheticTrades.ts` (it is a demo-dataset script). This is deliberate and was respected. The Python port is proven by the PRNG values and by the rule tests instead.
+- Uncommitted at handoff: none apart from this file. Latest suite lines: ml 1130 passed, 1 skipped (after `af3b737`); backend 742 passed, tsc 0; frontend 263 passed, tsc 0, lint 0 errors, build 0; e2e 16 passed (end of M1, `20d0e17`).
 
 - The guard blocks shell redirection into the repo, including redirection to a path held in a shell variable. Pipe command output to `tail` instead of writing log files from the shell.
 - The eval measure `evidence_cited` fails on all 18 recorded runs (measured, not gated). Finding the cause is part of M3.
