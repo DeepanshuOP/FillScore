@@ -82,3 +82,9 @@ Start every session by reading docs/HANDOFF.md. Findings, experiments and decisi
 
 ## Research record
 Start every session by reading docs/HANDOFF.md. Findings, experiments and decisions live in docs/research/ (append-only; see its README). Every phase report ends by appending its research notes to docs/research/LOG.md.
+
+## Master brief
+Long-running work follows docs/agent/MASTER_BRIEF.md; progress and the next action live in docs/PROGRESS.md.
+
+## Master brief
+Long-running work follows docs/agent/MASTER_BRIEF.md; progress and the next action live in docs/PROGRESS.md.
