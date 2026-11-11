@@ -139,6 +139,32 @@
 
 ---
 
+## §3a Milestones and additions from the market research (2026-11-11)
+
+**Milestones.** Work now follows `docs/agent/MASTER_BRIEF.md`. The milestones map onto the phases in §2: M1 = 4R-1a + 4R-1b · M2 = 4R-2 · M3 = 4b-2 plus C7 (moved here from 5a) and the `evidence_cited` fix · M4 = 4c · M5 = 5a without C7 · M6 = 5b · M7 = 5c · M8 = Phase 6 (stop for Deepanshu) · M9 = launch readiness (G5, security review, write-ups; G3 billing behind a flag). Current state: `docs/PROGRESS.md`.
+
+**Additions, changes and drops.** Source for each: `docs/research/MARKET_2026-11.md` (section or source number in brackets).
+
+| ID | Item | Why | Milestone | Pillar |
+|---|---|---|---|---|
+| **B3** (sharpened) | CSV import becomes a **broker-app round-trip audit**: realized cost of a buy-then-sell pair, and of each fill, against public prints at the same second | Two separate 2026 studies measured round-trip costs on broker apps by hand: TUM found −0.58% to −7.49% (6 to 13 round trips per platform) [20]; Frankfurt School found 0.53% to 6.45% (432 round trips on nine providers) [21]. No tool lets a user measure their own | M6 | Measured |
+| **A12** (new) | **Fee-schedule gap** per fill: the cost the published fee schedule predicts vs the measured cost. Same definition as the TUM "hidden spread" | The gap reached 4.51 percentage points on one app [20]. It is the single number retail users do not see | M4 (part of A6) | Measured |
+| **B6** (new) | **Fill-data quality report** before scoring: missing fills, duplicates, multiple fee rows, unit mismatches, fills with no order record | Recurring exchange-API fill problems [30]. A score on bad input is not verifiable | M1 (basic counts), M6 (full) | Verifiable |
+| **B7** (new) | **Aggressor-side convention tests per venue** (Binance `isBuyerMaker`; Coinbase `side` = maker side; Bybit CSV `side`), with a check of the user's fill side against the public print | Conventions differ by venue, and Bybit's CSV meaning is not documented [§8]. A wrong sign flips every spread | M2 (Bybit, before any Bybit demo), M6 | Measured |
+| **A13** (new) | **Stop-order outcome audit**: trigger price vs fill price and the public prints between them | Stop-loss slippage is a recurring complaint [29]. Needs the order type and stop price from order history (A4) | M4, if A4 returns stop prices; otherwise dropped with a note | Measured |
+| **D2** (sharpened) | Signed evidence packs gain an optional **public timestamp in a transparency log** (Sigstore Rekor v2), and a **reproduce-it-yourself bundle**: inputs, market-data pointers with checksums, and a script | Rekor v2 is generally available and free [42]. A signature proves integrity; a log entry proves the date. Neither proves origin, and the pack says so | M5 | Verifiable |
+| **E6** (new) | **Limits panel on every report:** sample size, reference-data source, what could not be measured | The TUM brief does this [20]; vendors do not publish methods [§1] | M1 (v2 result), M4 (all reports) | Explained |
+| **E3** (reworded) | Best-execution evidence pack is worded "supports your own documentation". Never "compliant", never "Article 78 report" | Article 78 duties sit with firms [19]; a compliance claim is a legal risk [§Risks] | M5 | Verifiable |
+| **D3** (narrowed) | zkTLS stays a **feasibility spike only**. Nothing is promised in copy until a proof of an exchange REST response works end to end | TLSNotary is pre-1.0 and says "not for production"; no project was shown to handle HMAC-signed exchange APIs [§6] | M7 | Verifiable |
+| **T5.9 / venue comparison** (constrained) | The matched venue comparison reports only the user's own past fills in matched buckets. A replay of past fills on another venue's tape is **not built**: it reads as routing advice | Invariant I1 [§Synthesis, idea 11] | M4 | Measured |
+| **/methodology** (sharpened) | Uses the Rule 605 names (effective spread, realized spread at horizons, effective-over-quoted) with one worked example per metric | The names are public and recognised [22]; no vendor publishes a method [§1] | M1 | Measured |
+
+**Positioning line, checked against the research:** no vendor found serves a retail or prosumer trader with an audit of their own fills from a read-only key; open-source TCA libraries cover FX and equities only; no vendor offers an MCP server for execution audits [§1, §7]. This is a statement about what a search found on 2026-11-11, not proof of absence.
+
+**Wording to stop using** (see the corrections at the top of `MARKET_2026-11.md`): "MiCA Article 78, enforceable since 1 Jul 2026" (say "MiCA applies since 30 Dec 2024; the transition ended 1 Jul 2026"); "TUM and Frankfurt School studies measured 0.5% to 7.5%" as if it were one study; any competitor named Botminds.
+
+---
+
 ## §4 Register of older IDs (one line each; corrected status)
 Legend: ✅ built · 🟨 partial · 🟥 not built · 🧊 deferred · ⛔ cut · ↪ superseded by.
 

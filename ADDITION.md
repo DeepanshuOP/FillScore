@@ -1,5 +1,7 @@
 # FillScore — Comprehensive Code Audit, Architecture Review & Roadmap Gap Analysis
 
+> **Superseded (2026-11-11).** This is the October 2026 review, kept for history. Its test counts, deployment status and security gaps are out of date (CI, CSRF protection, the OAuth code exchange, the legal pages and the ml-service deployment have all been built since). Its "A-" verdict on the scoring engine was overturned by the correctness audit in `docs/research/AUDIT_2026-11.md`. Current state: `docs/HANDOFF.md` and `docs/ROADMAP.md`.
+
 > **Auditor Roles:** Project Manager & Senior Full-Stack / Quant AI Systems Architect  
 > **Date:** October 2026  
 > **Repository:** `FillScore` (Next.js 16, Express/TypeScript, FastAPI/Python, LangGraph, MongoDB)  

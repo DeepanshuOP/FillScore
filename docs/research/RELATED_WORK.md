@@ -16,3 +16,13 @@ One line on how each source relates to FillScore. Add sources as they are used.
 - **MiCA Article 78** (best execution for CASPs; enforceable from 1 Jul 2026): regulatory motivation.
 - **TUM (Apr 2026) and Frankfurt School (2026) retail crypto cost studies**: round-trip costs of 0.53%–7.49%; hidden spreads on broker-model apps.
 - **tcapy** (Cuemacro, Apache-2.0): open-source TCA library; prior art for open metrics.
+
+Added or corrected 2026-11-11 (sources and details in `MARKET_2026-11.md`):
+- **Correction to the MiCA line above** (superseded 2026-11-11: "enforceable from 1 Jul 2026"): MiCA applied from 30 December 2024; 1 July 2026 ended the transitional period for existing providers. Article 78 obliges firms, not users.
+- **Correction to the retail-cost line above:** two separate studies. Rihacek, Voigt and Heilbock (TUM, supervised by P. Maume), "Pricing Transparency in European Crypto Trading", April 2026: −0.58% to −7.49% per EUR 100 round trip, N=6 to 13 per platform, done in cooperation with Bitvavo. Frankfurt School Blockchain Center with intas.tech, 17 March 2026: 432 round trips, 0.53% to 6.45%. FillScore's fee-schedule gap (roadmap A12) uses the TUM definition of "hidden spread".
+- **"Fundamentals of Perpetual Futures"** (arXiv 2212.06888): effective spreads on Binance perpetuals from exchange-labelled trade direction (median 0.11 bps BTC). Perpetuals, not spot; prior art for measuring spread from the aggressor flag.
+- **Maker-order experiment on the Binance BTC perpetual** (arXiv 2502.18625): trade-off between fill probability and post-fill return; context for maker markouts and opportunity cost.
+- **Talos market-impact model and TCA benchmarks** (vendor articles): the institutional comparison point; analyses orders routed through Talos.
+- **Sigstore Rekor v2** (general availability): transparency log for the optional timestamp on signed evidence packs.
+- **TLSNotary** (pre-1.0, Apache-2.0 or MIT) and **Reclaim Protocol**: candidates for the zkTLS feasibility spike.
+- **MCP Apps (SEP-1865)**: interactive UI in MCP clients; basis for the planned MCP App.

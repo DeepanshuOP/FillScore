@@ -190,8 +190,11 @@ analytics card.
 | `marketcaches` | Kline cache, 24 hour TTL |
 | `council_runs` | Persisted Council runs (written by ml-service; `created_at` is an ISO string) |
 
-`dataSource` (`synthetic-demo` or `real-user`) is set once and enforced at schema level. Only trader
-behaviour in the demo accounts is synthetic; market data and whale data are real.
+`dataSource` (`synthetic-demo` or `real-user`) is set once and enforced at schema level. Demo trader
+behaviour is synthetic. In the three Binance demos, MARKET fill prices come from real public prints,
+while LIMIT fills are offsets from a real 1-minute open with slippage set to 0. The demos `demo-bybit`,
+`demo-okx` and `demo-multi` have simulated prices and are hidden (API 404 `demo_unavailable`) until
+they are rebuilt from real prints. Whale bursts and markout prices are real public data.
 
 Canonical demo scores: `demo-disciplined` 95.885 (A), `demo-moderate` 84.809 (B),
 `demo-aggressive` 60.675 (C), `demo-bybit` 76.164 (B), `demo-okx` 81.659 (B), `demo-multi` 70.720 (C).
@@ -210,17 +213,22 @@ Canonical demo scores: `demo-disciplined` 95.885 (A), `demo-moderate` 84.809 (B)
 
 ## 7. Known gaps
 
-- **ml-service is not deployed yet.** Deploy target: Render (backend and ml-service, Frankfurt) and Vercel (frontend); see `docs/DEPLOY.md`. Railway is retired; its region got HTTP 451 from Binance, so Binance reachability is checked by `scripts/smoke_prod.sh`.
+Deployed: Render Frankfurt (backend and ml-service) and Vercel (frontend); see `docs/DEPLOY.md`.
+Binance reachability from the host is checked by `scripts/smoke_prod.sh`. Error tracking (Sentry on
+all three tiers) and Council tracing (Langfuse) are in place; see `docs/OBSERVABILITY.md`. GDPR export
+and erasure are `GET /api/account/export` and `DELETE /api/account/`.
+
+- **Scoring v1 is rule-based and partly inaccurate** (1-minute arrival proxy, high–low spread
+  heuristic, hand-picked hours). See `docs/research/AUDIT_2026-11.md`; measurement v2 and Scoring v2
+  are specified in `docs/superpowers/specs/2026-11-07-measurement-v2-design.md`.
+- **Demo data is only partly real** (see §5). No real-user trade has been scored yet.
 - **Council replay** endpoint does not exist; runs are persisted but not replayable.
 - **State is per instance:** rate limiters and the Council run budget live in memory. Running more
-  than one instance needs a shared store (ROADMAP R5-C8).
-- **No billing, quotas per plan, or GDPR export/erasure endpoints** (ROADMAP R5-C4, R5-C5).
-- **No observability** (error tracking, traces, Council run tracing) (ROADMAP R5-C9).
+  than one instance needs a shared store (ROADMAP G1).
+- **No billing or quotas per plan** (ROADMAP G3).
 - **No prompt-injection isolation layer** beyond the Council only receiving numeric packets, and no
-  `ENCRYPTION_KEY` rotation tooling (ROADMAP R5-C2, R5-M1).
-- **Field-name drift risk:** the ml-service loader projects `vwap5m` while the Trade model stores
-  `vwap5min`; nothing writes `vwap5m`. Fixing it changes packet contents and hashes, so it is held
-  until the evaluation is re-run.
+  `ENCRYPTION_KEY` rotation tooling (ROADMAP C6, G4).
+- **Bybit and OKX** connectors have not been run against live keys.
 - **Git history** contains credentials from before they were moved to the environment. They are
-  rotated; whether to purge history before the repository goes public is an open decision
-  (ROADMAP R6-G13).
+  rotated. The repository is public, so those old values are visible today; whether to purge the
+  history is a pending decision (ROADMAP R6-G13).

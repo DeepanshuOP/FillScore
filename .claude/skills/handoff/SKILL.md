@@ -1,14 +1,17 @@
 ---
 name: handoff
-description: Writes .work/HANDOFF.md so a fresh session can continue the current work without re-reading history. Use before /clear, before compacting a long session, when a usage limit is near, or when asked to hand off.
+description: Updates docs/PROGRESS.md and docs/HANDOFF.md so a fresh session can continue the current work without re-reading history. Use before /clear, before compacting a long session, when a usage limit is near, or when asked to hand off.
 ---
 
-Write `.work/HANDOFF.md` (overwrite it) with at most 60 lines:
-1. Current brief and checklist file paths, and the status of each item
-2. Decisions made this session, and why (one line each)
-3. Files changed so far (git status --short)
-4. The latest test summary line per tier
-5. Exactly what to do next, as numbered steps
-6. Open questions and blockers
+The resume files are tracked in the repo, so they survive across sessions and machines.
 
-Then reply with one line: the path, and "Start a new session with: continue from .work/HANDOFF.md".
+1. Update `docs/PROGRESS.md`:
+   - the current milestone and step, and the next concrete action as numbered steps;
+   - what is done, with commit hashes;
+   - "Waiting for Deepanshu": each item with its exact command or steps, and what it unblocks;
+   - decisions taken since the last report, one line each with the reason;
+   - known problems;
+   - uncommitted files (`git status --short`) and the latest test summary line per suite.
+2. Update the "Now" and "Next" sections of `docs/HANDOFF.md` only if the state they describe changed. Keep it under about 60 lines.
+
+Then reply with one line: "Start a new session with: read docs/agent/MASTER_BRIEF.md, then continue from docs/PROGRESS.md".

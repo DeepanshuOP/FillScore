@@ -149,7 +149,8 @@ FillScore/
 - [CONTRIBUTING.md](CONTRIBUTING.md): the product rules and how to run the checks
 - [docs/DEPLOY.md](docs/DEPLOY.md): the deploy guide (Render for backend and ml-service, Vercel for the frontend)
 - [docs/FIRST_REAL_USER.md](docs/FIRST_REAL_USER.md): first real user on the deployed stack
-- [ROADMAP.md](ROADMAP.md): the task register
+- [docs/ROADMAP.md](docs/ROADMAP.md): the roadmap and task register
+- [docs/research/](docs/research/): the research record (findings, experiments, decisions, the 2026-11 audit)
 
 ## License
 

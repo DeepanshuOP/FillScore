@@ -1,32 +1,31 @@
-# FillScore — Handoff (read this first in any new chat or agent session)
+# FillScore — Handoff
 
-Short, current-state file. **Overwrite the "Now" and "Next" sections at the end of every phase**; everything older moves to `docs/research/LOG.md` or an ADR. Keep it under ~120 lines.
+Short current-state file. A new session reads `docs/agent/MASTER_BRIEF.md`, then `docs/PROGRESS.md`, then this file. **Overwrite "Now" and "Next" at the end of every milestone.** Older history lives in `docs/research/LOG.md`, the ADRs and `docs/milestones/`. Keep this file under about 60 lines.
 
 ## What FillScore is
-An open-source crypto Transaction Cost Analysis SaaS. It **grades past execution** against real market data and never predicts, signals or advises. LLMs may label, argue and explain, but never originate a number.
+An open-source, independent execution auditor for crypto traders. It **grades past execution** against real public market data and never predicts, signals or advises. LLMs may label, argue and explain, but never originate a number.
 
 ## Where things are
-- Live: frontend `fill-score-kappa.vercel.app` (Vercel); API `fillscore-api` and ML `fillscore-ml` (Render, Frankfurt, auto-deploy after CI checks pass); MongoDB Atlas db `fillscore`.
-- Code map: `ARCHITECTURE.md`. Agent rules: `CLAUDE.md`. Research record: `docs/research/` (LOG, EXPERIMENTS, decisions/, RELATED_WORK).
-- Roadmap: `FillScore_Roadmap_v5.md` (claude.ai Project). Older: Unified v4, Supreme v2.
-- Briefs and reports: `.work/BRIEF_*.md`, `.work/REPORT_*.md` (local, not committed).
+- **Live:** frontend `fill-score-kappa.vercel.app` (Vercel); API `fillscore-api` and ML `fillscore-ml` (Render, Frankfurt, auto-deploy after CI passes); MongoDB Atlas database `fillscore`.
+- **Code map:** `ARCHITECTURE.md`. **Agent rules:** `CLAUDE.md`. **Roadmap:** `docs/ROADMAP.md` (the only one).
+- **Research record:** `docs/research/` (LOG, EXPERIMENTS, decisions, RELATED_WORK, AUDIT_2026-11, MARKET_2026-11).
+- **Design and plan for the current work:** `docs/superpowers/specs/2026-11-07-measurement-v2-design.md` and `docs/superpowers/plans/`.
 
 ## How work happens
-- An architect chat writes a brief. Claude Code in WSL (`~/FillScore`) runs it (`claude --model sonnet --effort medium`, auto mode off, a `/goal` line that allows BLOCKED). Deepanshu reviews the report and commits/pushes himself.
-- Agents never commit, push, `--apply`, write to Atlas, call live LLMs (unless the brief says so), or print secrets. Commits carry only Deepanshu's authorship.
+- The work follows the milestones in `docs/agent/MASTER_BRIEF.md`. Progress and the next action are in `docs/PROGRESS.md`.
+- The agent commits locally at the end of each milestone, with all suites green. Deepanshu pushes.
+- The agent asks Deepanshu before any Atlas write, `--apply`, push, history rewrite, paid service, new credential, or change to the guard hook or settings. Requests are listed in `docs/PROGRESS.md` under "Waiting for Deepanshu".
 
-## Now (update every phase)
-- Last completed: Phase 4a (markouts at 1/5/30/60/300 s, Corwin–Schultz + Abdi–Ranaldo spreads, spread-aware counterfactual). Demo backfill dry-run: 897/897 priced, 0 errors.
-- 4R-0 and 4R-0b: partial (see `.work/REPORT_phase4r0b.md`). Done in 4R-0b: guard hardening, migration/registry hardening, dashboard/copy/coach fixes, skipped-trade disclosure, hidden demos at the API (404 `demo_unavailable`). Not done: frontend picker/sitemap/comparison-card message and the Playwright check for hidden demos.
-- 4R-0c (see `.work/REPORT_phase4r0c.md`): done: hidden demos in the UI + e2e (14 pass), sed-`e` guard, spreadBps repair path (real users only), all-skipped 422, taker-fee fallback, Council without regime and with markout-based reversion. **Blocked:** the regenerated golden packets changed the demo-moderate/aggressive liquidity hashes, so `packet_provenance` fails on stored recordings (pytest 2 failures, `run_offline` 14 violations, `ablation --check` stale) until they are re-recorded with live LLM runs (your call). Roadmap merge (Task 8) not started.
-- 4R-0d (see `.work/REPORT_phase4r0d.md`): done: versioned golden sets (v1 recorded = ablation set, byte-identical; v2 unrecorded, regenerated with metrics 1.2.0), version-aware `run_offline`/`ablation --check`/dumper, roadmap IDs OK, plan wording fixed. **Blocked:** the demo Council re-record: 1 of 3 live runs used, `RouterExhausted` on synthesis (default fallback), nothing written; `demo_runs/*.json` still show "STABLE regime". So 4R-0 is complete except that item.
-- 4R-0e (see `.work/REPORT_phase4r0e.md`): demo Council runs re-recorded live (3 of 5 allowed runs, all 9/9 calls, no regime text; legacy `tradeContext.regime: null` key remains). **4R-0 is complete.** Guard test un-xfailed (checks JSON values).
-- In progress: migration dry-run against Atlas (Deepanshu's call, then `--apply`).
-- Known issues: the bar-based spread estimators overstate liquid-pair spreads (BNBUSDT 1.05–1.58 bps half-spread vs ~0.3 bps tick), so the 1.0 bp cap binds.
+## Now
+- **Scoring v1** is frozen and labelled rule-based. The audit of 2026-11 found its inputs weak (a 1-minute arrival proxy, a high–low spread heuristic, hand-picked hours). Phase 4R-0 fixed the misleading displays and is complete.
+- **Demo data:** the three Binance demos have real prices for MARKET fills only; LIMIT slippage is forced to 0. The demos demo-bybit, demo-okx and demo-multi had simulated prices and are hidden.
+- **No real user trade has been scored yet.**
+- **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
-0. 4R-1a. The ablation re-record on v2 waits until after 4R-2.
-1. Audit report → revise `BRIEF_phase4b1.md` from its findings.
-2. Phase 4b-1 (fee snapshots, Parquet/DuckDB lake, order reconstruction, provenance).
-3. Phase 4b-2 (cost-vs-expected model with conformal intervals; Quick/Deep audit).
-4. zkTLS spike. Billing last. **Design/UI pass (Track H): remind Deepanshu when it comes up.**
+See "Next concrete action" in `docs/PROGRESS.md`.
+
+## Known issues
+- The bar-based spread estimators (Corwin–Schultz, Abdi–Ranaldo) read volatility, not spread, on liquid pairs. Measurement v2 replaces them with aggressor-side prints (ADR-0008).
+- The eval measure `evidence_cited` fails on every recorded run. It is measured, not gated. Finding the cause is part of milestone M3.
+- Git history contains old, rotated credentials, and the repository is public, so they are visible today. Whether to purge the history is a pending decision for Deepanshu (roadmap item R6-G13; listed in `docs/PROGRESS.md`).
