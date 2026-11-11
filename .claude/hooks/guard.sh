@@ -23,7 +23,6 @@ RE_ENV_PATH='(^|[\/])\.env($|\.)'
 RE_ENV_READ="${SEP}(cat|tac|less|more|head|tail|bat|batcat|nl|od|xxd|hexdump|strings|grep|egrep|fgrep|rg|sed|awk|cut|sort|uniq|diff|cp|mv|source|\.|type|Get-Content|gc|Select-String|sls|base64|tee|vi|vim|nano|code)[[:space:]][^|;&]*\.env"
 RE_ENV_REDIRECT='<[[:space:]]*[^[:space:]|;&]*\.env'
 RE_ENV_SCRIPTED='(open\(|readFile|read_text|fs\.|Path\().{0,40}\.env'
-RE_GIT_COMMIT_PUSH='(^|[[:space:];|&(`/])git([[:space:]]+[^;|&]*)?[[:space:]](commit|push)([[:space:];|&]|$)'
 RE_GIT_ADD_BLANKET='(^|[[:space:];|&(`/])git[[:space:]]+(add|stage)([[:space:]]+[^;|&]*)?[[:space:]](\.|\./|[^[:space:];|&]*/\.|\*|:/|-A|--all|-u|--update)([[:space:];|&]|$)'
 RE_GIT_ADD_GLOB='(^|[[:space:];|&(`/])git[[:space:]]+(add|stage)[[:space:]][^;|&]*[*?]'
 RE_SEED='npm([[:space:]]+[^;|&]*)?[[:space:]](run|run-script)[[:space:]]+seed'
@@ -85,10 +84,103 @@ RE_ENV_READ_LINE="${SEP}(cat|tac|less|more|head|tail|bat|batcat|nl|od|xxd|hexdum
 [[ "$cmd_checked" =~ $RE_ENV_SCRIPTED ]] && deny "Reading .env from a script one-liner is still a read of secrets."
 [[ "$cmd_checked" =~ $RE_ENV_REDIRECT ]] && deny "Redirecting .env into a command is a read of secrets."
 
-# --- 2. No commits or pushes; Deepanshu commits after review -------------------------------------
-[[ "$cmd" =~ $RE_GIT_COMMIT_PUSH ]] && deny "git commit / git push are reserved for Deepanshu after review."
+# --- 2. Git: local commits are allowed; push, history rewrites and force operations are not --------
+# Written permission (docs/agent/MASTER_BRIEF.md, 2026-11): `git add <explicit files>` and `git commit`
+# are allowed so each milestone can be committed locally. Deepanshu still pushes himself, so everything
+# that publishes, rewrites or deletes history stays blocked, and so does anything that would bypass the
+# commit-msg hook or change the commit identity.
+# GIT_PRE matches `git`, then any global options, up to the subcommand position. These whole-command
+# checks also catch git behind a wrapper (bash -c, env, command, xargs). check_git below judges each
+# plain git segment in detail, with quoted text (commit messages) removed first.
+GIT_PRE='(^|[[:space:];|&(`/"'"'"'])git([[:space:]]+(-C|-c|--git-dir|--work-tree|--namespace|--exec-path)([[:space:]]+|=)[^[:space:]]+|[[:space:]]+-[^[:space:]]+)*[[:space:]]+'
+GIT_END='([[:space:];|&)"'"'"']|$)'
+MSG_GIT_PUSH="git push is reserved for Deepanshu. Commit locally and list the push in docs/PROGRESS.md."
+MSG_GIT_HISTORY="This rewrites or deletes git history (or forces an operation). It needs Deepanshu's approval: record it in docs/PROGRESS.md."
+[[ "$cmd_joined" =~ ${GIT_PRE}push${GIT_END} ]] && deny "$MSG_GIT_PUSH"
+[[ "$cmd_joined" =~ ${GIT_PRE}(rebase|filter-branch|filter-repo|update-ref|replace)${GIT_END} ]] && deny "$MSG_GIT_HISTORY"
+[[ "$cmd_joined" =~ ${GIT_PRE}reset([[:space:]]+[^\;\|\&]*)?[[:space:]]--(hard|soft|mixed|keep|merge)${GIT_END} ]] && deny "$MSG_GIT_HISTORY"
+[[ "$cmd_joined" =~ ${GIT_PRE}commit([[:space:]]+[^\;\|\&]*)?[[:space:]]--amend${GIT_END} ]] && deny "$MSG_GIT_HISTORY"
+[[ "$cmd_joined" =~ ${GIT_PRE}[a-z-]+([[:space:]]+[^\;\|\&]*)?[[:space:]]--no-verify${GIT_END} ]] && deny "--no-verify skips the commit-msg hook. Fix the message instead."
+[[ "$cmd_joined" =~ GIT_(AUTHOR|COMMITTER)_(NAME|EMAIL|DATE)= ]] && deny "Commits carry only Deepanshu's configured git identity."
 [[ "$cmd" =~ $RE_GIT_ADD_BLANKET ]] && deny "Blanket staging is forbidden. Stage an explicit file list."
 [[ "$cmd" =~ $RE_GIT_ADD_GLOB ]] && deny "Glob staging is forbidden. Stage an explicit file list."
+
+# check_git SEGMENT: the detailed rules for one shell segment whose command word is git.
+check_git() {
+  local s w sub="" skip=0 seen=0 nargs=0 first_arg="" after_dd=0
+  local -a args=()
+  s="$(printf '%s' "$1" | sed -E "s/'[^']*'/ Q /g; s/\"([^\"\\\\]|\\\\.)*\"/ Q /g")"
+  set -f
+  for w in $s; do
+    if (( ! seen )); then seen=1; continue; fi
+    if [[ -z "$sub" ]]; then
+      if (( skip )); then skip=0; continue; fi
+      case "$w" in
+        -C|-c|--git-dir|--work-tree|--namespace|--exec-path) skip=1 ;;
+        -*) ;;
+        *) sub="$w" ;;
+      esac
+      continue
+    fi
+    args+=("$w")
+  done
+  set +f
+  for w in "${args[@]}"; do
+    [[ "$w" == --force* ]] && deny "$MSG_GIT_HISTORY"
+    [[ "$w" == --no-verify ]] && deny "--no-verify skips the commit-msg hook. Fix the message instead."
+  done
+  case "$sub" in
+    push) deny "$MSG_GIT_PUSH" ;;
+    rebase|filter-branch|filter-repo|update-ref|replace|gc|prune|clean) deny "$MSG_GIT_HISTORY" ;;
+    reflog)
+      for w in "${args[@]}"; do [[ "$w" =~ ^(expire|delete|drop)$ ]] && deny "$MSG_GIT_HISTORY"; done ;;
+    stash)
+      for w in "${args[@]}"; do [[ "$w" =~ ^(drop|clear)$ ]] && deny "git stash drop/clear deletes saved work. It needs Deepanshu's approval."; done ;;
+    reset)
+      # Only unstaging is allowed: `git reset`, `git reset [HEAD] [--] <files>`. Moving the branch is a history rewrite.
+      for w in "${args[@]}"; do
+        if [[ "$w" == -- ]]; then after_dd=1; break; fi
+        [[ "$w" =~ ^--(hard|soft|mixed|keep|merge)$ ]] && deny "$MSG_GIT_HISTORY"
+        [[ "$w" == -* ]] && continue
+        nargs=$((nargs+1)); [[ $nargs -eq 1 ]] && first_arg="$w"
+      done
+      [[ $nargs -ge 1 && "$first_arg" != HEAD ]] && deny "git reset to another commit moves the branch (a history rewrite). To unstage, use: git restore --staged <file>." ;;
+    commit)
+      for w in "${args[@]}"; do
+        [[ "$w" == --amend ]] && deny "$MSG_GIT_HISTORY"
+        [[ "$w" == --all ]] && deny "git commit --all is blanket staging. Stage an explicit file list first."
+        [[ "$w" == --author* ]] && deny "Commits carry only Deepanshu's configured git identity."
+        [[ "$w" =~ ^-[a-zA-Z]*n[a-zA-Z]*$ ]] && deny "git commit -n skips the commit-msg hook. Fix the message instead."
+        [[ "$w" =~ ^-[a-zA-Z]*a[a-zA-Z]*$ ]] && deny "git commit -a is blanket staging. Stage an explicit file list first."
+      done ;;
+    branch)
+      for w in "${args[@]}"; do
+        [[ "$w" == --delete || "$w" =~ ^-[a-zA-Z]*[dDfMC][a-zA-Z]*$ ]] && deny "$MSG_GIT_HISTORY"
+      done ;;
+    tag)
+      for w in "${args[@]}"; do
+        [[ "$w" == --delete || "$w" =~ ^-[a-zA-Z]*[df][a-zA-Z]*$ ]] && deny "$MSG_GIT_HISTORY"
+      done ;;
+    checkout|switch|worktree|fetch|pull|merge|rm|mv)
+      for w in "${args[@]}"; do
+        [[ "$w" == --discard-changes || "$w" =~ ^-[a-zA-Z]*[fBC][a-zA-Z]*$ ]] && deny "$MSG_GIT_HISTORY"
+      done ;;
+    add|stage)
+      for w in "${args[@]}"; do
+        [[ "$w" =~ ^-[a-zA-Z]*f[a-zA-Z]*$ ]] && deny "git add -f can stage ignored files such as .env."
+        [[ "$w" =~ (^|/)\.env($|\.) && ! "$w" =~ \.env\.example$ ]] && deny ".env files are never staged."
+      done ;;
+    config)
+      # Reading is allowed. Writing could repoint core.hooksPath, change the identity or add an alias.
+      for w in "${args[@]}"; do
+        [[ "$w" =~ ^(--unset|--unset-all|--add|--replace-all|--edit|-e|--remove-section|--rename-section|set|unset|edit|remove-section|rename-section)$ ]] && deny "git config writes can disable the commit-msg hook or change the commit identity."
+        [[ "$w" == -* || "$w" =~ ^(get|list)$ ]] && continue
+        nargs=$((nargs+1))
+      done
+      [[ $nargs -ge 2 ]] && deny "git config writes can disable the commit-msg hook or change the commit identity." ;;
+  esac
+  return 0
+}
 
 # --- 3. Never run destructive data scripts --------------------------------------------------------
 # 4R-0: judge each shell segment (split on && || ; | & and newlines) on its own. A segment whose command word is a
@@ -179,6 +271,7 @@ check_segments() {
     if [[ $piped -eq 1 && "$base" =~ ^(sh|bash|zsh|dash|ksh|fish|csh)$ ]]; then
       deny "Piping into a shell executes text the guard cannot see."
     fi
+    [[ "$base" == git ]] && check_git "$seg"
     [[ "$base" == git && "$seg" =~ [[:space:]]-c[[:space:]] ]] && deny "git -c can set hooks (core.pager, core.sshCommand, alias.*) that execute commands."
     if [[ "$base" == sed ]] && { [[ "$seg" =~ $RE_SED_EXEC_FLAG ]] || [[ "$seg" =~ $RE_SED_EXEC_CMD ]]; }; then
       deny "sed with the e flag or e command executes shell. Spell the work out with real commands."
