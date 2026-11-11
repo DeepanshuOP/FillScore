@@ -9,7 +9,6 @@
       "Bash(npm run seed:*)"
     ],
     "ask": [
-      "Bash(git add:*)",
       "Bash(docker:*)",
       "Bash(npx prisma:*)"
     ],
