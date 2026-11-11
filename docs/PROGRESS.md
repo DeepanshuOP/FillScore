@@ -6,19 +6,19 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 **M1. Measurement v2 and Scoring v2** — in progress. Plan: `docs/superpowers/plans/2026-11-11-m1-measurement-and-scoring-v2.md` (it builds on `docs/superpowers/plans/2026-11-09-phase-4r1a.md`).
 
-**Done in M1 so far (Part A, Tasks 1–4; 73 tests in `ml-service/tests/measure/`, all green):** metric registry; real 2-minute fixtures with `SOURCE.md`; data layer (`measure/data/`: window type, data.binance.vision loader with mandatory checksum, REST window with paging and gap check, Parquet cache, price step); benchmarks (`measure/benchmarks.py`); fill metrics with the runtime identity (`measure/metrics.py`). Red phases seen: `ImportError: cannot import name 'MEASURE_VERSION'`, `ModuleNotFoundError: No module named 'measure.data'`, `No module named 'measure.metrics'`. Two defects found by the tests and fixed in code: the price step kept float noise at 12 decimals (now 8, the exchange precision), and the header-row skip dropped a data row.
+**Done in M1 so far (Part A complete, Tasks 1–6; 89 tests in `ml-service/tests/measure/`, all green; ml suite 949 passed, 1 skipped):** metric registry; real 2-minute fixtures with `SOURCE.md`; data layer (`measure/data/`: window type, data.binance.vision loader with mandatory checksum, REST window with paging and gap check, Parquet cache, price step); benchmarks (`measure/benchmarks.py`); fill metrics with the runtime identity (`measure/metrics.py`); `measure/enrich_fill.py` (`FillInput`, `measure_fill`), checked on real BTCUSDT and BNBUSDT slices; the generated method page `docs/methodology/measurement-v1.0.0.md` (`ml-service/scripts/gen_methodology.py`, with a drift test). Red phases seen: `ImportError: cannot import name 'MEASURE_VERSION'`, `ModuleNotFoundError: No module named 'measure.data'`, `No module named 'measure.metrics'`, `No module named 'measure.enrich_fill'`, `AssertionError: missing .../measurement-v1.0.0.md`. Two defects found by the tests and fixed in code: the price step kept float noise at 12 decimals (now 8, the exchange precision), and the header-row skip dropped a data row. The flaky router test passed 30 of 30 runs and in the full suite; no fix was needed. Commits: `0aa0603` (Tasks 1–4), then the Tasks 5–6 commit. Research notes: `docs/research/LOG.md` §G.
 
 **Next concrete action:**
-1. Part A, Task 5: write `tests/measure/test_enrich_fill.py` (red), then `measure/enrich_fill.py` (`FillInput`, `measure_fill`). Hand values for the real-data test, read from the raw BTCUSDT 2024-01-15 fixture with awk: pretend buy fill = aggregate id 2830846703, price 42864.25, t = 1705327260000. Strictly before t: ask proxy 42864.25 (id 2830846701, ts …259998), bid proxy 42864.24 (id 2830846700, ts …259998), so mid = 42864.245, two-sided, effective half-spread = 0.005/42864.245 × 1e4 = 0.0011665 bps (half a tick). Mid at +1 s = (42864.25 + 42864.24)/2 = 42864.245; at +15 s = (42841.38 + 42841.37)/2 = 42841.375; at +60 s (t = …320000) = (42824.72 + 42824.71)/2 = 42824.715; at +300 s there is no data in the slice, so `None`. For BNBUSDT the tick is 0.1.
-2. Task 6: write the generated `docs/methodology/measurement-v1.0.0.md` with a drift test; run the flaky-test loop from the 4R-1a plan.
-3. Then Part B (orders, fee snapshots, order-level shortfall, persistence, job), Part C (Scoring v2) and Part D, as in the M1 plan.
+1. Part B, Task 9 first (pure ml, no external facts needed): `ml-service/measure/orders.py`, `order_is(...)`, with the hand case from the 4R-1a plan (intended 200.00; execution 2.0; spread 0.75; impact/timing 1.25; opportunity 2.5; fees 7.5; total 12.0 bps).
+2. Then Tasks 7–8 (backend orders and fee snapshots). Get the cited exchange facts first (`docs-researcher`: Binance `allOrders` and `account/commission`, and the Bybit and OKX equivalents).
+3. Then Task 10 (persistence, `/internal/measure`, the job with an outbox) and Task 11; then Part C (Scoring v2) and Part D, as in the M1 plan. One `reviewer` pass runs on the whole M1 diff before the milestone commit.
 
 ## Milestone status
 
 | Milestone | Status | Report | Commit |
 |---|---|---|---|
 | M0 Orientation, research and hygiene | done | `docs/milestones/M0.md` | `ff681be` |
-| M1 Measurement v2 and Scoring v2 | in progress (Part A, Task 1) | | |
+| M1 Measurement v2 and Scoring v2 | in progress (Part A done; Part B next) | | |
 | M2 Real demos | not started | | |
 | M3 Cost against expectation, AI layer quality | not started | | |
 | M4 Explain and act | not started | | |
