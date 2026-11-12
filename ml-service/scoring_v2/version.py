@@ -22,7 +22,8 @@ _ID_RE = re.compile(r"^v2\.\d+\.\d+$")
 # The page's volume thresholds are still in BUSD, so the table may be dated; the value is stored in the version file.
 PUBLISHED_TAKER_BPS = {"binance": 10.0}
 CODE_FILES = ("measure/benchmarks.py", "measure/enrich_fill.py", "measure/metrics.py", "measure/orders.py", "measure/fees.py",
-              "scoring_v2/anchors.py", "scoring_v2/components.py", "scoring_v2/aggregate.py", "scoring_v2/calibrate.py")
+              "scoring_v2/anchors.py", "scoring_v2/components.py", "scoring_v2/aggregate.py", "scoring_v2/calibrate.py",
+              "scoring_v2/score.py")   # score.py since v2.1.0: it forms the spread units (taker events)
 
 
 def _path(version_id: str) -> Path:
@@ -50,9 +51,13 @@ def code_hash(root: Path | None = None) -> str:
     return h.hexdigest()
 
 
-def build_version(version_id: str, anchors: dict, hour_profiles: dict, window: dict, refs: list[dict]) -> dict:
+def build_version(version_id: str, anchors: dict, hour_profiles: dict, window: dict, refs: list[dict],
+                  extra: dict | None = None) -> dict:
+    """`extra` adds version-level fields that change how a score is computed or read, e.g. "spreadUnit" (v2.1.0+:
+    "taker_event") and the sample counts behind each anchor. A version without "spreadUnit" scores spread per fill."""
     _path(version_id)
     return {
+        **(extra or {}),
         "id": version_id,
         "weights": WEIGHTS,
         "bands": [[edge, g] for edge, g in BANDS],

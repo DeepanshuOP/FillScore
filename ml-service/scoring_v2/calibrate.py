@@ -2,18 +2,27 @@
 
 For each symbol it builds:
   * spread anchors per notional bucket: percentiles (10, 50, 90, 99) of the effective half-spread that public taker
-    prints paid against the same mid the user's fills are measured with (measure.benchmarks rules, vectorised);
+    EVENTS paid against the same mid the user's fills are measured with (measure.benchmarks rules, vectorised).
+    A taker event is a run of consecutive prints with the same millisecond and the same aggressor side: one taker
+    order walking several price levels prints one aggTrade per level, all in one millisecond. The event pays its
+    VWAP against the mid strictly before that millisecond, and is bucketed by its total notional. Since v2.1.0
+    (M1.1, ADR-0012); v2.0.0 measured every print separately, which counted the deeper levels of one order as extra
+    small takers and put the BTCUSDT lt1k median at 0.20 bps instead of half a tick (docs/research/LOG.md §K);
   * slippage anchors per duration bucket: percentiles of the signed mid drift over that duration, from start times
     every `step` seconds, counted for both a buy and a sell (so the baseline is a random-side entry);
   * an hour profile: for each UTC hour, the median quoted half-spread proxy (bps) plus the median absolute 1-minute
     mid return (bps) (spec decision D5).
 Anchors need MIN_SAMPLES samples and strictly increasing percentiles; otherwise they are None and the component reads
-"insufficient data" for that bucket. Nothing here writes to a database.
+"insufficient data" for that bucket. An hour profile needs MIN_PROFILE_DAYS days with samples in every hour.
+Calibration streams: `day_summary` reduces one day's prints to the samples above (a few MB), `save_summary` /
+`load_summary` keep it on disk so the raw file can be deleted, and `merge_summaries` builds the anchors from all days.
+Nothing here writes to a database.
 """
 from __future__ import annotations
 
 import math
 from collections import defaultdict
+from pathlib import Path
 
 import numpy as np
 
@@ -23,7 +32,9 @@ from measure.data.aggtrades import AggTradeWindow
 from .components import notional_bucket
 
 MIN_SAMPLES = 200
+MIN_PROFILE_DAYS = 30   # days with samples in an hour before that hour's profile value is used (M1.1)
 PCTS = (10, 50, 90, 99)
+SUMMARY_FORMAT = 1      # bump when day_summary changes, so stale summaries on disk are never merged
 # One representative duration per slippage bucket (each falls inside its bucket; tested).
 DURATION_SAMPLE_MS = {"lt1s": 500, "1s-10s": 5_000, "10s-1m": 30_000, "1m-10m": 300_000, "10m-1h": 1_800_000, "ge1h": 7_200_000}
 
@@ -58,12 +69,44 @@ def print_mids(window: AggTradeWindow, max_age_ms: int = MAX_QUOTE_AGE_MS) -> np
 
 
 def print_effective_half_bps(window: AggTradeWindow) -> tuple[np.ndarray, np.ndarray]:
-    """(effective half-spread in bps of each public print against the mid before it, notional of the print)."""
+    """(effective half-spread in bps of each public print against the mid before it, notional of the print).
+    The v2.0.0 baseline. Kept for the bias report (scripts/spread_bias_report.py); calibration uses taker_events."""
     mids = print_mids(window)
     side = np.where(window.is_buyer_maker, -1.0, 1.0)                 # buyer-initiated = +1
     with np.errstate(invalid="ignore"):
         eff = side * (window.price - mids) / mids * 1e4
     return eff, window.price * window.qty
+
+
+def event_starts(window: AggTradeWindow) -> np.ndarray:
+    """Boolean mask: True where a print starts a new taker event (another millisecond or another aggressor side
+    than the print before it, in aggregate-id order)."""
+    ts, m = window.ts_ms, window.is_buyer_maker
+    if len(ts) == 0:
+        return np.zeros(0, dtype=bool)
+    return np.r_[True, (ts[1:] != ts[:-1]) | (m[1:] != m[:-1])]
+
+
+def taker_events(window: AggTradeWindow) -> tuple[np.ndarray, np.ndarray]:
+    """(effective half-spread in bps of each taker event's VWAP against the mid strictly before its millisecond,
+    notional of the event). NaN where no mid exists. All prints of one event share one millisecond, so they share
+    one mid, exactly as all fills of one user order in one millisecond do (measure.enrich_fill)."""
+    n = len(window)
+    if n == 0:
+        return np.zeros(0), np.zeros(0)
+    starts = event_starts(window)
+    gid = np.cumsum(starts) - 1
+    ng = int(gid[-1]) + 1
+    first = np.flatnonzero(starts)
+    qty = np.bincount(gid, weights=window.qty, minlength=ng)
+    notional = np.bincount(gid, weights=window.price * window.qty, minlength=ng)
+    mids = print_mids(window)[first]
+    side = np.where(window.is_buyer_maker[first], -1.0, 1.0)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        vwap = notional / qty
+        eff = side * (vwap - mids) / mids * 1e4
+    eff = np.where(qty > 0, eff, np.nan)
+    return eff, notional
 
 
 def _mid(window: AggTradeWindow, t: int) -> float | None:
@@ -117,29 +160,116 @@ def anchors_from(samples) -> list[float] | None:
     return a
 
 
+def _bucket_ids(notional: np.ndarray) -> np.ndarray:
+    return np.array([notional_bucket(float(v)) for v in notional], dtype=object)
+
+
+def day_summary(window: AggTradeWindow, tick: float, drift_step_ms: int = 60_000, hour_step_ms: int = 10_000) -> dict:
+    """One day's prints -> the samples calibration needs: finite taker-event spreads per notional bucket, signed mid
+    drifts per duration bucket, and per-hour quoted half-spread and absolute 1-minute return samples."""
+    eff, notional = taker_events(window)
+    ok = np.isfinite(eff)
+    buckets = _bucket_ids(notional[ok]) if ok.any() else np.array([], dtype=object)
+    e = eff[ok]
+    spread = {b: e[buckets == b].astype(np.float64) for b in sorted(set(buckets.tolist()))}
+    drift = {b: np.asarray(drift_samples(window, ms, drift_step_ms), dtype=np.float64) for b, ms in DURATION_SAMPLE_MS.items()}
+    hs, hr = hour_samples(window, tick, hour_step_ms)
+    return {"spread": spread, "drift": drift, "tick": float(tick), "events": int(len(eff)),
+            "hourSpread": {int(h): np.asarray(v, dtype=np.float64) for h, v in hs.items()},
+            "hourRet": {int(h): np.asarray(v, dtype=np.float64) for h, v in hr.items()}}
+
+
+def summary_code_key() -> str:
+    """SHA-256 over the source of every function that shapes a day summary, and the constants they read. A summary
+    stores it, so a resumed calibration never merges summaries made by other code (review M1.1)."""
+    import hashlib
+    import inspect
+
+    from measure import benchmarks
+
+    from . import components
+    funcs = (day_summary, taker_events, event_starts, print_mids, drift_samples, hour_samples, _mid, _bucket_ids,
+             benchmarks.quote_at, benchmarks._last_on_side, components.notional_bucket)
+    consts = (benchmarks.MAX_QUOTE_AGE_MS, components.NOTIONAL_BUCKETS, DURATION_SAMPLE_MS, SUMMARY_FORMAT)
+    h = hashlib.sha256()
+    for f in funcs:
+        h.update(inspect.getsource(f).encode() + b"\0")
+    h.update(repr(consts).encode())
+    return h.hexdigest()
+
+
+def save_summary(path, s: dict) -> None:
+    """`s["codeKey"]` defaults to the current summary_code_key(); tests may pass another value."""
+    arrays = {"format": np.array(SUMMARY_FORMAT), "tick": np.array(s["tick"]), "events": np.array(s["events"]),
+              "codeKey": np.array(str(s.get("codeKey", summary_code_key())))}
+    if s.get("sha256"):
+        arrays["sha256"] = np.array(str(s["sha256"]))         # the source file's checksum, for the version's refs
+    for kind in ("spread", "drift", "hourSpread", "hourRet"):
+        for key, v in s[kind].items():
+            arrays[f"{kind}|{key}"] = np.asarray(v, dtype=np.float64)
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".part.npz")
+    np.savez_compressed(tmp, **arrays)
+    tmp.replace(path)
+
+
+def load_summary(path) -> dict:
+    with np.load(Path(path), allow_pickle=False) as z:
+        if int(z["format"]) != SUMMARY_FORMAT:
+            raise ValueError(f"{path}: summary format {int(z['format'])}, expected {SUMMARY_FORMAT}")
+        s = {"tick": float(z["tick"]), "events": int(z["events"]), "spread": {}, "drift": {}, "hourSpread": {}, "hourRet": {}}
+        if "sha256" in z.files:
+            s["sha256"] = str(z["sha256"])
+        s["codeKey"] = str(z["codeKey"]) if "codeKey" in z.files else ""      # "" = made before keys existed
+        for name in z.files:
+            if "|" in name:
+                kind, key = name.split("|", 1)
+                s[kind][int(key) if kind.startswith("hour") else key] = z[name]
+    return s
+
+
+def merge_summaries(summaries: list[dict], min_profile_days: int = MIN_PROFILE_DAYS) -> dict:
+    """All days of one symbol -> spread and slippage anchors, the hour profile, and the sample counts behind them."""
+    spread: dict[str, list[np.ndarray]] = defaultdict(list)
+    drift: dict[str, list[np.ndarray]] = defaultdict(list)
+    hs: dict[int, list[np.ndarray]] = defaultdict(list)
+    hr: dict[int, list[np.ndarray]] = defaultdict(list)
+    days_with = defaultdict(int)
+    for s in summaries:
+        for b, v in s["spread"].items():
+            spread[b].append(v)
+        for b, v in s["drift"].items():
+            drift[b].append(v)
+        for h in range(24):
+            a, r = s["hourSpread"].get(h), s["hourRet"].get(h)
+            if a is not None and len(a) and r is not None and len(r):
+                hs[h].append(a)
+                hr[h].append(r)
+                days_with[h] += 1
+    sp = {b: np.concatenate(v) for b, v in spread.items()}
+    dr = {b: np.concatenate(drift.get(b, [np.zeros(0)])) for b in DURATION_SAMPLE_MS}
+    profile_days = [int(days_with[h]) for h in range(24)]
+    profile = None
+    if min(profile_days) >= max(1, min_profile_days):
+        profile = [float(np.median(np.concatenate(hs[h])) + np.median(np.concatenate(hr[h]))) for h in range(24)]
+    return {"spread": {b: anchors_from(v) for b, v in sp.items()},
+            "slippage": {b: anchors_from(v) for b, v in dr.items()},
+            "profile": profile, "profileDays": profile_days,
+            "counts": {"spread": {b: int(len(v)) for b, v in sp.items()}, "slippage": {b: int(len(v)) for b, v in dr.items()},
+                       "days": len(summaries)}}
+
+
 def spread_by_bucket(windows: list[AggTradeWindow]) -> dict[str, list[float] | None]:
     groups: dict[str, list[np.ndarray]] = defaultdict(list)
     for w in windows:
-        eff, notional = print_effective_half_bps(w)
-        buckets = np.array([notional_bucket(v) for v in notional])
+        eff, notional = taker_events(w)
+        ok = np.isfinite(eff)
+        buckets = _bucket_ids(notional[ok]) if ok.any() else np.array([], dtype=object)
         for b in set(buckets.tolist()):
-            groups[b].append(eff[buckets == b])
+            groups[b].append(eff[ok][buckets == b])
     return {b: anchors_from(np.concatenate(v)) for b, v in groups.items()}
 
 
 def slippage_by_bucket(windows: list[AggTradeWindow], step_ms: int = 60_000) -> dict[str, list[float] | None]:
     return {b: anchors_from([d for w in windows for d in drift_samples(w, ms, step_ms)]) for b, ms in DURATION_SAMPLE_MS.items()}
-
-
-def hour_profile(windows: list[AggTradeWindow], tick: float, step_ms: int = 10_000) -> list[float] | None:
-    spreads: dict[int, list[float]] = defaultdict(list)
-    rets: dict[int, list[float]] = defaultdict(list)
-    for w in windows:
-        s, r = hour_samples(w, tick, step_ms)
-        for h, v in s.items():
-            spreads[h] += v
-        for h, v in r.items():
-            rets[h] += v
-    if any(not spreads.get(h) or not rets.get(h) for h in range(24)):
-        return None
-    return [float(np.median(spreads[h]) + np.median(rets[h])) for h in range(24)]

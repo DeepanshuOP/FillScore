@@ -1,5 +1,6 @@
-"""POST /internal/measure: service-to-service only. The backend signs a short-lived token on the shared
-JWT_ACCESS_SECRET with typ "measure"; a user's access token, or any other type, is refused. No new credential."""
+"""POST /internal/measure: service-to-service only. The backend signs a short-lived token on ML_SERVICE_TOKEN_SECRET
+(a secret of its own, never the user-token secret; M1.1) with typ "measure"; a user's access token, or any other type,
+is refused. Without a usable ML_SERVICE_TOKEN_SECRET every /internal/* call is refused (fail closed)."""
 import time
 
 import jwt
@@ -10,12 +11,16 @@ from fastapi.testclient import TestClient
 import main
 
 
-def tok(claims, alg="HS256", ttl=60):
-    return jwt.encode({"exp": int(time.time()) + ttl, **claims}, main.JWT_ACCESS_SECRET, algorithm=alg)
+SERVICE_SECRET = "s" * 40     # test value; 32 characters is the minimum
+
+
+def tok(claims, alg="HS256", ttl=60, secret=SERVICE_SECRET):
+    return jwt.encode({"exp": int(time.time()) + ttl, **claims}, secret, algorithm=alg)
 
 
 @pytest.fixture
 def client(monkeypatch):
+    monkeypatch.setenv("ML_SERVICE_TOKEN_SECRET", SERVICE_SECRET)
     db = mongomock.MongoClient().db
     calls = []
 
@@ -77,3 +82,24 @@ def test_measure_token_is_not_a_user_token():
     req = Request({"type": "http", "headers": [(b"authorization", f"Bearer {tok({'typ': 'measure', 'userId': 'acct-1', 'accountId': 'acct-1'})}".encode())]})
     with pytest.raises(HTTPException):
         main.get_account_id(None, req)
+
+
+def test_token_signed_with_the_user_token_secret_is_refused(client):
+    # Key separation (M1.1): a token minted on JWT_ACCESS_SECRET is not a service token.
+    assert post(client, tok({"typ": "measure", "accountId": "acct-1"}, secret=main.JWT_ACCESS_SECRET)).status_code == 401
+    assert client.calls == []
+
+
+@pytest.mark.parametrize("value", [None, "", "short-secret", "USE_JWT"])
+def test_unusable_service_secret_fails_closed(client, monkeypatch, value):
+    # Missing, empty, shorter than 32 characters, or equal to the user-token secret: 503, and the job does not run.
+    if value is None:
+        monkeypatch.delenv("ML_SERVICE_TOKEN_SECRET", raising=False)
+    else:
+        monkeypatch.setenv("ML_SERVICE_TOKEN_SECRET", main.JWT_ACCESS_SECRET if value == "USE_JWT" else value)
+    secret = main.JWT_ACCESS_SECRET if value == "USE_JWT" else (value or SERVICE_SECRET)
+    r = post(client, tok({"typ": "measure", "accountId": "acct-1"}, secret=secret))
+    assert r.status_code == 503
+    assert r.json()["detail"] == "Service token not configured"
+    assert client.calls == []
+    assert post(client, None).status_code == 401        # without a token the configuration state is not revealed

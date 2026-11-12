@@ -11,12 +11,16 @@ import main
 VERSION = {"id": "v2.0.0", "anchors": {}, "hourProfiles": {}, "feeTable": {}}
 
 
+SERVICE_SECRET = "s" * 40
+
+
 def tok(claims):
-    return jwt.encode({"exp": int(time.time()) + 60, **claims}, main.JWT_ACCESS_SECRET, algorithm="HS256")
+    return jwt.encode({"exp": int(time.time()) + 60, **claims}, SERVICE_SECRET, algorithm="HS256")
 
 
 @pytest.fixture
 def client(monkeypatch):
+    monkeypatch.setenv("ML_SERVICE_TOKEN_SECRET", SERVICE_SECRET)
     db = mongomock.MongoClient().db
     monkeypatch.setattr(main, "_get_db", lambda: db)
     import scoring_v2.version as ver

@@ -21,8 +21,7 @@ import { signDownloadToken, DOWNLOAD_TOKEN_TTL_SECONDS } from '../utils/download
 import { INGEST_DAYS_BACK } from '../config/ingestion';
 import { auditRunLimiter } from '../middleware/security';
 import { ScoreV2 } from '../models/ScoreV2';
-import { callMlInternal } from '../services/measureTrigger';
-import { loadEnv } from '../config/env';
+import { callMlInternal, mlServiceSecret } from '../services/measureTrigger';
 import {
     parseOrReject,
     runAuditQuerySchema,
@@ -255,7 +254,7 @@ auditRouter.get('/verify', verifyLimiter, resolveAccount, async (req: Request, r
     const accountId = req.accountId!;
     if (VALID_DEMO_USERS.has(accountId)) return res.status(404).json(DEMO_V2);
     try {
-        const r = await callMlInternal('/internal/verify-v2', accountId, { baseUrl: process.env.ML_SERVICE_URL, secret: loadEnv().JWT_ACCESS_SECRET });
+        const r = await callMlInternal('/internal/verify-v2', accountId, { baseUrl: process.env.ML_SERVICE_URL, secret: mlServiceSecret() });
         if (r.status === 404) return res.status(404).json({ error: 'no_v2_score' });
         if (!r.ok) return res.status(503).json({ error: 'verification_unavailable' });
         const b = await r.json() as { match: boolean; storedHash: string; recomputedHash: string; scoringVersion: string };

@@ -70,6 +70,7 @@ def render_json() -> str:
             "bands": v["bands"], "minFills": v["minFills"], "calibrationWindow": v["calibrationWindow"],
             "symbols": sorted(v["anchors"]), "calibrationFiles": len(v["calibrationRefs"]), "feeTable": v["feeTable"],
             "components": COMPONENT_DOCS, "anchorRule": ANCHOR_RULE,
+            "spreadUnit": v.get("spreadUnit", "fill"), "minProfileDays": v.get("minProfileDays"),
         },
     }
     return json.dumps(data, indent=2, sort_keys=True) + "\n"

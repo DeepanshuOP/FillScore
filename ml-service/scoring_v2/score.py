@@ -87,8 +87,10 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None):
             oms[(om["symbol"], str(om["orderId"]))] = om
 
     anchors, profiles = version.get("anchors", {}), version.get("hourProfiles", {})
+    by_event = version.get("spreadUnit") == "taker_event"
     orders: dict[tuple, dict] = {}
-    for t in sorted(trades, key=lambda x: (x["symbol"], str(x["orderId"]), _ms(x["executedAt"]))):
+    events: dict[tuple, list[tuple[dict, float, float, float, float]]] = {}
+    for t in sorted(trades, key=lambda x: (x["symbol"], str(x["orderId"]), _ms(x["executedAt"]), str(x["tradeId"]))):
         m, sym = t["measurement"], t["symbol"]
         key = (sym, str(t["orderId"]))
         o = orders.setdefault(key, {"orderId": key[1], "symbol": sym, "notional": 0.0, "fills": [], "_t": []})
@@ -98,11 +100,32 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None):
         eff, mid, tick = m.get("effHalfBps"), m.get("mid"), m.get("tickSize")
         spread = None
         sym_anchors = anchors.get(sym)
-        if eff is not None and mid and tick and sym_anchors is not None:
-            spread = spread_score(eff, tick / 2 / mid * 1e4, (sym_anchors.get("spread") or {}).get(notional_bucket(notional)))
         prof = profiles.get(sym)
         timing = timing_score(t["executedAt"].hour, prof) if prof else None
-        o["fills"].append({"notional": notional, "spread": spread, "timing": timing, "fees": _fee_unit(t, snap_for(t), version)})
+        fill = {"notional": notional, "spread": None, "timing": timing, "fees": _fee_unit(t, snap_for(t), version)}
+        o["fills"].append(fill)
+        if eff is None or not mid or not tick or sym_anchors is None:
+            continue
+        if by_event:
+            # v2.1.0+: the fills of one order in one millisecond, on one side and with one mid, are one taker event,
+            # the unit the public baseline is measured in (ADR-0012). Grouped here, scored below.
+            ek = (sym, str(t["orderId"]), _ms(t["executedAt"]), t.get("side"), bool(t.get("isMaker")), float(mid))
+            events.setdefault(ek, []).append((fill, float(eff), float(t["quantity"]), notional, float(tick)))
+        else:
+            spread = spread_score(eff, tick / 2 / mid * 1e4, (sym_anchors.get("spread") or {}).get(notional_bucket(notional)))
+            fill["spread"] = spread
+
+    for (sym, _oid, _ms_, _side, _maker, mid), members in events.items():
+        qty = sum(q for _, _, q, _, _ in members)
+        if qty <= 0:
+            continue
+        # qty-weighted mean of the fills' effective half-spreads == the event VWAP against the shared mid.
+        eff = sum(e * q for _, e, q, _, _ in members) / qty
+        notional = sum(n for _, _, _, n, _ in members)
+        tick = members[0][4]
+        s = spread_score(eff, tick / 2 / mid * 1e4, (anchors[sym].get("spread") or {}).get(notional_bucket(notional)))
+        for fill, *_ in members:
+            fill["spread"] = s
 
     for key, o in orders.items():
         om = oms.get(key)

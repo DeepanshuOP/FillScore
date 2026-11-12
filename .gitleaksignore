@@ -1,0 +1,25 @@
+# Known gitleaks findings that are not live secrets (checked 2026-11-12, gitleaks v8.30.1, config .gitleaks.toml).
+# Any finding not listed here fails the CI job `secrets`. Add a line only with a reason, never to silence a real key.
+
+# Rotated credentials in public history (roadmap R6-G13). Atlas URIs committed on 2026-06-10, before secrets moved to
+# environment variables. Deepanshu confirmed in writing on 2026-11-12 (the M1.1 instructions, point 6; recorded in
+# docs/PROGRESS.md "Waiting for Deepanshu" item 1 and docs/ROADMAP.md R6-G13) that every committed credential is
+# rotated, and decided not to purge the history (clones and forks keep it anyway). They are no longer in the tree.
+1bd5be8af6dfb40b65d775be2cad18069f6ecb9f:ml-service/whale/analyze_slippage.py:mongodb-uri-credentials:6
+1bd5be8af6dfb40b65d775be2cad18069f6ecb9f:ml-service/whale/calibrate_threshold.py:mongodb-uri-credentials:23
+1bd5be8af6dfb40b65d775be2cad18069f6ecb9f:ml-service/whale/normalized_comparison.py:mongodb-uri-credentials:5
+1bd5be8af6dfb40b65d775be2cad18069f6ecb9f:ml-service/whale/regen_fills.py:mongodb-uri-credentials:9
+1bd5be8af6dfb40b65d775be2cad18069f6ecb9f:backend/src/routes/whale.test.ts:mongodb-uri-credentials:19
+1bd5be8af6dfb40b65d775be2cad18069f6ecb9f:ml-service/whale/enrich.py:mongodb-uri-credentials:23
+
+# Dummy values in offline test and CI configuration (each file says "dummy values only").
+fd6b578fd874a2499e0915623c38b8ed9de18ce5:.github/workflows/ci.yml:generic-api-key:23
+072a52d9beeaa0d9007c5993aad8ae43313fffe0:frontend/e2e/env.ts:generic-api-key:16
+42ddb1341bb27cab46106fd72a6d182bed76ae1e:frontend/e2e/env.ts:generic-api-key:6
+87fde703f1ee6a61bc007939fdd18749298113c8:frontend/playwright.config.ts:generic-api-key:33
+564167bc0f69363831b1834c4d55cbf62d5361b4:scripts/local_smoke_full.sh:generic-api-key:49
+
+# Fake connection strings in tests of the credential masking and the local-Mongo guard.
+42ddb1341bb27cab46106fd72a6d182bed76ae1e:frontend/lib/localMongo.test.ts:mongodb-uri-credentials:19
+42ddb1341bb27cab46106fd72a6d182bed76ae1e:frontend/lib/localMongo.test.ts:mongodb-uri-credentials:32
+ac6110240403a712ae3dad7879bd7037b092280a:backend/src/config/__tests__/hardening.test.ts:mongodb-uri-credentials:82

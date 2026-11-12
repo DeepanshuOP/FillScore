@@ -27,6 +27,7 @@ def test_mongodb_uri_is_shared_and_prefers_backend_file(tmp_path):
 def test_jwt_secret_is_shared_so_both_services_verify_the_same_tokens(tmp_path):
     assert "JWT_ACCESS_SECRET" in SHARED_KEYS
     assert "MONGODB_URI" in SHARED_KEYS
+    assert "ML_SERVICE_TOKEN_SECRET" in SHARED_KEYS      # both services must hold the same service-token secret
     ml = tmp_path / "ml.env"
     backend = tmp_path / "backend.env"
     _write(ml, ["JWT_ACCESS_SECRET=ml-copy"])

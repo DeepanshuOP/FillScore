@@ -12,6 +12,10 @@ from scoring_v2.version import VERSIONS_DIR, load_version, version_file_sha256
 PINNED = {
     # scripts/calibrate_v2.py --id v2.0.0 --symbols BTCUSDT ETHUSDT BNBUSDT SOLUSDT --start 2025-10-01 --end 2025-10-29 --every 7
     "v2.0.0": "f2fb091f77d608f7b896398cf1822f13e91cbea0d3d4e57b33a697c3d59d562d",
+    # M1.1, ADR-0012: taker-event spread baseline, 90 days, streamed summaries:
+    # scripts/calibrate_v2.py --id v2.1.0 --symbols BTCUSDT ETHUSDT BNBUSDT SOLUSDT --start 2026-08-12 --end 2026-11-09
+    #   --every 1 --discard-raw (rebuilt from the same day summaries after the review fixes: only codeHash changed)
+    "v2.1.0": "63e20f1dc10b62e34bb43afdf0c875aee336b12145e4d750f2bef9e6fc0a57b0",
 }
 
 
@@ -49,6 +53,23 @@ def test_version_file_is_canonical_json():
     raw = (VERSIONS_DIR / f"{SCORING_V2_VERSION}.json").read_text(encoding="utf-8")
     from scoring_v2.integrity import canonical_json
     assert raw == canonical_json(json.loads(raw)) + "\n"
+
+
+def test_current_version_scores_spread_on_taker_events_over_90_days():
+    # M1.1: the current version uses the taker-event unit, covers 90 consecutive days, needs 30 days per hour, and
+    # every anchor has its sample count; each hour profile is backed by at least minProfileDays days.
+    v = load_version(SCORING_V2_VERSION)
+    assert v["spreadUnit"] == "taker_event"
+    assert len(v["calibrationWindow"]["days"]) == 90 and v["calibrationWindow"]["rule"] == "every day"
+    assert v["minProfileDays"] >= 30
+    for sym, a in v["anchors"].items():
+        counts = v["calibrationCounts"][sym]
+        assert counts["days"] == 90
+        for comp in ("spread", "slippage"):
+            for b, an in a[comp].items():
+                assert an is None or counts[comp][b] >= 200
+        if v["hourProfiles"][sym] is not None:
+            assert min(counts["profileDays"]) >= v["minProfileDays"]
 
 
 def test_bad_version_id_refused():

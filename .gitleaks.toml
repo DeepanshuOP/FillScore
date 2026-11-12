@@ -1,0 +1,17 @@
+# Secret scan config for CI (job `secrets` in .github/workflows/ci.yml). gitleaks v8.30.1, default rules plus the
+# rule below. Known findings that are not live secrets are listed by fingerprint in .gitleaksignore, each with its reason.
+[extend]
+useDefault = true
+
+# The default rules do not cover a password inside a MongoDB connection string, which is the credential this
+# project is most likely to paste by accident (MONGODB_URI).
+[[rules]]
+id = "mongodb-uri-credentials"
+description = "MongoDB connection string with an embedded password"
+regex = '''mongodb(?:\+srv)?://[^:@/\s'"]+:([^@/\s'"]{3,})@[^/\s'"]+'''
+secretGroup = 1
+keywords = ["mongodb://", "mongodb+srv://"]
+
+[rules.allowlist]
+# Placeholder passwords only, in docs and examples: pass, password, <db_password> or any <name>, ${VAR}, ***, xxx.
+regexes = ['''^(?:pass|password|PASSWORD|<[A-Za-z_]+>|\$\{[A-Z_]+\}|\*+|x+)$''']

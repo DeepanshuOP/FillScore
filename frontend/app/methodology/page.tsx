@@ -71,8 +71,9 @@ export default function MethodologyPage() {
         </p>
         <p style={P}>
           Calibration: {s.symbols.join(', ')}, from {s.calibrationFiles} checksum-verified daily files of Binance public
-          trades ({s.calibrationWindow.days.join(', ')}; rule: {s.calibrationWindow.rule}). A symbol outside this set
-          reads &quot;insufficient data&quot; for spread, slippage and timing.
+          trades ({s.calibrationWindow.days.length} days, {s.calibrationWindow.start} to {s.calibrationWindow.end}; rule:{' '}
+          {s.calibrationWindow.rule}). An hour&apos;s timing value needs samples on at least {s.minProfileDays} of those
+          days. A symbol outside this set reads &quot;insufficient data&quot; for spread, slippage and timing.
         </p>
 
         <h2 style={H2}>Verifying a score</h2>

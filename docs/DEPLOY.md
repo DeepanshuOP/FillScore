@@ -55,6 +55,8 @@ debug sink (`FILLSCORE_GROUNDING_DEBUG`) refuse to turn on.
 | `MONGODB_URI` | yes | Atlas connection string |
 | `JWT_ACCESS_SECRET` | yes | **must equal the ml-service value** |
 | `JWT_REFRESH_SECRET` | yes | backend only |
+| `ML_SERVICE_URL` | for measurement v2 | the ml-service base URL, e.g. `https://fillscore-ml.onrender.com`; without it measurement after a sync is skipped |
+| `ML_SERVICE_TOKEN_SECRET` | for measurement v2 | at least 32 random characters, **must equal the ml-service value** and differ from `JWT_ACCESS_SECRET`; without it measurement is skipped and `/api/audit/verify` answers 503 |
 | `ENCRYPTION_KEY` | yes | 64 hex characters (AES-256-GCM key for stored exchange secrets); startup fails otherwise |
 | `BINANCE_API_KEY`, `BINANCE_API_SECRET` | yes | the app's own read-only key for public market data (not a user's key) |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | yes | Google OAuth app |
@@ -68,6 +70,7 @@ debug sink (`FILLSCORE_GROUNDING_DEBUG`) refuse to turn on.
 |---|---|---|
 | `PORT` | yes | `8000` (set in `render.yaml`) |
 | `JWT_ACCESS_SECRET` | yes | **must equal the backend value**; the service refuses to start without it |
+| `ML_SERVICE_TOKEN_SECRET` | for measurement v2 | **must equal the backend value**; without a usable value (missing, under 32 characters, or equal to `JWT_ACCESS_SECRET`) every `/internal/*` route answers 503 |
 | `MONGODB_URI` | yes | same Atlas cluster as the backend (`/ready` pings it) |
 | `ALLOWED_ORIGINS` | yes | the Vercel site URL (the browser calls this service directly) |
 | `GROQ_API_KEY` | yes | Council models (free tier); `/ready` reports it |
@@ -98,6 +101,7 @@ After changing any of them, redeploy so the build picks them up.
 | What | Where it must be identical |
 |---|---|
 | `JWT_ACCESS_SECRET` | backend and ml-service (the ml-service verifies the backend's HS256 access tokens) |
+| `ML_SERVICE_TOKEN_SECRET` | backend and ml-service (the backend signs, the ml-service verifies the short-lived `/internal/*` token) |
 | `MONGODB_URI` | backend and ml-service point at the same cluster and database |
 | the Vercel site URL | backend `BACKEND_URL`, `FRONTEND_URL`, `ALLOWED_ORIGINS`; ml-service `ALLOWED_ORIGINS`; Vercel `NEXT_PUBLIC_SITE_URL`; the OAuth callback URLs |
 | the Render URLs | Vercel `BACKEND_PROXY_URL` (backend) and `NEXT_PUBLIC_ML_URL` (ml-service) |

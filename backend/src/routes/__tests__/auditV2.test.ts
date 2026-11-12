@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { describe, it, expect, beforeAll, afterAll, afterEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterAll, afterEach } from 'vitest';
 import mongoose from 'mongoose';
 import { createApp } from '../../app';
 import { User } from '../../models/User';
@@ -21,6 +21,9 @@ describe('GET /api/audit/v2 and /api/audit/verify', () => {
     let tokenA: string, idA: string, idB: string;
     const oldFetch = global.fetch;
     const oldUrl = process.env.ML_SERVICE_URL;
+    const oldSecret = process.env.ML_SERVICE_TOKEN_SECRET;
+    const SERVICE_SECRET = 's'.repeat(40);
+    beforeEach(() => { process.env.ML_SERVICE_TOKEN_SECRET = SERVICE_SECRET; });
 
     beforeAll(async () => {
         await mongoose.connect(process.env.MONGODB_URI!);
@@ -33,6 +36,7 @@ describe('GET /api/audit/v2 and /api/audit/verify', () => {
         await ScoreV2.deleteMany({ accountId: { $in: [idA, idB] } });
         global.fetch = oldFetch;
         if (oldUrl === undefined) delete process.env.ML_SERVICE_URL; else process.env.ML_SERVICE_URL = oldUrl;
+        if (oldSecret === undefined) delete process.env.ML_SERVICE_TOKEN_SECRET; else process.env.ML_SERVICE_TOKEN_SECRET = oldSecret;
     });
     afterAll(async () => { await User.deleteMany({ email: /^v2-/ }); });
 
@@ -76,7 +80,18 @@ describe('GET /api/audit/v2 and /api/audit/verify', () => {
         expect(seen!.url).toBe('http://ml.test/internal/verify-v2');
         expect(seen!.body).toEqual({ accountId: idA });
         const jwt = await import('jsonwebtoken');
-        expect((jwt.decode(seen!.auth.split(' ')[1]) as any).typ).toBe('measure');
+        // Signed on the service secret, never on the user-token secret (M1.1).
+        expect((jwt.verify(seen!.auth.split(' ')[1], SERVICE_SECRET, { algorithms: ['HS256'] }) as any).typ).toBe('measure');
+        expect(() => jwt.verify(seen!.auth.split(' ')[1], process.env.JWT_ACCESS_SECRET!, { algorithms: ['HS256'] })).toThrow();
+    });
+
+    it('verify: 503 without calling the ml-service when ML_SERVICE_TOKEN_SECRET is missing (fail closed)', async () => {
+        process.env.ML_SERVICE_URL = 'http://ml.test';
+        delete process.env.ML_SERVICE_TOKEN_SECRET;
+        let called = false;
+        global.fetch = (async () => { called = true; return new Response('{}', { status: 200 }); }) as any;
+        expect((await request(app).get('/api/audit/verify').set('Authorization', `Bearer ${tokenA}`)).status).toBe(503);
+        expect(called).toBe(false);
     });
 
     it('verify: 404 when the ml-service has no stored score, 503 when it is not configured or down', async () => {

@@ -34,6 +34,12 @@ services:
         sync: false # must equal the ml-service value
       - key: JWT_REFRESH_SECRET
         sync: false
+      # Measurement v2 (M1): the ml-service base URL, and the secret that signs the backend -> ml-service token.
+      # Without either, measurement after a sync is skipped and /api/audit/verify answers 503 (fail closed).
+      - key: ML_SERVICE_URL
+        sync: false # e.g. https://fillscore-ml.onrender.com
+      - key: ML_SERVICE_TOKEN_SECRET
+        sync: false # at least 32 random characters, must equal the ml-service value and differ from JWT_ACCESS_SECRET
       - key: ENCRYPTION_KEY
         sync: false
       - key: BINANCE_API_KEY
@@ -71,6 +77,8 @@ services:
         sync: false # the Vercel URL (the browser calls this service directly for the Council stream)
       - key: JWT_ACCESS_SECRET
         sync: false # must equal the backend value
+      - key: ML_SERVICE_TOKEN_SECRET
+        sync: false # must equal the backend value; without it /internal/* answers 503
       - key: MONGODB_URI
         sync: false
       - key: GROQ_API_KEY

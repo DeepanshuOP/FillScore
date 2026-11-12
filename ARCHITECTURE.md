@@ -213,7 +213,7 @@ Canonical demo scores: `demo-disciplined` 95.885 (A), `demo-moderate` 84.809 (B)
 | Auth: JWT, rotation, OAuth, CSRF origin check, email verification, password reset | Built |
 | PDF and CSV for signed-in users | Built (link tokens) |
 | Agent Council, evaluation harness, cost telemetry | Built |
-| CI (backend, frontend, ml-service tests, typecheck, frontend build) | Built (`.github/workflows/ci.yml`) |
+| CI (backend, frontend, ml-service tests, typecheck, frontend build, gitleaks secret scan of the full history) | Built (`.github/workflows/ci.yml`) |
 | Whale correlation | Sample accounts only; connected accounts get an explicit "unavailable" response |
 
 ## 7. Known gaps
@@ -235,5 +235,6 @@ and erasure are `GET /api/account/export` and `DELETE /api/account/`.
   `ENCRYPTION_KEY` rotation tooling (ROADMAP C6, G4).
 - **Bybit and OKX** connectors have not been run against live keys.
 - **Git history** contains credentials from before they were moved to the environment. They are
-  rotated. The repository is public, so those old values are visible today; whether to purge the
-  history is a pending decision (ROADMAP R6-G13).
+  rotated, and the history is deliberately not purged (clones and forks keep it; ROADMAP R6-G13).
+  The CI job `secrets` scans the full history with gitleaks (`.gitleaks.toml`, known findings in
+  `.gitleaksignore`) and fails on any new finding.

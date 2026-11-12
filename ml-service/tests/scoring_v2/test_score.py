@@ -152,3 +152,55 @@ def test_verify_with_another_version_file_does_not_match():
 
 def test_verify_without_stored_score():
     assert verify_account_v2(mongomock.MongoClient().db, ACC, VERSION, "ff" * 32) is None
+
+
+def _walking_order_db():
+    """One taker buy order that walked three levels in one millisecond (as Binance reports it: one trade per fill,
+    all with the order's match time). Mid before that millisecond 100.01 for every fill (measure.enrich_fill).
+      fill  price   qty  notional  effHalfBps = (p - 100.01)/100.01 x 1e4
+      a     100.02  1    100.02    0.99990001
+      b     100.03  2    200.06    1.99980002
+      c     100.05  1    100.05    3.99960004
+    """
+    db = mongomock.MongoClient().db
+    t = datetime(2026, 10, 1, 14, 0, 30)
+    for tid, p, q in (("a", 100.02, 1.0), ("b", 100.03, 2.0), ("c", 100.05, 1.0)):
+        meas = {"version": MEASURE_VERSION, "tradeId": tid, "symbol": "XUSDT", "side": 1, "mid": 100.01,
+                "quoteQuality": "two_sided", "effHalfBps": (p - 100.01) / 100.01 * 1e4, "tickSize": 0.01,
+                "marketDataRefs": [{"sha256": "ab"}], "unmeasuredReason": None}
+        db.trades.insert_one({"accountId": ACC, "dataSource": "real-user", "exchange": "binance", "symbol": "XUSDT",
+                              "tradeId": tid, "orderId": "o1", "side": "BUY", "isMaker": False, "executionPrice": p,
+                              "quantity": q, "notional": p * q, "feeUsd": p * q * 0.001, "feeAsset": "USDT",
+                              "executedAt": t, "measurement": meas})
+    return db
+
+
+def test_taker_event_unit_scores_the_order_vwap_once():
+    # v2.1.0 ("spreadUnit": "taker_event"): the three fills are one event, as the public baseline counts them.
+    #   event eff = qty-weighted mean = (1 x 0.99990001 + 2 x 1.99980002 + 1 x 3.99960004)/4 = 2.24977502 bps
+    #             = (VWAP 100.0325 - 100.01)/100.01 x 1e4. Event notional 400.13 -> lt1k.
+    #   anchors (0.5, 1, 2, 4): x in (2, 4): 40 - (0.24977502/2) x 40 = 35.0044996, given to each of the 3 fills.
+    v = {**VERSION, "id": "v2.1.0", "spreadUnit": "taker_event"}
+    c = score_account_v2(_walking_order_db(), ACC, v, "ff" * 32, now_ms=0)["result"]["components"]
+    assert c["spread"]["score"] == pytest.approx(35.0044996, abs=1e-6)
+    assert c["spread"]["measured"] == 3
+
+
+def test_per_fill_unit_is_kept_for_versions_without_spread_unit():
+    # v2.0.0 has no "spreadUnit": each fill scores alone, so v2.0.0 scores stay reproducible.
+    #   scores 75.0049995, 40.0069993, 0.0079992; notional-weighted (100.02, 200.06, 100.05)/400.13 = 38.7539066
+    c = score_account_v2(_walking_order_db(), ACC, VERSION, "ff" * 32, now_ms=0)["result"]["components"]
+    assert c["spread"]["score"] == pytest.approx(38.7539066, abs=1e-6)
+
+
+def test_fills_at_different_milliseconds_or_with_different_mids_are_separate_events():
+    # A later fill of the same order (another millisecond) is its own event; so is a fill whose stored mid differs.
+    db = _walking_order_db()
+    db.trades.update_one({"tradeId": "c"}, {"$set": {"executedAt": datetime(2026, 10, 1, 14, 0, 31)}})
+    v = {**VERSION, "id": "v2.1.0", "spreadUnit": "taker_event"}
+    # Event 1 = a + b: eff = (0.99990001 + 2 x 1.99980002)/3 = 1.66650002, notional 300.08, score
+    #   75 - 0.66650002 x 35 = 51.6724993. Event 2 = c alone: 0.0079992, notional 100.05.
+    #   mean = (51.6724993 x 300.08 + 0.0079992 x 100.05)/400.13 = 38.7550...
+    exp = (51.67249930 * 300.08 + 0.00799920 * 100.05) / 400.13
+    c = score_account_v2(db, ACC, v, "ff" * 32, now_ms=0)["result"]["components"]
+    assert c["spread"]["score"] == pytest.approx(exp, abs=1e-5)

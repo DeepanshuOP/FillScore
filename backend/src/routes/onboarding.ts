@@ -12,8 +12,7 @@ import { executeAuditPipeline, NoScorableTradesError } from './audit';
 import { INGEST_DAYS_BACK } from '../config/ingestion';
 import { User } from '../models/User';
 import mongoose from 'mongoose';
-import { requestMeasurement, requestScore } from '../services/measureTrigger';
-import { loadEnv } from '../config/env';
+import { mlServiceSecret, requestMeasurement, requestScore } from '../services/measureTrigger';
 
 export const onboardingRouter = Router();
 
@@ -169,11 +168,11 @@ onboardingRouter.post('/sync', requireAuth, accountExists, async (req: Request, 
 
         runSyncJob(accountId, lock.syncId, ctl => performSync(accountId, ctl))
             // M1: measure the new fills (measurement v2). Never rejects; pending trades are retried by the next sync.
-            .then(() => requestMeasurement(accountId, { baseUrl: process.env.ML_SERVICE_URL, secret: loadEnv().JWT_ACCESS_SECRET }))
+            .then(() => requestMeasurement(accountId, { baseUrl: process.env.ML_SERVICE_URL, secret: mlServiceSecret() }))
             .then(async r => {
                 if (r.status === 'skipped') return;
                 console.log(`[measure_v2] ${r.status} calls=${r.calls}`);
-                if (r.status === 'done') console.log(`[score_v2] ${await requestScore(accountId, { baseUrl: process.env.ML_SERVICE_URL, secret: loadEnv().JWT_ACCESS_SECRET })}`);
+                if (r.status === 'done') console.log(`[score_v2] ${await requestScore(accountId, { baseUrl: process.env.ML_SERVICE_URL, secret: mlServiceSecret() })}`);
             })
             .catch(e => console.error('[SyncJob] unexpected:', e?.name));
         return res.status(202).json({ syncId: lock.syncId });

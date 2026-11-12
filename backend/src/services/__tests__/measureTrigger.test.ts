@@ -1,8 +1,45 @@
 import { describe, it, expect } from 'vitest';
 import jwt from 'jsonwebtoken';
-import { mintMeasureToken, requestMeasurement, requestScore, MEASURE_TOKEN_TTL_S } from '../measureTrigger';
+import { mintMeasureToken, requestMeasurement, requestScore, MEASURE_TOKEN_TTL_S, mlServiceSecret, mlServiceSecretProblem, resetSecretWarningForTests, callMlInternal } from '../measureTrigger';
 
-const SECRET = 'test-secret';
+const SECRET = 's'.repeat(40);
+
+describe('mlServiceSecret (M1.1: the service token has its own key, fail closed)', () => {
+    it('returns ML_SERVICE_TOKEN_SECRET when it is at least 32 characters and differs from JWT_ACCESS_SECRET', () => {
+        expect(mlServiceSecret({ ML_SERVICE_TOKEN_SECRET: SECRET, JWT_ACCESS_SECRET: 'other' })).toBe(SECRET);
+    });
+    it.each([
+        ['missing', {}],
+        ['empty', { ML_SERVICE_TOKEN_SECRET: '' }],
+        ['too short', { ML_SERVICE_TOKEN_SECRET: 'x'.repeat(31) }],
+        ['equal to the user-token secret', { ML_SERVICE_TOKEN_SECRET: SECRET, JWT_ACCESS_SECRET: SECRET }],
+    ])('is undefined when %s (no fallback to JWT_ACCESS_SECRET)', (_name, env) => {
+        expect(mlServiceSecret(env as NodeJS.ProcessEnv)).toBeUndefined();
+    });
+    it('reports why the secret is unusable, once per process, by key name and reason only (review M1.1-2)', () => {
+        expect(mlServiceSecretProblem({})).toBe('missing');
+        expect(mlServiceSecretProblem({ ML_SERVICE_TOKEN_SECRET: 'x'.repeat(20) })).toBe('short');
+        expect(mlServiceSecretProblem({ ML_SERVICE_TOKEN_SECRET: SECRET, JWT_ACCESS_SECRET: SECRET })).toBe('equals_jwt');
+        expect(mlServiceSecretProblem({ ML_SERVICE_TOKEN_SECRET: SECRET })).toBeNull();
+        const lines: string[] = [];
+        const warn = (m: string) => lines.push(m);
+        const env = { ML_SERVICE_URL: 'http://ml', ML_SERVICE_TOKEN_SECRET: 'tooshort-value' } as NodeJS.ProcessEnv;
+        resetSecretWarningForTests();
+        expect(mlServiceSecret(env, warn)).toBeUndefined();
+        expect(mlServiceSecret(env, warn)).toBeUndefined();
+        expect(lines).toEqual(['[measure_v2] ML_SERVICE_TOKEN_SECRET unusable (short): measurement and verification are off']);
+        expect(lines.join('')).not.toContain('tooshort-value');
+        resetSecretWarningForTests();
+        mlServiceSecret({ ML_SERVICE_TOKEN_SECRET: '' } as NodeJS.ProcessEnv, warn);    // no ML_SERVICE_URL: nothing configured, no warning
+        expect(lines).toHaveLength(1);
+    });
+    it('without a secret nothing is sent: measurement and scoring skip, a direct call throws', async () => {
+        const fetchImpl = (async () => { throw new Error('must not be called'); }) as any;
+        expect(await requestMeasurement('acct-1', { baseUrl: 'http://ml', secret: undefined, fetchImpl })).toEqual({ status: 'skipped', calls: 0 });
+        expect(await requestScore('acct-1', { baseUrl: 'http://ml', secret: undefined, fetchImpl })).toBe('skipped');
+        await expect(callMlInternal('/internal/verify-v2', 'acct-1', { baseUrl: 'http://ml', secret: undefined, fetchImpl })).rejects.toThrow('ml_not_configured');
+    });
+});
 const ok = (body: Record<string, unknown>) => new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
 
 describe('measure token', () => {

@@ -163,17 +163,31 @@ app.add_middleware(
 # ---------------------------------------------------------------------------
 
 MEASURE_TOKEN_MAX_TTL_S = 300
+SERVICE_SECRET_MIN_LEN = 32
+
+
+def _service_token_secret() -> str | None:
+    """ML_SERVICE_TOKEN_SECRET, read per call. None (fail closed) when missing, shorter than 32 characters, or equal
+    to JWT_ACCESS_SECRET: the service token has its own key, so a leaked user-token secret cannot mint it (M1.1)."""
+    s = os.environ.get("ML_SERVICE_TOKEN_SECRET", "")
+    if len(s) < SERVICE_SECRET_MIN_LEN or s == JWT_ACCESS_SECRET:
+        return None
+    return s
 
 
 def get_measure_account(req: Request) -> str:
-    """Service-to-service auth for /internal/*: a token the backend signs on the shared JWT_ACCESS_SECRET with
-    typ "measure", an accountId, and an expiry at most 5 minutes after issue. User tokens are refused here, and
-    measure tokens are refused by get_account_id (it accepts typ "access" only). ADR-0011."""
+    """Service-to-service auth for /internal/*: a token the backend signs on ML_SERVICE_TOKEN_SECRET with typ
+    "measure", an accountId, and an expiry at most 5 minutes after issue. Without a usable secret every call is
+    refused with 503. User tokens are refused here, and measure tokens are refused by get_account_id (it accepts
+    typ "access" only, on another secret). ADR-0011, amended in M1.1."""
     auth_header = req.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    secret = _service_token_secret()      # checked after the header, so a caller without a token learns nothing
+    if secret is None:
+        raise HTTPException(status_code=503, detail="Service token not configured")
     try:
-        payload = jwt.decode(auth_header.split(" ", 1)[1], JWT_ACCESS_SECRET, algorithms=["HS256"],
+        payload = jwt.decode(auth_header.split(" ", 1)[1], secret, algorithms=["HS256"],
                              options={"require": ["exp"]})
         if payload.get("typ") != "measure" or not isinstance(payload.get("accountId"), str):
             raise ValueError("wrong token type")

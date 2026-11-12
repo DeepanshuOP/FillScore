@@ -149,3 +149,29 @@ def test_identity_is_checked(monkeypatch):
     monkeypatch.setattr(ef, "price_impact_bps", lambda side, a, b: 999.0)
     with pytest.raises(IdentityError):
         measure_fill(FillInput("t1", "X", 1, 100.02, 1.0, 2500), W(), tick=0.01)
+
+
+def test_fills_of_one_walking_order_share_the_quote_from_before_their_millisecond():
+    """M1.1 (architect review): the burst bias of the public baseline cannot reach user fills. A user's taker buy
+    walks three levels at t=3000; its own prints (ids 3-5) and a public sell in the same ms (id 6) are all at t, so
+    none of them sets any fill's benchmark. Every fill gets the mid strictly before 3000:
+      ask 100.02 @2000 (age 1000), bid 100.00 @1000 (age 2000) -> mid 100.01.
+      fills: 100.02 x 1 -> 0.99990001 ; 100.03 x 2 -> 1.99980002 ; 100.05 x 1 -> 3.99960004 bps
+      qty-weighted mean (1 x 0.99990001 + 2 x 1.99980002 + 3.99960004)/4 = 2.24977502
+        = (VWAP 100.0325 - 100.01)/100.01 x 1e4: the order measures exactly as one public taker event does."""
+    w = AggTradeWindow.from_rows("X", [
+        (1, 100.00, 1.0, 1000, True), (2, 100.02, 1.0, 2000, False),
+        (3, 100.02, 1.0, 3000, False), (4, 100.03, 2.0, 3000, False), (5, 100.05, 1.0, 3000, False),
+        (6, 100.01, 1.0, 3000, True), (7, 100.04, 1.0, 9000, False)])
+    fills = [FillInput("a", "X", 1, 100.02, 1.0, 3000), FillInput("b", "X", 1, 100.03, 2.0, 3000),
+             FillInput("c", "X", 1, 100.05, 1.0, 3000)]
+    recs = [measure_fill(f, w, tick=0.01) for f in fills]
+    assert [r["mid"] for r in recs] == pytest.approx([100.01] * 3, abs=1e-12)
+    assert all(r["quoteQuality"] == "two_sided" and r["quoteAgesMs"] == {"ask": 1000, "bid": 2000} for r in recs)
+    assert [r["effHalfBps"] for r in recs] == pytest.approx([0.99990001, 1.99980002, 3.99960004], abs=1e-8)
+    weighted = sum(r["effHalfBps"] * f.qty for r, f in zip(recs, fills)) / sum(f.qty for f in fills)
+    assert weighted == pytest.approx(2.24977502, abs=1e-8)
+    from scoring_v2.calibrate import taker_events
+    eff, notional = taker_events(w)
+    assert eff[2] == pytest.approx(weighted, abs=1e-9)          # same number as the public event of those prints
+    assert notional[2] == pytest.approx(100.02 + 200.06 + 100.05)

@@ -33,3 +33,8 @@
 - A fee snapshot applies only to fills within 30 days of it; other fills read "not measured" for fees. This is published on `/methodology`.
 - An oversized merged REST window falls back to one window per fill. Fills too recent to measure are counted but no longer take up the 500-fill batch.
 - Verification also recomputes the stored result from the stored inputs, so an edited grade fails the check.
+
+## Update (M1.1 architect review, 2026-11-12): the service token gets its own secret
+- Decision 3 is superseded on the key: the token is now signed on `ML_SERVICE_TOKEN_SECRET`, not on `JWT_ACCESS_SECRET`. Reason: key separation. A leak of the user-token secret must not also let anyone mint service tokens for any account, and the reverse.
+- Fail closed on both sides, with no fallback. The secret is unusable when it is missing, shorter than 32 characters, or equal to `JWT_ACCESS_SECRET`. Then the ml-service answers 503 on every `/internal/*` route (the rest of the service keeps running), and the backend sends nothing: measurement is skipped and `/api/audit/verify` answers 503.
+- Deepanshu creates the value and sets it on both Render services (`docs/PROGRESS.md`, "Waiting for Deepanshu"). Tests: `tests/measure/test_internal_measure.py`, `backend/src/services/__tests__/measureTrigger.test.ts`, `backend/src/routes/__tests__/auditV2.test.ts`.

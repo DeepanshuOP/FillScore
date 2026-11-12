@@ -16,7 +16,7 @@ from typing import MutableMapping
 
 from dotenv import dotenv_values
 
-SHARED_KEYS = ("MONGODB_URI", "JWT_ACCESS_SECRET")
+SHARED_KEYS = ("MONGODB_URI", "JWT_ACCESS_SECRET", "ML_SERVICE_TOKEN_SECRET")
 
 
 def _read(path: str) -> dict[str, str]:

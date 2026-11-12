@@ -4,7 +4,9 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Current milestone
 
-**M2. Real demos** — starting. M1 is done (report `docs/milestones/M1.md`).
+**M2. Real demos** — resumes now, on Scoring **v2.1.0**. M1 and its correction pass M1.1 are done.
+
+**M1.1 (done 2026-11-12, report `docs/milestones/M1.md` §"M1.1 corrections", ADR-0012, LOG §K):** the spread baseline is measured on taker events (the v2.0.0 bias came from multi-level orders counted print by print; quote age is second-order, 5 s cap kept); user spread is scored per event; calibration v2.1.0 over 90 days (360 files, streamed, raw files deleted; day summaries stay in `ml-service/.cache/market/summaries`, local only); `ML_SERVICE_TOKEN_SECRET` (fail closed); CI secret scan (gitleaks); R6-G13 closed. Grade the M2 demos with `SCORING_V2_VERSION` (v2.1.0), and remember that its spread unit is the taker event: build demo orders so that fills of one order share a millisecond, as Binance reports them.
 
 **Plan written:** `docs/superpowers/plans/2026-11-11-m2-real-demos.md`. The venue archives are verified (`docs/research/LOG.md` §J): Bybit and OKX both publish daily spot trade files whose `side` is the aggressor. OKX days are UTC+8. Neither publishes a checksum.
 
@@ -40,7 +42,7 @@ Plan: `docs/superpowers/plans/2026-11-11-m1-measurement-and-scoring-v2.md` (it b
 | Milestone | Status | Report | Commit |
 |---|---|---|---|
 | M0 Orientation, research and hygiene | done | `docs/milestones/M0.md` | `ff681be` |
-| M1 Measurement v2 and Scoring v2 | done (real-account check open until real trades exist) | `docs/milestones/M1.md` | `0aa0603`, `5d43067`, `6ab568e`, `46e08f3`, `20d0e17` |
+| M1 Measurement v2 and Scoring v2 | done (real-account check open until real trades exist); M1.1 corrections done | `docs/milestones/M1.md` | `0aa0603`, `5d43067`, `6ab568e`, `46e08f3`, `20d0e17`; M1.1: see "Done" |
 | M2 Real demos | in progress (planning) | | |
 | M3 Cost against expectation, AI layer quality | not started | | |
 | M4 Explain and act | not started | | |
@@ -51,6 +53,8 @@ Plan: `docs/superpowers/plans/2026-11-11-m1-measurement-and-scoring-v2.md` (it b
 | M9 Launch readiness | not started | | |
 
 ## Suite results
+
+**End of M1.1 (2026-11-12):** ml-service 1149 passed, 1 skipped; backend 93 files, 750 passed, tsc 0; frontend 39 files, 263 passed, tsc 0, lint 0 errors (89 warnings), build exit 0; e2e 16 passed; guard 214 passed; roadmap IDs OK; run_offline 0 violations; ablation --check exit 0; gitleaks full history: no leaks.
 
 **End of M1 (2026-11-11):** ml-service 1115 passed, 1 skipped; offline evals 0 gated violations; ablation --check exit 0; guard 214 passed; roadmap IDs OK; backend 93 files, 742 passed, tsc 0; frontend 39 files, 263 passed, tsc 0, lint 0 errors (89 warnings), build exit 0; e2e 16 passed. `dump_golden_packets --check v2` was not run: it needs a local mongod, and no packet code changed.
 
@@ -77,14 +81,12 @@ The M0 ml-service run used `--ignore=tests/measure`, because that folder holds t
 
 Nothing here blocks the current work.
 
-1. **Old credentials in public git history (decision).** The repository is public (`gh repo view` reports PUBLIC), and `ARCHITECTURE.md` says the history holds credentials from before they moved to environment variables, and that they were rotated.
-   - Please confirm that every credential that was ever committed is rotated (MongoDB URI, JWT secrets, OAuth client secrets, exchange or LLM keys).
-   - Then decide whether to purge the history (roadmap item R6-G13). A purge is a history rewrite and a force push, so only you can run it. If you want it, I can prepare the exact `git filter-repo` steps as a file under `.work/proposed/`.
-   - Unblocks: closing R6-G13 before launch (M9 security review).
-2. **Leftover graphify files (information).** `.claude/settings.json.graphify-bak` and `.agents/rules/graphify.md` refer to a `graphify-out/` folder that does not exist. Delete them if graphify is no longer used. I do not edit settings files.
+1. ~~Old credentials in public git history (decision).~~ **Done 2026-11-12.** Deepanshu confirmed every committed credential is rotated and decided against a purge (clones and forks keep the history anyway). R6-G13 is closed by the CI secret scan (job `secrets`, gitleaks 8.30.1 over the full history; the six rotated Atlas URIs of commit `1bd5be8a` are listed in `.gitleaksignore`).
+6. **Set `ML_SERVICE_TOKEN_SECRET` on both Render services, before or with the push of M1.1.** The backend → ml-service token now has its own secret (no longer `JWT_ACCESS_SECRET`). Steps: generate a value, e.g. `openssl rand -hex 32` (64 characters); in the Render dashboard open `fillscore-api` → Environment → add `ML_SERVICE_TOKEN_SECRET` with that value; then `fillscore-ml` → Environment → add the same key with the same value; save both (each redeploys). It must be at least 32 characters and differ from `JWT_ACCESS_SECRET`. Without it both sides fail closed: the ml-service answers 503 on `/internal/*`, the backend skips measurement and `/api/audit/verify` answers 503; everything else works. For local runs, add it to `backend/.env` (the ml-service reads it from there). Unblocks: measurement v2 and score verification in production (together with item 4).
+2. **(Done: both files are gone, commit `8a8159a`.)** Leftover graphify files (information). `.claude/settings.json.graphify-bak` and `.agents/rules/graphify.md` refer to a `graphify-out/` folder that does not exist. Delete them if graphify is no longer used. I do not edit settings files.
 3. **Pushing.** Local commits are not pushed. A push deploys through CI, so it is yours: `git push origin main` when you have reviewed the commits.
-5. **Which demo trades are in Atlas? (a read-only check, information for M2).** The committed `backend/src/data/synthetic/*-trades.json` cannot be reproduced by the current generator: their ids have another shape, and the counts are 174 / 113 / 64. The current generator (ported exactly to `ml-service/demo_v2/decisions.py`) gives 313 / 248 / 145 decisions for aggressive / moderate / disciplined. Running the TS generator to compare was blocked by the guard, which is correct, so I did not run it. To settle which version is seeded, please run a read-only count: `mongosh "$MONGODB_URI" --quiet --eval 'for (const u of ["demo-aggressive","demo-moderate","demo-disciplined"]) print(u, db.trades.countDocuments({userId: u}))'`. M2 builds on the current generator either way; this only decides how the old-vs-new table is labelled.
-4. **Set `ML_SERVICE_URL` on the backend service (Render), before or with the push of M1.** Value: the ml-service's base URL (for example `https://fillscore-ml.onrender.com`). Without it the backend skips measurement after a sync (it logs nothing and fails nothing). No new secret is needed: the service token is signed with the existing `JWT_ACCESS_SECRET`. Unblocks: measurement v2 in production (ADR-0011).
+5. **(Answered 2026-11-12: Atlas holds demo-aggressive 313, demo-moderate 248, demo-disciplined 145 trades, the same counts as the current generator and its Python port. So Atlas was seeded by the current generator; the committed JSON files are older and unused by the seed. The M2 old-vs-new table compares against the current generator.)** Original question: which demo trades are in Atlas? (a read-only check, information for M2). The committed `backend/src/data/synthetic/*-trades.json` cannot be reproduced by the current generator: their ids have another shape, and the counts are 174 / 113 / 64. The current generator (ported exactly to `ml-service/demo_v2/decisions.py`) gives 313 / 248 / 145 decisions for aggressive / moderate / disciplined. Running the TS generator to compare was blocked by the guard, which is correct, so I did not run it. To settle which version is seeded, please run a read-only count: `mongosh "$MONGODB_URI" --quiet --eval 'for (const u of ["demo-aggressive","demo-moderate","demo-disciplined"]) print(u, db.trades.countDocuments({userId: u}))'`. M2 builds on the current generator either way; this only decides how the old-vs-new table is labelled.
+4. **Set `ML_SERVICE_URL` on the backend service (Render), before or with the push of M1.** Value: the ml-service's base URL (for example `https://fillscore-ml.onrender.com`). Without it the backend skips measurement after a sync (it logs nothing and fails nothing). Since M1.1 the service token also needs `ML_SERVICE_TOKEN_SECRET` (item 6). Unblocks: measurement v2 in production (ADR-0011).
 
 ## Decisions since the last report
 

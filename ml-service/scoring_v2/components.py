@@ -27,8 +27,13 @@ COMPONENT_DOCS = {
             "\"not measured\". On a zero-fee pair the reference is the exchange's published taker rate.",
     "timing": "Where the fill's UTC hour ranks in the symbol's hour profile (median quoted half-spread plus median "
               "absolute 1-minute move, from the calibration days): 100 x (1 - hours with a lower index / 23).",
-    "spread": "The effective half-spread the fill paid (bps), mapped through anchors from the effective half-spread "
-              "of public taker prints of a similar size against the same mid. Half a tick or less scores 100.",
+    "spread": "The effective half-spread a taker event paid (bps): the fills of one order in one millisecond, at their "
+              "volume-weighted price, against the mid just before that millisecond. Mapped through anchors from the "
+              "same measure on public taker events (consecutive prints with the same millisecond and side, which is "
+              "how one order that walks several price levels appears) of a similar total size. Half a tick or less "
+              "scores 100. Each quote proxy may be up to 5 s old, for the fill and the baseline alike; on the "
+              "M1 calibration days, including events with proxies older than 1 s coincided with a 12% (ETH) and 18% "
+              "(BNB) higher 90th percentile for small events and left the medians almost unchanged. Version v2.0.0 scored each fill alone against single public prints.",
 }
 ANCHOR_RULE = "Anchors are the 10th, 50th, 90th and 99th percentiles of a public-market baseline; they score 100, 75, 40 and 0, linear in between."
 

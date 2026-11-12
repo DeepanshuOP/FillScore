@@ -56,7 +56,7 @@
 | **4a** | Microstructure measurement | A1, A2, spread-aware counterfactual, markouts card | Report accepted | ✅ (spread field collision fixed in 4R-0) |
 | **4R-0** | Stop the bleeding | Field registry and `spreadEstimates`, honest cards and copy, skipped-trade disclosure, guard read/execute split, hidden rolling demos, no regime in prompts, reversion from markouts | Suites green, no grade change | ✅ 4R-0/0b/0c; **4R-0d**: versioned golden sets, demo Council re-record |
 | **4R-1a** | Measurement layer v2 | Spec §5: aggTrades data layer, mid from aggressor-side prints, effective/realized spread, impact, E/Q, order IS with opportunity cost, lineage. **A3** fee snapshots, **A4** order reconstruction, **A7** | Every metric hand-tested; identities asserted; the committed real-data fixture passes | ✅ M1 (2026-11-11; Binance only; Bybit/OKX orders not built, see `docs/milestones/M1.md`) |
-| **4R-1b** | Scoring v2 | Spec §6: data-derived anchors and hour profiles, minimum 20 fills, bootstrap intervals, **A11** ScoringVersion + integrity hash, **D1** verify endpoint, `/methodology` generated from the metric registry | v1 unchanged; v2 versioned; ≥1 **real** account scored under v2 | ✅ built in M1 (v2.0.0, ADR-0010); the real-account check stays open until real trades exist (`scripts/validate_real_account.py`) |
+| **4R-1b** | Scoring v2 | Spec §6: data-derived anchors and hour profiles, minimum 20 fills, bootstrap intervals, **A11** ScoringVersion + integrity hash, **D1** verify endpoint, `/methodology` generated from the metric registry | v1 unchanged; v2 versioned; ≥1 **real** account scored under v2 | ✅ built in M1 (v2.0.0, ADR-0010); corrected in M1.1 (v2.1.0: taker-event spread baseline, 90-day calibration, ADR-0012); the real-account check stays open until real trades exist (`scripts/validate_real_account.py`) |
 | **4R-2** | Real demos | Spec §7: demos rebuilt from real prints, re-locked under v2; Bybit/OKX demos rebuilt from public archives or removed; whale study re-run (R6-E5); **one full ablation re-record** on golden v2 | New grades documented next to v1; ablation table regenerated and verified | |
 | **4b-2** | Cost vs expected | **A5** square-root impact + LightGBM residual + MAPIE conformal intervals, trained on real fills; **C1** Quick/Deep audit | Every order shows cost vs expected with an interval, or "insufficient data" | |
 | **4c** | Explain and act | **A6, A8, E1, E2, C3** | Exception queue live; replay figures open their sources | |
@@ -313,7 +313,7 @@ Legend: ✅ built · 🟨 partial · 🟥 not built · 🧊 deferred · ⛔ cut 
 | R6-G10 | Diagnostics folder | 🟥 |
 | R6-G11 | Integration-test marking | ✅ deselected |
 | R6-G12 | Sync weight accounting | 🟨 ↪ B5 |
-| R6-G13 | Git-history purge decision | 🟥 decide before wider launch |
+| R6-G13 | Git-history purge decision | ✅ decided 2026-11-12 (M1.1): every committed credential is rotated (Deepanshu confirmed); no purge, because clones and forks keep the history anyway. CI job `secrets` (gitleaks, full history) fails on any new finding |
 | R6-G14 | OKX enum | ✅ |
 | R6-A1 | LangGraph durability/replay | ↪ D1 |
 | R6-A2 | Reader/writer isolation | ↪ C6 |
