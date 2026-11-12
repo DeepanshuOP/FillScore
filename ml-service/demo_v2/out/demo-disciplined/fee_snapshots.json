@@ -1,0 +1,126 @@
+[
+ {
+  "accountId": "demo-disciplined",
+  "discount": {
+   "asset": null,
+   "enabledForAccount": false,
+   "enabledForSymbol": false,
+   "rate": 1.0
+  },
+  "exchange": "binance",
+  "fetchedAt": "2024-01-16T11:23:45.749Z",
+  "source": "published-schedule",
+  "special": {
+   "buyer": 0.0,
+   "maker": 0.0,
+   "seller": 0.0,
+   "taker": 0.0
+  },
+  "standard": {
+   "buyer": 0.0,
+   "maker": 0.001,
+   "seller": 0.0,
+   "taker": 0.001
+  },
+  "symbol": "BNBUSDT",
+  "tax": {
+   "buyer": 0.0,
+   "maker": 0.0,
+   "seller": 0.0,
+   "taker": 0.0
+  }
+ },
+ {
+  "accountId": "demo-disciplined",
+  "discount": {
+   "asset": null,
+   "enabledForAccount": false,
+   "enabledForSymbol": false,
+   "rate": 1.0
+  },
+  "exchange": "binance",
+  "fetchedAt": "2024-01-16T11:23:45.749Z",
+  "source": "published-schedule",
+  "special": {
+   "buyer": 0.0,
+   "maker": 0.0,
+   "seller": 0.0,
+   "taker": 0.0
+  },
+  "standard": {
+   "buyer": 0.0,
+   "maker": 0.001,
+   "seller": 0.0,
+   "taker": 0.001
+  },
+  "symbol": "BTCUSDT",
+  "tax": {
+   "buyer": 0.0,
+   "maker": 0.0,
+   "seller": 0.0,
+   "taker": 0.0
+  }
+ },
+ {
+  "accountId": "demo-disciplined",
+  "discount": {
+   "asset": null,
+   "enabledForAccount": false,
+   "enabledForSymbol": false,
+   "rate": 1.0
+  },
+  "exchange": "binance",
+  "fetchedAt": "2024-01-16T11:23:45.749Z",
+  "source": "published-schedule",
+  "special": {
+   "buyer": 0.0,
+   "maker": 0.0,
+   "seller": 0.0,
+   "taker": 0.0
+  },
+  "standard": {
+   "buyer": 0.0,
+   "maker": 0.001,
+   "seller": 0.0,
+   "taker": 0.001
+  },
+  "symbol": "ETHUSDT",
+  "tax": {
+   "buyer": 0.0,
+   "maker": 0.0,
+   "seller": 0.0,
+   "taker": 0.0
+  }
+ },
+ {
+  "accountId": "demo-disciplined",
+  "discount": {
+   "asset": null,
+   "enabledForAccount": false,
+   "enabledForSymbol": false,
+   "rate": 1.0
+  },
+  "exchange": "binance",
+  "fetchedAt": "2024-01-16T11:23:45.749Z",
+  "source": "published-schedule",
+  "special": {
+   "buyer": 0.0,
+   "maker": 0.0,
+   "seller": 0.0,
+   "taker": 0.0
+  },
+  "standard": {
+   "buyer": 0.0,
+   "maker": 0.001,
+   "seller": 0.0,
+   "taker": 0.001
+  },
+  "symbol": "SOLUSDT",
+  "tax": {
+   "buyer": 0.0,
+   "maker": 0.0,
+   "seller": 0.0,
+   "taker": 0.0
+  }
+ }
+]

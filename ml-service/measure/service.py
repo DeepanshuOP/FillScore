@@ -142,15 +142,27 @@ def _refs(*windows: AggTradeWindow | None) -> list[dict]:
     return out
 
 
-def measure_account(db, account_id: str, source: MarketSource, now_ms: int, limit: int = 500) -> dict:
+def check_data_source(account_id: str, data_source: str) -> None:
+    """real-user (production) or synthetic-demo (the offline M2 demo build, demo-* accounts only, in-memory
+    databases). Anything else, or a mix, is refused."""
+    if data_source not in ("real-user", "synthetic-demo"):
+        raise ValueError(f"unsupported data source {data_source!r}")
+    if data_source == "synthetic-demo" and not account_id.startswith("demo-"):
+        raise ValueError("synthetic-demo data belongs to demo-* accounts only")
+
+
+def measure_account(db, account_id: str, source: MarketSource, now_ms: int, limit: int = 500,
+                    data_source: str = "real-user") -> dict:
     """Measure up to `limit` pending fills of one account, then the orders they belong to and the account's
-    unfilled orders. Returns counts: {measured, orders, skipped{reason: n}, pending, measureVersion}."""
+    unfilled orders. Returns counts: {measured, orders, skipped{reason: n}, pending, measureVersion}.
+    `data_source="synthetic-demo"` is for the offline demo build only (demo_v2.build); the runtime never passes it."""
+    check_data_source(account_id, data_source)
     skipped: dict[str, int] = {}
     report = {"measured": 0, "orders": 0, "skipped": skipped, "measureVersion": MEASURE_VERSION}
-    if account_id.startswith("demo-"):
+    if account_id.startswith("demo-") and data_source == "real-user":
         skipped["demo"] = 1
         return report
-    pending_q = {"accountId": account_id, "dataSource": "real-user", "measurement.version": {"$ne": MEASURE_VERSION}}
+    pending_q = {"accountId": account_id, "dataSource": data_source, "measurement.version": {"$ne": MEASURE_VERSION}}
     # Fills younger than their last horizon are counted but not fetched, so they never fill the batch (review M1-2).
     cutoff = datetime.fromtimestamp((now_ms - POST_MS - PRE_MS) / 1000, tz=timezone.utc).replace(tzinfo=None)
     recent = db.trades.count_documents({**pending_q, "exchange": "binance", "executedAt": {"$gt": cutoff}})

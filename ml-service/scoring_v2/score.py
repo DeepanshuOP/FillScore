@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 
 from config.versions import MEASURE_VERSION
 from measure.fees import effective_rate
+from measure.service import check_data_source
 
 from .aggregate import score_account
 from .components import duration_bucket, fee_score, notional_bucket, slippage_score, spread_score, timing_score
@@ -54,10 +55,11 @@ def _fee_unit(t: dict, snap: dict | None, version: dict) -> float | None:
     return fee_score(fee / notional * 1e4, best, published)
 
 
-def _collect(db, account_id: str, version: dict, keys: set[str] | None = None):
-    if account_id.startswith("demo-"):
-        raise ValueError("demo accounts are not scored under v2")
-    q = {"accountId": account_id, "dataSource": "real-user", "measurement.version": MEASURE_VERSION}
+def _collect(db, account_id: str, version: dict, keys: set[str] | None = None, data_source: str = "real-user"):
+    check_data_source(account_id, data_source)
+    if account_id.startswith("demo-") and data_source == "real-user":
+        raise ValueError("demo accounts are not scored under v2 at runtime (the offline demo build passes synthetic-demo)")
+    q = {"accountId": account_id, "dataSource": data_source, "measurement.version": MEASURE_VERSION}
     trades = [t for t in db.trades.find(q) if keys is None or f"fill:{t['symbol']}:{t['tradeId']}" in keys]
     symbols = sorted({t["symbol"] for t in trades})
 
@@ -151,8 +153,10 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None):
     return list(orders.values()), entries, shas
 
 
-def score_account_v2(db, account_id: str, version: dict, version_sha256: str, now_ms: int) -> dict:
-    orders, entries, shas = _collect(db, account_id, version)
+def score_account_v2(db, account_id: str, version: dict, version_sha256: str, now_ms: int,
+                     data_source: str = "real-user") -> dict:
+    """`data_source="synthetic-demo"` is for the offline demo build only (demo_v2.build); the runtime never passes it."""
+    orders, entries, shas = _collect(db, account_id, version, data_source=data_source)
     return {
         "accountId": account_id,
         "scoringVersion": version["id"],

@@ -154,6 +154,20 @@ def test_verify_without_stored_score():
     assert verify_account_v2(mongomock.MongoClient().db, ACC, VERSION, "ff" * 32) is None
 
 
+def test_offline_demo_build_scores_synthetic_demo_rows_only_when_asked():
+    # M2: the hand case on a demo account, labelled synthetic-demo, scores identically when the build asks for it;
+    # by default demo accounts are still refused, and synthetic-demo is refused for a non-demo account.
+    db = make_db(20, accountId="demo-x", dataSource="synthetic-demo")
+    db.order_measurements.update_many({}, {"$set": {"accountId": "demo-x"}})
+    db.fee_snapshots.update_many({}, {"$set": {"accountId": "demo-x"}})
+    with pytest.raises(ValueError):
+        score_account_v2(db, "demo-x", VERSION, "ff" * 32, now_ms=0)
+    with pytest.raises(ValueError):
+        score_account_v2(db, ACC, VERSION, "ff" * 32, now_ms=0, data_source="synthetic-demo")
+    r = score_account_v2(db, "demo-x", VERSION, "ff" * 32, now_ms=0, data_source="synthetic-demo")
+    assert r["result"]["composite"] == pytest.approx(57.82502529, abs=1e-6) and r["result"]["grade"] == "D"
+
+
 def _walking_order_db():
     """One taker buy order that walked three levels in one millisecond (as Binance reports it: one trade per fill,
     all with the order's match time). Mid before that millisecond 100.01 for every fill (measure.enrich_fill).

@@ -1,0 +1,792 @@
+{
+ "demos": {
+  "demo-aggressive": {
+   "counts": {
+    "decisions": 313,
+    "fills": 721,
+    "orders": 311
+   },
+   "files": {
+    "fee_snapshots.json": "a6b83e14906154aa5e9dfc77ac474cd01a1f966c37456545ef1de63f97482980",
+    "orders.json": "af2561120abfd23c3fd023a5dcb08787c5380514ae936488d255079fd01b2e11",
+    "trades.json": "d31cc24e29147aefd02977248700081c00329cb0c414eb0655a1d274319e20d9"
+   },
+   "skipped": {
+    "no_limit_price": 2
+   },
+   "statuses": {
+    "CANCELED": 2,
+    "FILLED": 309
+   }
+  },
+  "demo-disciplined": {
+   "counts": {
+    "decisions": 145,
+    "fills": 385,
+    "orders": 144
+   },
+   "files": {
+    "fee_snapshots.json": "7e83a351341e7d331046219f770e3234f9fdc59fdd54e203814346ef3fb12d84",
+    "orders.json": "c6b8c770ee0155754aa2ad379330b789b63297afae3a01f0522cbd7ca0025b56",
+    "trades.json": "99042ae1906d31f27491578ec3563e6882a95a58f621bb10647f886c10439061"
+   },
+   "skipped": {
+    "no_limit_price": 1
+   },
+   "statuses": {
+    "CANCELED": 6,
+    "FILLED": 138
+   }
+  },
+  "demo-moderate": {
+   "counts": {
+    "decisions": 248,
+    "fills": 607,
+    "orders": 245
+   },
+   "files": {
+    "fee_snapshots.json": "db4344dd736c59751991e609a84f27fbe9d59c5159f32450a160af4c83b2e6e5",
+    "orders.json": "103384f33ee21f2b399127012c8bf5cc078b480220724214f2072c7f046c572c",
+    "trades.json": "23c337d411edd86841bca67d0cc604fcfac228b792f76761aad44ffc4b164490"
+   },
+   "skipped": {
+    "no_limit_price": 3
+   },
+   "statuses": {
+    "CANCELED": 11,
+    "FILLED": 234
+   }
+  }
+ },
+ "feeRates": {
+  "maker": 0.001,
+  "taker": 0.001
+ },
+ "feeSource": "https://www.binance.com/en/fee/schedule (regular tier 0.1000% / 0.1000%, searched 2026-11-11)",
+ "generatedBy": "ml-service/scripts/build_demo_v2.py",
+ "horizonMs": 300000,
+ "measureVersion": "1.0.0",
+ "scoringVersion": "v2.1.0",
+ "seed": 42,
+ "tapes": [
+  {
+   "day": "2024-01-01",
+   "sha256": "6a6e9ba3b35f61e0c11d7c727bc6d0548a2698d410ed47cde886274b940e1cf5",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-01.zip"
+  },
+  {
+   "day": "2024-01-02",
+   "sha256": "13195362bab4d3709dc9f06f3adc41fcbe71340fd1c57f8e34600f12a85e0568",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-02.zip"
+  },
+  {
+   "day": "2024-01-03",
+   "sha256": "7648fc3ad6ab6a7beb016adffd1afe89ee5579ecce3c8aec7d05fe10e3b58f4c",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-03.zip"
+  },
+  {
+   "day": "2024-01-04",
+   "sha256": "58ffcdea8b9ad88a52028b525fb58e44c67c2b1ffc79ef3d67f4d2df215f44a3",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-04.zip"
+  },
+  {
+   "day": "2024-01-05",
+   "sha256": "053f829b59de4630fef91022c34322eda99eb94c4be856781cf1cafb4075e6e3",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-05.zip"
+  },
+  {
+   "day": "2024-01-06",
+   "sha256": "8b12a4235f3a7e4ccc8a8644f24f79de41cfc796fe5aba1e5169bc37a501c1f3",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-06.zip"
+  },
+  {
+   "day": "2024-01-07",
+   "sha256": "d285d3513c18d4fcbb3cdcae3967a3476755b008d0225fe267c3388c8e0c848d",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-07.zip"
+  },
+  {
+   "day": "2024-01-08",
+   "sha256": "55ab31ef3ff5ccd1f6a3e3d036b4ccd553b784e37eb8a01e5a1f758541090f30",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-08.zip"
+  },
+  {
+   "day": "2024-01-09",
+   "sha256": "094f45249dafff5516e14642450cf880c2dffdf274e4af9fa9fb3ccec179ae74",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-09.zip"
+  },
+  {
+   "day": "2024-01-10",
+   "sha256": "2e08a0a848c154b17d4c31f0b58242d4a63420e93ac6b5d286ab067d34c384d6",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-10.zip"
+  },
+  {
+   "day": "2024-01-11",
+   "sha256": "9c12e27de566e9b1d7ec6fcc27f0be078899e5e0efb8e1b42e1f5d65af77ea3b",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-11.zip"
+  },
+  {
+   "day": "2024-01-12",
+   "sha256": "c75a82b2213bf28a89480c88ce30ddbb48ca2c1091a0cc2f9052c08b518b845a",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-12.zip"
+  },
+  {
+   "day": "2024-01-13",
+   "sha256": "c1287a9c709eec80804f5a70a2f8864415a24c6e7710680fa8981b26d50d6479",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-13.zip"
+  },
+  {
+   "day": "2024-01-14",
+   "sha256": "c4dd044ccd721576dd4515d45ce238dbdbbfb03e25f1d2450da66d5fe8608230",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-14.zip"
+  },
+  {
+   "day": "2024-01-15",
+   "sha256": "dde821f1a59567413acbe5188bfc4d319322a81e8875dedea67420d098a1c348",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-15.zip"
+  },
+  {
+   "day": "2024-01-18",
+   "sha256": "c3572d218ae75a93625664dc616a672eca681a650135a072dca10129e4e26089",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-18.zip"
+  },
+  {
+   "day": "2024-01-19",
+   "sha256": "1aa2d24a0d1f5a5b3112e23f52d110b627fea4d793a9d4912f9d3c413d87367c",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-19.zip"
+  },
+  {
+   "day": "2024-01-20",
+   "sha256": "1e018f7881a260e1993d85ac1750622c168b75eeb19d67df8f2d888f55d00852",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-20.zip"
+  },
+  {
+   "day": "2024-01-21",
+   "sha256": "30297aa979ab95684170f69fee929c10bf03961082e450c3bedf70108fd92fdc",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-21.zip"
+  },
+  {
+   "day": "2024-01-22",
+   "sha256": "132f134c4fccada1407625cbc6a725507a6eca0517495796f06db076e6e73ed9",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-22.zip"
+  },
+  {
+   "day": "2024-01-23",
+   "sha256": "6a1e66573357b23424d1201f94ca411c4a121b01637c6bc786d9ce4491235340",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-23.zip"
+  },
+  {
+   "day": "2024-01-24",
+   "sha256": "e71a7c554ea00b4b3a51d5531629f615732b9ab9f8c61ec79aa08dc4a86ca3ec",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-24.zip"
+  },
+  {
+   "day": "2024-01-25",
+   "sha256": "6a5dc6cc8334f4c16400a28a0f4aa5293738533b42f35077655cd1fd9cdd88ea",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-25.zip"
+  },
+  {
+   "day": "2024-01-26",
+   "sha256": "1ba431613544eed012853ed0a1fc082cc755d5396ae9258538a935576d69ed9b",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-26.zip"
+  },
+  {
+   "day": "2024-01-27",
+   "sha256": "6f20f12e2aae34782416905eb782c11a4a64a512325cdd2f99bbe27541033123",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-27.zip"
+  },
+  {
+   "day": "2024-01-28",
+   "sha256": "1979c5c9dee45428642eb8f1d1e253c5e44dc3d83b41950cf055a8871a552ff3",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-28.zip"
+  },
+  {
+   "day": "2024-01-29",
+   "sha256": "df1698b5bc7dcb600f8c02016a12f1ddee14624e662e11295d49d344604511f9",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-29.zip"
+  },
+  {
+   "day": "2024-01-30",
+   "sha256": "7af8b0b502ede63f80b40af36dffd23876301bcf3f2059b6fb2dbda65c534ab9",
+   "symbol": "BNBUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BNBUSDT/BNBUSDT-aggTrades-2024-01-30.zip"
+  },
+  {
+   "day": "2024-01-01",
+   "sha256": "9572fa650e2a7850e528fc6d0c3ec7874211af47947416f75004f0f95751dca3",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-01.zip"
+  },
+  {
+   "day": "2024-01-02",
+   "sha256": "97337ca2765f4597647f7c4ec1efa0cad29b440b523a45fc0c7f3754dc081a76",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-02.zip"
+  },
+  {
+   "day": "2024-01-03",
+   "sha256": "d892320f4e9b1329ee0274f6656d638ea5306db7d83c4e5a8d1884579a62f74a",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-03.zip"
+  },
+  {
+   "day": "2024-01-04",
+   "sha256": "63f8c567664c4520fc9236d568e52ef146c20ac4431632755a96adaf7bef26b1",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-04.zip"
+  },
+  {
+   "day": "2024-01-05",
+   "sha256": "9dc4fbf6222ab97f037f993fa7f4ae4eda979ab29f4ffd45ff6b4d1c1b4fc4e5",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-05.zip"
+  },
+  {
+   "day": "2024-01-06",
+   "sha256": "24dea14d3b5f5032d4e103c711219aede203d4ee57baae490022f47126998ac9",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-06.zip"
+  },
+  {
+   "day": "2024-01-07",
+   "sha256": "541874247f8fc572074bc99cb20b0681a661a63625a985ab692c9248e85db064",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-07.zip"
+  },
+  {
+   "day": "2024-01-08",
+   "sha256": "61651eaa5dd673618372a590cd22b4bb5590e510920a064321a3b62cb3e586ed",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-08.zip"
+  },
+  {
+   "day": "2024-01-09",
+   "sha256": "f68bb03c36b12650e1b16715a04816666717ce1e30ad4b1fd0917dd14244f727",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-09.zip"
+  },
+  {
+   "day": "2024-01-10",
+   "sha256": "263e7a08c6051d6f9771ac1f993a4f00c0507c65ef6071f216eb0a6df2d13d9d",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-10.zip"
+  },
+  {
+   "day": "2024-01-11",
+   "sha256": "e1ccb8ff0e3c799f8e4a5e758b202f54eed0f14b4a1bafe246b49f476d4d3446",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-11.zip"
+  },
+  {
+   "day": "2024-01-12",
+   "sha256": "4b881d781d49077b9865a3c0a12577199e408ffdc10763c23ce22c320980558c",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-12.zip"
+  },
+  {
+   "day": "2024-01-13",
+   "sha256": "aef59819efd4cb64bf1c9d078458e017afd00b2f79710fcac0929fd0500a657b",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-13.zip"
+  },
+  {
+   "day": "2024-01-14",
+   "sha256": "a2f5882cf6324106cb3bca4d0724e25222e38b563d6094eb60f4f35ddedbbaae",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-14.zip"
+  },
+  {
+   "day": "2024-01-15",
+   "sha256": "4b4ee84e3dec847499fd4bd9d3ea34aa5fff6ff9db825da4c8507b1107718a2b",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-15.zip"
+  },
+  {
+   "day": "2024-01-16",
+   "sha256": "b01212c3c3f6309e0c20972c317ac1b2d0c7571791644df7e471fdf2fa129d06",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-16.zip"
+  },
+  {
+   "day": "2024-01-17",
+   "sha256": "a90e72c46822056d49df2e14c1d2cc1353d1c85704bec35142abf23b7cd30fcd",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-17.zip"
+  },
+  {
+   "day": "2024-01-18",
+   "sha256": "4532fff7a068c1bfa1242f5727c9f7fe3332f38770702e9c3c9aa24cd9dcaa1b",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-18.zip"
+  },
+  {
+   "day": "2024-01-19",
+   "sha256": "2dc1afb18a70ba06b82eebba7f845518c1ebbdceb2e5627ff0f82142de22379d",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-19.zip"
+  },
+  {
+   "day": "2024-01-20",
+   "sha256": "47538ab04eb9fe3fe6cb2100f8b3dcef57aa16bca9a58f51c2e03c988ebe4d20",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-20.zip"
+  },
+  {
+   "day": "2024-01-21",
+   "sha256": "74af83c7aef99cbc0443bb898fd3b6de9fef6fcfd8623a1d1042e1ec04c1922a",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-21.zip"
+  },
+  {
+   "day": "2024-01-22",
+   "sha256": "6d00ecf88855924c4a590b065366d595a7246f222c464f886a7ec43a9639cb2e",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-22.zip"
+  },
+  {
+   "day": "2024-01-23",
+   "sha256": "21b21606b15df9cbaa2a3a0d08681799ea7f8912c22ea300d760db8ef11aafac",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-23.zip"
+  },
+  {
+   "day": "2024-01-24",
+   "sha256": "819980a60edf99389a8087636c82107d0db8af87f094d678103d17d3ffbbf69a",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-24.zip"
+  },
+  {
+   "day": "2024-01-25",
+   "sha256": "dafb03a8502dde09e6c47e7dcb01b4fe2d5cf500e655cbbad691016eeaf649e4",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-25.zip"
+  },
+  {
+   "day": "2024-01-26",
+   "sha256": "5701b9de29bba451df6e2c97d51f5d7be779dc5dc95e558a41f69d0efa41c51a",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-26.zip"
+  },
+  {
+   "day": "2024-01-27",
+   "sha256": "2a6905037957715d3fc81aa2a6d454b04087d13bc52899c6d47bb66990907a91",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-27.zip"
+  },
+  {
+   "day": "2024-01-28",
+   "sha256": "ec7442f3c645d8a57b23657bf8456b98e97fabbd90910ebc8e37a69c2fc474d5",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-28.zip"
+  },
+  {
+   "day": "2024-01-29",
+   "sha256": "0e9571bfed26882ef7fa02abe370ae69ab00a5738b9cd2313a90944acfe43288",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-29.zip"
+  },
+  {
+   "day": "2024-01-30",
+   "sha256": "ceda7cc3daf2bb7e6daf27c03559044b418abc4d1d7ba230191f95fd79ca89bd",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-30.zip"
+  },
+  {
+   "day": "2024-01-31",
+   "sha256": "d2a48a02515f2c1fbf1b24015df7e42b8241cb10bab703e5f1e1d9d49b74064a",
+   "symbol": "BTCUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-31.zip"
+  },
+  {
+   "day": "2024-01-01",
+   "sha256": "b6c61ccd2a06c461da996e5f636206231a3a39e0d2faa4e7cbfcf8aec72da888",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-01.zip"
+  },
+  {
+   "day": "2024-01-02",
+   "sha256": "61d2a38b40aed84b379007aaa93c433224cdc23ff6d00df568e55c9d0b2d92be",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-02.zip"
+  },
+  {
+   "day": "2024-01-03",
+   "sha256": "9bec26b7e8e6d473ec5cd395a06f4648e87b5131b08411ce71dff0406ee049f4",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-03.zip"
+  },
+  {
+   "day": "2024-01-04",
+   "sha256": "88b1dfea6c6c21de43f4183dba03999c367a0be473dc6f26ff6a84793a00a177",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-04.zip"
+  },
+  {
+   "day": "2024-01-05",
+   "sha256": "3bdf62e688ab8db6877f8da2054c05228d3f6aa2b29181c1a41b85aa200fc573",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-05.zip"
+  },
+  {
+   "day": "2024-01-06",
+   "sha256": "07d446363067fcd559d8a402d4826dafd3472ba3839357ec3327f1578d8cfaed",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-06.zip"
+  },
+  {
+   "day": "2024-01-07",
+   "sha256": "8cfa4567fff936a1a5bf116d2dc77485644a97599ecf71a069cbe37d3499755a",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-07.zip"
+  },
+  {
+   "day": "2024-01-08",
+   "sha256": "0f4149e4acd79a1989af59b37090847c3ee27fb0278594c8012bbec652a43f55",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-08.zip"
+  },
+  {
+   "day": "2024-01-09",
+   "sha256": "93e02bdc6517d885d3ce5e425a987c6f5a4526840eaeb9dd31e39ba8f9e1451a",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-09.zip"
+  },
+  {
+   "day": "2024-01-10",
+   "sha256": "0721e3175f2f9f913a2670ee75de6f682291cae3e0e1b55bf7714aa6c2892042",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-10.zip"
+  },
+  {
+   "day": "2024-01-11",
+   "sha256": "aefc017bf2fcf55f066f7f7648611f6a41d0322529e0a9a88b02df41eb377970",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-11.zip"
+  },
+  {
+   "day": "2024-01-12",
+   "sha256": "e30c3d9759dd190b55cf6349d685bf6fc10c956c70ea55c557e11fcb13f6a93e",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-12.zip"
+  },
+  {
+   "day": "2024-01-13",
+   "sha256": "4dab29b7a44b4f0f7acf9be0062ba85435b3e5c3ceaf3a39df8f23c0355c358e",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-13.zip"
+  },
+  {
+   "day": "2024-01-14",
+   "sha256": "4dff7e1efba77f7c811c54986aef429dbd29214f0845b4a8934452a427c807db",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-14.zip"
+  },
+  {
+   "day": "2024-01-15",
+   "sha256": "48f93ec54bbb85f046983dbd9ef029cc0c1555a09481bf8b52b19ab75da597ce",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-15.zip"
+  },
+  {
+   "day": "2024-01-16",
+   "sha256": "46e398be07a78ab26801bfb2a89fab09957fa2a2274670c231beffe01d0dbc6a",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-16.zip"
+  },
+  {
+   "day": "2024-01-17",
+   "sha256": "173e83721fdd5e3c2180510bc8e6edfb0e469c3a0d059381d8f0a4f548fe3a2b",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-17.zip"
+  },
+  {
+   "day": "2024-01-18",
+   "sha256": "cafa004e4da75a793753e3ffd51f0179a12c1ab4522beb4e04f1f3eebd432a89",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-18.zip"
+  },
+  {
+   "day": "2024-01-19",
+   "sha256": "12a7284dd44f840c9c40a1c7dfd06111323e3512d18464a0ca183e61761cd28a",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-19.zip"
+  },
+  {
+   "day": "2024-01-20",
+   "sha256": "f3ae80263ea30bd5d71f317670ee428395d8c820ce2d2322565507a409067fcb",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-20.zip"
+  },
+  {
+   "day": "2024-01-21",
+   "sha256": "bc05fcf3889240187ba0eb6800ad4761f13cee4ff06d820723fc18c129aeded2",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-21.zip"
+  },
+  {
+   "day": "2024-01-22",
+   "sha256": "2c96b34566c3917b0efbe176224564b9d088c5a289f49021d30d2539f029bdc2",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-22.zip"
+  },
+  {
+   "day": "2024-01-23",
+   "sha256": "3f6fe26ef8058ba038642d24fdbe54fb375f76b78c380d2ec5376e94e21ec219",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-23.zip"
+  },
+  {
+   "day": "2024-01-24",
+   "sha256": "82981a01217de60bbb29ede07c216f39db3c646c8264d6401c0a5138fb9c18ab",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-24.zip"
+  },
+  {
+   "day": "2024-01-25",
+   "sha256": "44af61c4238419290bfd7b2f91c955729c9cabfd4fa1941732a9028372d2de26",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-25.zip"
+  },
+  {
+   "day": "2024-01-26",
+   "sha256": "efd344bba3ed631916060183e5131a3624b69e785f83220aa0c2cf856cb48b7b",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-26.zip"
+  },
+  {
+   "day": "2024-01-27",
+   "sha256": "a6333a82ebe95e6f2d0a3f68b6c47d4e30401b319bf619adf925c99f2af72c6f",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-27.zip"
+  },
+  {
+   "day": "2024-01-28",
+   "sha256": "a29b459980afee79559a1635d4b30cd09fbf16ce92eb218015c1ac097996ecce",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-28.zip"
+  },
+  {
+   "day": "2024-01-29",
+   "sha256": "d8abae6b6bdc19523f33f23ac7581e38587aa1a30502fbd62ba04ec6977c821f",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-29.zip"
+  },
+  {
+   "day": "2024-01-30",
+   "sha256": "2f3b5f93aff4e8d6006de4bd70520699f687f7d84e2f0dcb286a3b48d57b68e7",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-30.zip"
+  },
+  {
+   "day": "2024-01-31",
+   "sha256": "c01b8f65673d9341d02a16d837eca64088b7357ce3514955648bc943710cccf7",
+   "symbol": "ETHUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/ETHUSDT/ETHUSDT-aggTrades-2024-01-31.zip"
+  },
+  {
+   "day": "2024-01-01",
+   "sha256": "6e9e3fb9e5655eb97d1135c20384d3c0a96189d508cf550ef8040bcc29905813",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-01.zip"
+  },
+  {
+   "day": "2024-01-02",
+   "sha256": "b8a42d65ec170b83145678292a882b2853399174c319f2cf0de388a3753788ed",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-02.zip"
+  },
+  {
+   "day": "2024-01-03",
+   "sha256": "1c3b0bea9e3accc92e3976057956874ea8f4da60cabc82f7a79bb3e57ba7cc4d",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-03.zip"
+  },
+  {
+   "day": "2024-01-04",
+   "sha256": "7aa90c2c9528b4c6a8d6eb86ae5b616a613787a9ed86daedf1cc83ecf240b460",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-04.zip"
+  },
+  {
+   "day": "2024-01-05",
+   "sha256": "52624e2c196e933d2fa1cecdf5eac493f73593ce188a11e564ed543908bb9623",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-05.zip"
+  },
+  {
+   "day": "2024-01-06",
+   "sha256": "2deffed660fd69801d94930e0e5034a135ac5f552e4b74fe57784c3118bdab51",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-06.zip"
+  },
+  {
+   "day": "2024-01-07",
+   "sha256": "947254117e32bf347109ffacc53accdf578d01d88091a43609ab311b7fc26ff5",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-07.zip"
+  },
+  {
+   "day": "2024-01-08",
+   "sha256": "88f42faaa15a92dcd80b429ee8171ab1a5ac0b074a2bebb8a4e8bcd36023bcff",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-08.zip"
+  },
+  {
+   "day": "2024-01-09",
+   "sha256": "5956d1d64bcfd994bef793b4ddd2ce1e7be4144fcd54d0814c75de9a1e421511",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-09.zip"
+  },
+  {
+   "day": "2024-01-10",
+   "sha256": "0226f75c2c807c3fcdc72f17059886f2ad3fbec5d5d80caa8ed7998cad3d61e2",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-10.zip"
+  },
+  {
+   "day": "2024-01-11",
+   "sha256": "a19f4a32c0347494791a772d3bf155ebfeb29e2eb345462fa43108c39f798698",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-11.zip"
+  },
+  {
+   "day": "2024-01-12",
+   "sha256": "6622dba8bbc4a7fd198fa01e283308228cb727fae1912845bee66ecf53ae6712",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-12.zip"
+  },
+  {
+   "day": "2024-01-13",
+   "sha256": "7a12f3efd7a94a5e55841a06348dabd1b743bfcb19ae7e98df16130924a7cf40",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-13.zip"
+  },
+  {
+   "day": "2024-01-14",
+   "sha256": "3f21eabd986cd966f55c77dd5538eab5c99b5f7377a7b3a09ba8b3ca2fea32a0",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-14.zip"
+  },
+  {
+   "day": "2024-01-15",
+   "sha256": "1a8875ab31eaf274fedd3ed9c0fde4b1cb62b6477de868fe8904eaa6713ef97a",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-15.zip"
+  },
+  {
+   "day": "2024-01-16",
+   "sha256": "5e8d95484613f02bb3ffb46f5b5d76c46cead87dcdd5efe453e301305641a868",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-16.zip"
+  },
+  {
+   "day": "2024-01-17",
+   "sha256": "421bb28846dcce7a8e548b248000a775d96aee091f228865c3026b60d30f474d",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-17.zip"
+  },
+  {
+   "day": "2024-01-19",
+   "sha256": "8b7a48e197d660900bf4b1dbbfb9706a5e2a867296e18427c1eaab267481ee20",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-19.zip"
+  },
+  {
+   "day": "2024-01-20",
+   "sha256": "ba2d6870d4bd010f7c9809e6c1fb0053b8ca88cab333949a5148b30c5aad1b47",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-20.zip"
+  },
+  {
+   "day": "2024-01-21",
+   "sha256": "21d6f79637b047d87a4716c0b2eebbde157b6a83a960e30615e005b24421911a",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-21.zip"
+  },
+  {
+   "day": "2024-01-22",
+   "sha256": "74b3c06604ce1dcfb121d186348237679f57fa41e25666fda44e6b2dc7eaa55c",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-22.zip"
+  },
+  {
+   "day": "2024-01-23",
+   "sha256": "202913c1c4281bb599163b48f8cb3f9948ccb7bdb98488dc4d0b2da31a6259cf",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-23.zip"
+  },
+  {
+   "day": "2024-01-24",
+   "sha256": "bc86da469e482c256e4b9f9642dd346c7a22401abf0ee6842b75559d1776d656",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-24.zip"
+  },
+  {
+   "day": "2024-01-25",
+   "sha256": "d69710ecbd9e58a49790a5fa2e183fcaa949a2a2220bee4f81e3a3120b334b32",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-25.zip"
+  },
+  {
+   "day": "2024-01-26",
+   "sha256": "bab0790fc8309bd0a2b2f1dafb9608bfdcdbd794abed23f9df83bf4ec35ba223",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-26.zip"
+  },
+  {
+   "day": "2024-01-28",
+   "sha256": "8a4a1b5049794cd883b7747ba7db56cc928fec5d753bb3369a215ea0cf5c90dd",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-28.zip"
+  },
+  {
+   "day": "2024-01-29",
+   "sha256": "decd47780f71075d5c71ca91027aa6ea7edf140795ed11419a35f7912abd10c2",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-29.zip"
+  },
+  {
+   "day": "2024-01-30",
+   "sha256": "e47b8e62835ab44a769e4653fa04013a09ae3300a39bf9b52112715154184b27",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-30.zip"
+  },
+  {
+   "day": "2024-01-31",
+   "sha256": "d3e6d6e16ac5f57f42a8bac73228b99299b4b4492d4097c6b4490a544299c93b",
+   "symbol": "SOLUSDT",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/SOLUSDT/SOLUSDT-aggTrades-2024-01-31.zip"
+  }
+ ],
+ "ttlMs": 1800000,
+ "window": [
+  "2024-01-01",
+  "2024-01-31"
+ ]
+}

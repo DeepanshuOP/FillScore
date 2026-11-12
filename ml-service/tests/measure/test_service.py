@@ -128,6 +128,24 @@ def test_demo_account_and_synthetic_trades_are_never_measured():
     assert all("measurement" not in t for t in d.trades.find())
 
 
+def test_offline_demo_build_measures_synthetic_demo_rows_only_when_asked():
+    # M2: the demo build reuses this job on an in-memory database. Only data_source="synthetic-demo" with a demo-*
+    # account unlocks it; the production default (real-user) is unchanged, and the two never mix.
+    d = mongomock.MongoClient().db
+    d.trades.insert_many([trade(1, 20000, 100.02, 1.0, "7", 0.10, accountId="demo-x", dataSource="synthetic-demo"),
+                          trade(2, 30000, 100.04, 0.5, "7", 0.05, accountId="demo-x", dataSource="synthetic-demo")])
+    d.orders.insert_one({**order("7", 10000, 40000, 2.0, 1.5), "accountId": "demo-x", "dataSource": "synthetic-demo"})
+    assert measure_account(d, "demo-x", Source(), NOW)["skipped"] == {"demo": 1}               # default: refused
+    with pytest.raises(ValueError):
+        measure_account(d, ACC, Source(), NOW, data_source="synthetic-demo")                  # not a demo account
+    with pytest.raises(ValueError):
+        measure_account(d, "demo-x", Source(), NOW, data_source="testnet")
+    r = measure_account(d, "demo-x", Source(), NOW, data_source="synthetic-demo")
+    assert r["measured"] == 2 and r["orders"] == 1
+    s = d.order_measurements.find_one({"orderId": "7"})["shortfall"]
+    assert s["totalBps"] == pytest.approx(12.0, abs=1e-9)                                     # same hand case as above
+
+
 def test_fill_too_recent_for_the_last_horizon_waits():
     d = mongomock.MongoClient().db
     d.trades.insert_one(trade(1, 20000, 100.02, 1.0, "7", 0.1))
