@@ -16,7 +16,9 @@ export interface FeeSnapshotDocument {
     tax: CommissionParts;
     special: CommissionParts;
     discount?: { enabledForAccount: boolean; enabledForSymbol: boolean; asset: string; rate: number };
-    source: 'account';
+    /** 'account': the exchange's answer for this account. 'published-schedule': the venue's published regular tier,
+     *  used only for the synthetic demo accounts (M2), never presented as an account's own rate. */
+    source: 'account' | 'published-schedule';
     fetchedAt: Date;
 }
 
@@ -30,7 +32,7 @@ const FeeSnapshotSchema = new Schema<FeeSnapshotDocument>({
     tax: Parts,
     special: Parts,
     discount: { enabledForAccount: Boolean, enabledForSymbol: Boolean, asset: String, rate: Number },
-    source: { type: String, enum: ['account'], required: true },
+    source: { type: String, enum: ['account', 'published-schedule'], required: true },
     fetchedAt: { type: Date, required: true },
 }, { timestamps: false, collection: 'fee_snapshots' });
 

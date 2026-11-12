@@ -59,7 +59,7 @@ def build_demo(account_id: str, decisions: Iterable[Decision], tapes: TapeSource
         orders.append({**base, "symbol": d.symbol, "orderId": d.old_order_id, "side": d.side, "type": d.order_type,
                        "origQty": d.quantity, "executedQty": o.executed_qty, "cummulativeQuoteQty": quote,
                        "price": o.limit_price, "timeInForce": "GTC" if maker else None, "status": o.status,
-                       "createdAt": iso(d.executed_at_ms), "updatedAt": iso(o.updated_ms)})
+                       "createdAt": iso(d.executed_at_ms), "updatedAt": iso(o.updated_ms), "restingMs": o.resting_ms})
     snaps = []
     if decisions:
         mid = (decisions[0].executed_at_ms + decisions[-1].executed_at_ms) // 2

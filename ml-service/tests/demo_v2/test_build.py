@@ -56,7 +56,9 @@ def test_market_and_limit_orders_hand_values():
     lim = o["ord-moderate-XUSDT-2"]
     assert (lim["type"], lim["status"], lim["price"], lim["timeInForce"], lim["updatedAt"]) == (
         "LIMIT", "FILLED", 100.00, "GTC", "2024-01-01T00:00:03.000Z")
+    assert lim["restingMs"] == 1500 and m["restingMs"] is None           # 3000 - 1500; market orders have none
     c = o["ord-moderate-XUSDT-3"]
+    assert c["restingMs"] is None                                         # never filled
     assert (c["status"], c["executedQty"], c["price"], c["updatedAt"]) == ("CANCELED", 0.0, 100.04, "2024-01-01T00:30:09.000Z")
     assert all(x["accountId"] == "demo-moderate" and x["exchange"] == "binance" and x["dataSource"] == "synthetic-demo"
                for x in out["orders"])
