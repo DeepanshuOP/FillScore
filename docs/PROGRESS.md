@@ -14,7 +14,15 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 **Part 2 became decision 11 (Waiting for Deepanshu):** eight backend routes read per-trade v1 fields (`/trades`, `/trades/export`, `/report`, `/analytics`, `/analytics/exchange-comparison`, `/coach`, `/analytics/whale-correlation`, `/share/:userId`), so adapting them for the rebuilt demos is dashboard design work for M8.
 
-**Next concrete action: M3** (it does not depend on the M2 re-lock or decision 11). Original M2 closing-task list, for reference:
+**M3 in progress.** Plan: `docs/superpowers/plans/2026-11-12-m3-cost-and-ai-quality.md` (commit `ec9abe2`).
+- (done) Plan §1, part 1: `agents/required_evidence.py` (`required_keys`, `prompt_line`) with `tests/test_required_evidence.py` (red: `ModuleNotFoundError`; then 4 passed).
+- **Next concrete action, plan §1 part 2, in this order (care: recorded outputs must not be orphaned):**
+  1. Wire `prompt_line(packets)` into the synthesis prompt (`agents/synthesis.py`, where the packet placeholders are listed) and into the single-call prompt (`agents/single_call.py`), with tests that the prompt text contains every required placeholder.
+  2. Bump `PROMPT_VERSION` to 1.7.0 and `SINGLE_PROMPT_VERSION` to 1.2.0 in `config/versions.py`. Do **not** touch golden v1/v2 or `demo_runs/*.json`: those fixtures carry prompt 1.6.0, and `run_offline.py` fails on a fixture whose versions match no golden set, so golden v2 (1.6.0) must stay.
+  3. Create unrecorded golden set **v3** (prompt 1.7.0 / single 1.2.0 / metrics 1.2.0). `tests/test_golden_sets.py:142` expects the newest unrecorded set to match the current versions; check how it picks the set. Its case packets come from `python -m evals.dump_golden_packets --set v3`, which needs a database with the demo data, so v3 is generated after Deepanshu's seed (item 9). Until then, make `dump_golden_packets` fill `required_evidence.synthesis` from `required_keys(packet)`, with a test.
+  4. `evidence_cited` itself stays as it is (it already reads `required_evidence.synthesis`). Add a test with a fixture result that cites the rule's keys (passes) and one that omits one (fails, naming the key).
+  5. Live check: at most 5 Council runs this session, only after v3 exists.
+- Then plan §2 (expected cost: square-root impact plus split conformal in numpy, on the January 2024 tapes in `ml-service/.cache/market/zips`), §3 (Quick/Deep), §4 (budget engine). Original M2 closing-task list, for reference:
 - label the frozen v1 audit as the published grade of the earlier demo data;
 - serve the v2 grade from `ml-service/demo_v2/out/grades_v2.json` via `GET /api/audit/v2` for demo ids, instead of today's `v2_not_available_for_demo`;
 - mark the fee component "not independently measured" for demo accounts;
