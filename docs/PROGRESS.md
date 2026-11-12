@@ -59,7 +59,7 @@ Plan: `docs/superpowers/plans/2026-11-11-m1-measurement-and-scoring-v2.md` (it b
 |---|---|---|---|
 | M0 Orientation, research and hygiene | done | `docs/milestones/M0.md` | `ff681be` |
 | M1 Measurement v2 and Scoring v2 | done (real-account check open until real trades exist); M1.1 corrections done | `docs/milestones/M1.md` | `0aa0603`, `5d43067`, `6ab568e`, `46e08f3`, `20d0e17`; M1.1: see "Done" |
-| M2 Real demos | in progress (planning) | | |
+| M2 Real demos | built; closing UI task next; seed, re-lock and ablation re-record wait for Deepanshu (items 7-10) | `docs/milestones/M2.md` | `a3d85da`, `af3b737`, `56fc7e2`, `7d78453`, `201ce5f` |
 | M3 Cost against expectation, AI layer quality | not started | | |
 | M4 Explain and act | not started | | |
 | M5 Trust and reach | not started | | |
@@ -91,6 +91,7 @@ The M0 ml-service run used `--ignore=tests/measure`, because that folder holds t
 
 ## Done
 
+- **M2 build** (2026-11-12): three Binance demos rebuilt from real January 2024 prints, offline v2 grades, Bybit/OKX tape loaders, safe seed script (on hold), whale pre-fill study (EXP-003), ablation re-record script, `evidence_cited` diagnosis (LOG §M). Report: `docs/milestones/M2.md`. Commits: `56fc7e2`, `7d78453`, `201ce5f`.
 - **M1.1** (2026-11-12): correction pass after the architect review (taker-event spread baseline, calibration v2.1.0 over 90 days, `ML_SERVICE_TOKEN_SECRET`, gitleaks CI job, R6-G13 closed). Report: `docs/milestones/M1.md` §"M1.1 corrections". Commit: `ca223a0`.
 - **M0** (2026-11-11): baseline; Dependabot alerts #265 and #270 fixed in the frontend; market research `docs/research/MARKET_2026-11.md`; roadmap §3a; instruction cleanup; M1 plan; reviewer findings fixed. Report: `docs/milestones/M0.md`. Commit: `ff681be`.
 
