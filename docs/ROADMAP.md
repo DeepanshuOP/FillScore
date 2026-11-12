@@ -159,6 +159,14 @@
 | **T5.9 / venue comparison** (constrained) | The matched venue comparison reports only the user's own past fills in matched buckets. A replay of past fills on another venue's tape is **not built**: it reads as routing advice | Invariant I1 [§Synthesis, idea 11] | M4 | Measured |
 | **/methodology** (sharpened) | Uses the Rule 605 names (effective spread, realized spread at horizons, effective-over-quoted) with one worked example per metric | The names are public and recognised [22]; no vendor publishes a method [§1] | M1 | Measured |
 
+**Additions from M1.1 and M2 (2026-11-12):**
+
+| ID | Item | Why | Milestone | Pillar |
+|---|---|---|---|---|
+| **A14** (new) | **Whale score v2 with the pre-fill rule**: only prints before the fill count as adverse; offline from public prints; versioned beside the old flag | EXP-003: more than half of the old "adverse" flags depended on bursts after the fill; the old flag is shown on the analytics panel and in the Council packet | M4 | Measured |
+| **A15** (new) | **Timing component decision** (Waiting for Deepanshu, item 7): the v2 hour profile mostly ranks volatility; option (b) builds it from the per-hour effective half-spread of taker events | LOG §L: on the rebuilt demos it reverses the profiles' order | M2 (before the re-lock) | Measured |
+| **E7** (new) | `evals/ablation.py` tabulates per golden set, so the rebuilt-demo runs (4-6, golden v3) are never mixed with runs 1-3 | `scripts/rerecord_ablation_v2.sh` numbers new runs 4-6 to protect the recorded ones | M3 | Explained |
+
 **Positioning line, checked against the research:** no vendor found serves a retail or prosumer trader with an audit of their own fills from a read-only key; open-source TCA libraries cover FX and equities only; no vendor offers an MCP server for execution audits [§1, §7]. This is a statement about what a search found on 2026-11-11, not proof of absence.
 
 **Wording to stop using** (see the corrections at the top of `MARKET_2026-11.md`): "MiCA Article 78, enforceable since 1 Jul 2026" (say "MiCA applies since 30 Dec 2024; the transition ended 1 Jul 2026"); "TUM and Frankfurt School studies measured 0.5% to 7.5%" as if it were one study; any competitor named Botminds.

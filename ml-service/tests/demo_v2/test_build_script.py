@@ -42,3 +42,4 @@ def test_nothing_after_the_window_is_borrowed(monkeypatch):
     w = t("BTCUSDT", end_31 - 5000, end_31 + 600_000)
     assert w.ts_ms.tolist() == [end_31 - 1000]                # only the 31st; February is never loaded
     assert sorted(d for _, d in t.used) == ["2024-01-31"]
+    assert len(t("BTCUSDT", end_31 + 1000, end_31 + 600_000)) == 0   # entirely after the window: empty (review M2 low 7)

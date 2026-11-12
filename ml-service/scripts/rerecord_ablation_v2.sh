@@ -30,7 +30,12 @@ do_or_print() { if [ "$RUN" = 1 ]; then echo "+ $*"; "$@"; else echo "would run:
 step "0. preconditions (read-only)"
 if [ -z "${GROQ_API_KEY:-}" ]; then echo "GROQ_API_KEY is not set"; [ "$RUN" = 1 ] && exit 1; else echo "GROQ_API_KEY: set"; fi
 if [ -z "${MONGODB_URI:-}" ]; then echo "MONGODB_URI is not set"; [ "$RUN" = 1 ] && exit 1; else echo "MONGODB_URI: set"; fi
-echo "Check by hand that the seed was applied: in mongosh, db.orders.countDocuments({accountId: 'demo-moderate'}) should be 245."
+# Read-only check that the rebuilt demos are seeded (demo-moderate has 245 orders after seedDemoV2 --apply).
+if [ -n "${MONGODB_URI:-}" ]; then
+  n=$(.venv/bin/python -c "import os; from pymongo import MongoClient; c = MongoClient(os.environ['MONGODB_URI'], serverSelectionTimeoutMS=8000); print(c.get_database(os.environ.get('MONGO_DB_NAME', 'fillscore')).orders.count_documents({'accountId': 'demo-moderate'}))" 2>/dev/null || echo "?")
+  echo "demo-moderate orders in the database: $n (expected 245)"
+  if [ "$RUN" = 1 ] && [ "$n" != "245" ]; then echo "refusing: the rebuilt demos are not seeded"; exit 1; fi
+fi
 
 step "1. golden set v3: packets from the rebuilt demos (read-only against Mongo; writes evals/golden/v3/)"
 [ "$DAY" = 1 ] && do_or_print .venv/bin/python -m evals.dump_golden_packets --set v3
@@ -39,10 +44,11 @@ echo "Then copy required_evidence review: the dump carries it over from the newe
 step "2. day $DAY: live runs (recordings saved to evals/recordings/, nothing written to Atlas: persist=False)"
 # Runs 1-3 of every arm and user are the recorded golden v1/v2 runs; recorded LLM output is never overwritten, so the
 # rebuilt-demo runs are numbered 4-6. Refuse to start if any target file already exists.
-for arm in single council; do for u in demo-disciplined demo-moderate demo-aggressive; do for n in 4 5 6; do
-  if [ -e "evals/recordings/$arm-$u-$n.json" ] && [ "$DAY" = 1 ] && [ "$arm" = single ]; then
-    echo "refusing: evals/recordings/$arm-$u-$n.json exists"; exit 1; fi
-done; done; done
+# (evals/live_eval.py also skips an existing recording, so runs 1-3 are safe twice over.)
+if [ "$DAY" = 1 ]; then targets="single:4 single:5 single:6 council:4"; else targets="council:6"; fi
+for t in $targets; do arm=${t%%:*}; n=${t##*:}; for u in demo-disciplined demo-moderate demo-aggressive; do
+  if [ -e "evals/recordings/$arm-$u-$n.json" ]; then echo "refusing: evals/recordings/$arm-$u-$n.json exists"; exit 1; fi
+done; done
 if [ "$DAY" = 1 ]; then
   do_or_print .venv/bin/python -m evals.live_eval --arm single --runs 3 --cap 40 --start 4
   do_or_print .venv/bin/python -m evals.live_eval --arm council --runs 1 --cap 70 --start 4
@@ -56,7 +62,7 @@ echo "NOTE: evals/ablation.py tabulates every recording; before reporting, tabul
 step "3. verify every run actually executed (the verify-council-run checks)"
 echo "For each new recording: grep for 'failed:', 'Max retries', '_default_', '429', 'rate limit', 'RouterExhausted',"
 echo "'REJECTED', 'fell back'; confirm n_calls == 9 on Council runs; check user_id and created_at; read the text."
-do_or_print bash -c "grep -lE 'failed:|Max retries|_default_|429|rate limit|RouterExhausted|REJECTED|fell back' evals/recordings/*.json || echo 'no failure markers'"
+do_or_print bash -c "grep -lE 'failed:|Max retries|_default_|HTTP 429|status 429|rate limit|RouterExhausted|REJECTED|fell back' evals/recordings/*-[456].json || echo 'no failure markers in runs 4-6'"
 
 step "4. gate and tabulate (offline)"
 do_or_print .venv/bin/python evals/run_offline.py

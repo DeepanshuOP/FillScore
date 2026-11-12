@@ -36,7 +36,7 @@ DAY_MS = 86_400_000
 
 
 def _check(pattern: re.Pattern, name: str, day: str) -> None:
-    if not pattern.match(name or "") or not _DAY.match(day or ""):
+    if not pattern.fullmatch(name or "") or not _DAY.fullmatch(day or ""):    # fullmatch: "$" accepts a trailing "\n"
         raise ValueError(f"unsafe symbol or date: {name!r} {day!r}")
 
 

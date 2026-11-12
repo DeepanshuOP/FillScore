@@ -53,6 +53,10 @@ def test_bybit_loader_url_and_own_checksum(tmp_path):
     assert tapes.load_bybit_day("BTCUSDT", "2024-01-15", tmp_path, opener=lambda u: 1 / 0).refs[0].sha256 == ref.sha256  # cached
     with pytest.raises(ValueError):
         tapes.load_bybit_day("../x", "2024-01-15", tmp_path, opener=opener)
+    with pytest.raises(ValueError):                                   # review M2 low 6: no trailing newline
+        tapes.bybit_url("BTCUSDT", "2024-01-15\n")
+    with pytest.raises(ValueError):
+        tapes.okx_url("BTC-USDT\n", "2024-01-15")
 
 
 def _okx_zip(day: str, rows: list[str]) -> bytes:

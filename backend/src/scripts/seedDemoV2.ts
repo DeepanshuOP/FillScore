@@ -12,6 +12,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { Types } from 'mongoose';
 
 export const REBUILT_DEMOS = ['demo-aggressive', 'demo-moderate', 'demo-disciplined'] as const;
 type Doc = Record<string, any>;
@@ -69,6 +70,45 @@ export async function applyDemoSeed(plan: SeedPlan, io: SeedIO): Promise<void> {
     }
 }
 
+type ModelMap = Record<'trades' | 'orders' | 'fee_snapshots', any>;
+const COLLECTION_OF: Record<string, 'trades' | 'orders' | 'fee_snapshots'> = { trades: 'trades', orders: 'orders', feeSnapshots: 'fee_snapshots' };
+
+/** Every document the Mongoose schemas would reject, as "<collection> <demo> #<i>: <message>". The dry run prints
+ *  these and refuses to continue, so a dry run that passes proves the apply cannot fail on validation. */
+export function validateWithModels(plan: SeedPlan, models: ModelMap): string[] {
+    const errors: string[] = [];
+    for (const [demo, p] of Object.entries(plan)) {
+        for (const key of ['trades', 'orders', 'feeSnapshots'] as const) {
+            const coll = COLLECTION_OF[key];
+            p[key].forEach((doc, i) => {
+                const err = new models[coll](doc).validateSync();
+                if (err) errors.push(`${coll} ${demo} #${i}: ${err.message}`);
+            });
+        }
+    }
+    return errors;
+}
+
+/** Replace one demo account's documents in one collection without ever leaving it empty: insert the new documents
+ *  (with ids chosen here), and only then delete the account's other documents. If the insert fails, the documents it
+ *  did insert are removed again, so the account keeps exactly its old documents (review M2, medium 2). */
+export function mongoReplace(models: ModelMap) {
+    return async (collection: 'trades' | 'orders' | 'fee_snapshots', accountId: string, docs: Doc[]): Promise<void> => {
+        if (!isRebuilt(accountId)) throw new Error(`${accountId} is not a rebuilt demo account`);
+        const m = models[collection];
+        const withIds = docs.map(d => ({ ...d, _id: new Types.ObjectId() }));
+        const ids = withIds.map(d => d._id);
+        try {
+            if (withIds.length) await m.insertMany(withIds, { ordered: true });
+        } catch (e: any) {
+            await m.deleteMany({ accountId, _id: { $in: ids } });
+            const dup = e?.code === 11000 || /E11000/.test(String(e?.message));
+            throw new Error(`${collection} ${accountId}: insert failed, old documents kept${dup ? ' (duplicate key: already applied?)' : ''}: ${e?.message}`);
+        }
+        await m.deleteMany({ accountId, _id: { $nin: ids } });
+    };
+}
+
 export function readDemoFiles(outDir: string): Record<string, DemoFiles> {
     const read = (demo: string, name: string) => JSON.parse(fs.readFileSync(path.join(outDir, demo, `${name}.json`), 'utf8'));
     return Object.fromEntries(REBUILT_DEMOS.map(d => [d, { trades: read(d, 'trades'), orders: read(d, 'orders'), fee_snapshots: read(d, 'fee_snapshots') }]));
@@ -79,21 +119,29 @@ async function run() {
     const outDir = path.resolve(__dirname, '../../../ml-service/demo_v2/out');
     const plan = planDemoSeed(readDemoFiles(outDir));
     for (const [demo, p] of Object.entries(plan)) console.log(`${demo}: ${JSON.stringify(p.counts)}`);
+    const [{ default: mongoose }, { loadEnv }, { Trade }, { Order }, { FeeSnapshot }] = await Promise.all([
+        import('mongoose'), import('../config/env'), import('../models/Trade'), import('../models/Order'), import('../models/FeeSnapshot'),
+    ]);
+    const models: ModelMap = { trades: Trade, orders: Order, fee_snapshots: FeeSnapshot };
+    const errors = validateWithModels(plan, models);                 // no database needed
+    if (errors.length) {
+        console.error(`${errors.length} document(s) fail schema validation; nothing written:\n${errors.slice(0, 20).join('\n')}`);
+        process.exit(1);
+    }
+    console.log('All documents pass schema validation.');
     if (!apply) {
         console.log('Dry run: nothing written. Re-run with --apply to replace these demo accounts.');
         return;
     }
-    const [{ default: mongoose }, { loadEnv }, { Trade }, { Order }, { FeeSnapshot }] = await Promise.all([
-        import('mongoose'), import('../config/env'), import('../models/Trade'), import('../models/Order'), import('../models/FeeSnapshot'),
-    ]);
     await mongoose.connect(loadEnv().MONGODB_URI);
-    const models = { trades: Trade, orders: Order, fee_snapshots: FeeSnapshot } as Record<string, any>;
+    for (const demo of Object.keys(plan)) {
+        const before = await Promise.all([Trade.countDocuments({ accountId: demo }), Order.countDocuments({ accountId: demo }), FeeSnapshot.countDocuments({ accountId: demo })]);
+        console.log(`${demo} before: trades ${before[0]}, orders ${before[1]}, fee snapshots ${before[2]}`);
+    }
+    const replace = mongoReplace(models);
     await applyDemoSeed(plan, {
         replace: async (collection, accountId, docs) => {
-            if (!isRebuilt(accountId)) throw new Error('refused');
-            const m = models[collection];
-            await m.deleteMany({ accountId });
-            if (docs.length) await m.insertMany(docs);
+            await replace(collection, accountId, docs);
             console.log(`${collection}: ${accountId} replaced with ${docs.length}`);
         },
     });

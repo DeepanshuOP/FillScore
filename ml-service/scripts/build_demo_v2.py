@@ -61,6 +61,8 @@ class DayTapes:
             if d <= date(2024, 1, 31):                     # the decision window; nothing is borrowed from other days
                 parts.append(self._day(symbol, d.isoformat()).between(start, end))
             d += timedelta(days=1)
+        if not parts:                                      # entirely after the window: no prints, never borrowed
+            return AggTradeWindow.from_rows(symbol, [])
         if len(parts) == 1:
             return parts[0]
         cols = [np.concatenate([getattr(p, c) for p in parts]) for c in ("agg_id", "price", "qty", "ts_ms", "is_buyer_maker")]
