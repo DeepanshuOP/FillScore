@@ -1,6 +1,7 @@
 {
  "demo-aggressive": {
   "integrityHash": "7f84fe13f73e0753ee67a5e470c457d2c6cc5d6feef791e7802d6a4fb508e976",
+  "measureVersion": "1.0.0",
   "measured": 721,
   "orders": 311,
   "result": {
@@ -42,10 +43,12 @@
   },
   "scoringVersion": "v2.1.0",
   "skipped": {},
-  "unmeasuredFills": 9
+  "unmeasuredFills": 9,
+  "versionFileSha256": "63e20f1dc10b62e34bb43afdf0c875aee336b12145e4d750f2bef9e6fc0a57b0"
  },
  "demo-disciplined": {
   "integrityHash": "991a081e91f58e001ed8ba1e70f819e7b0d2431d59754fa8817f2a80b89b74d7",
+  "measureVersion": "1.0.0",
   "measured": 385,
   "orders": 144,
   "result": {
@@ -87,10 +90,12 @@
   },
   "scoringVersion": "v2.1.0",
   "skipped": {},
-  "unmeasuredFills": 0
+  "unmeasuredFills": 0,
+  "versionFileSha256": "63e20f1dc10b62e34bb43afdf0c875aee336b12145e4d750f2bef9e6fc0a57b0"
  },
  "demo-moderate": {
   "integrityHash": "3d0213e6acf621fe60423046136c708d96b314018b8c83262b150fe66d924e60",
+  "measureVersion": "1.0.0",
   "measured": 607,
   "orders": 245,
   "result": {
@@ -132,6 +137,7 @@
   },
   "scoringVersion": "v2.1.0",
   "skipped": {},
-  "unmeasuredFills": 0
+  "unmeasuredFills": 0,
+  "versionFileSha256": "63e20f1dc10b62e34bb43afdf0c875aee336b12145e4d750f2bef9e6fc0a57b0"
  }
 }

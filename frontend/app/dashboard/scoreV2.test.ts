@@ -48,6 +48,15 @@ describe('describeV2', () => {
     expect(v.components.map(c => c.name)).toEqual(['Slippage', 'Fees', 'Timing', 'Spread']);
   });
 
+  it('a rebuilt demo states its provenance, and its fee component is marked not independently measured', () => {
+    const v = scored(200, { ...base(), computedAt: null, demo: { dataSource: 'synthetic-demo', basis: 'offline build' } });
+    expect(v.note).toBe('Demo trader: the trading behaviour is synthetic; every fill price comes from real public '
+      + 'prints of January 2024. Its fees were generated at the published rate, so the fee component is not independently measured.');
+    expect(v.components.find(c => c.key === 'fees')!.value).toBe('67 (not independently measured)');
+    expect(v.components.find(c => c.key === 'slippage')!.value).toBe('58');
+    expect(scored(200, base()).note).toBeNull();                         // a real account carries no demo note
+  });
+
   it('demo and not-yet-computed states', () => {
     expect(describeV2(404, { error: 'v2_not_available_for_demo' }).kind).toBe('demo');
     expect(describeV2(404, { error: 'no_v2_score' }).kind).toBe('pending');

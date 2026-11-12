@@ -6,7 +6,13 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 **M2. Real demos** — built and verified offline (report `docs/milestones/M2.md`); its closing steps wait for Deepanshu (items 7-10: timing decision, demo set, Atlas seed, re-lock, ablation re-record).
 
-**Next concrete action: the M2 closing UI task** (needs no decision; it unblocks item 9). For the three Binance demos, make the dashboard read the rebuilt data honestly:
+**M2 closing UI task, part 1 done (uncommitted at the time of writing; see the commit after `d1aa3eb`):**
+- `GET /api/audit/v2` serves a demo's offline-built v2 grade (`backend/src/data/demoV2Grades.ts`, kept equal to `grades_v2.json` by a test) only once that demo's rebuilt orders are in the database. Before the seed, nothing changes.
+- The response carries `demo: {dataSource: 'synthetic-demo', basis}` and `computedAt: null`.
+- The v2 panel shows the provenance note and marks the fee component "not independently measured".
+- The v1 grade shows "Published grade of the earlier demo data, kept unchanged".
+
+**Next concrete action: part 2**, then M3: label or hide, for rebuilt demos only, the panels that read per-trade v1 fields: analytics, worst trades, cost attribution, exchange comparison, component means and the whale panel. They can detect a rebuilt demo as "`/api/audit/v2` answered with `demo`". Add tests with new-shape trade documents. Original task list:
 - label the frozen v1 audit as the published grade of the earlier demo data;
 - serve the v2 grade from `ml-service/demo_v2/out/grades_v2.json` via `GET /api/audit/v2` for demo ids, instead of today's `v2_not_available_for_demo`;
 - mark the fee component "not independently measured" for demo accounts;

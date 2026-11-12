@@ -36,6 +36,7 @@ export default function ScoreV2Panel({ status, body, onVerify }: Props) {
             {v.range && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#888078' }}>{v.range}</span>}
           </div>
           {v.detail && <p style={TEXT}>{v.detail}</p>}
+          {v.note && <p style={{ ...TEXT, fontSize: '0.78rem' }} data-testid="score-v2-demo-note">{v.note}</p>}
           <ul style={{ ...TEXT, listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem' }}>
             {v.components.map(c => (
               <li key={c.key} title={c.counts}>

@@ -95,7 +95,8 @@ def score_offline(demo: str, out: dict, tapes: DayTapes) -> dict:
     unmeasured = db.trades.count_documents({"measurement.unmeasuredReason": {"$ne": None}})
     s = score_account_v2(db, demo, load_version(SCORING_V2_VERSION), version_file_sha256(SCORING_V2_VERSION), now,
                          data_source="synthetic-demo")
-    return {"scoringVersion": s["scoringVersion"], "integrityHash": s["integrityHash"], "result": s["result"],
+    return {"scoringVersion": s["scoringVersion"], "versionFileSha256": s["versionFileSha256"],
+            "measureVersion": s["measureVersion"], "integrityHash": s["integrityHash"], "result": s["result"],
             "measured": sum(r["measured"] for r in reports), "orders": sum(r["orders"] for r in reports),
             "unmeasuredFills": unmeasured, "skipped": reports[-1]["skipped"]}
 

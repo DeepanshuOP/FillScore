@@ -21,6 +21,8 @@ import { signDownloadToken, DOWNLOAD_TOKEN_TTL_SECONDS } from '../utils/download
 import { INGEST_DAYS_BACK } from '../config/ingestion';
 import { auditRunLimiter } from '../middleware/security';
 import { ScoreV2 } from '../models/ScoreV2';
+import { Order } from '../models/Order';
+import { DEMO_V2_GRADES } from '../data/demoV2Grades';
 import { callMlInternal, mlServiceSecret } from '../services/measureTrigger';
 import {
     parseOrReject,
@@ -235,7 +237,17 @@ const DEMO_V2 = { error: 'v2_not_available_for_demo', message: 'The measured sco
 auditRouter.get('/v2', resolveAccount, async (req: Request, res: Response) => {
     try {
         const accountId = req.accountId!;
-        if (VALID_DEMO_USERS.has(accountId)) return res.status(404).json(DEMO_V2);
+        if (VALID_DEMO_USERS.has(accountId)) {
+            // A rebuilt demo (M2) has orders; the old demo data had none. Until the rebuilt data is seeded, the grade
+            // of data the dashboard does not show is never served.
+            const g = (DEMO_V2_GRADES as Record<string, any>)[accountId];
+            if (!g || !(await Order.exists({ accountId }))) return res.status(404).json(DEMO_V2);
+            return res.status(200).json({
+                label: 'v2 (measured)', scoringVersion: g.scoringVersion, versionFileSha256: g.versionFileSha256,
+                measureVersion: g.measureVersion, integrityHash: g.integrityHash, computedAt: null, result: g.result,
+                demo: { dataSource: 'synthetic-demo', basis: 'offline build (ml-service/scripts/build_demo_v2.py): real January 2024 prints, synthetic trading behaviour' },
+            });
+        }
         const s = await ScoreV2.findOne({ accountId }).sort({ computedAt: -1 }).lean();
         if (!s) return res.status(404).json({ error: 'no_v2_score', message: 'No measured score yet. It is computed after your trades are synced and measured.' });
         return res.status(200).json({

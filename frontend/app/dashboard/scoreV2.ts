@@ -9,7 +9,9 @@ export interface V2Response {
   versionFileSha256: string;
   measureVersion: string;
   integrityHash: string;
-  computedAt: string;
+  computedAt: string | null;
+  /** Present only for a rebuilt demo account (M2): its grade comes from the offline build, not a stored score. */
+  demo?: { dataSource: 'synthetic-demo'; basis: string };
   result: {
     components: Record<string, V2Component>;
     composite: number | null;
@@ -31,8 +33,13 @@ export interface V2Scored {
   components: Array<{ key: string; name: string; value: string; counts: string }>;
   version: string;
   hashShort: string;
-  computedAt: string;
+  computedAt: string | null;
+  /** Provenance note for a rebuilt demo account; null for a real account. */
+  note: string | null;
 }
+
+export const DEMO_NOTE = 'Demo trader: the trading behaviour is synthetic; every fill price comes from real public prints '
+  + 'of January 2024. Its fees were generated at the published rate, so the fee component is not independently measured.';
 export type V2View = V2Message | V2Scored;
 
 export function isScored(v: V2View): v is V2Scored {
@@ -53,17 +60,20 @@ export function describeV2(status: number, body: unknown): V2View {
   const b = body as V2Response;
   const r = b.result;
   const range = r.band ? `95% range ${Math.round(r.band[0])}–${Math.round(r.band[1])}` : null;
+  const isDemo = !!b.demo;
   const components = ORDER.map(([key, name]) => {
     const c = r.components[key];
+    const shown = c && c.score !== null ? String(Math.round(c.score)) : 'insufficient data';
     return {
       key, name,
-      value: c && c.score !== null ? String(Math.round(c.score)) : 'insufficient data',
+      value: isDemo && key === 'fees' && c && c.score !== null ? `${shown} (not independently measured)` : shown,
       counts: c ? `${c.measured} measured, ${c.unmeasured} not measured` : '0 measured',
     };
   });
   const common = {
     label: 'v2 · measured', range, components, version: b.scoringVersion,
     hashShort: `${b.integrityHash.slice(0, 8)}…${b.integrityHash.slice(-4)}`, computedAt: b.computedAt,
+    note: isDemo ? DEMO_NOTE : null,
   };
   if (r.grade && r.composite !== null) {
     return { kind: 'graded', headline: `${r.grade} · ${Math.round(r.composite)} / 100`, detail: null, ...common };

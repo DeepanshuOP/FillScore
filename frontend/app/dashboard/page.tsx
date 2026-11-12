@@ -592,6 +592,11 @@ function DashboardContent() {
                   <div data-testid="score-v1-label" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.18em', color: '#888078' }}>
                     V1 · RULE-BASED
                   </div>
+                  {(scoreV2.body as { demo?: unknown } | null)?.demo ? (
+                    <div data-testid="score-v1-demo-note" style={{ fontFamily: 'var(--font-inter)', fontSize: '0.7rem', lineHeight: 1.5, color: '#888078', maxWidth: '16rem' }}>
+                      Published grade of the earlier demo data, kept unchanged. The trades shown now were rebuilt from real prints; their measured score is the v2 panel.
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* RIGHT COLUMN — Three hero stats */}
