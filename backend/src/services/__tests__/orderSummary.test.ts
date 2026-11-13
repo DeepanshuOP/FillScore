@@ -47,6 +47,7 @@ describe('summariseOrders', () => {
         expect(s.shortfall).toEqual({
             n: 5, unmeasured: 1,
             medianBps: { execution: 3, spread: 1, impactTiming: 2.5, opportunity: 0, total: 6.5 },
+            totals: null,       // these fixtures state no intended notional
         });
     });
     it('unfilled orders: their opportunity cost', () => {
@@ -88,5 +89,48 @@ describe('quantile', () => {
         expect(quantile([5, 1, 3], 0.5)).toBe(3);
         expect(quantile([2], 0.9)).toBe(2);
         expect(quantile([], 0.5)).toBeNull();
+    });
+});
+
+// Totals per term over all orders, in USD and in bps of the intended notional (M2 live-site review, item 3).
+// Order A: intended notional $10,000. execution 2 bps = $2, spread 1 = $1, impact 1 = $1, opportunity 0, fees 10 = $10, total 12 = $12
+// Order B: $20,000. execution 4 bps = $8, spread 1 = $2, impact 3 = $6, opportunity 0, fees 10 = $20, total 14 = $28
+// Order C (unfilled): $5,000. execution 0, spread and impact not defined, opportunity 40 bps = $20, fees 0, total 40 = $20
+// Per term the USD amounts add up over the orders that have the term; bps = USD / (their intended notional) x 10,000.
+//   execution   $2 + $8 + $0 = $10  over $35,000 -> 10 / 35000 x 1e4 = 2.857142857...
+//   spread      $1 + $2      = $3   over $30,000 -> 1.0
+//   impact      $1 + $6      = $7   over $30,000 -> 2.333333...
+//   opportunity $0 + $0 + $20 = $20 over $35,000 -> 5.714285714...
+//   fees        $10 + $20 + $0 = $30 over $35,000 -> 8.571428571...
+//   total       $12 + $28 + $20 = $60 over $35,000 -> 17.142857142...
+// Check of the identity: 10 + 20 + 30 = 60 (execution + opportunity + fees = total).
+describe('summariseOrders totals', () => {
+    const sm = (orderId: string, notional: number, e: number | null, s: number | null, i: number | null, opp: number | null, f: number | null, t: number | null) =>
+        ({ orderId, unmeasuredReason: null, shortfall: { intendedNotional: notional, executionBps: e, spreadBps: s, impactTimingBps: i, opportunityBps: opp, feesBps: f, totalBps: t } });
+    const ords = [o('A', 'MARKET', 1, 1, 'FILLED', null), o('B', 'MARKET', 1, 1, 'FILLED', null), o('C', 'LIMIT', 1, 0, 'CANCELED', null)];
+    const ms = [sm('A', 10000, 2, 1, 1, 0, 10, 12), sm('B', 20000, 4, 1, 3, 0, 10, 14), sm('C', 5000, 0, null, null, 40, 0, 40)];
+    const t = summariseOrders(ords, ms).shortfall!.totals!;
+
+    it('USD per term', () => {
+        expect(t.execution.usd).toBeCloseTo(10, 9);
+        expect(t.spread.usd).toBeCloseTo(3, 9);
+        expect(t.impactTiming.usd).toBeCloseTo(7, 9);
+        expect(t.opportunity.usd).toBeCloseTo(20, 9);
+        expect(t.fees.usd).toBeCloseTo(30, 9);
+        expect(t.total.usd).toBeCloseTo(60, 9);
+    });
+    it('bps of the intended notional of the orders that have the term', () => {
+        expect(t.execution.bps).toBeCloseTo(2.857142857, 6);
+        expect(t.spread.bps).toBeCloseTo(1, 9);
+        expect(t.impactTiming.bps).toBeCloseTo(2.333333333, 6);
+        expect(t.opportunity.bps).toBeCloseTo(5.714285714, 6);
+        expect(t.fees.bps).toBeCloseTo(8.571428571, 6);
+        expect(t.total.bps).toBeCloseTo(17.142857142, 6);
+    });
+    it('order counts per term', () => {
+        expect([t.execution.n, t.spread.n, t.impactTiming.n, t.opportunity.n, t.fees.n, t.total.n]).toEqual([3, 2, 2, 3, 3, 3]);
+    });
+    it('a measurement without intendedNotional gives no totals (never a guess)', () => {
+        expect(summariseOrders(ORDERS, MEAS).shortfall!.totals).toBeNull();
     });
 });

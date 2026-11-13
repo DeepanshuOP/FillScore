@@ -127,23 +127,41 @@ def test_dump_treats_a_non_false_recorded_flag_as_recorded(tmp_path):
             dump_golden_packets.resolve_out_dir(f"s{i}", str(tmp_path))
 
 
-def test_v2_packets_deterministic():
-    """The edge packets are built from in-code trades, so they must reproduce hash-identically from the current
-    code. The three demo packets need a read-only Mongo read; they are checked when one is reachable (see
-    evals/dump_golden_packets.py --check v2), else the check says so and skips that part."""
+def test_v2_is_a_pinned_historical_set():
+    """Golden set v2 (prompt 1.6.0, metrics 1.2.0) was superseded by v3 in M3. Metrics 1.3.0 changed the packets, so the
+    current code no longer reproduces v2's hashes; the set stays as the record of what the 1.6.0 demo runs were
+    owned by. Its manifest and the metrics version inside every packet are pinned, like v1's."""
     g = golden_sets.load_golden("v2")
     assert set(g) >= {"demo-disciplined", "demo-moderate", "demo-aggressive"}
-    for name, trades in edge_trades().items():
-        ctx = packet_ctx(*build_all_packets(trades, name, "BTCUSDT"))
+    assert golden_sets.read_manifest("v2") == {"prompt_version": "1.6.0", "single_prompt_version": "1.1.0",
+                                               "metrics_version": "1.2.0", "recorded": False, "note": "re-record after 4R-2"}
+    for gid, gg in g.items():
+        assert all(gg["packet"][k]["metrics_version"] == "1.2.0" for k in ("fee", "risk", "liquidity", "alpha")), gid
+        assert gg["required_evidence"]["synthesis"] is not None
+
+
+def test_newest_set_packets_deterministic():
+    """The newest set (v3) is the one the current versions own. Its edge packets are built from in-code trades, so
+    they must reproduce hash-identically from the current code, and every case's required_evidence is the one rule
+    applied to its packet. The three demo packets need a read-only Mongo read; they are checked when one is
+    reachable (evals/dump_golden_packets.py --check v3), else that part is skipped."""
+    from agents.required_evidence import golden_required_evidence
+    from config.versions import METRICS_VERSION, PROMPT_VERSION, SINGLE_PROMPT_VERSION
+    name = golden_sets.list_sets()[-1]
+    assert name == "v3"
+    g = golden_sets.load_golden(name)
+    assert set(g) >= {"demo-disciplined", "demo-moderate", "demo-aggressive"}
+    for edge, trades in edge_trades().items():
+        ctx = packet_ctx(*build_all_packets(trades, edge, "BTCUSDT"))
         for k in ("fee", "risk", "liquidity", "alpha"):
-            assert ctx[k]["content_hash"] == g[name]["packet"][k]["content_hash"], (name, k)
-        assert g[name]["required_evidence"] == REQUIRED_EVIDENCE
-    m = golden_sets.read_manifest("v2")
-    from config.versions import METRICS_VERSION, PROMPT_VERSION
-    assert (m["prompt_version"], m["metrics_version"], m["recorded"]) == (PROMPT_VERSION, METRICS_VERSION, False)
+            assert ctx[k]["content_hash"] == g[edge]["packet"][k]["content_hash"], (edge, k)
+    m = golden_sets.read_manifest(name)
+    assert (m["prompt_version"], m["single_prompt_version"], m["metrics_version"], m["recorded"]) == \
+        (PROMPT_VERSION, SINGLE_PROMPT_VERSION, METRICS_VERSION, False)
     for gid, gg in g.items():   # every packet in the set was built by the current metrics code
         assert all(gg["packet"][k]["metrics_version"] == METRICS_VERSION for k in ("fee", "risk", "liquidity", "alpha")), gid
-    mismatches = dump_golden_packets.check_demo_hashes("v2")
+        assert gg["required_evidence"] == golden_required_evidence(gg["packet"]), gid
+    mismatches = dump_golden_packets.check_demo_hashes(name)
     if mismatches is None:
         pytest.skip("no reachable Mongo: demo packet determinism not checked here")
     assert mismatches == []

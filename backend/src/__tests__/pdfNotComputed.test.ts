@@ -41,6 +41,26 @@ describe('report PDF without per-trade v1 fields', () => {
         expect(text).not.toMatch(/\$0\.00/);
     }, 30000);
 
+    it('a rebuilt demo prints its current fills and orders, not the stored audit counts, and no negative zero', async () => {
+        const ts = trades();
+        const summary: any = await computeAuditSummary('demo-disciplined', ts);
+        summary.current = { fills: 607, orders: 245, notionalUsd: 123456.7, makerRatio: 0.66 };   // stored audit says 12 trades
+        summary.breakdown.avgSlippageBps = -0.0004;
+        const doc = ReportService.generateReport(summary, null, [], undefined as any);
+        const chunks: Buffer[] = [];
+        doc.on('data', (c: Buffer) => chunks.push(c));
+        await new Promise<void>(r => { doc.on('end', () => r()); });
+        const parser = new PDFParse({ data: new Uint8Array(Buffer.concat(chunks)) });
+        const text = (await parser.getText()).text;
+        await parser.destroy();
+        expect(text).toMatch(/Fills Analysed\s*:\s*607 \(in 245 orders\)/);
+        expect(text).toContain('$123,457');
+        expect(text).toContain('66% of fills');
+        expect(text).not.toContain('Trades Analysed');
+        expect(text).toContain('>-0.01 bps avg');
+        expect(text).not.toMatch(/-0\.0 bps/);
+    }, 30000);
+
     it('a v1-enriched account still prints its numbers', async () => {
         const ts = trades().map(t => ({ ...t, ...scoreTrade(t) }));
         const { aggregateCostAttribution } = await import('../scoring/attribution');

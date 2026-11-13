@@ -9,6 +9,7 @@ from __future__ import annotations
 from agents.metrics.liquidity_packet import LiquidityMetricsPacket
 from agents.grounded_call import grounded_verdict
 from agents.prompts import packet_values, system_prompt
+from agents.required_evidence import specialist_line
 from agents.schemas import TradeContext, LiquidityVerdict
 
 ROLE = "specialist"
@@ -34,7 +35,7 @@ SYSTEM_PROMPT = system_prompt(
     "- GOOD: low slippage, little adverse selection\n"
     "- POOR / CRITICAL: high slippage, strong adverse selection\n"
     "- MODERATE: everything else\n"
-    "\nExample: \"slippageRoot\": \"Market orders averaged {{liquidity.avg_slippage_bps}} of slippage and were worst at {{liquidity.worst_hour_utc}}.\"  Wrong: \"averaged 7.3 bps\" or \"the five worst trades\" (digits or number words outside a placeholder).\n"
+    "\nExample: \"slippageRoot\": \"The account placed {{liquidity.market_order_count}} market fills and {{liquidity.limit_order_count}} limit fills.\"  Wrong: \"averaged 7.3 bps\" or \"the five worst trades\" (digits or number words outside a placeholder).\n"
 )
 
 
@@ -42,6 +43,8 @@ def build_user_prompt(context: TradeContext, packet: LiquidityMetricsPacket, ctx
     ctx = ctx if ctx is not None else {NAMESPACE: packet.to_prompt_dict()}
     return f"""LiquidityMetricsPacket:
 {packet_values(ctx, [NAMESPACE])}
+
+{specialist_line(ctx, NAMESPACE)}
 
 Assign liquidityRating, write slippageRoot citing packet keys, list cited_evidence keys.
 Schema: liquidityRating (GOOD/MODERATE/POOR/CRITICAL), slippageRoot (str), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""

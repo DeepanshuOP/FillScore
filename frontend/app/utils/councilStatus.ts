@@ -21,7 +21,7 @@ const COUNCIL_ERROR_MESSAGES: Record<string, string> = {
     NO_DATA: 'There are no scored trades to analyse for this account yet.',
     MODEL_UNAVAILABLE: "The Council's AI model is unavailable right now. This is a configuration problem on our side, not yours.",
     DAILY_BUDGET_EXHAUSTED: 'The daily AI budget has been reached. Please try again tomorrow.',
-    DEMO_NOT_GENERATED: 'Demo analysis not generated yet.',
+    DEMO_NOT_GENERATED: 'Demo analysis not yet generated for the current demo data.',
 };
 
 /**

@@ -21,6 +21,9 @@ PINNED = {
     # scripts/calibrate_v2.py --id v2.2.0 --symbols BTCUSDT ETHUSDT BNBUSDT SOLUSDT --start 2026-08-12 --end 2026-11-09
     #   --every 1 --discard-raw
     "v2.2.0": "a0fa45c7ab977bd7c3f3c1afa8afc83f7ee5810a44011896868ab9bb5c3c3e8d",
+    # M3, ADR-0014: the implementation-shortfall decomposition. No recalibration: scripts/build_scoring_v230.py copies the
+    # v2.2.0 calibration and adds the decomposition fields.
+    "v2.3.0": "2a4d6b1ad79a2b7d22aecfe7cae7b0d894db2865a54b4dfae2f8d77cea0f4fa3",
 }
 
 
@@ -35,7 +38,11 @@ def test_version_file_unchanged(vid, sha):
 
 def test_current_version_exists_and_is_consistent():
     v = load_version(SCORING_V2_VERSION)
-    assert v["weights"] == WEIGHTS
+    if v.get("decomposition") == "implementation_shortfall":
+        assert set(v["weights"]) == {"execution", "fees", "unfilled"}
+        assert sum(v["weights"].values()) == pytest.approx(1.0)
+    else:
+        assert v["weights"] == WEIGHTS
     assert v["measureVersion"] == MEASURE_VERSION
     assert v["minFills"] == 20
     assert len(v["calibrationRefs"]) == len(v["anchors"]) * len(v["calibrationWindow"]["days"])
@@ -91,6 +98,17 @@ def test_v220_reproduces_the_v210_anchors_and_adds_a_cost_based_timing_rule():
         t = new["calibrationCounts"][sym]["timing"]
         assert min(t["eventDays"]) >= new["minProfileDays"] and min(t["events"]) > 0
         assert t["stepBps"] > 0 and new["timingFloorBps"][sym] == pytest.approx(t["stepBps"] * new["timingFloorSteps"])
+
+
+def test_v230_keeps_the_v220_calibration_and_decomposes_the_shortfall():
+    # ADR-0014: nothing is recalibrated. Anchors, hour profiles, floors, the 90 days and their checksums equal v2.2.0's;
+    # what is new is the reading of the score: three shortfall components, equal weights, timing not scored.
+    old, new = load_version("v2.2.0"), load_version("v2.3.0")
+    for k in ("anchors", "hourProfiles", "timingFloorBps", "timingReferenceHours", "calibrationWindow", "calibrationRefs",
+              "calibrationCounts", "spreadUnit", "timingUnit", "minProfileDays", "feeTable", "bands", "minFills"):
+        assert new[k] == old[k], k
+    assert new["decomposition"] == "implementation_shortfall" and new["timingScored"] is False
+    assert new["weights"] == {"execution": 1 / 3, "fees": 1 / 3, "unfilled": 1 / 3}
 
 
 def test_bad_version_id_refused():

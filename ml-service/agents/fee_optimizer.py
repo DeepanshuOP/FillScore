@@ -9,6 +9,7 @@ from __future__ import annotations
 from agents.metrics.fee_packet import FeeMetricsPacket
 from agents.grounded_call import grounded_verdict
 from agents.prompts import packet_values, system_prompt
+from agents.required_evidence import specialist_line
 from agents.schemas import TradeContext, FeeVerdict
 
 ROLE = "specialist"
@@ -38,6 +39,8 @@ def build_user_prompt(context: TradeContext, packet: FeeMetricsPacket, ctx: dict
     ctx = ctx if ctx is not None else {NAMESPACE: packet.to_prompt_dict()}
     return f"""FeeMetricsPacket:
 {packet_values(ctx, [NAMESPACE])}
+
+{specialist_line(ctx, NAMESPACE)}
 
 Assign feeRating, write recommendedAction, list cited_evidence keys.
 Schema: feeRating (OPTIMAL/MODERATE/WASTEFUL/SEVERELY_WASTEFUL), recommendedAction (str), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""

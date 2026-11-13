@@ -35,6 +35,60 @@ test('dashboard of a rebuilt demo: v1-only views say "not computed", measured vi
   expect(findAdviceTerms(await orders.innerText())).toEqual([])
 })
 
+// Live-site review of the rebuilt demo (2026-11-14), items 1 to 4 and 6, against the real backend and pages.
+test('header cards come from the current fills and orders, not from the stored v1 audit', async ({ page }) => {
+  await page.goto(`/dashboard?userId=${ID}`)
+  await expect(page.getByTestId('score-v1-label')).toBeVisible({ timeout: 30_000 })
+  // 3 fills of $420 in 5 orders, none a maker fill (reshapeDemoAsRebuilt)
+  await expect(page.getByText('FILLS ANALYSED')).toBeVisible()
+  await expect(page.getByTestId('header-trades')).toHaveText('3')
+  await expect(page.getByTestId('header-trades-sub')).toHaveText('in 5 orders')
+  await expect(page.getByTestId('header-volume')).toHaveText('$1,260.00')
+  await expect(page.getByTestId('header-maker')).toContainText('0% of fills')
+  await expect(page.getByText('TRADES ANALYSED')).toHaveCount(0)
+  // item 6: the card that links to the trades table no longer promises per-trade scores
+  await expect(page.getByText('See every fill')).toBeVisible()
+  await expect(page.getByText(/Per-trade scores not computed for this data/)).toBeVisible()
+  await expect(page.getByText('Sortable table · Per-trade scores · Full breakdown')).toHaveCount(0)
+})
+
+test('no negative zero; totals per term in USD and bps; grammar of the unfilled note', async ({ page }) => {
+  await page.goto(`/dashboard?userId=${ID}`)
+  const orders = page.getByTestId('orders-panel')
+  await expect(orders).toBeVisible({ timeout: 30_000 })
+  const text = await orders.innerText()
+  expect(text).not.toMatch(/-0\.0 bps|-\$0\.00/)
+  await expect(page.getByTestId('orders-shortfall')).toContainText('Impact and timing: >-0.01 bps')
+  // hand values (see reshapeDemoAsRebuilt): execution $2 + $8 + $0 = $10 over $35,000 = 2.9 bps; fees $30 = 8.6 bps;
+  // unfilled orders 7 bps x $5,000 = $3.50 over $35,000 = 1.0 bps; total $2.50 + $9 + $3.50 = $15 = 4.3 bps
+  const totals = page.getByTestId('orders-totals')
+  await expect(totals).toContainText('Execution cost: $10.00 · 2.9 bps')
+  await expect(totals).toContainText('Spread paid: $3.00 · 1.0 bps')
+  await expect(totals).toContainText('Fees: $30.00 · 8.6 bps')
+  await expect(totals).toContainText('Unfilled orders: $3.50 · 1.0 bps')
+  await expect(totals).toContainText('Total: $15.00 · 4.3 bps')
+  await expect(totals).toContainText('Impact and timing: >-$0.01 · >-0.01 bps')
+  // one unfilled order in this fixture: "its"
+  await expect(page.getByTestId('orders-unfilled')).toContainText('its median cost')
+})
+
+test('v2.3.0 panel: dollar costs beside the letter, components named after the shortfall terms, timing as information', async ({ page }) => {
+  await page.goto(`/dashboard?userId=${ID}`)
+  const v2 = page.getByTestId('score-v2')
+  await expect(v2).toBeVisible({ timeout: 30_000 })
+  // hand values of reshapeDemoAsRebuilt: execution $10.00 (2.9 bps), unfilled orders $3.50 (1.0 bps), fees $30.00 (8.6 bps), total $15.00 (4.3 bps)
+  const costs = page.getByTestId('score-v2-costs')
+  await expect(costs).toBeVisible()
+  await expect(costs).toContainText('Execution cost: $10.00 · 2.9 bps')
+  await expect(costs).toContainText('Unfilled orders: $3.50 · 1.0 bps')
+  await expect(costs).toContainText('Fees: $30.00 · 8.6 bps')
+  await expect(costs).toContainText('Total: $15.00 · 4.3 bps')
+  const text = await v2.innerText()
+  for (const name of ['Execution cost', 'Fees', 'Unfilled orders']) expect(text).toContain(name)
+  expect(text).not.toMatch(/Slippage|Spread:/)                  // the old component names are gone from the panel
+  await expect(page.getByTestId('score-v2-timing')).toHaveText('Timing, not scored: No material difference between hours.')
+})
+
 test('analytics of a rebuilt demo says not computed instead of drawing empty charts', async ({ page }) => {
   await page.goto(`/analytics?userId=${ID}`)
   await expect(page.getByTestId('not-computed')).toBeVisible({ timeout: 30_000 })

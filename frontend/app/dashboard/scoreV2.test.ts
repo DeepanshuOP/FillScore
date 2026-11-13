@@ -70,6 +70,41 @@ describe('describeV2', () => {
   });
 });
 
+// v2.3.0 (ADR-0014): three components named after the shortfall terms; timing is information, not a component.
+const shortfallBody = (over: Partial<V2Response['result']> = {}): V2Response => ({
+  ...base(), scoringVersion: 'v2.3.0',
+  result: {
+    components: {
+      execution: { score: 83.68, measured: 607, unmeasured: 0, reason: null },
+      fees: { score: 100, measured: 607, unmeasured: 0, reason: null },
+      unfilled: { score: 96.54, measured: 245, unmeasured: 0, reason: null },
+    },
+    timing: { scored: false, fills: 607, fillsAboveFloor: 0, meanExcessBps: 0.003, message: 'No material difference between hours.' },
+    composite: 93.41, grade: 'A', band: [92.5, 94.1], reason: null, orders: 245, fills: 607, ...over,
+  },
+});
+
+describe('describeV2 under v2.3.0', () => {
+  it('names the components after the shortfall terms (no "slippage" beside "execution")', () => {
+    const v = scored(200, shortfallBody());
+    expect(v.components.map(c => c.name)).toEqual(['Execution cost', 'Fees', 'Unfilled orders']);
+    expect(v.components.map(c => c.value)).toEqual(['84', '100', '97']);
+    expect(v.headline).toBe('A · 93 / 100');
+  });
+  it('reports timing as information only, in the audit\'s own words', () => {
+    expect(scored(200, shortfallBody()).timingNote).toBe('Timing, not scored: No material difference between hours.');
+  });
+  it('older versions keep their four components and have no timing note', () => {
+    const v = scored(200, base());
+    expect(v.components.map(c => c.name)).toEqual(['Slippage', 'Fees', 'Timing', 'Spread']);
+    expect(v.timingNote).toBeNull();
+  });
+  it('a rebuilt demo marks its fee component as not independently measured, in the new names too', () => {
+    const v = scored(200, { ...shortfallBody(), computedAt: null, demo: { dataSource: 'synthetic-demo', basis: 'offline build' } });
+    expect(v.components.find(c => c.key === 'fees')!.value).toBe('100 (not independently measured)');
+  });
+});
+
 describe('describeVerify', () => {
   it('states the outcome in past tense', () => {
     expect(describeVerify(200, { match: true })).toBe('Integrity check passed: the hash was recomputed from the stored inputs and matched.');

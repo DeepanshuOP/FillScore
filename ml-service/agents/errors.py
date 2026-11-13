@@ -23,7 +23,7 @@ _MESSAGES = {
     MODEL_UNAVAILABLE: "The Council's AI model is unavailable right now. This is a configuration problem on our side, not yours.",
     INTERNAL: "The Council hit an unexpected problem. Please try again.",
     DAILY_BUDGET_EXHAUSTED: "The daily AI budget has been reached. Please try again tomorrow.",
-    DEMO_NOT_GENERATED: "Demo analysis not generated yet.",
+    DEMO_NOT_GENERATED: "Demo analysis not yet generated for the current demo data.",
 }
 
 _RATE_LIMIT_MARKERS = ("429", "too many requests", "rate limit", "rate_limit", "max retries exceeded")

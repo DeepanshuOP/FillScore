@@ -56,10 +56,11 @@ def render_json() -> str:
     import measure.orders  # noqa: F401
     from config.versions import SCORING_V2_VERSION
     from measure.registry import REGISTRY
-    from scoring_v2.components import ANCHOR_RULE, COMPONENT_DOCS
+    from scoring_v2.components import ANCHOR_RULE, COMPONENT_DOCS, COMPONENT_DOCS_SHORTFALL, SHORTFALL_RULE
     from scoring_v2.version import load_version, version_file_sha256
 
     v = load_version(SCORING_V2_VERSION)
+    shortfall = v.get("decomposition") == "implementation_shortfall"
     data = {
         "generatedBy": "ml-service/scripts/gen_methodology.py",
         "measureVersion": MEASURE_VERSION,
@@ -69,7 +70,9 @@ def render_json() -> str:
             "version": v["id"], "versionFileSha256": version_file_sha256(v["id"]), "weights": v["weights"],
             "bands": v["bands"], "minFills": v["minFills"], "calibrationWindow": v["calibrationWindow"],
             "symbols": sorted(v["anchors"]), "calibrationFiles": len(v["calibrationRefs"]), "feeTable": v["feeTable"],
-            "components": COMPONENT_DOCS, "anchorRule": ANCHOR_RULE,
+            "components": COMPONENT_DOCS_SHORTFALL if shortfall else COMPONENT_DOCS, "anchorRule": ANCHOR_RULE,
+            "decomposition": v.get("decomposition", "components"), "timingScored": v.get("timingScored", True),
+            "weightRule": SHORTFALL_RULE if shortfall else None,
             "spreadUnit": v.get("spreadUnit", "fill"), "minProfileDays": v.get("minProfileDays"),
             "timingUnit": v.get("timingUnit", "hour_rank"), "timingReferenceHours": v.get("timingReferenceHours"),
             "timingFloorSteps": v.get("timingFloorSteps"),

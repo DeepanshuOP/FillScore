@@ -27,6 +27,29 @@ const median = (v: number[]) => quantile(v, 0.5);
 const nums = (rows: Array<Record<string, any>>, key: string): number[] =>
     rows.map(r => r[key]).filter((v): v is number => typeof v === 'number' && Number.isFinite(v));
 
+export const TERMS: Array<[string, string]> = [
+    ['execution', 'executionBps'], ['spread', 'spreadBps'], ['impactTiming', 'impactTimingBps'],
+    ['opportunity', 'opportunityBps'], ['fees', 'feesBps'], ['total', 'totalBps'],
+];
+
+/** Totals per term over all measured orders: USD = bps x intended notional / 10,000, summed over the orders that have
+ *  the term; bps = that USD over the same orders' intended notional. null when no order states its notional. */
+export function termTotals(sf: Array<Record<string, any>>) {
+    const out: Record<string, { usd: number; bps: number; n: number } | null> = {};
+    let any = false;
+    for (const [name, key] of TERMS) {
+        let usd = 0, notional = 0, n = 0;
+        for (const s of sf) {
+            const b = s[key], nt = s.intendedNotional;
+            if (typeof b !== 'number' || !Number.isFinite(b) || typeof nt !== 'number' || !(nt > 0)) continue;
+            usd += b * nt / 1e4; notional += nt; n++;
+        }
+        out[name] = n ? { usd, bps: usd / notional * 1e4, n } : null;
+        if (n) any = true;
+    }
+    return any ? out as Record<string, { usd: number; bps: number; n: number }> : null;
+}
+
 export function summariseOrders(orders: OrderLike[], measurements: MeasurementLike[]) {
     const counts = { total: orders.length, filled: 0, partial: 0, unfilled: 0, open: 0 };
     const unfilledIds = new Set<string>();
@@ -57,6 +80,7 @@ export function summariseOrders(orders: OrderLike[], measurements: MeasurementLi
                 opportunity: median(nums(sf, 'opportunityBps')),
                 total: median(nums(sf, 'totalBps')),
             },
+            totals: termTotals(sf),
         } : null,
         unfilled: unfilledSf.length ? { n: unfilledSf.length, medianOpportunityBps: unfilledOpp } : null,
     };

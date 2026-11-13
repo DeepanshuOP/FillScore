@@ -24,8 +24,10 @@ import { buildComponentCards, cardVisual, type ComponentMeans } from './componen
 import { skippedNotice, type SkippedTrades } from './skipped';
 import ScoreV2Panel from './ScoreV2Panel';
 import OrdersPanel from './OrdersPanel';
+import { describeHeaderStats, tradesCardCopy, type CurrentFigures } from './headerStats';
 import NotComputed from '../components/NotComputed';
 import { NOT_COMPUTED, isNotComputed } from '../utils/notComputed';
+import { formatBps } from '../utils/formatBps';
 
 interface CostAttribution {
   slippageCost: number;
@@ -61,6 +63,8 @@ interface AuditSummary {
   createdAt: string;
   /** False for a rebuilt demo: its trades carry no per-trade v1 fields (decision 11). Absent in old responses = true. */
   v1Computed?: boolean;
+  /** Present for a rebuilt demo: figures from its current fills and orders (the stored audit describes the earlier trades). */
+  current?: CurrentFigures;
 }
 
 const formatDate = (dateStr?: string) => {
@@ -77,9 +81,6 @@ const formatCurrency = (val: number) =>
     style: 'currency', currency: 'USD',
     minimumFractionDigits: 2, maximumFractionDigits: 2
   }).format(val);
-
-const formatNumber = (val: number) =>
-  new Intl.NumberFormat('en-US').format(Math.round(val));
 
 
 const gradeConfig = {
@@ -475,6 +476,8 @@ function DashboardContent() {
         {audit && !loading && (() => {
           const cfg = gradeConfig[audit.fillGrade];
           const v1Computed = audit.v1Computed !== false;
+          const header = describeHeaderStats(audit, audit.current);
+          const tradesCard = tradesCardCopy(v1Computed);
           return (
             <div>
               {dashboardMode === 'demo' && (
@@ -658,13 +661,13 @@ function DashboardContent() {
                   }}>
                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent)' }} />
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' }}>
-                      TRADES ANALYSED
+                      {header.tradesLabel}
                     </div>
-                    <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-primary, #ede8e0)' }}>
-                      {formatNumber(audit.totalTrades)}
+                    <div data-testid="header-trades" style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-primary, #ede8e0)' }}>
+                      {header.trades}
                     </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#484844' }}>
-                      across all symbols
+                    <div data-testid="header-trades-sub" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#484844' }}>
+                      {header.tradesSub}
                     </div>
                   </div>
 
@@ -683,11 +686,11 @@ function DashboardContent() {
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' }}>
                       TOTAL VOLUME
                     </div>
-                    <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-primary, #ede8e0)' }}>
-                      {formatCurrency(audit.totalNotional)}
+                    <div data-testid="header-volume" style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-primary, #ede8e0)' }}>
+                      {header.volume}
                     </div>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#484844' }}>
-                      notional traded
+                      {header.volumeSub}
                     </div>
                   </div>
 
@@ -714,7 +717,7 @@ function DashboardContent() {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#888078' }}>
                   <span>EXCHANGE  ·  {audit.exchange.toUpperCase()}</span>
-                  <span>MAKER RATIO  ·  {Math.round(audit.breakdown.makerRatio * 100)}%</span>
+                  <span data-testid="header-maker">MAKER RATIO  ·  {header.makerRatio}{header.makerSub ? ` ${header.makerSub}` : ''}</span>
                 </div>
               </div>
 
@@ -722,6 +725,7 @@ function DashboardContent() {
                 <ScoreV2Panel
                   status={scoreV2.status}
                   body={scoreV2.body}
+                  ordersBody={ordersSummary}
                   onVerify={dashboardMode === 'real' ? async () => {
                     const r = await authFetch(`${apiBase()}/audit/verify`, {}, { accessToken, refreshAccessToken });
                     return { status: r.status, body: await r.json().catch(() => null) };
@@ -1181,9 +1185,9 @@ function DashboardContent() {
                           <span style={{ color: '#ede8e0', fontSize: '1.1rem', fontWeight: 600 }}>{Math.round(audit.avgFillScore)} avg score</span>
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginTop: '16px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#888078' }}>
-                          <div>TOTAL NOTIONAL: <span style={{ color: '#ede8e0' }}>{formatCurrency(audit.totalNotional)}</span></div>
-                          <div>MAKER RATIO: <span style={{ color: '#ede8e0' }}>{Math.round(audit.breakdown.makerRatio * 100)}%</span></div>
-                          <div>AVG SLIPPAGE: <span style={{ color: '#ede8e0' }}>{audit.breakdown.avgSlippageBps.toFixed(1)} bps</span></div>
+                          <div>TOTAL NOTIONAL: <span style={{ color: '#ede8e0' }}>{header.volume}</span></div>
+                          <div>MAKER RATIO: <span style={{ color: '#ede8e0' }}>{header.makerRatio}{header.makerSub ? ` ${header.makerSub}` : ''}</span></div>
+                          <div>AVG SLIPPAGE: <span style={{ color: '#ede8e0' }}>{v1Computed ? formatBps(audit.breakdown.avgSlippageBps) : NOT_COMPUTED}</span></div>
                         </div>
                       </div>
                       <div style={{
@@ -1439,7 +1443,7 @@ function DashboardContent() {
                       fontSize: '1rem',
                       color: '#ede8e0'
                     }}>
-                      See every trade in detail
+                      {tradesCard.title}
                     </div>
                     <div style={{
                       fontFamily: 'var(--font-mono)',
@@ -1447,7 +1451,7 @@ function DashboardContent() {
                       letterSpacing: '0.1em',
                       color: '#888078'
                     }}>
-                      Sortable table · Per-trade scores · Full breakdown
+                      {tradesCard.subtitle}
                     </div>
                   </div>
                   

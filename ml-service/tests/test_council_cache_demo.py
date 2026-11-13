@@ -59,7 +59,9 @@ def _stored_run(router, account=USER, created=None, degraded=False, **overrides)
     from tests.council_fakes import SYNTHESIS
 
     result = {
-        "tradeContext": {"userId": account, "symbol": "BTCUSDT"},
+        "tradeContext": {"userId": account, "symbol": "BTCUSDT", "fee_packet_hash": fee.content_hash,
+                         "risk_packet_hash": risk.content_hash, "liquidity_packet_hash": liq.content_hash,
+                         "alpha_packet_hash": alpha.content_hash},
         "liquidity": {"liquidityRating": "GOOD", "slippageRoot": "x", "confidence": 0.5},
         "alpha": {"alphaRating": "NEUTRAL", "bestAlternative": "x", "confidence": 0.5},
         "risk": {"riskLevel": "LOW", "confidence": 0.5},
@@ -136,7 +138,8 @@ def test_demo_request_serves_the_latest_stored_run_without_calls_or_packet_loads
     loads = []
     result = _flow(router, db, account="demo-aggressive", loads=loads)
     assert result.run_id == "new" and result.cached is True        # newest NON-degraded, any age
-    assert provider.calls == [] and loads == []
+    # one packet read, to check the stored run against the current data (item 5, 2026-11-14); no LLM call
+    assert provider.calls == [] and loads == [1]
 
 
 def test_demo_request_falls_back_to_the_committed_fixture(tmp_path):
@@ -162,8 +165,12 @@ def test_demo_request_uses_the_fixture_when_the_database_is_down(tmp_path):
     async def db_down(*_a, **_k):
         raise RuntimeError("bad auth")
 
+    async def load(*_a, **_k):
+        return make_packets(), []
+
     from agents.council_service import council_flow
     with patch("agents.council_service.DEMO_RUNS_DIR", tmp_path), \
+         patch("agents.metrics.loader.load_run_inputs", load), \
          patch("agents.persistence.latest_demo_run", db_down):
         result = asyncio.run(council_flow("demo-moderate", "BTCUSDT", llm=router))
     assert result.cached is True and provider.calls == []
@@ -187,7 +194,7 @@ def test_anonymous_demo_stream_says_not_generated_and_makes_no_calls(tmp_path, m
         res = client.post("/ml/agents/council/stream", json={"userId": "demo-aggressive", "symbol": "BTCUSDT"})
         plain = client.post("/ml/agents/council", json={"userId": "demo-aggressive", "symbol": "BTCUSDT"})
     assert "event: error" in res.text and "DEMO_NOT_GENERATED" in res.text
-    assert "Demo analysis not generated yet" in res.text
+    assert "Demo analysis not yet generated for the current demo data" in res.text
     assert plain.status_code == 404 and plain.json()["detail"]["code"] == "DEMO_NOT_GENERATED"
     assert provider.calls == []
 

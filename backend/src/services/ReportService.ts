@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import { formatBps } from '../utils/formatBps';
 
 /** Host of the configured site (FRONTEND_URL); empty when unset, so no domain we do not own is printed. */
 function siteHost(): string {
@@ -121,10 +122,10 @@ export class ReportService {
     const timingScore = Math.min(100, Math.max(0, (bd.worstHour >= 22 || bd.worstHour <= 7) ? 65 : 85));
     const spreadScore = Math.min(100, Math.max(0, Math.round(100 - ((bd.avgFeeDragBps || 0) * 2))));
 
-    const slippageAvg = bd.avgSlippageBps ? bd.avgSlippageBps.toFixed(1) + ' bps avg' : '';
+    const slippageAvg = bd.avgSlippageBps ? formatBps(bd.avgSlippageBps) + ' avg' : '';
     const feeRatio = bd.makerRatio != null ? Math.round(bd.makerRatio * 100) + '% maker ratio' : '';
     const timingPeak = bd.bestHour != null ? `Peak: ${bd.bestHour.toString().padStart(2, '0')}:00 UTC` : '';
-    const spreadAvg = bd.avgFeeDragBps ? bd.avgFeeDragBps.toFixed(1) + ' bps drag' : '';
+    const spreadAvg = bd.avgFeeDragBps ? formatBps(bd.avgFeeDragBps) + ' drag' : '';
 
     drawRow('SLIPPAGE', '35%', slippageScore, slippageAvg);
     drawRow('FEE EFF.', '25%', feeScore, feeRatio);
@@ -154,8 +155,15 @@ export class ReportService {
     cy += 30;
 
     doc.fillColor(grey).font('Courier').fontSize(12);
-    doc.text(`Total Volume    : $${(auditData.totalNotional || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`, 50, cy); cy += 16;
-    doc.text(`Trades Analysed : ${auditData.totalTrades || 0}`, 50, cy); cy += 16;
+    const cur = auditData.current;      // set for a rebuilt demo: the stored audit describes earlier trades
+    if (cur) {
+      doc.text(`Total Volume    : ${cur.notionalUsd == null ? 'not computed' : '$' + cur.notionalUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })} (all fills)`, 50, cy); cy += 16;
+      doc.text(`Fills Analysed  : ${cur.fills} (in ${cur.orders} orders)`, 50, cy); cy += 16;
+      doc.text(`Maker Ratio     : ${cur.makerRatio == null ? 'not computed' : Math.round(cur.makerRatio * 100) + '% of fills'}`, 50, cy); cy += 16;
+    } else {
+      doc.text(`Total Volume    : $${(auditData.totalNotional || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`, 50, cy); cy += 16;
+      doc.text(`Trades Analysed : ${auditData.totalTrades || 0}`, 50, cy); cy += 16;
+    }
     if (bd.bestSymbol) { doc.text(`Best Symbol     : ${bd.bestSymbol}`, 50, cy); cy += 16; }
     if (bd.worstSymbol) { doc.text(`Worst Symbol    : ${bd.worstSymbol}`, 50, cy); cy += 16; }
     if (bd.bestHour != null) { doc.text(`Best Hour       : ${bd.bestHour.toString().padStart(2, '0')}:00 UTC`, 50, cy); cy += 16; }
@@ -194,7 +202,7 @@ export class ReportService {
       doc.text((t.exchange || '').toUpperCase(), colX[2], ty);
       doc.text((t.side || '').toUpperCase(), colX[3], ty);
       doc.text(`$${Math.round(t.notional || t.notionalValue || 0)}`, colX[4], ty);
-      doc.text((t.slippageBps || t.arrivalSlippageBps || 0).toFixed(1), colX[5], ty);
+      doc.text(formatBps(t.slippageBps ?? t.arrivalSlippageBps).replace(' bps', ''), colX[5], ty);
       doc.text(Math.round(t.fillScore || 0).toString(), colX[6], ty);
 
       const tGrade = t.fillGrade || 'F';
@@ -231,7 +239,7 @@ export class ReportService {
         { continued: true }
       );
       doc.fillColor(white).font('Courier').text(
-        ` in this period (a difference of ~${comparisonData.venueAlphaBps.toFixed(1)} bps).`
+        ` in this period (a difference of ~${formatBps(comparisonData.venueAlphaBps)}).`
       );
 
       // Venue cards
@@ -273,7 +281,7 @@ export class ReportService {
         doc.fillColor(grey).font('Courier').fontSize(8);
         doc.text('AVG SLIPPAGE', valX, labelY + 60, { width: vw });
         doc.fillColor(white).font('Courier').fontSize(10);
-        doc.text(`${(ex.avgSlippageBps || 0).toFixed(1)} bps`, valX, labelY + 70, { width: vw });
+        doc.text(formatBps(ex.avgSlippageBps ?? 0), valX, labelY + 70, { width: vw });
 
         doc.fillColor(grey).font('Courier').fontSize(8);
         doc.text('TRADES', valX, labelY + 88, { width: vw });

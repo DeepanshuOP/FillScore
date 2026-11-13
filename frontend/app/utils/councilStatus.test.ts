@@ -126,7 +126,7 @@ describe('Phase 1b error codes', () => {
     });
 
     it('explains a demo analysis that has not been generated', () => {
-        expect(councilErrorMessage('DEMO_NOT_GENERATED')).toBe('Demo analysis not generated yet.');
+        expect(councilErrorMessage('DEMO_NOT_GENERATED')).toBe('Demo analysis not yet generated for the current demo data.');
     });
 });
 

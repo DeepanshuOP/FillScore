@@ -24,6 +24,7 @@ import { ScoreV2 } from '../models/ScoreV2';
 import { Order } from '../models/Order';
 import { OrderMeasurement } from '../models/OrderMeasurement';
 import { summariseOrders } from '../services/orderSummary';
+import { summariseTrades } from '../services/tradeSummary';
 import { DEMO_V2_GRADES } from '../data/demoV2Grades';
 import { callMlInternal, mlServiceSecret } from '../services/measureTrigger';
 import {
@@ -232,7 +233,11 @@ auditRouter.get('/score', resolveAccount, async (req: Request, res: Response) =>
         }
 
         const body = await withComponentMeans(await descriptiveAudit(latestAudit, accountId), accountId);
-        return res.status(200).json({ ...body, v1Computed: await v1Flag(req, accountId) });
+        const v1Computed = await v1Flag(req, accountId);
+        // A rebuilt demo: the stored audit describes the earlier trades, so the header figures come from the current ones.
+        const current = v1Computed ? undefined : summariseTrades(
+            await Trade.find({ accountId }, { notional: 1, isMaker: 1 }).lean(), await Order.countDocuments({ accountId }));
+        return res.status(200).json({ ...body, v1Computed, ...(current ? { current } : {}) });
 
     } catch (error: any) {
         console.error('Error fetching score:', error);
@@ -397,7 +402,11 @@ auditRouter.get('/report', resolveDownloadAccount('report'), async (req: Request
             comparisonData = { exchanges, bestExchange, worstExchange, venueAlphaBps, perSymbolRanking };
         }
 
-        const doc = ReportService.generateReport(await descriptiveAudit(latestAudit, accountId), attribution, worstTrades, comparisonData);
+        const reportAudit = await descriptiveAudit(latestAudit, accountId);
+        if (!(await v1Flag(req, accountId))) {
+            reportAudit.current = summariseTrades(await Trade.find({ accountId }, { notional: 1, isMaker: 1 }).lean(), await Order.countDocuments({ accountId }));
+        }
+        const doc = ReportService.generateReport(reportAudit, attribution, worstTrades, comparisonData);
         
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="fillscore-audit-${accountId}-${new Date().toISOString().split('T')[0]}.pdf"`);

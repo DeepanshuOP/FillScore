@@ -5,8 +5,8 @@
 
 Demo users' trades are read from the configured Mongo (no writes); edge cases are built in code (no DB).
 A set whose MANIFEST says recorded: true is never written: its packets are what recordings were made against.
-`required_evidence` (hand-written, not produced by the packet code) is carried over from the set being rewritten,
-else from the newest recorded set, so a regeneration never drops it."""
+`required_evidence` of every case is derived from its packet values by agents.required_evidence.golden_required_evidence
+(from golden set v3 on; v1 and v2 carry hand-picked keys and are never rewritten)."""
 from __future__ import annotations
 
 import argparse
@@ -33,18 +33,6 @@ def resolve_out_dir(set_name: str, root: str | None = None) -> str:
         raise SystemExit(f"refusing to write {set_name}: its manifest says recorded: true "
                          f"(recordings were made against these packets; make a new set instead)")
     return d
-
-
-def _seed_required_evidence(set_name: str, root: str | None) -> dict[str, dict]:
-    """gid -> required_evidence from the set being rewritten, else the newest recorded set."""
-    for name in [set_name] + sorted(golden_sets.recorded_sets(root), reverse=True):
-        try:
-            g = golden_sets.load_golden(name, root)
-        except FileNotFoundError:
-            continue
-        if g:
-            return {gid: v["required_evidence"] for gid, v in g.items() if "required_evidence" in v}
-    return {}
 
 
 async def _demo_contexts() -> dict[str, tuple[int, dict]]:
@@ -96,26 +84,25 @@ def dump(set_name: str, root: str | None = None) -> None:
     from agents.metrics.loader import build_all_packets
     from agents.render import packet_ctx
     from config.versions import METRICS_VERSION, PROMPT_VERSION, SINGLE_PROMPT_VERSION
-    from evals.edge_cases import REQUIRED_EVIDENCE, edge_trades
+    from agents.required_evidence import golden_required_evidence
+    from evals.edge_cases import edge_trades
     d = resolve_out_dir(set_name, root)
-    seed = _seed_required_evidence(set_name, root)
     demos = asyncio.run(_demo_contexts())   # read before anything is written
     os.makedirs(d, exist_ok=True)
-    for u, (n, ctx) in demos.items():
-        doc = {"id": u, "kind": "demo", "symbol": "BTCUSDT", "n_trades": n, "packet": ctx}
-        if u in seed:
-            doc["required_evidence"] = seed[u]
+    for u, (n, ctx) in demos.items():       # required_evidence: the one rule, from the packet values (M3, LOG §M)
+        doc = {"id": u, "kind": "demo", "symbol": "BTCUSDT", "n_trades": n, "packet": ctx,
+               "required_evidence": golden_required_evidence(ctx)}
         _write(os.path.join(d, f"{u}.json"), doc)
         print(u, n, "trades")
     for name, trades in edge_trades().items():
         ctx = packet_ctx(*build_all_packets(trades, name, "BTCUSDT"))
         _write(os.path.join(d, f"{name}.json"), {"id": name, "kind": "edge", "symbol": "BTCUSDT", "n_trades": len(trades),
-                                                 "packet": ctx, "required_evidence": REQUIRED_EVIDENCE})
+                                                 "packet": ctx, "required_evidence": golden_required_evidence(ctx)})
         print(name, len(trades))
     if not os.path.exists(os.path.join(d, "MANIFEST.json")):
         _write(os.path.join(d, "MANIFEST.json"),
                {"prompt_version": PROMPT_VERSION, "single_prompt_version": SINGLE_PROMPT_VERSION,
-                "metrics_version": METRICS_VERSION, "recorded": False, "note": "re-record after 4R-2"})
+                "metrics_version": METRICS_VERSION, "recorded": False, "note": "packets only; edit this note when the set is recorded"})
 
 
 def main(argv: list[str] | None = None) -> int:

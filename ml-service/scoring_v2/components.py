@@ -35,7 +35,35 @@ COMPONENT_DOCS = {
               "M1 calibration days, including events with proxies older than 1 s coincided with a 12% (ETH) and 18% "
               "(BNB) higher 90th percentile for small events and left the medians almost unchanged. Version v2.0.0 scored each fill alone against single public prints.",
 }
-ANCHOR_RULE = "Anchors are the 10th, 50th, 90th and 99th percentiles of a public-market baseline; they score 100, 75, 40 and 0, linear in between."
+# v2.3.0 (ADR-0014): the three scored components are the terms of the implementation shortfall. Timing is information.
+COMPONENT_DOCS_SHORTFALL = {
+    "execution": "The cost of executing the fills: the spread paid plus the impact and timing of the order (the two "
+                 "terms the order-level shortfall adds up to). The order's score is the mean of its spread score and its "
+                 "impact score. The spread score is the effective half-spread of the order's taker events against "
+                 "public taker events of a similar size (half a tick or less scores 100); the impact score places the "
+                 "mid's signed drift between the order's arrival and its fills among the drifts of random-side entries "
+                 "over the same duration. For fast fills the impact part is mostly market movement during the order. "
+                 "Both parts use the 10th, 50th, 90th and 99th percentiles of a public baseline.",
+    "fees": "The fee paid (bps of notional) against the lowest rate the account had for that fill, from the account's "
+            "own commission snapshot: 100 at or below that rate, falling linearly to 0 at twice it. A snapshot is the "
+            "rate when it was fetched, so it is applied only to fills within 30 days of it; other fills read "
+            "\"not measured\". On a zero-fee pair the reference is the exchange's published taker rate.",
+    "unfilled": "The cost of the part of an order that did not fill: the move of the mid from the order's arrival to "
+                   "its end, on the unfilled quantity. The filled share of the order scores 100; the unfilled share is "
+                   "placed among the signed mid drifts of random-side entries over the same duration (the anchors of "
+                   "the impact score). Orders that stay unfilled are, by selection, those where the price moved away, so "
+                   "the unfilled share scores low for every trader; the score describes how large the move was. "
+                   "An order with no measured end price reads \"not measured\".",
+    "timing": "Not scored. The audit reports whether the hour of the day made a material difference: an hour's cost is "
+              "the median effective half-spread of public taker events that started in it; the excess over the mean of "
+              "the 3 cheapest hours is compared with a floor of one price step. Below the floor the audit states "
+              "\"No material difference between hours.\"",
+}
+SHORTFALL_RULE = ("Component weights are equal (1/3 each): the three terms are scored against three different yardsticks "
+                  "(a market baseline, the account's own best rate, a market drift), so no term is given more weight "
+                  "than another by judgment. A sensitivity table of other weightings is in ADR-0014.")
+
+ANCHOR_RULE ="Anchors are the 10th, 50th, 90th and 99th percentiles of a public-market baseline; they score 100, 75, 40 and 0, linear in between."
 
 DURATION_BUCKETS = ((1_000, "lt1s"), (10_000, "1s-10s"), (60_000, "10s-1m"), (600_000, "1m-10m"), (3_600_000, "10m-1h"))
 NOTIONAL_BUCKETS = ((1_000, "lt1k"), (10_000, "1k-10k"), (100_000, "10k-100k"))
@@ -143,6 +171,33 @@ def spread_score(eff_half_bps: float, half_tick_bps: float, anchors: Sequence[fl
     if not _anchors_ok(anchors):
         return None
     return score_from_anchors(x, *anchors)
+
+
+def execution_unit_score(spread: float | None, impact: float | None) -> float | None:
+    """v2.3.0: the execution cost of an order is spread paid plus impact/timing. Its unit score is the mean of the
+    order's spread score and its impact score, which sit on the same anchor ladder (100, 75, 40, 0 at the market's 10th,
+    50th, 90th and 99th percentile); the one that exists when only one does (ADR-0014)."""
+    parts = [p for p in (spread, impact) if p is not None]
+    return sum(parts) / len(parts) if parts else None
+
+
+def opportunity_unit_score(fill_ratio: float, opportunity_bps: float | None, anchors: Sequence[float] | None) -> float | None:
+    """v2.3.0: the cost of the unfilled part of an order. The filled share scores 100 (nothing was lost on it). The
+    unfilled share scores S, from the signed mid drift over the order's life per unit of unfilled quantity
+    (opportunity_bps / (1 - fill_ratio), bps) through the duration anchors of the symbol: the drift is placed among the
+    drifts of random-side entries over the same duration. Non-fills are selected on adverse moves (a passive order stays
+    unfilled when the price runs away), so S is low by construction for every trader; it is a description of how large
+    the move was, not of how likely a non-fill is (ADR-0014). Unit score = fill_ratio x 100 + (1 - fill_ratio) x S."""
+    r = _finite("fill_ratio", fill_ratio)
+    if not 0.0 <= r <= 1.0 + 1e-9:
+        raise ValueError(f"fill_ratio must be within 0..1, got {fill_ratio!r}")
+    if r >= 1.0 - 1e-9:
+        return 100.0
+    if opportunity_bps is None or not _anchors_ok(anchors):
+        return None
+    unfilled = 1.0 - r
+    s = score_from_anchors(_finite("opportunity_bps", opportunity_bps) / unfilled, *anchors)
+    return r * 100.0 + unfilled * s
 
 
 def slippage_score(impact_timing_bps: float, anchors: Sequence[float] | None) -> float | None:

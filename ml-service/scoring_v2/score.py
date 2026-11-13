@@ -16,8 +16,9 @@ from config.versions import MEASURE_VERSION
 from measure.fees import effective_rate
 from measure.service import check_data_source
 
-from .aggregate import score_account
-from .components import duration_bucket, fee_score, notional_bucket, slippage_score, spread_score, timing_cost_score, timing_score
+from .aggregate import score_account, spec_for
+from .components import (duration_bucket, execution_unit_score, fee_score, notional_bucket, opportunity_unit_score,
+                         slippage_score, spread_score, timing_cost_score, timing_excess_bps, timing_score)
 from .integrity import canonical_json, integrity_hash
 
 USD_PEGGED_QUOTES = ("USDT", "USDC", "FDUSD")
@@ -91,6 +92,8 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None, d
     anchors, profiles = version.get("anchors", {}), version.get("hourProfiles", {})
     by_event = version.get("spreadUnit") == "taker_event"
     by_cost = version.get("timingUnit") == "excess_event_cost"
+    shortfall = version.get("decomposition") == "implementation_shortfall"   # v2.3.0 (ADR-0014)
+    timing_rows: list[tuple[float, float, float]] = []                       # (notional, excess bps, floor bps): information only
     orders: dict[tuple, dict] = {}
     events: dict[tuple, list[tuple[dict, float, float, float, float]]] = {}
     for t in sorted(trades, key=lambda x: (x["symbol"], str(x["orderId"]), _ms(x["executedAt"]), str(x["tradeId"]))):
@@ -104,7 +107,14 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None, d
         spread = None
         sym_anchors = anchors.get(sym)
         prof = profiles.get(sym)
-        if by_cost:
+        if shortfall:
+            # v2.3.0: timing is not scored. The hour's excess cost over the cheapest hours is reported (information).
+            floor = (version.get("timingFloorBps") or {}).get(sym)
+            if prof and floor is not None:
+                timing_rows.append((notional, timing_excess_bps(t["executedAt"].hour, prof, int(version.get("timingReferenceHours", 3))),
+                                    float(floor)))
+            timing = None
+        elif by_cost:
             # v2.2.0: the hour's excess cost over the cheapest hours, less a floor, on the spread ladder of the
             # fill's size class (ADR-0013). No profile or no floor stored for the symbol: not measured.
             floor = (version.get("timingFloorBps") or {}).get(sym)
@@ -139,15 +149,35 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None, d
         for fill, *_ in members:
             fill["spread"] = s
 
+    if shortfall:
+        # An order that never filled has no trade; its measurement still carries its unfilled cost (opportunity).
+        for (sym, oid), om in oms.items():
+            orders.setdefault((sym, oid), {"orderId": oid, "symbol": sym, "notional": 0.0, "fills": [], "_t": []})
+
     for key, o in orders.items():
         om = oms.get(key)
         o["slippage"] = None
-        it = ((om or {}).get("shortfall") or {}).get("impactTimingBps")
+        sf = (om or {}).get("shortfall") or {}
+        it = sf.get("impactTimingBps")
         sym_anchors = anchors.get(o["symbol"])
         if it is not None and sym_anchors is not None:
             qty = sum(q for _, q in o["_t"])
             delay = sum((ts - om["arrivalMs"]) * q for ts, q in o["_t"]) / qty if qty > 0 else 0.0
             o["slippage"] = slippage_score(it, (sym_anchors.get("slippage") or {}).get(duration_bucket(max(delay, 0.0))))
+        if shortfall:
+            spreads = [(f["spread"], f["notional"]) for f in o["fills"] if f["spread"] is not None]
+            sp = sum(s * w for s, w in spreads) / sum(w for _, w in spreads) if spreads else None
+            o["execution"] = execution_unit_score(sp, o["slippage"])
+            o["unfilled"] = None
+            ratio = sf.get("fillRatio")
+            if om is not None and isinstance(ratio, (int, float)) and not isinstance(ratio, bool):
+                end = om.get("endMs")
+                bucket = duration_bucket(max(float(end) - float(om["arrivalMs"]), 0.0)) if isinstance(end, (int, float)) else None
+                a = ((sym_anchors or {}).get("slippage") or {}).get(bucket) if bucket else None
+                o["unfilled"] = opportunity_unit_score(ratio, sf.get("opportunityBps"), a)
+                intended = sf.get("intendedNotional")
+                if isinstance(intended, (int, float)) and intended > 0:
+                    o["intended"] = float(intended)
         del o["_t"]
 
     entries, shas = [], set()
@@ -160,13 +190,35 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None, d
             shas.update(r["sha256"] for r in om.get("marketDataRefs", []) if r.get("sha256"))
     for k, snap in sorted(used_snaps.items()):
         entries.append((k, _plain(snap)))
-    return list(orders.values()), entries, shas
+    return list(orders.values()), entries, shas, timing_rows
+
+
+def _timing_info(rows: list[tuple[float, float, float]]) -> dict:
+    """v2.3.0 timing, information only: how many fills were in an hour that cost more than the floor (about one price
+    step) over the symbol's cheapest hours, and the notional-weighted mean excess in bps."""
+    if not rows:
+        return {"scored": False, "fills": 0, "fillsAboveFloor": 0, "meanExcessBps": None, "message": "insufficient data"}
+    above = sum(1 for _, ex, fl in rows if ex > fl + 1e-12)
+    w = sum(n for n, _, _ in rows)
+    mean = sum(n * ex for n, ex, _ in rows) / w if w > 0 else None
+    msg = ("No material difference between hours." if above == 0 else
+           f"{above} of {len(rows)} fills were in an hour that cost more than the one-price-step floor over the cheapest hours; "
+           f"on average these fills' hours cost {mean:.2f} bps more than the cheapest hours.")
+    return {"scored": False, "fills": len(rows), "fillsAboveFloor": above, "meanExcessBps": mean, "message": msg}
+
+
+def _result(orders: list[dict], timing_rows: list, version: dict) -> dict:
+    spec = spec_for(version)
+    r = score_account(orders, spec)
+    if spec:
+        r["timing"] = _timing_info(timing_rows)
+    return r
 
 
 def score_account_v2(db, account_id: str, version: dict, version_sha256: str, now_ms: int,
                      data_source: str = "real-user") -> dict:
     """`data_source="synthetic-demo"` is for the offline demo build only (demo_v2.build); the runtime never passes it."""
-    orders, entries, shas = _collect(db, account_id, version, data_source=data_source)
+    orders, entries, shas, timing_rows = _collect(db, account_id, version, data_source=data_source)
     return {
         "accountId": account_id,
         "scoringVersion": version["id"],
@@ -175,7 +227,7 @@ def score_account_v2(db, account_id: str, version: dict, version_sha256: str, no
         "integrityHash": integrity_hash(version["id"], version_sha256, entries, shas),
         "inputKeys": sorted(k for k, _ in entries),
         "computedAt": datetime.fromtimestamp(now_ms / 1000, tz=timezone.utc),
-        "result": score_account(orders),
+        "result": _result(orders, timing_rows, version),
     }
 
 
@@ -183,11 +235,11 @@ def verify_account_v2(db, account_id: str, version: dict, version_sha256: str) -
     stored = db.scores_v2.find_one({"accountId": account_id, "scoringVersion": version["id"]}, sort=[("computedAt", -1)])
     if stored is None:
         return None
-    orders, entries, shas = _collect(db, account_id, version, keys=set(stored.get("inputKeys", [])))
+    orders, entries, shas, timing_rows = _collect(db, account_id, version, keys=set(stored.get("inputKeys", [])))
     recomputed = integrity_hash(version["id"], version_sha256, entries, shas)
     # The hash covers the inputs; the stored result is checked by recomputing it from those inputs (deterministic:
     # fixed bootstrap seed), so an edited grade or composite is caught too (review M1-1).
-    result_match = canonical_json(_plain(stored.get("result"))) == canonical_json(score_account(orders))
+    result_match = canonical_json(_plain(stored.get("result"))) == canonical_json(_result(orders, timing_rows, version))
     hash_match = recomputed == stored["integrityHash"]
     return {"match": hash_match and result_match, "storedHash": stored["integrityHash"],
             "recomputedHash": recomputed, "resultMatch": result_match, "scoringVersion": version["id"]}

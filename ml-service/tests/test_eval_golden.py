@@ -26,8 +26,10 @@ def test_demo_packets_match_the_stored_fixture_hashes():
     import json, os
     for u in ("demo-disciplined", "demo-moderate", "demo-aggressive"):
         res = json.load(open(os.path.join(run_offline.ROOT, "demo_runs", f"{u}.json")))["council_result"]
-        pk = run_offline.load_golden("v2")[u]["packet"]   # 4R-0e: demo_runs re-recorded on the v2 (metrics 1.2.0) packets
-        assert res["tradeContext"]["fee_packet_hash"] == pk["fee"]["content_hash"]
+        pk = run_offline.load_golden("v3")[u]["packet"]   # M3: demo_runs re-recorded on the v3 (metrics 1.3.0, prompt 1.7.0) packets
+        for ns in ("fee", "risk", "liquidity", "alpha"):
+            assert res["tradeContext"][f"{ns}_packet_hash"] == pk[ns]["content_hash"], (u, ns)
+        assert (res["prompt_version"], res["metrics_version"]) == ("1.7.0", "1.3.0")
 
 
 def test_offline_runner_is_green_on_fixtures():

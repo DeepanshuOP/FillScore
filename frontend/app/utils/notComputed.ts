@@ -3,6 +3,8 @@
  * blank that looks like zero. The rebuilt demos have no per-trade v1 fields; the API marks those views
  * (`v1Computed: false`, `notComputed: true`, or slippage `null`) and these helpers show them honestly.
  */
+import { formatBps } from './formatBps';
+
 export const NOT_COMPUTED = 'not computed for this data';
 
 interface SlippageFields { slippageBps?: number | null; arrivalSlippageBps?: number | null; vwapSlippageBps?: number | null }
@@ -16,7 +18,7 @@ export function tradeSlippageBps(t: SlippageFields): number | null {
 }
 
 export function formatBpsOrNotComputed(v: number | null | undefined): string {
-  return isNum(v) ? v.toFixed(1) : NOT_COMPUTED;
+  return isNum(v) ? formatBps(v).replace(' bps', '') : NOT_COMPUTED;
 }
 
 /** True for an API body that says its v1 view was not computed (analytics, exchange comparison, coach, whale). */

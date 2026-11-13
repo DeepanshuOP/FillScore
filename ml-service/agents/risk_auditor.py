@@ -9,6 +9,7 @@ from __future__ import annotations
 from agents.metrics.risk_packet import RiskMetricsPacket
 from agents.grounded_call import grounded_verdict
 from agents.prompts import packet_values, system_prompt
+from agents.required_evidence import specialist_line
 from agents.schemas import TradeContext, RiskVerdict
 
 ROLE = "specialist"
@@ -37,6 +38,8 @@ def build_user_prompt(context: TradeContext, packet: RiskMetricsPacket, ctx: dic
     ctx = ctx if ctx is not None else {NAMESPACE: packet.to_prompt_dict()}
     return f"""RiskMetricsPacket:
 {packet_values(ctx, [NAMESPACE])}
+
+{specialist_line(ctx, NAMESPACE)}
 
 Assign riskLevel, list cited_evidence keys.
 Schema: riskLevel (LOW/MEDIUM/HIGH/CRITICAL), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""

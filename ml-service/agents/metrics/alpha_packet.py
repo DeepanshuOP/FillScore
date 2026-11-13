@@ -12,6 +12,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from config.versions import METRICS_VERSION
+from agents.metrics.measured import summarise_measurements
 from agents.metrics.time_utils import utc_hour_key
 
 
@@ -54,6 +55,12 @@ class AlphaMetricsPacket:
     worst5_vwap_trade_ids: list[str] = field(default_factory=list)
     worst5_vwap_deviation_bps: list[float] = field(default_factory=list)
 
+    # ── metrics 1.3.0: what could be measured ────────────────────────────────
+    # scores_available: some trade carries the v1 fillScore (rebuilt demo trades do not). measured: summary of the
+    # order shortfall (agents.metrics.measured); empty when there are no measurements.
+    scores_available: bool = True
+    measured: dict[str, Any] = field(default_factory=dict)
+
     # ── evidence index ───────────────────────────────────────────────────────
     evidence_index: dict[str, list[str]] = field(default_factory=dict)
 
@@ -67,26 +74,38 @@ class AlphaMetricsPacket:
         return hashlib.sha256(serialised.encode()).hexdigest()[:16]
 
     def to_prompt_dict(self) -> dict[str, Any]:
-        return {
-            "market_order_count": self.market_order_count,
-            "vwap_trades_count": self.vwap_trades_count,
-            "avg_vwap_deviation_bps": round(self.avg_vwap_deviation_bps, 4),
-            "median_vwap_deviation_bps": round(self.median_vwap_deviation_bps, 4),
-            "pct_beating_vwap": round(self.pct_beating_vwap, 4),
-            "worst5_vwap_deviation_bps": [round(x, 4) for x in self.worst5_vwap_deviation_bps],
-            "symbol_avg_fill_score": {k: round(v, 2) for k, v in self.symbol_avg_fill_score.items()},
-            "best_symbol": self.best_symbol,
-            "worst_symbol": self.worst_symbol,
-            "best_symbol_avg_score": round(self.best_symbol_avg_score, 2),
-            "worst_symbol_avg_score": round(self.worst_symbol_avg_score, 2),
-            "best_hour_utc": self.best_hour_utc,
-            "worst_hour_utc": self.worst_hour_utc,
-            "best_hour_avg_score": round(self.best_hour_avg_score, 2),
-            "worst_hour_avg_score": round(self.worst_hour_avg_score, 2),
+        """The prompt view. A value that was not measured is absent (never 0): VWAP values when no trade has a VWAP,
+        score values when no trade has a v1 score; the unfilled-order values appear when orders were measured."""
+        d: dict[str, Any] = {"market_order_count": self.market_order_count, "vwap_trades_count": self.vwap_trades_count}
+        if self.vwap_trades_count > 0:
+            d.update({
+                "avg_vwap_deviation_bps": round(self.avg_vwap_deviation_bps, 4),
+                "median_vwap_deviation_bps": round(self.median_vwap_deviation_bps, 4),
+                "pct_beating_vwap": round(self.pct_beating_vwap, 4),
+                "worst5_vwap_deviation_bps": [round(x, 4) for x in self.worst5_vwap_deviation_bps],
+            })
+        if self.scores_available:
+            d.update({
+                "symbol_avg_fill_score": {k: round(v, 2) for k, v in self.symbol_avg_fill_score.items()},
+                "best_symbol": self.best_symbol,
+                "worst_symbol": self.worst_symbol,
+                "best_symbol_avg_score": round(self.best_symbol_avg_score, 2),
+                "worst_symbol_avg_score": round(self.worst_symbol_avg_score, 2),
+                "best_hour_utc": self.best_hour_utc,
+                "worst_hour_utc": self.worst_hour_utc,
+                "best_hour_avg_score": round(self.best_hour_avg_score, 2),
+                "worst_hour_avg_score": round(self.worst_hour_avg_score, 2),
+            })
+        if self.measured:
+            d["unfilled_order_count"] = self.measured["unfilled_order_count"]
+            if self.measured.get("median_opportunity_bps_unfilled") is not None:
+                d["median_opportunity_bps_unfilled"] = round(self.measured["median_opportunity_bps_unfilled"], 4)
+        d.update({
             "evidence_counts": {k: len(v) for k, v in self.evidence_index.items()},
             "content_hash": self.content_hash,
             "metrics_version": self.metrics_version,
-        }
+        })
+        return d
 
 
 def _avg(vals: list[float]) -> float:
@@ -102,7 +121,7 @@ def _percentile(sorted_vals: list[float], p: float) -> float:
     return sorted_vals[lo] + (idx - lo) * (sorted_vals[hi] - sorted_vals[lo])
 
 
-def build_alpha_packet(trades: list[dict], user_id: str, symbol: str) -> AlphaMetricsPacket:
+def build_alpha_packet(trades: list[dict], user_id: str, symbol: str, measurements: list[dict] | None = None) -> AlphaMetricsPacket:
     """
     Build an AlphaMetricsPacket from a list of trade dicts.
     Each trade dict must have at minimum:
@@ -120,7 +139,8 @@ def build_alpha_packet(trades: list[dict], user_id: str, symbol: str) -> AlphaMe
     if not trades:
         pkt = AlphaMetricsPacket(
             user_id=user_id, symbol=symbol,
-            computed_at=datetime.now(timezone.utc).isoformat()
+            computed_at=datetime.now(timezone.utc).isoformat(),
+            scores_available=False, measured=summarise_measurements(measurements) or {},
         )
         pkt.content_hash = pkt.compute_hash()
         return pkt
@@ -223,6 +243,8 @@ def build_alpha_packet(trades: list[dict], user_id: str, symbol: str) -> AlphaMe
         worst_hour_utc=int(worst_hour_str) if worst_hour_str is not None else -1,
         best_hour_avg_score=hour_avg.get(best_hour_str, 0.0) if best_hour_str is not None else 0.0,
         worst_hour_avg_score=hour_avg.get(worst_hour_str, 0.0) if worst_hour_str is not None else 0.0,
+        scores_available=any(isinstance(t.get("fillScore"), (int, float)) and not isinstance(t.get("fillScore"), bool) for t in trades),
+        measured=summarise_measurements(measurements) or {},
         evidence_index=evidence,
     )
     pkt.content_hash = pkt.compute_hash()

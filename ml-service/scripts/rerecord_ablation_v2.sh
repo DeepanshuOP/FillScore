@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Re-record the single-call vs Council ablation on the rebuilt demos (M2). FOR DEEPANSHU TO RUN.
+# Re-record the single-call vs Council ablation on the rebuilt demos: golden set v3, Council prompt 1.7.0, single-call
+# prompt 1.2.0, metrics 1.3.0 (M3). ONE combined re-record, so evidence_cited is measured on the new recordings.
+# FOR DEEPANSHU TO RUN.
 # DRY RUN BY DEFAULT: prints every step, the budget and the checks, and runs nothing that calls an LLM or writes.
 #
 #   bash ml-service/scripts/rerecord_ablation_v2.sh            # dry run: print the plan
@@ -37,9 +39,11 @@ if [ -n "${MONGODB_URI:-}" ]; then
   if [ "$RUN" = 1 ] && [ "$n" != "245" ]; then echo "refusing: the rebuilt demos are not seeded"; exit 1; fi
 fi
 
-step "1. golden set v3: packets from the rebuilt demos (read-only against Mongo; writes evals/golden/v3/)"
-[ "$DAY" = 1 ] && do_or_print .venv/bin/python -m evals.dump_golden_packets --set v3
-echo "Then copy required_evidence review: the dump carries it over from the newest recorded set."
+step "1. golden set v3 (committed in M3): its demo packets must still reproduce hash-identically from the seeded database"
+# v3 = prompt 1.7.0 / single 1.2.0 / metrics 1.3.0. Its required_evidence is derived from the packets by
+# agents/required_evidence.py (the same rule the prompts use), so evidence_cited is measured on these recordings.
+# Read-only. A mismatch means the demo data changed after v3 was dumped: regenerate v3 first (it is not recorded yet).
+do_or_print .venv/bin/python -m evals.dump_golden_packets --check v3
 
 step "2. day $DAY: live runs (recordings saved to evals/recordings/, nothing written to Atlas: persist=False)"
 # Runs 1-3 of every arm and user are the recorded golden v1/v2 runs; recorded LLM output is never overwritten, so the
@@ -63,6 +67,11 @@ step "3. verify every run actually executed (the verify-council-run checks)"
 echo "For each new recording: grep for 'failed:', 'Max retries', '_default_', '429', 'rate limit', 'RouterExhausted',"
 echo "'REJECTED', 'fell back'; confirm n_calls == 9 on Council runs; check user_id and created_at; read the text."
 do_or_print bash -c "grep -lE 'failed:|Max retries|_default_|HTTP 429|status 429|rate limit|RouterExhausted|REJECTED|fell back' evals/recordings/*-[456].json || echo 'no failure markers in runs 4-6'"
+
+step "3b. after day 2 only: mark golden v3 as recorded"
+echo "When all 18 recordings 4-6 exist and every one passed step 3, edit evals/golden/v3/MANIFEST.json: \"recorded\": true"
+echo "(and its note). Until then the offline runner checks v3 for determinism only and never scores these runs."
+echo "Then run the steps of 4 below: evidence_cited is measured, for the first time, against the rule the prompt states."
 
 step "4. gate and tabulate (offline)"
 do_or_print .venv/bin/python evals/run_offline.py

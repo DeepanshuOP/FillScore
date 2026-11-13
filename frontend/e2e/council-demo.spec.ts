@@ -1,5 +1,10 @@
 import { test, expect } from '@playwright/test'
 import { findAdviceTerms } from '../../backend/src/constants/adviceTerms'
+import { storeDemoRunForCurrentData } from './db'
+
+// A demo run is served only if its packet hashes equal those of the current data (live-site review item 5), so the
+// committed fixture is first stored as a run for this database's current demo-disciplined data.
+test.beforeAll(async () => { await storeDemoRunForCurrentData('demo-disciplined') })
 
 // The demo Council is served from the stored fixture (ml-service/demo_runs). The e2e ml-service runs with
 // FILLSCORE_E2E_NO_LLM=1, so any attempted provider call raises: this test passing proves no LLM was used.

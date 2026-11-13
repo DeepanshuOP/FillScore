@@ -268,18 +268,19 @@ async def find_cached_run(
         client.close()
 
 
-async def latest_demo_run(account_id: str, symbol: str) -> Optional[dict]:
-    """Newest non-degraded run stored for a demo account (served to visitors, never re-run),
-    from the current prompt and metrics versions only."""
+async def latest_demo_run(account_id: str, symbol: str, packet_hashes: Optional[dict[str, str]] = None) -> Optional[dict]:
+    """Newest non-degraded run stored for a demo account (served to visitors, never re-run), from the current prompt
+    and metrics versions only. With `packet_hashes`, only a run whose four packet hashes equal them (the hashes of the
+    account's current data)."""
     from config.versions import METRICS_VERSION
 
+    query: dict[str, Any] = {"accountId": account_id, "symbol": symbol, "degraded": False,
+                             "prompt_version": PROMPT_VERSION, "metrics_version": METRICS_VERSION}
+    for key, value in (packet_hashes or {}).items():
+        query[f"packet_hashes.{key}"] = value
     client, db = _get_db()
     try:
-        doc = await db["council_runs"].find_one(
-            {"accountId": account_id, "symbol": symbol, "degraded": False,
-             "prompt_version": PROMPT_VERSION, "metrics_version": METRICS_VERSION},
-            sort=[("created_at", -1)],
-        )
+        doc = await db["council_runs"].find_one(query, sort=[("created_at", -1)])
         return _strip_id(doc)
     finally:
         client.close()

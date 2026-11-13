@@ -12,6 +12,7 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from config.versions import METRICS_VERSION
+from agents.metrics.measured import summarise_measurements
 from agents.metrics.time_utils import utc_hour_key
 from agents.metrics.markout_packet import fill_markout_bps
 
@@ -60,6 +61,12 @@ class LiquidityMetricsPacket:
     reversion_60s_avg_bps: float = 0.0
     reversion_trade_count: int = 0      # how many trades have reversion data
 
+    # ── metrics 1.3.0: what could be measured ────────────────────────────────
+    # slippage_available: some market fill carries the v1 arrivalSlippageBps (rebuilt demo trades do not).
+    # measured: summary of the order shortfall (agents.metrics.measured); empty when there are no measurements.
+    slippage_available: bool = True
+    measured: dict[str, Any] = field(default_factory=dict)
+
     # ── evidence index ───────────────────────────────────────────────────────
     evidence_index: dict[str, list[str]] = field(default_factory=dict)
 
@@ -73,29 +80,41 @@ class LiquidityMetricsPacket:
         return hashlib.sha256(serialised.encode()).hexdigest()[:16]
 
     def to_prompt_dict(self) -> dict[str, Any]:
-        return {
-            "market_order_count": self.market_order_count,
-            "limit_order_count": self.limit_order_count,
-            "avg_slippage_bps": round(self.avg_slippage_bps, 4),
-            "median_slippage_bps": round(self.median_slippage_bps, 4),
-            "p90_slippage_bps": round(self.p90_slippage_bps, 4),
-            "pct_negative_slippage": round(self.pct_negative_slippage, 4),
-            "worst5_slippage_bps": [round(x, 4) for x in self.worst5_slippage_bps],
-            "worst_hour_utc": self.worst_hour_utc,
-            "best_hour_utc": self.best_hour_utc,
-            "adverse_slippage_avg_bps": round(self.adverse_slippage_avg_bps, 4),
-            "clean_slippage_avg_bps": round(self.clean_slippage_avg_bps, 4),
-            "adverse_vs_clean_diff_bps": round(self.adverse_vs_clean_diff_bps, 4),
+        """The prompt view. Slippage values are absent (never 0) when no market fill has a v1 slippage; the measured
+        order shortfall (medians over measured orders) is present when orders were measured."""
+        d: dict[str, Any] = {"market_order_count": self.market_order_count, "limit_order_count": self.limit_order_count}
+        if self.slippage_available:
+            d.update({
+                "avg_slippage_bps": round(self.avg_slippage_bps, 4),
+                "median_slippage_bps": round(self.median_slippage_bps, 4),
+                "p90_slippage_bps": round(self.p90_slippage_bps, 4),
+                "pct_negative_slippage": round(self.pct_negative_slippage, 4),
+                "worst5_slippage_bps": [round(x, 4) for x in self.worst5_slippage_bps],
+                "worst_hour_utc": self.worst_hour_utc,
+                "best_hour_utc": self.best_hour_utc,
+                "adverse_slippage_avg_bps": round(self.adverse_slippage_avg_bps, 4),
+                "clean_slippage_avg_bps": round(self.clean_slippage_avg_bps, 4),
+                "adverse_vs_clean_diff_bps": round(self.adverse_vs_clean_diff_bps, 4),
+            })
+        d.update({
             "adverse_market_count": self.adverse_market_count,
             "clean_market_count": self.clean_market_count,
             "has_reversion_data": self.has_reversion_data,
             "reversion_30s_avg_bps": round(self.reversion_30s_avg_bps, 4),
             "reversion_60s_avg_bps": round(self.reversion_60s_avg_bps, 4),
             "reversion_trade_count": self.reversion_trade_count,
+        })
+        if self.measured:
+            d["measured_order_count"] = self.measured["measured_order_count"]
+            for k in ("median_spread_paid_bps", "median_impact_timing_bps", "median_execution_bps"):
+                if self.measured.get(k) is not None:
+                    d[k] = round(self.measured[k], 4)
+        d.update({
             "evidence_counts": {k: len(v) for k, v in self.evidence_index.items()},
             "content_hash": self.content_hash,
             "metrics_version": self.metrics_version,
-        }
+        })
+        return d
 
 
 def _avg(vals: list[float]) -> float:
@@ -111,7 +130,7 @@ def _percentile(sorted_vals: list[float], p: float) -> float:
     return sorted_vals[lo] + (idx - lo) * (sorted_vals[hi] - sorted_vals[lo])
 
 
-def build_liquidity_packet(trades: list[dict], user_id: str, symbol: str) -> LiquidityMetricsPacket:
+def build_liquidity_packet(trades: list[dict], user_id: str, symbol: str, measurements: list[dict] | None = None) -> LiquidityMetricsPacket:
     """
     Build a LiquidityMetricsPacket from a list of trade dicts.
     Each trade dict must have at minimum:
@@ -128,7 +147,8 @@ def build_liquidity_packet(trades: list[dict], user_id: str, symbol: str) -> Liq
     if not trades:
         pkt = LiquidityMetricsPacket(
             user_id=user_id, symbol=symbol,
-            computed_at=datetime.now(timezone.utc).isoformat()
+            computed_at=datetime.now(timezone.utc).isoformat(),
+            slippage_available=False, measured=summarise_measurements(measurements) or {},
         )
         pkt.content_hash = pkt.compute_hash()
         return pkt
@@ -157,6 +177,7 @@ def build_liquidity_packet(trades: list[dict], user_id: str, symbol: str) -> Liq
             computed_at=datetime.now(timezone.utc).isoformat(),
             market_order_count=0,
             limit_order_count=limit_count,
+            slippage_available=False, measured=summarise_measurements(measurements) or {},
             evidence_index={"all_trades": all_ids, "limit_trades": limit_ids},
         )
         pkt.content_hash = pkt.compute_hash()
@@ -259,6 +280,9 @@ def build_liquidity_packet(trades: list[dict], user_id: str, symbol: str) -> Liq
         reversion_30s_avg_bps=round(_wavg(rev_rows["30"]), 6),
         reversion_60s_avg_bps=round(_wavg(rev_rows["60"]), 6),
         reversion_trade_count=len(rev_ids),
+        slippage_available=any(isinstance(t.get("arrivalSlippageBps"), (int, float)) and not isinstance(t.get("arrivalSlippageBps"), bool)
+                               for t in market_trades),
+        measured=summarise_measurements(measurements) or {},
         evidence_index=evidence,
     )
     pkt.content_hash = pkt.compute_hash()

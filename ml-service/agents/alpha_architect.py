@@ -9,6 +9,7 @@ from __future__ import annotations
 from agents.metrics.alpha_packet import AlphaMetricsPacket
 from agents.grounded_call import grounded_verdict
 from agents.prompts import packet_values, system_prompt
+from agents.required_evidence import specialist_line
 from agents.schemas import TradeContext, AlphaVerdict
 
 ROLE = "specialist"
@@ -30,7 +31,7 @@ SYSTEM_PROMPT = system_prompt(
     '  "confidence": float (0-1),\n'
     '  "flags": [string]\n'
     "}\n"
-    "\nExample: \"bestAlternative\": \"Fills sat close to the VWAP benchmark, with a median deviation of {{alpha.median_vwap_deviation_bps}}.\"  Wrong: \"a median deviation of 2 bps\" or \"within three bps\" (digits or number words outside a placeholder).\n"
+    "\nExample: \"bestAlternative\": \"The comparison rested on {{alpha.market_order_count}} market fills.\"  Wrong: \"a median deviation of 2 bps\" or \"within three bps\" (digits or number words outside a placeholder).\n"
 )
 
 
@@ -38,6 +39,8 @@ def build_user_prompt(context: TradeContext, packet: AlphaMetricsPacket, ctx: di
     ctx = ctx if ctx is not None else {NAMESPACE: packet.to_prompt_dict()}
     return f"""AlphaMetricsPacket:
 {packet_values(ctx, [NAMESPACE])}
+
+{specialist_line(ctx, NAMESPACE)}
 
 Assign alphaRating, write bestAlternative, list cited_evidence keys.
 Schema: alphaRating (POSITIVE/NEUTRAL/NEGATIVE/SEVERELY_NEGATIVE), bestAlternative (str), cited_evidence (list[str]), severity (LOW/MEDIUM/HIGH/CRITICAL), confidence (0-1), flags (list[str])"""

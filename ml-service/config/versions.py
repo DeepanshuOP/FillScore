@@ -1,5 +1,5 @@
-SCORING_V2_VERSION = "v2.2.0"  # M2 closing steps: timing from the excess cost of the hour (ADR-0013). v2.1.0 was M1.1: taker-event spread baseline, 90-day calibration (ADR-0012); v2.0.0 was M1 (ml-service/scoring_v2/versions/<id>.json)
+SCORING_V2_VERSION = "v2.3.0"  # M3: the implementation-shortfall decomposition, timing information only (ADR-0014). v2.2.0 was the M2 closing steps: timing from the excess cost of the hour (ADR-0013). v2.1.0 was M1.1: taker-event spread baseline, 90-day calibration (ADR-0012); v2.0.0 was M1 (ml-service/scoring_v2/versions/<id>.json)
 MEASURE_VERSION = "1.0.0"  # M1: measurement layer v2 (ml-service/measure). Recorded on every stored measurement.
-METRICS_VERSION = "1.2.0"  # 4R-0c: liquidity reversion semantics changed (1.1.0 was 1c.1: vwap5min load + datetime hour parsing)
-PROMPT_VERSION = "1.6.0"  # 4R-0c: regime removed, single priority rule (1.5.0 was 2c: duplicate strip, debate fallback + claim check, count keys)
-SINGLE_PROMPT_VERSION = "1.1.0"  # 4R-0c: regime removed, single priority rule (1.0.0 was 3c: the ablation single-call prompt versions on its own, apart from the Council's
+METRICS_VERSION = "1.3.0"  # M3: packets of rebuilt demo data (a value that was not measured is absent; measured order shortfall added). 1.2.0 was:  4R-0c: liquidity reversion semantics changed (1.1.0 was 1c.1: vwap5min load + datetime hour parsing)
+PROMPT_VERSION = "1.7.0"  # M3: the synthesis prompt names the required-evidence placeholders (agents/required_evidence.py). 1.6.0 was: 4R-0c: regime removed, single priority rule (1.5.0 was 2c: duplicate strip, debate fallback + claim check, count keys)
+SINGLE_PROMPT_VERSION = "1.2.0"  # M3: the single-call prompt names the required-evidence placeholders. 1.1.0 was: 4R-0c: regime removed, single priority rule (1.0.0 was 3c: the ablation single-call prompt versions on its own, apart from the Council's

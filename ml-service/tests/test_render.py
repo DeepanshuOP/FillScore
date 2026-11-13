@@ -137,7 +137,13 @@ def test_packet_savings_are_not_placeholders():
 
 
 def test_negative_zero_renders_as_zero():
-    # -0.04 rounds to -0.0 at one decimal; the display must read 0.0, never -0.0
-    assert format_value(["liquidity", "avg_slippage_bps"], -0.04) == "0.0 bps"
+    # Live-site review 2026-11-14: a real value below 0.05 bps is not rounded to zero (and never "-0.0"):
+    # size 0.01 .. 0.05 -> two decimals, below 0.01 -> "<0.01 bps" / ">-0.01 bps"; exact zero -> "0.0 bps".
+    assert format_value(["liquidity", "avg_slippage_bps"], -0.04) == "-0.04 bps"
+    assert format_value(["liquidity", "median_spread_paid_bps"], 0.0006) == "<0.01 bps"
+    assert format_value(["liquidity", "median_spread_paid_bps"], -0.0006) == ">-0.01 bps"
+    assert format_value(["liquidity", "median_spread_paid_bps"], 0.02) == "0.02 bps"
+    assert format_value(["liquidity", "median_spread_paid_bps"], 0) == "0.0 bps"
+    assert format_value(["liquidity", "median_spread_paid_bps"], -0.0) == "0.0 bps"
     assert format_value(["liquidity", "avg_slippage_bps"], -0.06) == "-0.1 bps"
     assert format_value(["fee", "total_fee_paid_usd"], -0.001) == "$0.00"

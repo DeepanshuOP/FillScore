@@ -76,6 +76,9 @@ export default defineConfig({
       env: {
         JWT_ACCESS_SECRET: backendEnv.JWT_ACCESS_SECRET,
         MONGODB_URI: mongoUri,
+        // The backend seeds the database named in the URI; the ml-service reads MONGO_DB_NAME (default "fillscore").
+        // Without this it read an empty database, which did not matter while demo runs were served without a data check.
+        MONGO_DB_NAME: 'fillscore_e2e',
         ALLOWED_ORIGINS: SITE,
         // Dummy provider keys make the router treat providers as configured; the guard below makes any
         // attempted provider call raise (agents/llm_router.py), so no outbound LLM call is possible.

@@ -20,6 +20,8 @@ export interface V2Response {
     reason: string | null;
     orders: number;
     fills: number;
+    /** v2.3.0 and later: timing is reported, never scored. */
+    timing?: { scored: false; fills: number; fillsAboveFloor: number; meanExcessBps: number | null; message: string };
   };
 }
 
@@ -36,6 +38,8 @@ export interface V2Scored {
   computedAt: string | null;
   /** Provenance note for a rebuilt demo account; null for a real account. */
   note: string | null;
+  /** v2.3.0 and later: what the audit found about the hour of the day (information, not scored); null before. */
+  timingNote: string | null;
 }
 
 export const DEMO_NOTE = 'Demo trader: the trading behaviour is synthetic; every fill price comes from real public prints '
@@ -47,6 +51,8 @@ export function isScored(v: V2View): v is V2Scored {
 }
 
 const ORDER: Array<[string, string]> = [['slippage', 'Slippage'], ['fees', 'Fees'], ['timing', 'Timing'], ['spread', 'Spread']];
+/** v2.3.0 (ADR-0014): the scored components are the terms of the implementation shortfall, named as on the cost panel. */
+const SHORTFALL_ORDER: Array<[string, string]> = [['execution', 'Execution cost'], ['fees', 'Fees'], ['unfilled', 'Unfilled orders']];
 
 export function describeV2(status: number, body: unknown): V2View {
   if (status === 404) {
@@ -61,7 +67,7 @@ export function describeV2(status: number, body: unknown): V2View {
   const r = b.result;
   const range = r.band ? `95% range ${Math.round(r.band[0])}–${Math.round(r.band[1])}` : null;
   const isDemo = !!b.demo;
-  const components = ORDER.map(([key, name]) => {
+  const components = ('execution' in r.components ? SHORTFALL_ORDER : ORDER).map(([key, name]) => {
     const c = r.components[key];
     const shown = c && c.score !== null ? String(Math.round(c.score)) : 'insufficient data';
     return {
@@ -74,6 +80,7 @@ export function describeV2(status: number, body: unknown): V2View {
     label: 'v2 · measured', range, components, version: b.scoringVersion,
     hashShort: `${b.integrityHash.slice(0, 8)}…${b.integrityHash.slice(-4)}`, computedAt: b.computedAt,
     note: isDemo ? DEMO_NOTE : null,
+    timingNote: r.timing ? `Timing, not scored: ${r.timing.message}` : null,
   };
   if (r.grade && r.composite !== null) {
     return { kind: 'graded', headline: `${r.grade} · ${Math.round(r.composite)} / 100`, detail: null, ...common };

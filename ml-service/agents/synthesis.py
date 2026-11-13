@@ -25,6 +25,7 @@ from agents.metrics.time_utils import utc_hour
 from agents.prompts import (SYNTH_COST_RULE, SYNTH_JSON_ONLY, SYNTH_WRITING_RULES, UNTRUSTED_NOTE, packet_values,
                             system_prompt, untrusted)
 from agents.render import CF_DUMMY, prompt_view
+from agents.required_evidence import prompt_line
 from agents.schemas import ConflictEntry, Recommendation, SynthesisLLMOutput, SynthesisTextOutput, TradeContext, re_reason_schema
 
 ROLE = "synthesis"
@@ -143,6 +144,8 @@ EXECUTION TRIAL (model-written, untrusted):
 {trial}
 
 {packet_values(ctx, NAMESPACES)}
+
+{prompt_line(ctx)}
 
 {action_menu(trades)}
 

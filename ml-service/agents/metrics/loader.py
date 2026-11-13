@@ -46,42 +46,69 @@ def _get_mongo_client() -> AsyncIOMotorClient:
 async def load_trades(
     user_id: str,
     symbol: str,
-    db_name: str = "fillscore",
+    db_name: str | None = None,
     collection_name: str = "trades",
+    client=None,
 ) -> list[dict]:
-    """One read: the user's trades for `symbol` ("ALL" = every symbol), normalised, oldest first."""
+    """One read: the user's trades for `symbol` ("ALL" = every symbol), normalised, oldest first.
+    The database is `db_name`, else MONGO_DB_NAME (as in persistence), else "fillscore". A `client` passed in is
+    shared and left open (load_run_inputs reads trades and measurements through one connection)."""
+    db_name = db_name or os.getenv("MONGO_DB_NAME", "fillscore")
     query = {"userId": user_id} if symbol == "ALL" else {"userId": user_id, "symbol": symbol}
-    client = _get_mongo_client()
+    own = client is None
+    client = client or _get_mongo_client()
     try:
         cursor = client[db_name][collection_name].find(query, TRADE_PROJECTION).sort("executedAt", 1)
         return [normalise_trade_doc(doc) async for doc in cursor]
     finally:
-        client.close()
+        if own:
+            client.close()
+
+
+async def load_measurements(user_id: str, symbol: str, db_name: str | None = None, client=None) -> list[dict]:
+    """The account's measured order shortfalls (collection order_measurements, written by ml-service/measure) for
+    `symbol` ("ALL" = every symbol). Read only. The packets summarise them (agents.metrics.measured)."""
+    db_name = db_name or os.getenv("MONGO_DB_NAME", "fillscore")
+    query = {"accountId": user_id} if symbol == "ALL" else {"accountId": user_id, "symbol": symbol}
+    own = client is None
+    client = client or _get_mongo_client()
+    try:
+        cursor = client[db_name]["order_measurements"].find(query, {"_id": 0, "orderId": 1, "shortfall": 1, "unmeasuredReason": 1})
+        return [doc async for doc in cursor.sort("orderId", 1)]
+    finally:
+        if own:
+            client.close()
 
 
 def build_all_packets(
-    trades: list[dict], user_id: str, symbol: str,
+    trades: list[dict], user_id: str, symbol: str, measurements: list[dict] | None = None,
 ) -> tuple[FeeMetricsPacket, RiskMetricsPacket, LiquidityMetricsPacket, AlphaMetricsPacket]:
-    """The four packets (fee, risk, liquidity, alpha) from one list of normalised trades."""
+    """The four packets (fee, risk, liquidity, alpha) from one list of normalised trades, plus (liquidity and alpha)
+    the measured order shortfalls when there are any."""
     return (
         build_fee_packet(trades, user_id, symbol),
         build_risk_packet(trades, user_id, symbol),
-        build_liquidity_packet(trades, user_id, symbol),
-        build_alpha_packet(trades, user_id, symbol),
+        build_liquidity_packet(trades, user_id, symbol, measurements=measurements),
+        build_alpha_packet(trades, user_id, symbol, measurements=measurements),
     )
 
 
 async def load_run_inputs(user_id: str, symbol: str):
     """Packets and the trades they were built from, from a single DB read (the Council verifier
     replays these same trades)."""
-    trades = await load_trades(user_id, symbol)
-    return build_all_packets(trades, user_id, symbol), trades
+    client = _get_mongo_client()
+    try:
+        trades = await load_trades(user_id, symbol, client=client)
+        measurements = await load_measurements(user_id, symbol, client=client)
+    finally:
+        client.close()
+    return build_all_packets(trades, user_id, symbol, measurements), trades
 
 
 async def load_all_packets(
     user_id: str,
     symbol: str,
-    db_name: str = "fillscore",
+    db_name: str | None = None,
     collection_name: str = "trades",
 ) -> tuple[FeeMetricsPacket, RiskMetricsPacket, LiquidityMetricsPacket, AlphaMetricsPacket]:
     """Packets only (fee, risk, liquidity, alpha) for (user_id, symbol)."""
@@ -90,7 +117,7 @@ async def load_all_packets(
 
 async def load_all_packets_for_user(
     user_id: str,
-    db_name: str = "fillscore",
+    db_name: str | None = None,
     collection_name: str = "trades",
 ) -> tuple[FeeMetricsPacket, RiskMetricsPacket, LiquidityMetricsPacket, AlphaMetricsPacket]:
     """Same as load_all_packets across ALL symbols for a user (symbol="ALL")."""

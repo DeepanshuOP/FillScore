@@ -145,6 +145,9 @@ def make_packets(total_fee_paid_usd: float = 328.0, trade_count: int = 10):
     packets = (fee, RiskMetricsPacket("u", "BTCUSDT", "2026-11-01T00:00:00Z"),
                LiquidityMetricsPacket("u", "BTCUSDT", "2026-11-01T00:00:00Z"),
                AlphaMetricsPacket("u", "BTCUSDT", "2026-11-01T00:00:00Z"))
+    # Metrics 1.3.0: VWAP values are in the prompt view only when some trade has a VWAP. One sample (deviation 0.0)
+    # keeps the VWAP keys the prompts and tests quote.
+    packets[3].vwap_trades_count = 1
     for p in packets:
         p.content_hash = p.compute_hash()
     return packets

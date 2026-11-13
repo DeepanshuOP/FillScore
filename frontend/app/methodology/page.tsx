@@ -10,7 +10,10 @@ export const metadata: Metadata = {
 const H2 = { fontFamily: 'var(--font-inter)', fontSize: '1.05rem', fontWeight: 600, color: '#ede8e0', margin: '2rem 0 0.75rem' } as const;
 const P = { fontFamily: 'var(--font-inter)', fontSize: '0.9rem', lineHeight: 1.75, color: '#a09890', marginBottom: '0.75rem' } as const;
 const MONO = { fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#c8bfb4' } as const;
-const NAMES: Record<string, string> = { slippage: 'Slippage', fees: 'Fees', timing: 'Timing', spread: 'Spread' };
+const NAMES: Record<string, string> = {
+  slippage: 'Slippage', fees: 'Fees', timing: 'Timing', spread: 'Spread',
+  execution: 'Execution cost (spread and impact)', unfilled: 'Unfilled orders',
+};
 
 /** Rendered from methodology.json, which ml-service/scripts/gen_methodology.py generates from the metric registry and
  *  the committed scoring version file. A test fails when the JSON is stale, so this page matches the code. */
@@ -57,13 +60,22 @@ export default function MethodologyPage() {
         ))}
 
         <h2 style={H2}>The measured score ({s.version})</h2>
-        <p style={P}>Four components, each scored 0–100. Lower cost scores higher. {s.anchorRule}</p>
+        <p style={P}>
+          {Object.keys(s.weights).length === 3 ? 'Three' : 'Four'} components, each scored 0–100. Lower cost scores higher. {s.anchorRule}
+        </p>
+        {s.weightRule && <p style={P}>{s.weightRule}</p>}
         {Object.entries(s.weights).map(([k, w]) => (
           <section key={k} style={{ marginBottom: '1rem' }}>
             <p style={{ ...MONO, marginBottom: '0.25rem' }}>{NAMES[k] ?? k} · weight {Math.round(w * 100)}%</p>
             <p style={P}>{(s.components as Record<string, string>)[k]}</p>
           </section>
         ))}
+        {s.timingScored === false && (
+          <section style={{ marginBottom: '1rem' }}>
+            <p style={{ ...MONO, marginBottom: '0.25rem' }}>Timing · information only, not scored</p>
+            <p style={P}>{(s.components as Record<string, string>).timing}</p>
+          </section>
+        )}
         <p style={P}>
           A letter grade is shown only when at least {s.minFills} fills were measured in every component. With fewer
           fills the dashboard shows a 95% bootstrap range and the reason instead of a letter. A component without

@@ -40,6 +40,23 @@ export default function OrdersPanel({ body }: { body: unknown }) {
           <p style={{ ...TEXT, fontSize: '0.72rem' }}>{v.shortfallNote}</p>
         </div>
       )}
+      {v.totals && (
+        <div data-testid="orders-totals">
+          <div style={LABEL}>Total over all orders · USD and bps of intended notional</div>
+          <ul style={GRID}>
+            {v.totals.map(r => (
+              <li key={r.label}>
+                <span style={{ color: '#888078' }}>{r.label}: </span>
+                <span style={{ color: '#ede8e0' }}>{r.usd} · {r.bps}</span>
+                {r.n && <span style={{ color: '#888078', fontSize: '0.7rem' }}> ({r.n})</span>}
+              </li>
+            ))}
+          </ul>
+          <p style={{ ...TEXT, fontSize: '0.72rem' }}>
+            Each line adds up the orders that have that term; the bps share is over the intended notional of those orders.
+          </p>
+        </div>
+      )}
       {v.unfilledNote && <p style={TEXT} data-testid="orders-unfilled">{v.unfilledNote}</p>}
       <p style={{ ...TEXT, fontSize: '0.72rem' }}>These costs coincided with the orders; the audit does not show what caused them.</p>
     </section>

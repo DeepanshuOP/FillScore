@@ -15,6 +15,7 @@ from agents.council import (RunCollector, _clock, enforce_claims, override_synth
                             _default_synthesis, _model_usage, _token_usage)
 from agents.prompts import (SYNTH_COST_RULE, SYNTH_JSON_ONLY, SYNTH_WRITING_RULES, packet_values, system_prompt)
 from agents.render import packet_ctx
+from agents.required_evidence import prompt_line
 from agents.schemas import SynthesisOutput, TradeContext
 from agents.verification import summarise
 from config.versions import SINGLE_PROMPT_VERSION
@@ -40,6 +41,8 @@ def build_single_user_prompt(context: TradeContext, fee_pkt, risk_pkt, liquidity
                              trades: list[dict] | None) -> str:
     ctx = synthesis.packet_ctx_of(fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt)
     return f"""{packet_values(ctx, synthesis.NAMESPACES)}
+
+{prompt_line(ctx)}
 
 {synthesis.action_menu(trades)}
 

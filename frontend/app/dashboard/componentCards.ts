@@ -1,5 +1,7 @@
 /** Dashboard COMPONENT SCORES cards. Every score is the engine's notional-weighted component mean from the API
  *  (`breakdown.componentMeans`); nothing is re-derived in the browser. */
+import { formatBps } from '../utils/formatBps'
+
 export interface ComponentMeans { slippage: number | null; fees: number | null; timing: number | null; spread: number | null }
 
 export interface CardInput {
@@ -27,7 +29,7 @@ export function buildComponentCards(b: CardInput): ComponentCard[] {
   const tip = (v: number | null | undefined) => (m == null || v == null ? NO_SCORES_TOOLTIP : undefined)
   return [
     { label: 'SLIPPAGE', key: 'slippage', score: show(m?.slippage), weight: '35%',
-      value: `${b.avgSlippageBps.toFixed(1)} bps avg`, description: 'Arrival price vs execution', tooltip: tip(m?.slippage) },
+      value: `${formatBps(b.avgSlippageBps)} avg`, description: 'Arrival price vs execution', tooltip: tip(m?.slippage) },
     { label: 'LIQUIDITY PROVISION', key: 'fees', score: show(m?.fees), weight: '25%',
       value: `${Math.round(b.makerRatio * 100)}% maker`, description: 'Maker vs taker order ratio', tooltip: tip(m?.fees) },
     { label: 'TIMING', key: 'timing', score: show(m?.timing), weight: '25%',

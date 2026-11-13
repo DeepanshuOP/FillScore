@@ -50,6 +50,22 @@ def test_load_trades_all_symbols():
     assert [t["id"] for t in trades] == ["b1", "b2", "e1"]
 
 
+def test_load_run_inputs_gives_the_packets_this_accounts_order_measurements_only():
+    client = _client_with_trades()
+    sf = lambda s: {"executionBps": 2.0, "spreadBps": s, "impactTimingBps": 1.0, "opportunityBps": 0.0, "fillRatio": 1.0}   # noqa: E731
+    asyncio.run(client["fillscore"]["order_measurements"].insert_many([
+        {"accountId": "u", "symbol": "BTCUSDT", "orderId": "1", "shortfall": sf(1.0), "unmeasuredReason": None},
+        {"accountId": "u", "symbol": "BTCUSDT", "orderId": "2", "shortfall": sf(3.0), "unmeasuredReason": None},
+        {"accountId": "u", "symbol": "ETHUSDT", "orderId": "3", "shortfall": sf(50.0), "unmeasuredReason": None},      # other symbol
+        {"accountId": "other", "symbol": "BTCUSDT", "orderId": "4", "shortfall": sf(90.0), "unmeasuredReason": None},  # other account
+    ]))
+    with patch.object(loader, "_get_mongo_client", _Counting(client)):
+        (_, _, liq, alpha), _ = asyncio.run(loader.load_run_inputs("u", "BTCUSDT"))
+    # two orders for u on BTCUSDT: spreads 1 and 3 -> median 2
+    assert liq.measured["measured_order_count"] == 2 and liq.measured["median_spread_paid_bps"] == 2.0
+    assert alpha.measured["unfilled_order_count"] == 0
+
+
 def test_load_run_inputs_reads_once_and_builds_packets_from_those_trades():
     counting = _Counting(_client_with_trades())
     with patch.object(loader, "_get_mongo_client", counting):

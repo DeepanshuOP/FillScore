@@ -59,6 +59,18 @@ describe('rebuilt demo (no per-trade v1 fields)', () => {
         expect(res.body.fillGrade).toBe('C');
         expect(res.body.v1Computed).toBe(false);
         expect(res.body.breakdown.componentMeans).toBeNull();      // not 0: the dashboard shows "not computed"
+        // Header figures come from the current data: 3 fills x $420 = $1,260, no maker fill, 5 orders (not the audit's counts).
+        expect(res.body.current).toEqual({ fills: 3, orders: 5, notionalUsd: 1260, makerRatio: 0 });
+    });
+
+    it('/score: an enriched account has no "current" block (its audit describes its trades)', async () => {
+        const res = await request(app).get(`/api/audit/score?userId=${ENRICHED}`);
+        expect(res.body.current).toBeUndefined();
+    });
+
+    it('/orders-summary: totals per term stay null when the measurements state no notional', async () => {
+        const res = await request(app).get(`/api/audit/orders-summary?userId=${REBUILT}`);
+        expect(res.body.shortfall.totals).toBeNull();
     });
 
     it('/trades: slippage is null (not 0) and the response says v1 is not computed', async () => {
@@ -122,7 +134,7 @@ describe('rebuilt demo (no per-trade v1 fields)', () => {
         // measured: orders 1, 2, 4 (order 5 is unmeasured and counted). execution [2, 4, 0] -> 2; spread [1, 1] -> 1;
         // impact [1, 3] -> 2; opportunity [0, 0, 7] -> 0; total [2.5, 4.5, 7] -> 4.5
         expect(res.body.shortfall).toEqual({ n: 3, unmeasured: 1,
-            medianBps: { execution: 2, spread: 1, impactTiming: 2, opportunity: 0, total: 4.5 } });
+            medianBps: { execution: 2, spread: 1, impactTiming: 2, opportunity: 0, total: 4.5 }, totals: null });
         expect(res.body.unfilled).toEqual({ n: 1, medianOpportunityBps: 7 });
     });
 
