@@ -6,7 +6,7 @@ describe('findOrphanAccountIds', () => {
         expect(findOrphanAccountIds(['demo-moderate', '965b15aa', 'u1', 'u2', '965b15aa'], ['u1'])).toEqual(['965b15aa', 'u2']);
     });
     it('never returns demo ids even when no users exist', () => {
-        expect(findOrphanAccountIds(['demo-okx', 'demo-multi'], [])).toEqual([]);
+        expect(findOrphanAccountIds(['demo-moderate', 'demo-aggressive'], [])).toEqual([]);
     });
 });
 

@@ -103,6 +103,7 @@ Generated from the app (`npm run docs:routes`).
 | PATCH | `/api/audit/trades/:tradeId/note` |
 | GET | `/api/audit/trades/export` |
 | GET | `/api/audit/v2` |
+| GET | `/api/audit/orders-summary` |
 | GET | `/api/audit/verify` |
 | POST | `/api/auth/forgot-password` |
 | GET | `/api/auth/github` |
@@ -197,12 +198,14 @@ analytics card.
 
 `dataSource` (`synthetic-demo` or `real-user`) is set once and enforced at schema level. Demo trader
 behaviour is synthetic. In the three Binance demos, MARKET fill prices come from real public prints,
-while LIMIT fills are offsets from a real 1-minute open with slippage set to 0. The demos `demo-bybit`,
-`demo-okx` and `demo-multi` have simulated prices and are hidden (API 404 `demo_unavailable`) until
-they are rebuilt from real prints. Whale bursts and markout prices are real public data.
+while LIMIT fills are offsets from a real 1-minute open with slippage set to 0. M2 rebuilt the three Binance
+demos from real prints (`ml-service/demo_v2/out/`); their trades carry no per-trade v1 fields, so every v1-only
+view says "not computed for this data" and the measured views (`/api/audit/orders-summary`, v2 components) take
+its place. `demo-bybit`, `demo-okx` and `demo-multi` were removed from the product on 2026-11-13 (their Atlas
+data is kept; `demo-bybit` returns in M6 with Bybit measurement). Whale bursts and markout prices are real public data.
 
-Canonical demo scores: `demo-disciplined` 95.885 (A), `demo-moderate` 84.809 (B),
-`demo-aggressive` 60.675 (C), `demo-bybit` 76.164 (B), `demo-okx` 81.659 (B), `demo-multi` 70.720 (C).
+Canonical v1 demo scores (the frozen, published audits): `demo-disciplined` 95.885 (A), `demo-moderate` 84.809 (B),
+`demo-aggressive` 60.675 (C).
 
 ## 6. Build status
 

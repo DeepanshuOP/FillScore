@@ -3,7 +3,7 @@
 | Component | Weight | Unit  | Input                                   | Mapping                                         |
 | slippage  | 0.35   | order | impactTimingBps (execution net of spread) | anchors of signed mid drift, by duration bucket |
 | fees      | 0.25   | fill  | fee paid, bps, vs best available rate   | 100 at <= best, linear to 0 at 2 x best          |
-| timing    | 0.25   | fill  | UTC hour in the symbol's hour profile   | 100 x (1 - hours strictly cheaper / 23)          |
+| timing    | 0.25   | fill  | excess cost of the UTC hour (v2.2.0)    | 100 up to 1 price step; then spread-ladder points |
 | spread    | 0.15   | fill  | effective half-spread, bps              | anchors by notional bucket; <= half a tick = 100 |
 """
 from __future__ import annotations
@@ -25,8 +25,8 @@ COMPONENT_DOCS = {
             "own commission snapshot: 100 at or below that rate, falling linearly to 0 at twice it. A snapshot is "
             "the rate when it was fetched, so it is applied only to fills within 30 days of it; other fills read "
             "\"not measured\". On a zero-fee pair the reference is the exchange's published taker rate.",
-    "timing": "Where the fill's UTC hour ranks in the symbol's hour profile (median quoted half-spread plus median "
-              "absolute 1-minute move, from the calibration days): 100 x (1 - hours with a lower index / 23).",
+    "timing": "How much more the fill's UTC hour cost than the symbol's cheapest hours, in bps. An hour's cost is the median effective half-spread of public taker events that started in it (calibration days); the reference is the mean of the 3 cheapest hours. An excess of up to one price step scores 100. Above that step the excess is converted to points on the spread ladder of the fill's size class (the market-median event re-scored at its median plus the excess, divided by 75). Hours are not ranked, so hours that cost almost the same score the same; where nearly every event pays half a tick, every hour scores 100."
+              "",
     "spread": "The effective half-spread a taker event paid (bps): the fills of one order in one millisecond, at their "
               "volume-weighted price, against the mid just before that millisecond. Mapped through anchors from the "
               "same measure on public taker events (consecutive prints with the same millisecond and side, which is "
@@ -84,6 +84,46 @@ def timing_score(hour: int, profile: Sequence[float] | None) -> float:
         raise ValueError(f"hour must be 0..23, got {hour!r}")
     cheaper = sum(1 for v in vals if v < vals[hour])
     return 100.0 * (1 - cheaper / 23)
+
+
+TIMING_REFERENCE_HOURS = 3   # v2.2.0: the reference cost is the mean of the symbol's 3 cheapest hours
+
+
+def _check_cost_profile(profile) -> list[float]:
+    if profile is None or len(profile) != 24:
+        raise ValueError("an hour profile has 24 values")
+    vals = [_finite("hour cost", v) for v in profile]
+    if any(v < 0 for v in vals):
+        raise ValueError("an hour cost cannot be negative")
+    return vals
+
+
+def timing_excess_bps(hour: int, profile: Sequence[float], reference_hours: int = TIMING_REFERENCE_HOURS) -> float:
+    """Median taker-event cost of `hour` minus the mean of the symbol's 3 cheapest hours (bps), never below 0."""
+    vals = _check_cost_profile(profile)
+    if not isinstance(hour, int) or isinstance(hour, bool) or not 0 <= hour <= 23:
+        raise ValueError(f"hour must be 0..23, got {hour!r}")
+    if not isinstance(reference_hours, int) or not 1 <= reference_hours <= 24:
+        raise ValueError(f"reference_hours must be 1..24, got {reference_hours!r}")
+    ref = sum(sorted(vals)[:reference_hours]) / reference_hours
+    return max(0.0, vals[hour] - ref)
+
+
+def timing_cost_score(hour: int, profile: Sequence[float], floor_bps: float,
+                      spread_anchors: Sequence[float] | None, reference_hours: int = TIMING_REFERENCE_HOURS) -> float | None:
+    """v2.2.0 timing: excess cost of the fill's hour over the cheapest hours, in bps, minus a materiality floor
+    (about one price step); at or below the floor the score is 100. Above it, the excess is converted to points on the
+    spread ladder of the fill's size class: the market-median event (anchor a50, 75 points) re-scored at
+    a50 + excess, as a fraction of 75. So 100 = no material excess, 0 = the median event would have scored 0."""
+    floor = _finite("floor_bps", floor_bps)
+    if floor < 0:
+        raise ValueError("floor cannot be negative")
+    excess = timing_excess_bps(hour, profile, reference_hours) - floor
+    if excess <= 1e-12:
+        return 100.0
+    if not _anchors_ok(spread_anchors):
+        return None
+    return score_from_anchors(spread_anchors[1] + excess, *spread_anchors) / 75.0 * 100.0
 
 
 def _anchors_ok(anchors) -> bool:

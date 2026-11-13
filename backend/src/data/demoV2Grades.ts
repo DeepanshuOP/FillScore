@@ -1,58 +1,143 @@
 /**
  * Scoring v2 grades of the three Binance demos rebuilt from real January 2024 prints (M2), copied from
  * ml-service/demo_v2/out/grades_v2.json (built by ml-service/scripts/build_demo_v2.py through the production
- * measurement job and scorer, offline). GET /api/audit/v2 serves them for a demo account only once its rebuilt orders
- * are in the database. A test (routes/__tests__/auditV2.test.ts) fails when this copy differs from the build output.
- * Every number here comes from deterministic code; nothing is typed by hand.
+ * measurement job and scorer, offline) by ml-service/scripts/gen_demo_grades_ts.py. GET /api/audit/v2 serves them for
+ * a demo account only once its rebuilt orders are in the database. A test (routes/__tests__/auditV2.test.ts) fails
+ * when this copy differs from the build output. Every number here comes from deterministic code; nothing is typed
+ * by hand.
  */
 export const DEMO_V2_GRADES = {
     'demo-aggressive': {
-        integrityHash: '7f84fe13f73e0753ee67a5e470c457d2c6cc5d6feef791e7802d6a4fb508e976',
-        measureVersion: '1.0.0', measured: 721, orders: 311,
+        integrityHash: '3c430008204a919865e038f50a4ad752664031abbd844768c7844329cf920e14',
+        measureVersion: '1.0.0',
+        measured: 721,
+        orders: 311,
         result: {
-            band: [77.3108380304442, 79.18252979180266],
+            band: [89.60506315137353, 90.904501771747],
             components: {
-                fees: { measured: 721, reason: null, score: 100.0, unmeasured: 0 },
-                slippage: { measured: 702, reason: null, score: 76.28305029304894, unmeasured: 19 },
-                spread: { measured: 712, reason: null, score: 90.54916556506288, unmeasured: 9 },
-                timing: { measured: 721, reason: null, score: 51.91932097852902, unmeasured: 0 },
+                fees: {
+                    measured: 721,
+                    reason: null,
+                    score: 100.0,
+                    unmeasured: 0,
+                },
+                slippage: {
+                    measured: 702,
+                    reason: null,
+                    score: 76.28305029304894,
+                    unmeasured: 19,
+                },
+                spread: {
+                    measured: 712,
+                    reason: null,
+                    score: 90.54916556506288,
+                    unmeasured: 9,
+                },
+                timing: {
+                    measured: 721,
+                    reason: null,
+                    score: 100.0,
+                    unmeasured: 0,
+                },
             },
-            composite: 78.26127268195881, fills: 721, grade: 'B', orders: 309, reason: null,
+            composite: 90.28144243732656,
+            fills: 721,
+            grade: 'A',
+            orders: 309,
+            reason: null,
         },
-        scoringVersion: 'v2.1.0', skipped: {}, unmeasuredFills: 9,
-        versionFileSha256: '63e20f1dc10b62e34bb43afdf0c875aee336b12145e4d750f2bef9e6fc0a57b0',
+        scoringVersion: 'v2.2.0',
+        skipped: {},
+        unmeasuredFills: 9,
+        versionFileSha256: 'a0fa45c7ab977bd7c3f3c1afa8afc83f7ee5810a44011896868ab9bb5c3c3e8d',
     },
     'demo-disciplined': {
-        integrityHash: '991a081e91f58e001ed8ba1e70f819e7b0d2431d59754fa8817f2a80b89b74d7',
-        measureVersion: '1.0.0', measured: 385, orders: 144,
+        integrityHash: '7e40a6ab7d1769ddf043d8843bed9dade8fbfae3371bea6f3af776f617650fed',
+        measureVersion: '1.0.0',
+        measured: 385,
+        orders: 144,
         result: {
-            band: [71.65173492782165, 74.55542740259152],
+            band: [89.46463833372187, 90.73876833053076],
             components: {
-                fees: { measured: 385, reason: null, score: 100.00000000000007, unmeasured: 0 },
-                slippage: { measured: 385, reason: null, score: 75.02966282809359, unmeasured: 0 },
-                spread: { measured: 385, reason: null, score: 91.98931795363181, unmeasured: 0 },
-                timing: { measured: 385, reason: null, score: 32.01413401594112, unmeasured: 0 },
+                fees: {
+                    measured: 385,
+                    reason: null,
+                    score: 100.00000000000007,
+                    unmeasured: 0,
+                },
+                slippage: {
+                    measured: 385,
+                    reason: null,
+                    score: 75.02966282809359,
+                    unmeasured: 0,
+                },
+                spread: {
+                    measured: 385,
+                    reason: null,
+                    score: 91.98931795363181,
+                    unmeasured: 0,
+                },
+                timing: {
+                    measured: 385,
+                    reason: null,
+                    score: 100.00000000000007,
+                    unmeasured: 0,
+                },
             },
-            composite: 73.06231318686282, fills: 385, grade: 'C', orders: 138, reason: null,
+            composite: 90.05877968287757,
+            fills: 385,
+            grade: 'A',
+            orders: 138,
+            reason: null,
         },
-        scoringVersion: 'v2.1.0', skipped: {}, unmeasuredFills: 0,
-        versionFileSha256: '63e20f1dc10b62e34bb43afdf0c875aee336b12145e4d750f2bef9e6fc0a57b0',
+        scoringVersion: 'v2.2.0',
+        skipped: {},
+        unmeasuredFills: 0,
+        versionFileSha256: 'a0fa45c7ab977bd7c3f3c1afa8afc83f7ee5810a44011896868ab9bb5c3c3e8d',
     },
     'demo-moderate': {
-        integrityHash: '3d0213e6acf621fe60423046136c708d96b314018b8c83262b150fe66d924e60',
-        measureVersion: '1.0.0', measured: 607, orders: 245,
+        integrityHash: 'c33addddd5c0afe94395c5183f9f6f45945720511435f0286ac7ee32c69943dd',
+        measureVersion: '1.0.0',
+        measured: 607,
+        orders: 245,
         result: {
-            band: [75.19182086484594, 77.54572363572287],
+            band: [89.99643909011324, 91.00926743691095],
             components: {
-                fees: { measured: 607, reason: null, score: 100.00000000000016, unmeasured: 0 },
-                slippage: { measured: 607, reason: null, score: 76.87753630263151, unmeasured: 0 },
-                spread: { measured: 607, reason: null, score: 90.48197668533663, unmeasured: 0 },
-                timing: { measured: 607, reason: null, score: 43.52543847871633, unmeasured: 0 },
+                fees: {
+                    measured: 607,
+                    reason: null,
+                    score: 100.00000000000016,
+                    unmeasured: 0,
+                },
+                slippage: {
+                    measured: 607,
+                    reason: null,
+                    score: 76.87753630263151,
+                    unmeasured: 0,
+                },
+                spread: {
+                    measured: 607,
+                    reason: null,
+                    score: 90.48197668533663,
+                    unmeasured: 0,
+                },
+                timing: {
+                    measured: 607,
+                    reason: null,
+                    score: 100.00000000000016,
+                    unmeasured: 0,
+                },
             },
-            composite: 76.36079382840065, fills: 607, grade: 'B', orders: 234, reason: null,
+            composite: 90.4794342087216,
+            fills: 607,
+            grade: 'A',
+            orders: 234,
+            reason: null,
         },
-        scoringVersion: 'v2.1.0', skipped: {}, unmeasuredFills: 0,
-        versionFileSha256: '63e20f1dc10b62e34bb43afdf0c875aee336b12145e4d750f2bef9e6fc0a57b0',
+        scoringVersion: 'v2.2.0',
+        skipped: {},
+        unmeasuredFills: 0,
+        versionFileSha256: 'a0fa45c7ab977bd7c3f3c1afa8afc83f7ee5810a44011896868ab9bb5c3c3e8d',
     },
 } as const;
 

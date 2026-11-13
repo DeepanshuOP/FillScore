@@ -73,12 +73,11 @@ def _dt(s: str) -> datetime:
     return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%fZ")      # naive UTC, as Mongo returns it
 
 
-def score_offline(demo: str, out: dict, tapes: DayTapes) -> dict:
+def measure_offline(demo: str, out: dict, tapes: DayTapes):
+    """Measure one rebuilt demo with the production job on an in-memory database. Returns (db, now_ms, reports)."""
     import mongomock
 
     from measure.service import measure_account
-    from scoring_v2.score import score_account_v2
-    from scoring_v2.version import load_version, version_file_sha256
 
     db = mongomock.MongoClient().db
     db.trades.insert_many([{**t, "executedAt": _dt(t["executedAt"])} for t in out["trades"]] or [{"_skip": 1}])
@@ -92,13 +91,24 @@ def score_offline(demo: str, out: dict, tapes: DayTapes) -> dict:
         reports.append(r)
         if r["measured"] == 0 or r["pending"] == 0:
             break
+    return db, now, reports
+
+
+def score_offline(demo: str, out: dict, tapes: DayTapes) -> dict:
+    from scoring_v2.score import _plain, score_account_v2
+    from scoring_v2.version import load_version, version_file_sha256
+
+    db, now, reports = measure_offline(demo, out, tapes)
     unmeasured = db.trades.count_documents({"measurement.unmeasuredReason": {"$ne": None}})
     s = score_account_v2(db, demo, load_version(SCORING_V2_VERSION), version_file_sha256(SCORING_V2_VERSION), now,
                          data_source="synthetic-demo")
+    # The order measurements the production job wrote into the in-memory database: the seed script stores them in
+    # `order_measurements`, so the dashboard's order views read the same documents as for a real account.
+    oms = sorted((_plain(d) for d in db.order_measurements.find({"accountId": demo})), key=lambda d: (d["symbol"], d["orderId"]))
     return {"scoringVersion": s["scoringVersion"], "versionFileSha256": s["versionFileSha256"],
             "measureVersion": s["measureVersion"], "integrityHash": s["integrityHash"], "result": s["result"],
             "measured": sum(r["measured"] for r in reports), "orders": sum(r["orders"] for r in reports),
-            "unmeasuredFills": unmeasured, "skipped": reports[-1]["skipped"]}
+            "unmeasuredFills": unmeasured, "skipped": reports[-1]["skipped"], "orderMeasurements": oms}
 
 
 def main(argv=None) -> int:
@@ -123,6 +133,9 @@ def main(argv=None) -> int:
             (d / f"{name}.json").write_text(text, encoding="utf-8")
             files[f"{name}.json"] = hashlib.sha256(text.encode()).hexdigest()
         g = score_offline(demo, out, tapes)
+        text = json.dumps(g.pop("orderMeasurements"), indent=1, sort_keys=True, default=str) + "\n"
+        (d / "order_measurements.json").write_text(text, encoding="utf-8")
+        files["order_measurements.json"] = hashlib.sha256(text.encode()).hexdigest()
         grades[demo] = g
         manifest["demos"][demo] = {"counts": out["counts"], "skipped": out["skipped"], "files": files,
                                    "statuses": {s: sum(1 for o in out["orders"] if o["status"] == s) for s in ("FILLED", "CANCELED")}}

@@ -9,10 +9,7 @@ loadEnv();
 const DEMO_USERS = [
     'demo-disciplined',
     'demo-moderate',
-    'demo-aggressive',
-    'demo-bybit',
-    'demo-okx',
-    'demo-multi'
+    'demo-aggressive'
 ];
 
 async function run() {

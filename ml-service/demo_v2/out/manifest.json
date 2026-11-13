@@ -8,6 +8,7 @@
    },
    "files": {
     "fee_snapshots.json": "a6b83e14906154aa5e9dfc77ac474cd01a1f966c37456545ef1de63f97482980",
+    "order_measurements.json": "8e57ae3ef7103b840ef995512983f50517a681513b078f6670772127a7452770",
     "orders.json": "11c0851275d7628c4c0d202b5eb9a33fc0b6018dd1e376d184e538eb6b3f9b6d",
     "trades.json": "d31cc24e29147aefd02977248700081c00329cb0c414eb0655a1d274319e20d9"
    },
@@ -27,6 +28,7 @@
    },
    "files": {
     "fee_snapshots.json": "7e83a351341e7d331046219f770e3234f9fdc59fdd54e203814346ef3fb12d84",
+    "order_measurements.json": "5cc8eac00e5a63d758522b3dfec8cd07263546820bc26c9fff3eeaf4eee396a3",
     "orders.json": "633d3f6a40822c77e911da13732ca3e91a29523cedcdee245f1dea2196394588",
     "trades.json": "99042ae1906d31f27491578ec3563e6882a95a58f621bb10647f886c10439061"
    },
@@ -46,6 +48,7 @@
    },
    "files": {
     "fee_snapshots.json": "db4344dd736c59751991e609a84f27fbe9d59c5159f32450a160af4c83b2e6e5",
+    "order_measurements.json": "30c5a326f8439fab193e2748644620e382ac13746b10318392764dbf1c1105ee",
     "orders.json": "ec61518bacfbf9830afe61cf2abdc9ecc2c84e5ea09e9894e88e99b850444677",
     "trades.json": "23c337d411edd86841bca67d0cc604fcfac228b792f76761aad44ffc4b164490"
    },
@@ -66,7 +69,7 @@
  "generatedBy": "ml-service/scripts/build_demo_v2.py",
  "horizonMs": 300000,
  "measureVersion": "1.0.0",
- "scoringVersion": "v2.1.0",
+ "scoringVersion": "v2.2.0",
  "seed": 42,
  "tapes": [
   {

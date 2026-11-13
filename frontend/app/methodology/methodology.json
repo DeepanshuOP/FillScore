@@ -199,7 +199,7 @@
       "fees": "The fee paid (bps of notional) against the lowest rate the account had for that fill, from the account's own commission snapshot: 100 at or below that rate, falling linearly to 0 at twice it. A snapshot is the rate when it was fetched, so it is applied only to fills within 30 days of it; other fills read \"not measured\". On a zero-fee pair the reference is the exchange's published taker rate.",
       "slippage": "How far the mid moved against the order between the order's arrival and its fills, with the spread taken out (impact/timing, bps of the intended notional). Mapped through anchors from the signed mid drift of a random-side entry over the same duration, so 75 is the market median. For fast fills this is mostly market movement during the order, not a choice the trader made.",
       "spread": "The effective half-spread a taker event paid (bps): the fills of one order in one millisecond, at their volume-weighted price, against the mid just before that millisecond. Mapped through anchors from the same measure on public taker events (consecutive prints with the same millisecond and side, which is how one order that walks several price levels appears) of a similar total size. Half a tick or less scores 100. Each quote proxy may be up to 5 s old, for the fill and the baseline alike; on the M1 calibration days, including events with proxies older than 1 s coincided with a 12% (ETH) and 18% (BNB) higher 90th percentile for small events and left the medians almost unchanged. Version v2.0.0 scored each fill alone against single public prints.",
-      "timing": "Where the fill's UTC hour ranks in the symbol's hour profile (median quoted half-spread plus median absolute 1-minute move, from the calibration days): 100 x (1 - hours with a lower index / 23)."
+      "timing": "How much more the fill's UTC hour cost than the symbol's cheapest hours, in bps. An hour's cost is the median effective half-spread of public taker events that started in it (calibration days); the reference is the mean of the 3 cheapest hours. An excess of up to one price step scores 100. Above that step the excess is converted to points on the spread ladder of the fill's size class (the market-median event re-scored at its median plus the excess, divided by 75). Hours are not ranked, so hours that cost almost the same score the same; where nearly every event pays half a tick, every hour scores 100."
     },
     "feeTable": {
       "publishedTakerBps": {
@@ -216,8 +216,11 @@
       "ETHUSDT",
       "SOLUSDT"
     ],
-    "version": "v2.1.0",
-    "versionFileSha256": "63e20f1dc10b62e34bb43afdf0c875aee336b12145e4d750f2bef9e6fc0a57b0",
+    "timingFloorSteps": 1.0,
+    "timingReferenceHours": 3,
+    "timingUnit": "excess_event_cost",
+    "version": "v2.2.0",
+    "versionFileSha256": "a0fa45c7ab977bd7c3f3c1afa8afc83f7ee5810a44011896868ab9bb5c3c3e8d",
     "weights": {
       "fees": 0.25,
       "slippage": 0.35,

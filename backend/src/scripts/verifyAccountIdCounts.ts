@@ -32,7 +32,7 @@ async function run() {
     console.log(`\n[Mismatch Check] Trade Mismatches: ${tradesMismatch} | Audit Mismatches: ${auditsMismatch}`);
 
     console.log('\n[Per-User Trade Counts]');
-    const users = ['demo-aggressive', 'demo-moderate', 'demo-disciplined', 'demo-bybit', 'demo-okx', 'demo-multi'];
+    const users = ['demo-aggressive', 'demo-moderate', 'demo-disciplined'];
     for (const u of users) {
         const count = await Trade.countDocuments({ userId: u });
         console.log(`- ${u}: ${count}`);

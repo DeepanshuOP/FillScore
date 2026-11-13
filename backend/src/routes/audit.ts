@@ -14,7 +14,7 @@ import { summariseMarkouts, MarkoutTrade } from '../analytics/markouts';
 import { descriptiveAudit, withComponentMeans } from '../services/auditText';
 import { EnrichedTrade } from '../types';
 import rateLimit from 'express-rate-limit';
-import { resolveAccount, resolveDownloadAccount, VALID_DEMO_USERS, isHiddenDemo } from '../middleware/resolveAccount';
+import { resolveAccount, resolveDownloadAccount, VALID_DEMO_USERS } from '../middleware/resolveAccount';
 import { ExchangeConnection } from '../models/ExchangeConnection';
 import { requireAuth } from '../middleware/requireAuth';
 import { signDownloadToken, DOWNLOAD_TOKEN_TTL_SECONDS } from '../utils/downloadToken';
@@ -22,6 +22,8 @@ import { INGEST_DAYS_BACK } from '../config/ingestion';
 import { auditRunLimiter } from '../middleware/security';
 import { ScoreV2 } from '../models/ScoreV2';
 import { Order } from '../models/Order';
+import { OrderMeasurement } from '../models/OrderMeasurement';
+import { summariseOrders } from '../services/orderSummary';
 import { DEMO_V2_GRADES } from '../data/demoV2Grades';
 import { callMlInternal, mlServiceSecret } from '../services/measureTrigger';
 import {
@@ -131,6 +133,15 @@ export async function executeAuditPipeline(accountId: string) {
 
 export const auditRouter = Router();
 
+/** The per-trade v1 fields (fillScore, arrival slippage, ...) exist for this account. The rebuilt demos (M2) have
+ *  none: v1 enrichment needed invented arrival prices. Their v1-only views say so (decision 11, option A). */
+const hasV1Trades = async (accountId: string): Promise<boolean> =>
+    !!(await Trade.exists({ accountId, fillScore: { $exists: true, $ne: null } }));
+/** The "not computed for this data" answers apply to demo accounts only. A real account whose trades are not yet
+ *  enriched keeps its earlier behaviour (404 / empty), and is never described as a rebuilt demo (review 2026-11-13). */
+const v1Flag = async (req: Request, accountId: string): Promise<boolean> => (req.isDemo ? hasV1Trades(accountId) : true);
+const NOT_COMPUTED = 'not_computed_for_this_data';
+
 const shareLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 100,
@@ -220,7 +231,8 @@ auditRouter.get('/score', resolveAccount, async (req: Request, res: Response) =>
             return res.status(404).json({ error: 'No audit found for this user.' });
         }
 
-        return res.status(200).json(await withComponentMeans(await descriptiveAudit(latestAudit, accountId), accountId));
+        const body = await withComponentMeans(await descriptiveAudit(latestAudit, accountId), accountId);
+        return res.status(200).json({ ...body, v1Computed: await v1Flag(req, accountId) });
 
     } catch (error: any) {
         console.error('Error fetching score:', error);
@@ -256,6 +268,23 @@ auditRouter.get('/v2', resolveAccount, async (req: Request, res: Response) => {
         });
     } catch (error: any) {
         console.error('Error fetching v2 score:', error?.name);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+/**
+ * Measured order views (decision 11): how orders ended, resting time of limit orders, implementation shortfall
+ * and the cost of unfilled orders. Statistics only, over `orders` and `order_measurements` (summariseOrders).
+ */
+auditRouter.get('/orders-summary', resolveAccount, async (req: Request, res: Response) => {
+    try {
+        const accountId = req.accountId!;
+        const orders = await Order.find({ accountId }).lean();
+        if (orders.length === 0) return res.status(200).json({ available: false, reason: 'no_orders' });
+        const measurements = await OrderMeasurement.find({ accountId }).lean();
+        return res.status(200).json({ available: true, ...summariseOrders(orders as any, measurements as any) });
+    } catch (error: any) {
+        console.error('Error fetching orders summary:', error?.name);
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
@@ -387,10 +416,6 @@ auditRouter.get('/share/:userId', shareLimiter, async (req: Request, res: Respon
             return res.status(400).json({ error: 'Missing userId parameter' });
         }
 
-        if (isHiddenDemo(userId)) {
-            return res.status(404).json({ error: 'demo_unavailable' });
-        }
-
         if (!VALID_DEMO_USERS.has(userId)) {
             return res.status(404).json({ error: 'This score card is no longer available.' });
         }
@@ -465,7 +490,7 @@ auditRouter.get('/trades/export', resolveDownloadAccount('export'), async (req, 
       const notional = t.notionalValue ?? t.notional ?? 0;
       const price = t.executionPrice ?? t.price ?? 0;
       const fee = t.feePaid ?? tradeFeeUsd(t);
-      const slippage = t.arrivalSlippageBps ?? 0;
+      const slippage = t.arrivalSlippageBps ?? '';        // a value that was not computed is an empty cell, never 0
       const fillScore = t.fillScore ?? '';
       const grade = t.fillGrade ?? '';
       const arrival = t.arrivalPriceProxy ?? '';
@@ -512,10 +537,11 @@ auditRouter.get('/trades', resolveAccount, async (req, res) => {
       ...t,
       notionalValue: t.notionalValue ?? t.notional,
       feePaid: t.feePaid ?? tradeFeeUsd(t),
-      slippageBps: t.slippageBps ?? t.arrivalSlippageBps ?? t.vwapSlippageBps ?? 0
+      slippageBps: t.slippageBps ?? t.arrivalSlippageBps ?? t.vwapSlippageBps ?? null   // null = not computed, never 0
     }));
 
     return res.json({
+      v1Computed: await v1Flag(req, accountId),
       trades: formattedTrades,
       total,
       page: pageNum,
@@ -568,9 +594,11 @@ auditRouter.get('/analytics', resolveAccount, async (req, res) => {
       fillScore: { $exists: true, $ne: null }
     }).lean()
 
-    if (!trades.length) return res.status(404).json({ 
-      error: 'No trades found' 
-    })
+    if (!trades.length) {
+      const total = await Trade.countDocuments({ accountId })
+      if (req.isDemo && total > 0) return res.status(200).json({ notComputed: true, reason: NOT_COMPUTED, totalTrades: total })
+      return res.status(404).json({ error: 'No trades found' })
+    }
 
     // 1. Heatmap: 24 hours × 7 days grid
     // dayOfWeek: 0=Sun, 1=Mon ... 6=Sat
@@ -708,6 +736,11 @@ auditRouter.get('/analytics/exchange-comparison', resolveAccount, async (req, re
   try {
     const accountId = req.accountId!;
 
+    if (req.isDemo && !(await hasV1Trades(accountId)) && (await Trade.exists({ accountId }))) {
+      return res.json({ notComputed: true, reason: NOT_COMPUTED, exchanges: [], bestExchange: null, worstExchange: null,
+        venueAlphaBps: null, perSymbolRanking: [] });
+    }
+
     const pipeline: any[] = [
       { $match: { accountId } },
       {
@@ -822,7 +855,10 @@ auditRouter.get('/coach', resolveAccount, async (req: Request, res: Response) =>
         if (!latestAudit) return res.status(404).json({ error: 'No audit found' });
 
         const tradeDocs = await Trade.find({ accountId, fillScore: { $exists: true, $ne: null } }).lean();
-        if (tradeDocs.length === 0) return res.status(200).json({ headline: '', actions: [] });
+        if (tradeDocs.length === 0) {
+            const notComputed = !!req.isDemo && !!(await Trade.exists({ accountId }));
+            return res.status(200).json({ headline: '', actions: [], ...(notComputed ? { notComputed: true, reason: NOT_COMPUTED } : {}) });
+        }
         
         const trades = tradeDocs.map(doc => ({ ...doc, executedAt: new Date(doc.executedAt) } as unknown as EnrichedTrade));
         const attribution = aggregateCostAttribution(trades);
@@ -892,6 +928,11 @@ auditRouter.get('/analytics/whale-correlation', resolveAccount, async (req: Requ
 
         const summaryBySymbol: Record<string, { totalEnriched: number, withWhaleEvent: number, adverseCount: number, detectionRate: number, adverseRate: number }> = {};
         const symbolsSet = new Set<string>();
+
+        if (trades.length === 0) {
+            // Never enriched (the rebuilt demos): "no whale activity" would be a finding we did not measure.
+            return res.status(200).json({ available: false, reason: NOT_COMPUTED, symbols: [], summaryBySymbol: {}, trades: [] });
+        }
 
         const formattedTrades = trades.map(t => {
             const sym = t.symbol;

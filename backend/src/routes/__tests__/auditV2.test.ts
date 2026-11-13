@@ -83,8 +83,8 @@ describe('GET /api/audit/v2 and /api/audit/verify', () => {
             expect(res.body.scoringVersion).toBe(g.scoringVersion);
             expect(res.body.computedAt).toBeNull();
             expect(res.body.demo).toEqual({ dataSource: 'synthetic-demo', basis: expect.stringContaining('offline build') });
-            const other = await request(app).get('/api/audit/v2?userId=demo-okx');      // never rebuilt: no grade
-            expect(other.status).toBe(404);
+            const other = await request(app).get('/api/audit/v2?userId=demo-okx');      // a removed demo id: refused
+            expect(other.status).toBe(403);
         } finally {
             await Order.deleteMany({ accountId: 'demo-moderate' });
         }

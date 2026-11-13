@@ -1,0 +1,6717 @@
+[
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 312.45,
+  "arrivalMs": 1705698202000,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-19",
+    "sha256": "1aa2d24a0d1f5a5b3112e23f52d110b627fea4d793a9d4912f9d3c413d87367c",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-160309",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.6002560409669186,
+   "feesBps": 10.00160025604097,
+   "fillRatio": 1.0,
+   "filledQty": 0.10209029769301413,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -1.6002560409669186,
+   "intendedNotional": 31.898113514182263,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.10209029769301413,
+   "spreadBps": 0.0,
+   "totalBps": 8.401344215074051,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BNBUSDT-974139:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 316.15,
+  "arrivalMs": 1705672819786,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-19",
+    "sha256": "1aa2d24a0d1f5a5b3112e23f52d110b627fea4d793a9d4912f9d3c413d87367c",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-246803",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.5815277558106764,
+   "feesBps": 9.998418472244191,
+   "fillRatio": 1.0,
+   "filledQty": 0.07211470112030131,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 22.799062759183258,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.07211470112030131,
+   "spreadBps": -1.5815277558106764,
+   "totalBps": 8.416890716433516,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BNBUSDT-249620:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 312.45,
+  "arrivalMs": 1705657285832,
+  "endBasis": "order canceled",
+  "endMid": 313.75,
+  "endMs": 1705659085832,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-19",
+    "sha256": "1aa2d24a0d1f5a5b3112e23f52d110b627fea4d793a9d4912f9d3c413d87367c",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-404781",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": 0.0,
+   "feesBps": 0.0,
+   "fillRatio": 0.0,
+   "filledQty": 0,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 32.5052410256803,
+   "opportunityBps": 41.60665706513079,
+   "orderedQty": 0.10403341662883758,
+   "spreadBps": 0.0,
+   "totalBps": 41.60665706513079,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 303.25,
+  "arrivalMs": 1706267255821,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-26",
+    "sha256": "1ba431613544eed012853ed0a1fc082cc755d5396ae9258538a935576d69ed9b",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-46479",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.6488046166533015,
+   "feesBps": 10.001648804616654,
+   "fillRatio": 1.0,
+   "filledQty": 0.12721276310927207,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 38.577270412886755,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.12721276310927207,
+   "spreadBps": -1.6488046166533015,
+   "totalBps": 8.35284418796335,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BNBUSDT-688405:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 308.75,
+  "arrivalMs": 1704208949004,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-02",
+    "sha256": "13195362bab4d3709dc9f06f3adc41fcbe71340fd1c57f8e34600f12a85e0568",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-526056",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.619433198380935,
+   "feesBps": 9.99838056680162,
+   "fillRatio": 1.0,
+   "filledQty": 0.09171164792564614,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 28.315971297043244,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.09171164792564614,
+   "spreadBps": -1.619433198380935,
+   "totalBps": 8.378947368420683,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BNBUSDT-342205:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 312.25,
+  "arrivalMs": 1705572497785,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-18",
+    "sha256": "c3572d218ae75a93625664dc616a672eca681a650135a072dca10129e4e26089",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-536551",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.60128102482022,
+   "feesBps": 9.99839871897518,
+   "fillRatio": 1.0,
+   "filledQty": 0.11839175752500979,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -1.60128102482022,
+   "intendedNotional": 36.96782628718431,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.11839175752500979,
+   "spreadBps": 0.0,
+   "totalBps": 8.397117694154959,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BNBUSDT-559842:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 318.45,
+  "arrivalMs": 1704367454531,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-04",
+    "sha256": "58ffcdea8b9ad88a52028b525fb58e44c67c2b1ffc79ef3d67f4d2df215f44a3",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-537773",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.5701051970485593,
+   "feesBps": 9.998429894802953,
+   "fillRatio": 1.0,
+   "filledQty": 0.11556446231997498,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 36.80150302579603,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.11556446231997498,
+   "spreadBps": -1.5701051970485593,
+   "totalBps": 8.428324697754393,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BNBUSDT-946544:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 306.15,
+  "arrivalMs": 1704627224636,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-07",
+    "sha256": "d285d3513c18d4fcbb3cdcae3967a3476755b008d0225fe267c3388c8e0c848d",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-547258",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.6331863465606573,
+   "feesBps": 9.99836681365344,
+   "fillRatio": 1.0,
+   "filledQty": 0.13124467447341698,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -2.65662504962719,
+   "intendedNotional": 40.18055709003661,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.13124467447341698,
+   "spreadBps": 1.0234387030665326,
+   "totalBps": 8.365180467092783,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BNBUSDT-917852:0",
+   "v2:syn-disciplined-BNBUSDT-917852:1",
+   "v2:syn-disciplined-BNBUSDT-917852:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 295.75,
+  "arrivalMs": 1705100687969,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-12",
+    "sha256": "c75a82b2213bf28a89480c88ce30ddbb48ca2c1091a0cc2f9052c08b518b845a",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-617016",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.6906170752328442,
+   "feesBps": 10.001690617075232,
+   "fillRatio": 1.0,
+   "filledQty": 0.08027939719070527,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 1.690617075230922,
+   "intendedNotional": 23.742631719151085,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.08027939719070527,
+   "spreadBps": -3.3812341504637664,
+   "totalBps": 8.311073541842388,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BNBUSDT-931995:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 314.05,
+  "arrivalMs": 1705665610047,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-19",
+    "sha256": "1aa2d24a0d1f5a5b3112e23f52d110b627fea4d793a9d4912f9d3c413d87367c",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-747978",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.5921031682856668,
+   "feesBps": 9.998407896831717,
+   "fillRatio": 1.0,
+   "filledQty": 0.07580332244535572,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 23.806033413963963,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.07580332244535572,
+   "spreadBps": -1.5921031682856668,
+   "totalBps": 8.406304728546049,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BNBUSDT-985661:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 305.55,
+  "arrivalMs": 1704642996563,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-07",
+    "sha256": "d285d3513c18d4fcbb3cdcae3967a3476755b008d0225fe267c3388c8e0c848d",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-830845",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.6363933889710809,
+   "feesBps": 9.998363606611028,
+   "fillRatio": 1.0,
+   "filledQty": 0.09372302507671014,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 28.637070312188783,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.09372302507671014,
+   "spreadBps": -1.6363933889710809,
+   "totalBps": 8.361970217639948,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BNBUSDT-37050:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 309.15,
+  "arrivalMs": 1704616354957,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-07",
+    "sha256": "d285d3513c18d4fcbb3cdcae3967a3476755b008d0225fe267c3388c8e0c848d",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-914207",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.6173378618797145,
+   "feesBps": 10.001617337861878,
+   "fillRatio": 1.0,
+   "filledQty": 0.13277653194975983,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 41.04786485226825,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.13277653194975983,
+   "spreadBps": -1.6173378618797145,
+   "totalBps": 8.384279475982163,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BNBUSDT-830001:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 300.05,
+  "arrivalMs": 1705149131812,
+  "endBasis": "order canceled",
+  "endMid": 299.55,
+  "endMs": 1705150931812,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-13",
+    "sha256": "c1287a9c709eec80804f5a70a2f8864415a24c6e7710680fa8981b26d50d6479",
+    "source": "data.binance.vision",
+    "symbol": "BNBUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BNBUSDT-922156",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": 0.0,
+   "feesBps": 0.0,
+   "fillRatio": 0.0,
+   "filledQty": 0,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 25.39638748092677,
+   "opportunityBps": 16.663889351774703,
+   "orderedQty": 0.084640518183392,
+   "spreadBps": 0.0,
+   "totalBps": 16.663889351774703,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BNBUSDT",
+  "tradeIds": [],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 46254.715,
+  "arrivalMs": 1705018562464,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-12",
+    "sha256": "4b881d781d49077b9865a3c0a12577199e408ffdc10763c23ce22c320980558c",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-104031",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0010809708799158434,
+   "feesBps": 9.999998919029121,
+   "fillRatio": 1.0,
+   "filledQty": 0.004731060932509461,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 218.83387508085931,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004731060932509461,
+   "spreadBps": -0.0010809708799158434,
+   "totalBps": 9.998917948149206,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-671448:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42415.225000000006,
+  "arrivalMs": 1704288912857,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-03",
+    "sha256": "d892320f4e9b1329ee0274f6656d638ea5306db7d83c4e5a8d1884579a62f74a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-130139",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011788219924936416,
+   "feesBps": 9.999998821178007,
+   "fillRatio": 1.0,
+   "filledQty": 0.003082053512749724,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 3.3737885393741687,
+   "intendedNotional": 130.72599320531992,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.003082053512749724,
+   "spreadBps": -3.374967361366662,
+   "totalBps": 9.998819999185516,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-808927:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42580.065,
+  "arrivalMs": 1706707508856,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-31",
+    "sha256": "d2a48a02515f2c1fbf1b24015df7e42b8241cb10bab703e5f1e1d9d49b74064a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-131407",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011742584228982868,
+   "feesBps": 10.000001174258426,
+   "fillRatio": 1.0,
+   "filledQty": 0.003950259922203369,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.308523400177557,
+   "intendedNotional": 168.2023242543144,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.003950259922203369,
+   "spreadBps": -0.30969765860045534,
+   "totalBps": 9.998826915835528,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-934774:0",
+   "v2:syn-disciplined-BTCUSDT-934774:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43256.295,
+  "arrivalMs": 1704374902988,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-04",
+    "sha256": "63f8c567664c4520fc9236d568e52ef146c20ac4431632755a96adaf7bef26b1",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-140909",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011559011248320303,
+   "feesBps": 10.000001155901124,
+   "fillRatio": 1.0,
+   "filledQty": 0.004117320958803348,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.6797388470814328,
+   "intendedNotional": 178.10005000368048,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004117320958803348,
+   "spreadBps": -0.6808947482062649,
+   "totalBps": 9.998845254776292,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-526032:0",
+   "v2:syn-disciplined-BTCUSDT-526032:1",
+   "v2:syn-disciplined-BTCUSDT-526032:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41348.134999999995,
+  "arrivalMs": 1705667124966,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-19",
+    "sha256": "2dc1afb18a70ba06b82eebba7f845518c1ebbdceb2e5627ff0f82142de22379d",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-152848",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0012092443842162686,
+   "feesBps": 10.000001209244385,
+   "fillRatio": 1.0,
+   "filledQty": 0.0030800000872456814,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.13553744952828475,
+   "intendedNotional": 127.3522594074462,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0030800000872456814,
+   "spreadBps": -0.13674669391250102,
+   "totalBps": 9.998791964860166,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-323795:0",
+   "v2:syn-disciplined-BTCUSDT-323795:1",
+   "v2:syn-disciplined-BTCUSDT-323795:2",
+   "v2:syn-disciplined-BTCUSDT-323795:3",
+   "v2:syn-disciplined-BTCUSDT-323795:4"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 38891.215,
+  "arrivalMs": 1706012026586,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-23",
+    "sha256": "21b21606b15df9cbaa2a3a0d08681799ea7f8912c22ea300d760db8ef11aafac",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-157839",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0012856373874296837,
+   "feesBps": 10.000001285637387,
+   "fillRatio": 1.0,
+   "filledQty": 0.005260253092715113,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.13474746047654731,
+   "intendedNotional": 204.57763398319838,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.005260253092715113,
+   "spreadBps": -0.13603309786397702,
+   "totalBps": 9.998715648249956,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-511668:0",
+   "v2:syn-disciplined-BTCUSDT-511668:1",
+   "v2:syn-disciplined-BTCUSDT-511668:2",
+   "v2:syn-disciplined-BTCUSDT-511668:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43873.425,
+  "arrivalMs": 1704551560861,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-06",
+    "sha256": "24dea14d3b5f5032d4e103c711219aede203d4ee57baae490022f47126998ac9",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-162584",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.001139642049231546,
+   "feesBps": 10.000001139642048,
+   "fillRatio": 1.0,
+   "filledQty": 0.003090458891740866,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 135.58901640237602,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.003090458891740866,
+   "spreadBps": -0.001139642049231546,
+   "totalBps": 9.998861497592815,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-78387:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42353.785,
+  "arrivalMs": 1706455863041,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-28",
+    "sha256": "ec7442f3c645d8a57b23657bf8456b98e97fabbd90910ebc8e37a69c2fc474d5",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-165153",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011805320361938398,
+   "feesBps": 9.999998819467962,
+   "fillRatio": 0.9999999999999998,
+   "filledQty": 0.004579723223771377,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.1502199570496339,
+   "intendedNotional": 193.96861277911987,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004579723223771378,
+   "spreadBps": -0.1514004890858277,
+   "totalBps": 9.998818287431767,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-782840:0",
+   "v2:syn-disciplined-BTCUSDT-782840:1",
+   "v2:syn-disciplined-BTCUSDT-782840:2",
+   "v2:syn-disciplined-BTCUSDT-782840:3",
+   "v2:syn-disciplined-BTCUSDT-782840:4",
+   "v2:syn-disciplined-BTCUSDT-782840:5",
+   "v2:syn-disciplined-BTCUSDT-782840:6",
+   "v2:syn-disciplined-BTCUSDT-782840:7",
+   "v2:syn-disciplined-BTCUSDT-782840:8",
+   "v2:syn-disciplined-BTCUSDT-782840:9",
+   "v2:syn-disciplined-BTCUSDT-782840:10",
+   "v2:syn-disciplined-BTCUSDT-782840:11",
+   "v2:syn-disciplined-BTCUSDT-782840:12",
+   "v2:syn-disciplined-BTCUSDT-782840:13"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 40076.744999999995,
+  "arrivalMs": 1706091309525,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-24",
+    "sha256": "819980a60edf99389a8087636c82107d0db8af87f094d678103d17d3ffbbf69a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-17131",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0012476063106873216,
+   "feesBps": 9.999998752393692,
+   "fillRatio": 1.0,
+   "filledQty": 0.004820612957817328,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.017830412974146656,
+   "intendedNotional": 193.1944762541408,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004820612957817328,
+   "spreadBps": 0.01658280666345935,
+   "totalBps": 9.998751146083004,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-623352:0",
+   "v2:syn-disciplined-BTCUSDT-623352:1",
+   "v2:syn-disciplined-BTCUSDT-623352:2",
+   "v2:syn-disciplined-BTCUSDT-623352:3",
+   "v2:syn-disciplined-BTCUSDT-623352:4"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41739.565,
+  "arrivalMs": 1705840682646,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-21",
+    "sha256": "74af83c7aef99cbc0443bb898fd3b6de9fef6fcfd8623a1d1042e1ec04c1922a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-17330",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.001197904194109511,
+   "feesBps": 10.000001197904195,
+   "fillRatio": 1.0,
+   "filledQty": 0.002644162436021497,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.10743717331148239,
+   "intendedNotional": 110.36618986887761,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.002644162436021497,
+   "spreadBps": 0.10623926911737286,
+   "totalBps": 9.998803293710086,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-834364:0",
+   "v2:syn-disciplined-BTCUSDT-834364:1",
+   "v2:syn-disciplined-BTCUSDT-834364:2",
+   "v2:syn-disciplined-BTCUSDT-834364:3",
+   "v2:syn-disciplined-BTCUSDT-834364:4",
+   "v2:syn-disciplined-BTCUSDT-834364:5"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42766.005000000005,
+  "arrivalMs": 1705142876700,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-13",
+    "sha256": "aef59819efd4cb64bf1c9d078458e017afd00b2f79710fcac0929fd0500a657b",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-193306",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011691529282149818,
+   "feesBps": 10.000001169152931,
+   "fillRatio": 1.0000000000000002,
+   "filledQty": 0.004142594831898738,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.25604449141348695,
+   "intendedNotional": 177.16223129395556,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004142594831898737,
+   "spreadBps": -0.25721364434170196,
+   "totalBps": 9.998832016224716,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-246962:0",
+   "v2:syn-disciplined-BTCUSDT-246962:1",
+   "v2:syn-disciplined-BTCUSDT-246962:2",
+   "v2:syn-disciplined-BTCUSDT-246962:3",
+   "v2:syn-disciplined-BTCUSDT-246962:4",
+   "v2:syn-disciplined-BTCUSDT-246962:5",
+   "v2:syn-disciplined-BTCUSDT-246962:6",
+   "v2:syn-disciplined-BTCUSDT-246962:7",
+   "v2:syn-disciplined-BTCUSDT-246962:8",
+   "v2:syn-disciplined-BTCUSDT-246962:9"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42666.225000000006,
+  "arrivalMs": 1706696272650,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-31",
+    "sha256": "d2a48a02515f2c1fbf1b24015df7e42b8241cb10bab703e5f1e1d9d49b74064a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-199835",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011718871302489626,
+   "feesBps": 10.00000117188713,
+   "fillRatio": 1.0,
+   "filledQty": 0.0042464383310240736,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 181.17949328009763,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0042464383310240736,
+   "spreadBps": -0.0011718871302489626,
+   "totalBps": 9.998829284756882,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-347206:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41306.895000000004,
+  "arrivalMs": 1705656535942,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-19",
+    "sha256": "2dc1afb18a70ba06b82eebba7f845518c1ebbdceb2e5627ff0f82142de22379d",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-201662",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0012104516685121588,
+   "feesBps": 10.000001210451668,
+   "fillRatio": 1.0000000000000002,
+   "filledQty": 0.0031800908372186026,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.053635001172750045,
+   "intendedNotional": 131.3596783034509,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.003180090837218602,
+   "spreadBps": 0.05242454950423788,
+   "totalBps": 9.998790758783155,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-77223:0",
+   "v2:syn-disciplined-BTCUSDT-77223:1",
+   "v2:syn-disciplined-BTCUSDT-77223:2",
+   "v2:syn-disciplined-BTCUSDT-77223:3",
+   "v2:syn-disciplined-BTCUSDT-77223:4",
+   "v2:syn-disciplined-BTCUSDT-77223:5",
+   "v2:syn-disciplined-BTCUSDT-77223:6",
+   "v2:syn-disciplined-BTCUSDT-77223:7",
+   "v2:syn-disciplined-BTCUSDT-77223:8",
+   "v2:syn-disciplined-BTCUSDT-77223:9",
+   "v2:syn-disciplined-BTCUSDT-77223:10"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42879.994999999995,
+  "arrivalMs": 1706712217486,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-31",
+    "sha256": "d2a48a02515f2c1fbf1b24015df7e42b8241cb10bab703e5f1e1d9d49b74064a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-202200",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011660449131714245,
+   "feesBps": 10.000001166044912,
+   "fillRatio": 1.0,
+   "filledQty": 0.005323826446542059,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.032405627005546785,
+   "intendedNotional": 228.28565140859124,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.005323826446542059,
+   "spreadBps": 0.03123958209237536,
+   "totalBps": 9.99883512113174,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-689743:0",
+   "v2:syn-disciplined-BTCUSDT-689743:1",
+   "v2:syn-disciplined-BTCUSDT-689743:2",
+   "v2:syn-disciplined-BTCUSDT-689743:3",
+   "v2:syn-disciplined-BTCUSDT-689743:4",
+   "v2:syn-disciplined-BTCUSDT-689743:5",
+   "v2:syn-disciplined-BTCUSDT-689743:6",
+   "v2:syn-disciplined-BTCUSDT-689743:7"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42604.645000000004,
+  "arrivalMs": 1705504966303,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-17",
+    "sha256": "a90e72c46822056d49df2e14c1d2cc1353d1c85704bec35142abf23b7cd30fcd",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-225046",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011735809551706522,
+   "feesBps": 10.000001173580955,
+   "fillRatio": 1.0,
+   "filledQty": 0.002752185645222246,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.02464520007053819,
+   "intendedNotional": 117.25589238878976,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.002752185645222246,
+   "spreadBps": 0.023471619115367534,
+   "totalBps": 9.998827592625785,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-363230:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 45632.865000000005,
+  "arrivalMs": 1704880267425,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-10",
+    "sha256": "263e7a08c6051d6f9771ac1f993a4f00c0507c65ef6071f216eb0a6df2d13d9d",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-228460",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.18955636469416565,
+   "feesBps": 10.000189556364694,
+   "fillRatio": 1.0,
+   "filledQty": 0.0049841327505070875,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.188460663164713,
+   "intendedNotional": 227.44025694596863,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0049841327505070875,
+   "spreadBps": -0.0010957015294526555,
+   "totalBps": 9.81063319167053,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-275540:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41626.354999999996,
+  "arrivalMs": 1705769502270,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-20",
+    "sha256": "47538ab04eb9fe3fe6cb2100f8b3dcef57aa16bca9a58f51c2e03c988ebe4d20",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-231504",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0012011620996795554,
+   "feesBps": 9.9999987988379,
+   "fillRatio": 1.0,
+   "filledQty": 0.004103707739334696,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 170.8223951737935,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004103707739334696,
+   "spreadBps": -0.0012011620996795554,
+   "totalBps": 9.998797636738221,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-181911:0",
+   "v2:syn-disciplined-BTCUSDT-181911:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41762.005000000005,
+  "arrivalMs": 1705836720480,
+  "endBasis": "order canceled",
+  "endMid": 41700.915,
+  "endMs": 1705838520480,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-21",
+    "sha256": "74af83c7aef99cbc0443bb898fd3b6de9fef6fcfd8623a1d1042e1ec04c1922a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-234065",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": 0.0,
+   "feesBps": 0.0,
+   "fillRatio": 0.0,
+   "filledQty": 0,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 184.48609785774136,
+   "opportunityBps": 14.628129085278298,
+   "orderedQty": 0.004417558444757174,
+   "spreadBps": 0.0,
+   "totalBps": 14.628129085278298,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 45343.505000000005,
+  "arrivalMs": 1704277093984,
+  "endBasis": "order canceled",
+  "endMid": 45075.255000000005,
+  "endMs": 1704278893984,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-03",
+    "sha256": "d892320f4e9b1329ee0274f6656d638ea5306db7d83c4e5a8d1884579a62f74a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-237766",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": 0.0,
+   "feesBps": 0.0,
+   "fillRatio": 0.0,
+   "filledQty": 0,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 147.85389593991044,
+   "opportunityBps": 59.159520200302104,
+   "orderedQty": 0.0032607513675863924,
+   "spreadBps": 0.0,
+   "totalBps": 59.159520200302104,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42865.025,
+  "arrivalMs": 1705414040311,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-16",
+    "sha256": "b01212c3c3f6309e0c20972c317ac1b2d0c7571791644df7e471fdf2fa129d06",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-26114",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.09448262307063529,
+   "feesBps": 9.999905517376932,
+   "fillRatio": 1.0,
+   "filledQty": 0.004263741398341112,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.5773938076552025,
+   "intendedNotional": 182.76538163342676,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004263741398341112,
+   "spreadBps": -0.6718764307258377,
+   "totalBps": 9.905422894306295,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-483170:0",
+   "v2:syn-disciplined-BTCUSDT-483170:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42693.994999999995,
+  "arrivalMs": 1705313552007,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-15",
+    "sha256": "4b4ee84e3dec847499fd4bd9d3ea34aa5fff6ff9db825da4c8507b1107718a2b",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-269442",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011711248847479973,
+   "feesBps": 9.99999882887512,
+   "fillRatio": 1.0000000000000002,
+   "filledQty": 0.0036954911993144343,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 157.7752827860744,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0036954911993144334,
+   "spreadBps": -0.0011711248847479973,
+   "totalBps": 9.99882770399037,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-954477:0",
+   "v2:syn-disciplined-BTCUSDT-954477:1",
+   "v2:syn-disciplined-BTCUSDT-954477:2",
+   "v2:syn-disciplined-BTCUSDT-954477:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 45965.125,
+  "arrivalMs": 1705060734980,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-12",
+    "sha256": "4b881d781d49077b9865a3c0a12577199e408ffdc10763c23ce22c320980558c",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-274233",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0010877812248700847,
+   "feesBps": 10.000001087781223,
+   "fillRatio": 1.0,
+   "filledQty": 0.004370760771935041,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.026106749409545472,
+   "intendedNotional": 200.90256522709063,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004370760771935041,
+   "spreadBps": -0.027194530634415556,
+   "totalBps": 9.998913306556354,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-672064:0",
+   "v2:syn-disciplined-BTCUSDT-672064:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42805.994999999995,
+  "arrivalMs": 1705413541186,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-16",
+    "sha256": "b01212c3c3f6309e0c20972c317ac1b2d0c7571791644df7e471fdf2fa129d06",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-291460",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011680606897834318,
+   "feesBps": 10.00000116806069,
+   "fillRatio": 1.0,
+   "filledQty": 0.003594815602336058,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.0004629642461208137,
+   "intendedNotional": 153.87965869951927,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.003594815602336058,
+   "spreadBps": -0.0007050964436626181,
+   "totalBps": 9.998833107370906,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-297079:0",
+   "v2:syn-disciplined-BTCUSDT-297079:1",
+   "v2:syn-disciplined-BTCUSDT-297079:2",
+   "v2:syn-disciplined-BTCUSDT-297079:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42683.994999999995,
+  "arrivalMs": 1705307658184,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-15",
+    "sha256": "4b4ee84e3dec847499fd4bd9d3ea34aa5fff6ff9db825da4c8507b1107718a2b",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-30017",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011713992574164192,
+   "feesBps": 10.000001171399262,
+   "fillRatio": 1.0000000000000004,
+   "filledQty": 0.0049288217409402925,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.08506895770363165,
+   "intendedNotional": 210.38180254618663,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004928821740940291,
+   "spreadBps": 0.08389755844621521,
+   "totalBps": 9.998829772141846,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-71955:0",
+   "v2:syn-disciplined-BTCUSDT-71955:1",
+   "v2:syn-disciplined-BTCUSDT-71955:2",
+   "v2:syn-disciplined-BTCUSDT-71955:3",
+   "v2:syn-disciplined-BTCUSDT-71955:4",
+   "v2:syn-disciplined-BTCUSDT-71955:5",
+   "v2:syn-disciplined-BTCUSDT-71955:6",
+   "v2:syn-disciplined-BTCUSDT-71955:7",
+   "v2:syn-disciplined-BTCUSDT-71955:8"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42728.015,
+  "arrivalMs": 1704116815175,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-01",
+    "sha256": "9572fa650e2a7850e528fc6d0c3ec7874211af47947416f75004f0f95751dca3",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-317799",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011701924363630408,
+   "feesBps": 10.000001170192437,
+   "fillRatio": 1.0000000000000002,
+   "filledQty": 0.002543189873924622,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.004547332678146584,
+   "intendedNotional": 108.66545508089933,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0025431898739246214,
+   "spreadBps": 0.003377140241783544,
+   "totalBps": 9.998830977756075,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-108780:0",
+   "v2:syn-disciplined-BTCUSDT-108780:1",
+   "v2:syn-disciplined-BTCUSDT-108780:2",
+   "v2:syn-disciplined-BTCUSDT-108780:3",
+   "v2:syn-disciplined-BTCUSDT-108780:4"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42928.89,
+  "arrivalMs": 1705231768424,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-14",
+    "sha256": "a2f5882cf6324106cb3bca4d0724e25222e38b563d6094eb60f4f35ddedbbaae",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-329533",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.258567132763177,
+   "feesBps": 9.999741432867237,
+   "fillRatio": 1.0,
+   "filledQty": 0.005346285930089203,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.03362242179528614,
+   "intendedNotional": 229.51012060134707,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.005346285930089203,
+   "spreadBps": -0.22494471096789087,
+   "totalBps": 9.74117430010406,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-920290:0",
+   "v2:syn-disciplined-BTCUSDT-920290:1",
+   "v2:syn-disciplined-BTCUSDT-920290:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43858.21,
+  "arrivalMs": 1704582151612,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-06",
+    "sha256": "24dea14d3b5f5032d4e103c711219aede203d4ee57baae490022f47126998ac9",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-347646",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": 0.0,
+   "feesBps": 10.0,
+   "fillRatio": 1.0,
+   "filledQty": 0.003290562005937591,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0011400374063101654,
+   "intendedNotional": 144.31815947443212,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.003290562005937591,
+   "spreadBps": -0.0011400374063101654,
+   "totalBps": 10.0,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-477822:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43168.955,
+  "arrivalMs": 1704370109569,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-04",
+    "sha256": "63f8c567664c4520fc9236d568e52ef146c20ac4431632755a96adaf7bef26b1",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-350772",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.001158239759256765,
+   "feesBps": 9.99999884176024,
+   "fillRatio": 1.0,
+   "filledQty": 0.0034798571780054973,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.02200655540565301,
+   "intendedNotional": 150.22179792374632,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0034798571780054973,
+   "spreadBps": 0.02084831564639624,
+   "totalBps": 9.99884060200098,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-97657:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42529.115000000005,
+  "arrivalMs": 1705585067758,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-18",
+    "sha256": "4532fff7a068c1bfa1242f5727c9f7fe3332f38770702e9c3c9aa24cd9dcaa1b",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-369456",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.001175665189519371,
+   "feesBps": 9.999998824334808,
+   "fillRatio": 1.0,
+   "filledQty": 0.0032374895978718996,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.06065323911107736,
+   "intendedNotional": 137.6875674191978,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0032374895978718996,
+   "spreadBps": 0.05947757392155799,
+   "totalBps": 9.998823159145289,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-484411:0",
+   "v2:syn-disciplined-BTCUSDT-484411:1",
+   "v2:syn-disciplined-BTCUSDT-484411:2",
+   "v2:syn-disciplined-BTCUSDT-484411:3",
+   "v2:syn-disciplined-BTCUSDT-484411:4",
+   "v2:syn-disciplined-BTCUSDT-484411:5",
+   "v2:syn-disciplined-BTCUSDT-484411:6",
+   "v2:syn-disciplined-BTCUSDT-484411:7"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 46762.994999999995,
+  "arrivalMs": 1704789522886,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-09",
+    "sha256": "f68bb03c36b12650e1b16715a04816666717ce1e30ad4b1fd0917dd14244f727",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-404927",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.2149135229677613,
+   "feesBps": 9.999785086477033,
+   "fillRatio": 1.0,
+   "filledQty": 0.004623333282180113,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.4437269255325425,
+   "intendedNotional": 216.20091115792218,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004623333282180113,
+   "spreadBps": -0.6586404485003038,
+   "totalBps": 9.78487156350927,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-441991:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42726.145000000004,
+  "arrivalMs": 1705568091489,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-18",
+    "sha256": "4532fff7a068c1bfa1242f5727c9f7fe3332f38770702e9c3c9aa24cd9dcaa1b",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-41864",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011702436523071892,
+   "feesBps": 10.000001170243655,
+   "fillRatio": 1.0,
+   "filledQty": 0.004294729953302426,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 183.4972547206427,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004294729953302426,
+   "spreadBps": -0.0011702436523071892,
+   "totalBps": 9.998830926591348,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-121507:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 46987.115000000005,
+  "arrivalMs": 1704973655874,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-11",
+    "sha256": "e1ccb8ff0e3c799f8e4a5e758b202f54eed0f14b4a1bafe246b49f476d4d3446",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-420840",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0010641215144578796,
+   "feesBps": 10.000001064121514,
+   "fillRatio": 1.0,
+   "filledQty": 0.003106813763800521,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.1787724145233823,
+   "intendedNotional": 145.98021560327794,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.003106813763800521,
+   "spreadBps": -0.17983653603784017,
+   "totalBps": 9.998936942607058,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-381207:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 47252.055,
+  "arrivalMs": 1704976638838,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-11",
+    "sha256": "e1ccb8ff0e3c799f8e4a5e758b202f54eed0f14b4a1bafe246b49f476d4d3446",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-434034",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0010581550363006763,
+   "feesBps": 9.999998941844964,
+   "fillRatio": 1.0,
+   "filledQty": 0.004235227363529284,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 200.12319631899072,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004235227363529284,
+   "spreadBps": -0.0010581550363006763,
+   "totalBps": 9.998940786808664,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-973115:0",
+   "v2:syn-disciplined-BTCUSDT-973115:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41999.0,
+  "arrivalMs": 1706536725355,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-29",
+    "sha256": "0e9571bfed26882ef7fa02abe370ae69ab00a5738b9cd2313a90944acfe43288",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-44527",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": 0.019048072573572283,
+   "feesBps": 9.999980951927427,
+   "fillRatio": 1.0,
+   "filledQty": 0.005489663438328219,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.0003989548165129116,
+   "intendedNotional": 230.56037474634687,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.005489663438328219,
+   "spreadBps": 0.019447027390085195,
+   "totalBps": 10.019029024501,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-926893:0",
+   "v2:syn-disciplined-BTCUSDT-926893:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41511.53999999999,
+  "arrivalMs": 1706345766583,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-27",
+    "sha256": "2a6905037957715d3fc81aa2a6d454b04087d13bc52899c6d47bb66990907a91",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-450392",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.10840359090613494,
+   "feesBps": 10.000108403590907,
+   "fillRatio": 1.0,
+   "filledQty": 0.003296821607721526,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.09274529443975373,
+   "intendedNotional": 136.8561420417964,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.003296821607721526,
+   "spreadBps": -0.20114888534588865,
+   "totalBps": 9.89170481268477,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-905822:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 47238.58,
+  "arrivalMs": 1704987613917,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-11",
+    "sha256": "e1ccb8ff0e3c799f8e4a5e758b202f54eed0f14b4a1bafe246b49f476d4d3446",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-470842",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.12278099807440152,
+   "feesBps": 9.999877219001926,
+   "fillRatio": 1.0,
+   "filledQty": 0.0032897923443631154,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.2921340988667857,
+   "intendedNotional": 155.40511884258459,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0032897923443631154,
+   "spreadBps": 0.1693531007923842,
+   "totalBps": 9.877096220927525,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-256746:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 46530.005000000005,
+  "arrivalMs": 1704792249024,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-09",
+    "sha256": "f68bb03c36b12650e1b16715a04816666717ce1e30ad4b1fd0917dd14244f727",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-487741",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.001074575426626465,
+   "feesBps": 10.000001074575426,
+   "fillRatio": 1.0000000000000002,
+   "filledQty": 0.003886592263369645,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 180.8431574475509,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0038865922633696446,
+   "spreadBps": -0.001074575426626465,
+   "totalBps": 9.9989264991488,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-641585:0",
+   "v2:syn-disciplined-BTCUSDT-641585:1",
+   "v2:syn-disciplined-BTCUSDT-641585:2",
+   "v2:syn-disciplined-BTCUSDT-641585:3",
+   "v2:syn-disciplined-BTCUSDT-641585:4"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42912.005000000005,
+  "arrivalMs": 1705165258241,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-13",
+    "sha256": "aef59819efd4cb64bf1c9d078458e017afd00b2f79710fcac0929fd0500a657b",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-490364",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011651751076782854,
+   "feesBps": 9.999998834824893,
+   "fillRatio": 0.9999999999999999,
+   "filledQty": 0.003029593492141749,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 130.00593108275422,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0030295934921417494,
+   "spreadBps": -0.0011651751076782854,
+   "totalBps": 9.998833659717215,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-511206:0",
+   "v2:syn-disciplined-BTCUSDT-511206:1",
+   "v2:syn-disciplined-BTCUSDT-511206:2",
+   "v2:syn-disciplined-BTCUSDT-511206:3",
+   "v2:syn-disciplined-BTCUSDT-511206:4",
+   "v2:syn-disciplined-BTCUSDT-511206:5"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 46549.994999999995,
+  "arrivalMs": 1704799963006,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-09",
+    "sha256": "f68bb03c36b12650e1b16715a04816666717ce1e30ad4b1fd0917dd14244f727",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-510962",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0010741139708781184,
+   "feesBps": 9.999998925886029,
+   "fillRatio": 1.0,
+   "filledQty": 0.004266171974022937,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.05506555433903963,
+   "intendedNotional": 198.59028405990782,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004266171974022937,
+   "spreadBps": -0.05613966830991774,
+   "totalBps": 9.99892481191515,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-246135:0",
+   "v2:syn-disciplined-BTCUSDT-246135:1",
+   "v2:syn-disciplined-BTCUSDT-246135:2",
+   "v2:syn-disciplined-BTCUSDT-246135:3",
+   "v2:syn-disciplined-BTCUSDT-246135:4",
+   "v2:syn-disciplined-BTCUSDT-246135:5",
+   "v2:syn-disciplined-BTCUSDT-246135:6"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43597.884999999995,
+  "arrivalMs": 1704528256379,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-06",
+    "sha256": "24dea14d3b5f5032d4e103c711219aede203d4ee57baae490022f47126998ac9",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-522010",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011468446243795111,
+   "feesBps": 10.000001146844623,
+   "fillRatio": 0.9999999999999998,
+   "filledQty": 0.004018963167704638,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.0491119908131475,
+   "intendedNotional": 175.21829400482252,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004018963167704639,
+   "spreadBps": 0.047965146188768,
+   "totalBps": 9.998854302220243,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-451173:0",
+   "v2:syn-disciplined-BTCUSDT-451173:1",
+   "v2:syn-disciplined-BTCUSDT-451173:2",
+   "v2:syn-disciplined-BTCUSDT-451173:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 46750.005000000005,
+  "arrivalMs": 1704813969666,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-09",
+    "sha256": "f68bb03c36b12650e1b16715a04816666717ce1e30ad4b1fd0917dd14244f727",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-522991",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.001069518601630236,
+   "feesBps": 10.000001069518602,
+   "fillRatio": 1.0,
+   "filledQty": 0.00420420225569841,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.10909089742542556,
+   "intendedNotional": 196.54647647491197,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.00420420225569841,
+   "spreadBps": -0.11016041602705579,
+   "totalBps": 9.998931550916973,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-14062:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42571.125,
+  "arrivalMs": 1704078420003,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-01",
+    "sha256": "9572fa650e2a7850e528fc6d0c3ec7874211af47947416f75004f0f95751dca3",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-523942",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011745050189255406,
+   "feesBps": 9.999998825494982,
+   "fillRatio": 1.0,
+   "filledQty": 0.0025128038788028674,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.01222704873459216,
+   "intendedNotional": 106.97288802500172,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0025128038788028674,
+   "spreadBps": 0.011052543715666621,
+   "totalBps": 9.998824320476057,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-34666:0",
+   "v2:syn-disciplined-BTCUSDT-34666:1",
+   "v2:syn-disciplined-BTCUSDT-34666:2",
+   "v2:syn-disciplined-BTCUSDT-34666:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 44654.805,
+  "arrivalMs": 1704891831116,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-10",
+    "sha256": "263e7a08c6051d6f9771ac1f993a4f00c0507c65ef6071f216eb0a6df2d13d9d",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-533699",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011197003317740734,
+   "feesBps": 9.999998880299668,
+   "fillRatio": 1.0,
+   "filledQty": 0.004625167141785408,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.27502968356764157,
+   "intendedNotional": 206.53593680883478,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004625167141785408,
+   "spreadBps": -0.27614938389941573,
+   "totalBps": 9.998879179967894,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-980012:0",
+   "v2:syn-disciplined-BTCUSDT-980012:1",
+   "v2:syn-disciplined-BTCUSDT-980012:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42940.005000000005,
+  "arrivalMs": 1704356916155,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-04",
+    "sha256": "63f8c567664c4520fc9236d568e52ef146c20ac4431632755a96adaf7bef26b1",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-534154",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011644153272410318,
+   "feesBps": 10.000001164415329,
+   "fillRatio": 1.0,
+   "filledQty": 0.005302022414579032,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.004653713122922375,
+   "intendedNotional": 227.6688689921357,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.005302022414579032,
+   "spreadBps": 0.0034892977956813426,
+   "totalBps": 9.998836749088085,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-751149:0",
+   "v2:syn-disciplined-BTCUSDT-751149:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41790.895000000004,
+  "arrivalMs": 1705842871287,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-21",
+    "sha256": "74af83c7aef99cbc0443bb898fd3b6de9fef6fcfd8623a1d1042e1ec04c1922a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-605061",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011964328604727448,
+   "feesBps": 9.999998803567138,
+   "fillRatio": 0.9999999999999998,
+   "filledQty": 0.002558801648209223,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 2.4347408687934617,
+   "intendedNotional": 106.93461100613861,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0025588016482092236,
+   "spreadBps": -2.4359373016539347,
+   "totalBps": 9.998802370706665,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-754971:0",
+   "v2:syn-disciplined-BTCUSDT-754971:1",
+   "v2:syn-disciplined-BTCUSDT-754971:2",
+   "v2:syn-disciplined-BTCUSDT-754971:3",
+   "v2:syn-disciplined-BTCUSDT-754971:4",
+   "v2:syn-disciplined-BTCUSDT-754971:5"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43320.28999999999,
+  "arrivalMs": 1706730031495,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-31",
+    "sha256": "d2a48a02515f2c1fbf1b24015df7e42b8241cb10bab703e5f1e1d9d49b74064a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-626823",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.011541935660087784,
+   "feesBps": 9.99998845806434,
+   "fillRatio": 1.0,
+   "filledQty": 0.004325498946364305,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.011541935660087784,
+   "intendedNotional": 187.38186875119612,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004325498946364305,
+   "spreadBps": 0.0,
+   "totalBps": 9.988446522404251,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-55989:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 44999.365000000005,
+  "arrivalMs": 1704724052585,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-08",
+    "sha256": "61651eaa5dd673618372a590cd22b4bb5590e510920a064321a3b62cb3e586ed",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-640087",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011111267913795255,
+   "feesBps": 9.999998888873208,
+   "fillRatio": 1.0,
+   "filledQty": 0.0043424447449263905,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 195.40725606927458,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0043424447449263905,
+   "spreadBps": -0.0011111267913795255,
+   "totalBps": 9.998887762081829,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-565217:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 40825.725,
+  "arrivalMs": 1705921788511,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-22",
+    "sha256": "6d00ecf88855924c4a590b065366d595a7246f222c464f886a7ec43a9639cb2e",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-65953",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.319021278863275,
+   "feesBps": 9.998680978721138,
+   "fillRatio": 1.0,
+   "filledQty": 0.003423955702617381,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -1.2962765038458806,
+   "intendedNotional": 139.78547392723897,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.003423955702617381,
+   "spreadBps": -0.02274477501739444,
+   "totalBps": 8.679659699857863,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-191078:0",
+   "v2:syn-disciplined-BTCUSDT-191078:1",
+   "v2:syn-disciplined-BTCUSDT-191078:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 46830.005000000005,
+  "arrivalMs": 1704809689407,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-09",
+    "sha256": "f68bb03c36b12650e1b16715a04816666717ce1e30ad4b1fd0917dd14244f727",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-688285",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.001067691537649123,
+   "feesBps": 9.999998932308461,
+   "fillRatio": 1.0,
+   "filledQty": 0.002766324844460856,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0052685890410041,
+   "intendedNotional": 129.5470062977261,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.002766324844460856,
+   "spreadBps": -0.006336280578653224,
+   "totalBps": 9.998931240770812,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-428958:0",
+   "v2:syn-disciplined-BTCUSDT-428958:1",
+   "v2:syn-disciplined-BTCUSDT-428958:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 45791.095,
+  "arrivalMs": 1705068052860,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-12",
+    "sha256": "4b881d781d49077b9865a3c0a12577199e408ffdc10763c23ce22c320980558c",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-705666",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.001091915361416147,
+   "feesBps": 9.999998908084638,
+   "fillRatio": 1.0,
+   "filledQty": 0.0032407447564256993,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 148.39725101224107,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0032407447564256993,
+   "spreadBps": -0.001091915361416147,
+   "totalBps": 9.998906992723224,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-361447:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43836.884999999995,
+  "arrivalMs": 1704443514727,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-05",
+    "sha256": "9dc4fbf6222ab97f037f993fa7f4ae4eda979ab29f4ffd45ff6b4d1c1b4fc4e5",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-714018",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011405919933993058,
+   "feesBps": 10.000001140591992,
+   "fillRatio": 1.0,
+   "filledQty": 0.005010508054646173,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.05910313756633828,
+   "intendedNotional": 219.645065383098,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.005010508054646173,
+   "spreadBps": -0.06024372955973759,
+   "totalBps": 9.998860548598593,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-628895:0",
+   "v2:syn-disciplined-BTCUSDT-628895:1",
+   "v2:syn-disciplined-BTCUSDT-628895:2",
+   "v2:syn-disciplined-BTCUSDT-628895:3",
+   "v2:syn-disciplined-BTCUSDT-628895:4",
+   "v2:syn-disciplined-BTCUSDT-628895:5",
+   "v2:syn-disciplined-BTCUSDT-628895:6",
+   "v2:syn-disciplined-BTCUSDT-628895:7"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 45656.145000000004,
+  "arrivalMs": 1704882223397,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-10",
+    "sha256": "263e7a08c6051d6f9771ac1f993a4f00c0507c65ef6071f216eb0a6df2d13d9d",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-725486",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0010951428344764132,
+   "feesBps": 9.999998904857165,
+   "fillRatio": 1.0,
+   "filledQty": 0.00235038426728933,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 107.30948491308042,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.00235038426728933,
+   "spreadBps": -0.0010951428344764132,
+   "totalBps": 9.998903762022689,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-802087:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41677.375,
+  "arrivalMs": 1705756478005,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-20",
+    "sha256": "47538ab04eb9fe3fe6cb2100f8b3dcef57aa16bca9a58f51c2e03c988ebe4d20",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-726235",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.04438859213126346,
+   "feesBps": 9.999955611407866,
+   "fillRatio": 0.9999999999999998,
+   "filledQty": 0.004939255815470273,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0011996916786099542,
+   "intendedNotional": 205.85521684228542,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004939255815470274,
+   "spreadBps": -0.04558828380987342,
+   "totalBps": 9.955567019276604,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-409057:0",
+   "v2:syn-disciplined-BTCUSDT-409057:1",
+   "v2:syn-disciplined-BTCUSDT-409057:2",
+   "v2:syn-disciplined-BTCUSDT-409057:3",
+   "v2:syn-disciplined-BTCUSDT-409057:4"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43879.915,
+  "arrivalMs": 1704551484768,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-06",
+    "sha256": "24dea14d3b5f5032d4e103c711219aede203d4ee57baae490022f47126998ac9",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-741468",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011394734920021276,
+   "feesBps": 9.99999886052651,
+   "fillRatio": 1.0,
+   "filledQty": 0.0046048296250085705,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.2689157442534451,
+   "intendedNotional": 202.05953253485794,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0046048296250085705,
+   "spreadBps": -0.2700552177454472,
+   "totalBps": 9.998859387034507,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-988764:0",
+   "v2:syn-disciplined-BTCUSDT-988764:1",
+   "v2:syn-disciplined-BTCUSDT-988764:2",
+   "v2:syn-disciplined-BTCUSDT-988764:3",
+   "v2:syn-disciplined-BTCUSDT-988764:4",
+   "v2:syn-disciplined-BTCUSDT-988764:5"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41071.104999999996,
+  "arrivalMs": 1705674585922,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-19",
+    "sha256": "2dc1afb18a70ba06b82eebba7f845518c1ebbdceb2e5627ff0f82142de22379d",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-75774",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0012174008964834554,
+   "feesBps": 10.000001217400897,
+   "fillRatio": 1.0,
+   "filledQty": 0.004644813362030681,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.005928926248521918,
+   "intendedNotional": 190.7676172973651,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004644813362030681,
+   "spreadBps": -0.007146327145005366,
+   "totalBps": 9.998783816504414,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-213498:0",
+   "v2:syn-disciplined-BTCUSDT-213498:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 44054.055,
+  "arrivalMs": 1704629604537,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-07",
+    "sha256": "541874247f8fc572074bc99cb20b0681a661a63625a985ab692c9248e85db064",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-758937",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011349693001882926,
+   "feesBps": 9.999998865030701,
+   "fillRatio": 1.0,
+   "filledQty": 0.0025727691214758163,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.008753305649311266,
+   "intendedNotional": 113.34091237979729,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0025727691214758163,
+   "spreadBps": 0.0076183363491229734,
+   "totalBps": 9.99886389573051,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-998052:0",
+   "v2:syn-disciplined-BTCUSDT-998052:1",
+   "v2:syn-disciplined-BTCUSDT-998052:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41632.45,
+  "arrivalMs": 1705759176259,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-20",
+    "sha256": "47538ab04eb9fe3fe6cb2100f8b3dcef57aa16bca9a58f51c2e03c988ebe4d20",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-761094",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.15853018498875096,
+   "feesBps": 10.000158530184988,
+   "fillRatio": 0.9999999999999998,
+   "filledQty": 0.004906474733824561,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.15942275373874362,
+   "intendedNotional": 204.26856403221436,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004906474733824562,
+   "spreadBps": 0.0008925687499926654,
+   "totalBps": 9.841628345196238,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-144570:0",
+   "v2:syn-disciplined-BTCUSDT-144570:1",
+   "v2:syn-disciplined-BTCUSDT-144570:2",
+   "v2:syn-disciplined-BTCUSDT-144570:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 45909.994999999995,
+  "arrivalMs": 1705064841722,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-12",
+    "sha256": "4b881d781d49077b9865a3c0a12577199e408ffdc10763c23ce22c320980558c",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-776651",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0010890874628456519,
+   "feesBps": 9.999998910912536,
+   "fillRatio": 1.0,
+   "filledQty": 0.003659923857613482,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.004290884215717094,
+   "intendedNotional": 168.02708600341563,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.003659923857613482,
+   "spreadBps": 0.003201796752871442,
+   "totalBps": 9.99890982344969,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-492039:0",
+   "v2:syn-disciplined-BTCUSDT-492039:1",
+   "v2:syn-disciplined-BTCUSDT-492039:2",
+   "v2:syn-disciplined-BTCUSDT-492039:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42921.994999999995,
+  "arrivalMs": 1705400791087,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-16",
+    "sha256": "b01212c3c3f6309e0c20972c317ac1b2d0c7571791644df7e471fdf2fa129d06",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-782720",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011649039140376994,
+   "feesBps": 9.999998835096086,
+   "fillRatio": 1.0,
+   "filledQty": 0.0025659223891000356,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 110.13450795533977,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0025659223891000356,
+   "spreadBps": -0.0011649039140376994,
+   "totalBps": 9.998833931182048,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-770589:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41774.994999999995,
+  "arrivalMs": 1706361418637,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-27",
+    "sha256": "2a6905037957715d3fc81aa2a6d454b04087d13bc52899c6d47bb66990907a91",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-790926",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.00119688823359061,
+   "feesBps": 9.999998803111767,
+   "fillRatio": 1.0,
+   "filledQty": 0.002648679374071141,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 110.64856760842503,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.002648679374071141,
+   "spreadBps": -0.00119688823359061,
+   "totalBps": 9.998801914878177,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-981964:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 40195.535,
+  "arrivalMs": 1706261316694,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-26",
+    "sha256": "5701b9de29bba451df6e2c97d51f5d7be779dc5dc95e558a41f69d0efa41c51a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-801645",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0012439192573644345,
+   "feesBps": 9.999998756080744,
+   "fillRatio": 1.0,
+   "filledQty": 0.0036506546178129064,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 146.7400154632103,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0036506546178129064,
+   "spreadBps": -0.0012439192573644345,
+   "totalBps": 9.99875483682338,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-540677:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41900.005000000005,
+  "arrivalMs": 1706539536425,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-29",
+    "sha256": "0e9571bfed26882ef7fa02abe370ae69ab00a5738b9cd2313a90944acfe43288",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-809187",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011933172794085954,
+   "feesBps": 10.00000119331728,
+   "fillRatio": 1.0,
+   "filledQty": 0.005190630548485354,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 217.4874459346891,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.005190630548485354,
+   "spreadBps": -0.0011933172794085954,
+   "totalBps": 9.998807876037871,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-55623:0",
+   "v2:syn-disciplined-BTCUSDT-55623:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42921.625,
+  "arrivalMs": 1705399939995,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-16",
+    "sha256": "b01212c3c3f6309e0c20972c317ac1b2d0c7571791644df7e471fdf2fa129d06",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-815620",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.5999306876189077,
+   "feesBps": 10.000599930687619,
+   "fillRatio": 1.0,
+   "filledQty": 0.002779879465467396,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.598765773662975,
+   "intendedNotional": 119.31694396199201,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.002779879465467396,
+   "spreadBps": -0.0011649139559326226,
+   "totalBps": 9.40066924306871,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-808983:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42886.065,
+  "arrivalMs": 1705565222034,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-18",
+    "sha256": "4532fff7a068c1bfa1242f5727c9f7fe3332f38770702e9c3c9aa24cd9dcaa1b",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-842617",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011658798737204294,
+   "feesBps": 9.999998834120127,
+   "fillRatio": 1.0,
+   "filledQty": 0.00533443706112355,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 228.77301454175355,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.00533443706112355,
+   "spreadBps": -0.0011658798737204294,
+   "totalBps": 9.998832954246407,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-681803:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42770.005000000005,
+  "arrivalMs": 1705152658999,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-13",
+    "sha256": "aef59819efd4cb64bf1c9d078458e017afd00b2f79710fcac0929fd0500a657b",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-857695",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011690435849564793,
+   "feesBps": 10.000001169043585,
+   "fillRatio": 1.0,
+   "filledQty": 0.005345218168914926,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 228.61500781058226,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.005345218168914926,
+   "spreadBps": -0.0011690435849564793,
+   "totalBps": 9.998832125458629,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-954902:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41571.915,
+  "arrivalMs": 1705740680260,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-20",
+    "sha256": "47538ab04eb9fe3fe6cb2100f8b3dcef57aa16bca9a58f51c2e03c988ebe4d20",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-864656",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.001202735067023171,
+   "feesBps": 9.999998797264933,
+   "fillRatio": 1.0000000000000002,
+   "filledQty": 0.003184210717365471,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.5289523427317548,
+   "intendedNotional": 132.37373728440636,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0031842107173654707,
+   "spreadBps": -0.5301550777987779,
+   "totalBps": 9.998796062197911,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-294088:0",
+   "v2:syn-disciplined-BTCUSDT-294088:1",
+   "v2:syn-disciplined-BTCUSDT-294088:2",
+   "v2:syn-disciplined-BTCUSDT-294088:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41054.2,
+  "arrivalMs": 1705607798159,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-18",
+    "sha256": "4532fff7a068c1bfa1242f5727c9f7fe3332f38770702e9c3c9aa24cd9dcaa1b",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-893732",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.29473232945871625,
+   "feesBps": 10.00029473232946,
+   "fillRatio": 1.0,
+   "filledQty": 0.0048150583116319985,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.3239619819657298,
+   "intendedNotional": 197.6783669374024,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0048150583116319985,
+   "spreadBps": 0.029229652507013506,
+   "totalBps": 9.705562402870743,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-513362:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43956.604999999996,
+  "arrivalMs": 1704622754637,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-07",
+    "sha256": "541874247f8fc572074bc99cb20b0681a661a63625a985ab692c9248e85db064",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-91088",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011374854808237935,
+   "feesBps": 9.999998862514518,
+   "fillRatio": 1.0,
+   "filledQty": 0.0026191722722751125,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 115.12992099934957,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0026191722722751125,
+   "spreadBps": -0.0011374854808237935,
+   "totalBps": 9.998861377033695,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-777338:0",
+   "v2:syn-disciplined-BTCUSDT-777338:1",
+   "v2:syn-disciplined-BTCUSDT-777338:2",
+   "v2:syn-disciplined-BTCUSDT-777338:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 48039.884999999995,
+  "arrivalMs": 1704986029256,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-11",
+    "sha256": "e1ccb8ff0e3c799f8e4a5e758b202f54eed0f14b4a1bafe246b49f476d4d3446",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-915519",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.2612412581763376,
+   "feesBps": 10.000261241258176,
+   "fillRatio": 1.0,
+   "filledQty": 0.0044966133369938105,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 1.6632013169870594,
+   "intendedNotional": 216.01678759864888,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0044966133369938105,
+   "spreadBps": -1.924442575163397,
+   "totalBps": 9.73901998308184,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-745852:0",
+   "v2:syn-disciplined-BTCUSDT-745852:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42944.005000000005,
+  "arrivalMs": 1705412727025,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-16",
+    "sha256": "b01212c3c3f6309e0c20972c317ac1b2d0c7571791644df7e471fdf2fa129d06",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-924393",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011643068682999308,
+   "feesBps": 10.000001164306871,
+   "fillRatio": 1.0,
+   "filledQty": 0.00378494486648897,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.014065816773764693,
+   "intendedNotional": 162.54069127122668,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.00378494486648897,
+   "spreadBps": 0.012901509905464762,
+   "totalBps": 9.99883685743857,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-163190:0",
+   "v2:syn-disciplined-BTCUSDT-163190:1",
+   "v2:syn-disciplined-BTCUSDT-163190:2",
+   "v2:syn-disciplined-BTCUSDT-163190:3",
+   "v2:syn-disciplined-BTCUSDT-163190:4",
+   "v2:syn-disciplined-BTCUSDT-163190:5",
+   "v2:syn-disciplined-BTCUSDT-163190:6",
+   "v2:syn-disciplined-BTCUSDT-163190:7",
+   "v2:syn-disciplined-BTCUSDT-163190:8"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43191.9,
+  "arrivalMs": 1706623663724,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-30",
+    "sha256": "ceda7cc3daf2bb7e6daf27c03559044b418abc4d1d7ba230191f95fd79ca89bd",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-932252",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.4607345358731528,
+   "feesBps": 9.999539265464126,
+   "fillRatio": 1.0,
+   "filledQty": 0.0029690128851040496,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.001110836205242434,
+   "intendedNotional": 128.2373076321256,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0029690128851040496,
+   "spreadBps": -0.45962369966791033,
+   "totalBps": 9.538804729590973,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-665158:0",
+   "v2:syn-disciplined-BTCUSDT-665158:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42828.795,
+  "arrivalMs": 1705376126355,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-16",
+    "sha256": "b01212c3c3f6309e0c20972c317ac1b2d0c7571791644df7e471fdf2fa129d06",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-935176",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011674388684950524,
+   "feesBps": 9.999998832561133,
+   "fillRatio": 1.0,
+   "filledQty": 0.0048437463036510395,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 207.45181747107813,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0048437463036510395,
+   "spreadBps": -0.0011674388684950524,
+   "totalBps": 9.998831393692639,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-942650:0",
+   "v2:syn-disciplined-BTCUSDT-942650:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43086.115000000005,
+  "arrivalMs": 1705160586690,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-13",
+    "sha256": "aef59819efd4cb64bf1c9d078458e017afd00b2f79710fcac0929fd0500a657b",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-93927",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011604666601713,
+   "feesBps": 10.00000116046666,
+   "fillRatio": 1.0,
+   "filledQty": 0.005090649505235961,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.03865344574442122,
+   "intendedNotional": 219.33631000728974,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.005090649505235961,
+   "spreadBps": 0.037492979084249915,
+   "totalBps": 9.998840693806489,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-776019:0",
+   "v2:syn-disciplined-BTCUSDT-776019:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42695.475,
+  "arrivalMs": 1705320918428,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-15",
+    "sha256": "4b4ee84e3dec847499fd4bd9d3ea34aa5fff6ff9db825da4c8507b1107718a2b",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-94113",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.3571807082604082,
+   "feesBps": 10.00035718070826,
+   "fillRatio": 1.0,
+   "filledQty": 0.004432239507245622,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.7469075236159772,
+   "intendedNotional": 189.23657107561777,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004432239507245622,
+   "spreadBps": 0.38972681535556897,
+   "totalBps": 9.643176472447852,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-945095:0",
+   "v2:syn-disciplined-BTCUSDT-945095:1",
+   "v2:syn-disciplined-BTCUSDT-945095:2",
+   "v2:syn-disciplined-BTCUSDT-945095:3",
+   "v2:syn-disciplined-BTCUSDT-945095:4"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41259.125,
+  "arrivalMs": 1706273251581,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-26",
+    "sha256": "5701b9de29bba451df6e2c97d51f5d7be779dc5dc95e558a41f69d0efa41c51a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-942534",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0012118531348836543,
+   "feesBps": 9.999998788146865,
+   "fillRatio": 1.0,
+   "filledQty": 0.0029435683675782596,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.6071384208959004,
+   "intendedNotional": 121.44905522395736,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0029435683675782596,
+   "spreadBps": -0.608350274030784,
+   "totalBps": 9.998786935011982,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-319618:0",
+   "v2:syn-disciplined-BTCUSDT-319618:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 44921.57,
+  "arrivalMs": 1704722238450,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-08",
+    "sha256": "61651eaa5dd673618372a590cd22b4bb5590e510920a064321a3b62cb3e586ed",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-942687",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.09794849111514319,
+   "feesBps": 9.999902051508885,
+   "fillRatio": 1.0,
+   "filledQty": 0.002698094633698449,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.2359668195045159,
+   "intendedNotional": 121.20264695430923,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.002698094633698449,
+   "spreadBps": -0.3339153106196591,
+   "totalBps": 9.901953560393743,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-524268:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 42387.585,
+  "arrivalMs": 1706444168257,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-28",
+    "sha256": "ec7442f3c645d8a57b23657bf8456b98e97fabbd90910ebc8e37a69c2fc474d5",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-958197",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011795906743402942,
+   "feesBps": 10.000001179590672,
+   "fillRatio": 1.0,
+   "filledQty": 0.004716231071088713,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.3406181305059562,
+   "intendedNotional": 199.90964540541384,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004716231071088713,
+   "spreadBps": 0.33943853983161587,
+   "totalBps": 9.998821588916332,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-234595:0",
+   "v2:syn-disciplined-BTCUSDT-234595:1",
+   "v2:syn-disciplined-BTCUSDT-234595:2",
+   "v2:syn-disciplined-BTCUSDT-234595:3",
+   "v2:syn-disciplined-BTCUSDT-234595:4",
+   "v2:syn-disciplined-BTCUSDT-234595:5",
+   "v2:syn-disciplined-BTCUSDT-234595:6",
+   "v2:syn-disciplined-BTCUSDT-234595:7",
+   "v2:syn-disciplined-BTCUSDT-234595:8",
+   "v2:syn-disciplined-BTCUSDT-234595:9",
+   "v2:syn-disciplined-BTCUSDT-234595:10",
+   "v2:syn-disciplined-BTCUSDT-234595:11"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 44867.244999999995,
+  "arrivalMs": 1704223800959,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-02",
+    "sha256": "97337ca2765f4597647f7c4ec1efa0cad29b440b523a45fc0c7f3754dc081a76",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-958573",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0011143987121688915,
+   "feesBps": 10.000001114398712,
+   "fillRatio": 1.0,
+   "filledQty": 0.004980808528590726,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.8146254578365211,
+   "intendedNotional": 223.47515655036958,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004980808528590726,
+   "spreadBps": -0.8157398565486899,
+   "totalBps": 9.998886715686544,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-343788:0",
+   "v2:syn-disciplined-BTCUSDT-343788:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 43788.065,
+  "arrivalMs": 1704444139615,
+  "endBasis": "order canceled",
+  "endMid": 44054.555,
+  "endMs": 1704445939615,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-05",
+    "sha256": "9dc4fbf6222ab97f037f993fa7f4ae4eda979ab29f4ffd45ff6b4d1c1b4fc4e5",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-960505",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": 0.0,
+   "feesBps": 0.0,
+   "fillRatio": 0.0,
+   "filledQty": 0,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 138.75570446613315,
+   "opportunityBps": 60.85904914957944,
+   "orderedQty": 0.0031688019204806866,
+   "spreadBps": 0.0,
+   "totalBps": 60.85904914957944,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 39790.155,
+  "arrivalMs": 1706200847233,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-25",
+    "sha256": "dafb03a8502dde09e6c47e7dcb01b4fe2d5cf500e655cbbad691016eeaf649e4",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-97773",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0012565922411351786,
+   "feesBps": 10.00000125659224,
+   "fillRatio": 1.0,
+   "filledQty": 0.0036144630958200264,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 143.8200468244587,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0036144630958200264,
+   "spreadBps": -0.0012565922411351786,
+   "totalBps": 9.998744664351104,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-773888:0",
+   "v2:syn-disciplined-BTCUSDT-773888:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 41841.755000000005,
+  "arrivalMs": 1705845317417,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-21",
+    "sha256": "74af83c7aef99cbc0443bb898fd3b6de9fef6fcfd8623a1d1042e1ec04c1922a",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-9818",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.001194978556081277,
+   "feesBps": 10.000001194978557,
+   "fillRatio": 1.0,
+   "filledQty": 0.0043616877448132375,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.18402669773389635,
+   "intendedNotional": 182.50067000497802,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0043616877448132375,
+   "spreadBps": -0.1852216762899776,
+   "totalBps": 9.998806216422475,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-812688:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 47092.005000000005,
+  "arrivalMs": 1704972188868,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-11",
+    "sha256": "e1ccb8ff0e3c799f8e4a5e758b202f54eed0f14b4a1bafe246b49f476d4d3446",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-BTCUSDT-990855",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.0010617513534742495,
+   "feesBps": 9.999998938248646,
+   "fillRatio": 1.0,
+   "filledQty": 0.004194957607162144,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.11466914606706533,
+   "intendedNotional": 197.54896461126776,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.004194957607162144,
+   "spreadBps": -0.11573089742053956,
+   "totalBps": 9.998937186895171,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-BTCUSDT-21964:0",
+   "v2:syn-disciplined-BTCUSDT-21964:1",
+   "v2:syn-disciplined-BTCUSDT-21964:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2238.825,
+  "arrivalMs": 1704344863165,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-04",
+    "sha256": "88b1dfea6c6c21de43f4183dba03999c367a0be473dc6f26ff6a84793a00a177",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-125248",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.02233314350210106,
+   "feesBps": 10.000022333143503,
+   "fillRatio": 1.0,
+   "filledQty": 0.03570923206905057,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 1.3399886100955958,
+   "intendedNotional": 79.94672148699213,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.03570923206905057,
+   "spreadBps": -1.362321753597697,
+   "totalBps": 9.977689189641403,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-275225:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2382.035,
+  "arrivalMs": 1705918697117,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-22",
+    "sha256": "2c96b34566c3917b0efbe176224564b9d088c5a289f49021d30d2539f029bdc2",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-146652",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.020990455640278752,
+   "feesBps": 10.000020990455642,
+   "fillRatio": 1.0,
+   "filledQty": 0.025718441460871756,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.037247162429607884,
+   "intendedNotional": 61.262227705247646,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.025718441460871756,
+   "spreadBps": 0.016256706789329133,
+   "totalBps": 9.979030534815363,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-993322:0",
+   "v2:syn-disciplined-ETHUSDT-993322:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2330.895,
+  "arrivalMs": 1704282663130,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-03",
+    "sha256": "9bec26b7e8e6d473ec5cd395a06f4648e87b5131b08411ce71dff0406ee049f4",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-175370",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.02145098771119737,
+   "feesBps": 10.000021450987711,
+   "fillRatio": 1.0,
+   "filledQty": 0.028206643800416743,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 1.3085102503537753,
+   "intendedNotional": 65.74672500117238,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.028206643800416743,
+   "spreadBps": -1.3299612380649728,
+   "totalBps": 9.978570463276515,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-223833:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2295.1949999999997,
+  "arrivalMs": 1704791362752,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-09",
+    "sha256": "93e02bdc6517d885d3ce5e425a987c6f5a4526840eaeb9dd31e39ba8f9e1451a",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-196847",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.021784641392601237,
+   "feesBps": 10.000021784641394,
+   "fillRatio": 1.0,
+   "filledQty": 0.050593390601588156,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 116.12169714181212,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.050593390601588156,
+   "spreadBps": -0.021784641392601237,
+   "totalBps": 9.97823714324879,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-905761:0",
+   "v2:syn-disciplined-ETHUSDT-905761:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2306.1949999999997,
+  "arrivalMs": 1706713746618,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-31",
+    "sha256": "c01b8f65673d9341d02a16d837eca64088b7357ce3514955648bc943710cccf7",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-209595",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.021680733849952588,
+   "feesBps": 10.000021680733848,
+   "fillRatio": 1.0,
+   "filledQty": 0.05103497224756548,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 117.69659782247426,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.05103497224756548,
+   "spreadBps": -0.021680733849952588,
+   "totalBps": 9.978340946883897,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-294224:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2547.825,
+  "arrivalMs": 1705150547414,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-13",
+    "sha256": "4dab29b7a44b4f0f7acf9be0062ba85435b3e5c3ceaf3a39df8f23c0355c358e",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-226485",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.01962458174974495,
+   "feesBps": 9.999980375418252,
+   "fillRatio": 1.0,
+   "filledQty": 0.04355828822679569,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.6476111977862044,
+   "intendedNotional": 110.97889570143572,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.04355828822679569,
+   "spreadBps": -0.6672357795359494,
+   "totalBps": 9.980355793668505,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-801432:0",
+   "v2:syn-disciplined-ETHUSDT-801432:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2430.375,
+  "arrivalMs": 1704900471711,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-10",
+    "sha256": "0721e3175f2f9f913a2670ee75de6f682291cae3e0e1b55bf7714aa6c2892042",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-252204",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.020572956848672073,
+   "feesBps": 9.99997942704315,
+   "fillRatio": 1.0,
+   "filledQty": 0.045440608456178956,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 110.43771877668593,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.045440608456178956,
+   "spreadBps": -0.020572956848672073,
+   "totalBps": 9.97940647019448,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-259225:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2546.785,
+  "arrivalMs": 1705485222404,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-17",
+    "sha256": "173e83721fdd5e3c2180510bc8e6edfb0e469c3a0d059381d8f0a4f548fe3a2b",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-256100",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.019632595604475413,
+   "feesBps": 9.999980367404394,
+   "fillRatio": 1.0,
+   "filledQty": 0.023804622725893333,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 60.62525608896425,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.023804622725893333,
+   "spreadBps": -0.019632595604475413,
+   "totalBps": 9.980347771799918,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-181104:0",
+   "v2:syn-disciplined-ETHUSDT-181104:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2359.31,
+  "arrivalMs": 1704891724180,
+  "endBasis": "order canceled",
+  "endMid": 2380.215,
+  "endMs": 1704893524180,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-10",
+    "sha256": "0721e3175f2f9f913a2670ee75de6f682291cae3e0e1b55bf7714aa6c2892042",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-258254",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": 0.0,
+   "feesBps": 0.0,
+   "fillRatio": 0.0,
+   "filledQty": 0,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 95.88520078302977,
+   "opportunityBps": 88.60641458731665,
+   "orderedQty": 0.04064120475182565,
+   "spreadBps": 0.0,
+   "totalBps": 88.60641458731665,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2326.605,
+  "arrivalMs": 1704133203534,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-01",
+    "sha256": "b6c61ccd2a06c461da996e5f636206231a3a39e0d2faa4e7cbfcf8aec72da888",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-273463",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.021490540938875053,
+   "feesBps": 9.99997850945906,
+   "fillRatio": 1.0,
+   "filledQty": 0.0478978513157256,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.029065426257808377,
+   "intendedNotional": 111.43938036042375,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0478978513157256,
+   "spreadBps": 0.007574885318933326,
+   "totalBps": 9.978487968520184,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-326002:0",
+   "v2:syn-disciplined-ETHUSDT-326002:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2530.7349999999997,
+  "arrivalMs": 1705328018454,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-15",
+    "sha256": "48f93ec54bbb85f046983dbd9ef029cc0c1555a09481bf8b52b19ab75da597ce",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-295433",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.019757106137581137,
+   "feesBps": 10.000019757106138,
+   "fillRatio": 1.0,
+   "filledQty": 0.04398069448063948,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 111.30348284646114,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.04398069448063948,
+   "spreadBps": -0.019757106137581137,
+   "totalBps": 9.980262650968557,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-50534:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2492.565,
+  "arrivalMs": 1705696937540,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-19",
+    "sha256": "12a7284dd44f840c9c40a1c7dfd06111323e3512d18464a0ca183e61761cd28a",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-304681",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.020059657421608416,
+   "feesBps": 10.000020059657423,
+   "fillRatio": 1.0,
+   "filledQty": 0.03545015896533787,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.212875812339838,
+   "intendedNotional": 88.36182548143738,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.03545015896533787,
+   "spreadBps": 0.1928161549182296,
+   "totalBps": 9.979960402235815,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-351538:0",
+   "v2:syn-disciplined-ETHUSDT-351538:1",
+   "v2:syn-disciplined-ETHUSDT-351538:2",
+   "v2:syn-disciplined-ETHUSDT-351538:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2238.365,
+  "arrivalMs": 1704544301944,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-06",
+    "sha256": "07d446363067fcd559d8a402d4826dafd3472ba3839357ec3327f1578d8cfaed",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-317151",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.022337733120623274,
+   "feesBps": 9.999977662266879,
+   "fillRatio": 1.0,
+   "filledQty": 0.033033516631079736,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 73.94106745392679,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.033033516631079736,
+   "spreadBps": -0.022337733120623274,
+   "totalBps": 9.977639929146255,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-917490:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2202.185,
+  "arrivalMs": 1706022102872,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-23",
+    "sha256": "3f6fe26ef8058ba038642d24fdbe54fb375f76b78c380d2ec5376e94e21ec219",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-32906",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.022704722809887178,
+   "feesBps": 9.99997729527719,
+   "fillRatio": 1.0000000000000002,
+   "filledQty": 0.025564229955258068,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 56.297163744019976,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.025564229955258064,
+   "spreadBps": -0.022704722809887178,
+   "totalBps": 9.977272572467305,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-348063:0",
+   "v2:syn-disciplined-ETHUSDT-348063:1",
+   "v2:syn-disciplined-ETHUSDT-348063:2",
+   "v2:syn-disciplined-ETHUSDT-348063:3",
+   "v2:syn-disciplined-ETHUSDT-348063:4"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2248.5550000000003,
+  "arrivalMs": 1706280049289,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-26",
+    "sha256": "efd344bba3ed631916060183e5131a3624b69e785f83220aa0c2cf856cb48b7b",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-35272",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.022236502997055405,
+   "feesBps": 10.000022236502998,
+   "fillRatio": 1.0,
+   "filledQty": 0.054466931644783396,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.013635781890674157,
+   "intendedNotional": 122.47189148453594,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.054466931644783396,
+   "spreadBps": -0.03587228488772956,
+   "totalBps": 9.977785733505941,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-726164:0",
+   "v2:syn-disciplined-ETHUSDT-726164:1",
+   "v2:syn-disciplined-ETHUSDT-726164:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2226.9449999999997,
+  "arrivalMs": 1706174886574,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-25",
+    "sha256": "44af61c4238419290bfd7b2f91c955729c9cabfd4fa1941732a9028372d2de26",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-363233",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.022452283285438752,
+   "feesBps": 10.000022452283286,
+   "fillRatio": 1.0,
+   "filledQty": 0.05311931787154697,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.20499518209440232,
+   "intendedNotional": 118.29379933745216,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.05311931787154697,
+   "spreadBps": 0.18254289880896352,
+   "totalBps": 9.977570168997847,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-292674:0",
+   "v2:syn-disciplined-ETHUSDT-292674:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2535.9449999999997,
+  "arrivalMs": 1705318055426,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-15",
+    "sha256": "48f93ec54bbb85f046983dbd9ef029cc0c1555a09481bf8b52b19ab75da597ce",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-389071",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.019716515932539518,
+   "feesBps": 9.999980283484067,
+   "fillRatio": 1.0000000000000002,
+   "filledQty": 0.039251918152357027,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 99.54070557887901,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.03925191815235702,
+   "spreadBps": -0.019716515932539518,
+   "totalBps": 9.980263767551529,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-159833:0",
+   "v2:syn-disciplined-ETHUSDT-159833:1",
+   "v2:syn-disciplined-ETHUSDT-159833:2",
+   "v2:syn-disciplined-ETHUSDT-159833:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2273.185,
+  "arrivalMs": 1706455903973,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-28",
+    "sha256": "a29b459980afee79559a1635d4b30cd09fbf16ce92eb218015c1ac097996ecce",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-397280",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.021995570092663553,
+   "feesBps": 9.999978004429908,
+   "fillRatio": 1.0,
+   "filledQty": 0.04740334461342484,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.034618161979468653,
+   "intendedNotional": 107.75657192506814,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.04740334461342484,
+   "spreadBps": 0.012622591886805102,
+   "totalBps": 9.977982434337244,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-518166:0",
+   "v2:syn-disciplined-ETHUSDT-518166:1",
+   "v2:syn-disciplined-ETHUSDT-518166:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2265.065,
+  "arrivalMs": 1706378195482,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-27",
+    "sha256": "a6333a82ebe95e6f2d0a3f68b6c47d4e30401b319bf619adf925c99f2af72c6f",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-409641",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.02207442170581921,
+   "feesBps": 10.000022074421706,
+   "fillRatio": 1.0,
+   "filledQty": 0.03101604649839546,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.02207442170381155,
+   "intendedNotional": 70.25336136188811,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.03101604649839546,
+   "spreadBps": -0.04414884340963077,
+   "totalBps": 9.977947652715887,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-783082:0",
+   "v2:syn-disciplined-ETHUSDT-783082:1",
+   "v2:syn-disciplined-ETHUSDT-783082:2",
+   "v2:syn-disciplined-ETHUSDT-783082:3",
+   "v2:syn-disciplined-ETHUSDT-783082:4"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2469.605,
+  "arrivalMs": 1705679706252,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-19",
+    "sha256": "12a7284dd44f840c9c40a1c7dfd06111323e3512d18464a0ca183e61761cd28a",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-41416",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.020246152725270396,
+   "feesBps": 9.999979753847274,
+   "fillRatio": 1.0,
+   "filledQty": 0.04873656814327615,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.5871384290199518,
+   "intendedNotional": 120.36007236947549,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.04873656814327615,
+   "spreadBps": -0.6073845817452223,
+   "totalBps": 9.979733601122005,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-554220:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2234.4049999999997,
+  "arrivalMs": 1704283620196,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-03",
+    "sha256": "9bec26b7e8e6d473ec5cd395a06f4648e87b5131b08411ce71dff0406ee049f4",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-456277",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.9622248428559081,
+   "feesBps": 10.000962224842855,
+   "fillRatio": 1.0,
+   "filledQty": 0.02482678315886269,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 55.47308842407858,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.02482678315886269,
+   "spreadBps": -0.9622248428559081,
+   "totalBps": 9.038737381986948,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-49184:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2238.785,
+  "arrivalMs": 1704462506193,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-05",
+    "sha256": "3bdf62e688ab8db6877f8da2054c05228d3f6aa2b29181c1a41b85aa200fc573",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-53305",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.02233354252466914,
+   "feesBps": 10.000022333542526,
+   "fillRatio": 1.0,
+   "filledQty": 0.03194967937184179,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.36299921032414045,
+   "intendedNotional": 71.52846293248881,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.03194967937184179,
+   "spreadBps": -0.38533275284880963,
+   "totalBps": 9.977688791017858,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-175596:0",
+   "v2:syn-disciplined-ETHUSDT-175596:1",
+   "v2:syn-disciplined-ETHUSDT-175596:2",
+   "v2:syn-disciplined-ETHUSDT-175596:3"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2248.825,
+  "arrivalMs": 1706279941045,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-26",
+    "sha256": "efd344bba3ed631916060183e5131a3624b69e785f83220aa0c2cf856cb48b7b",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-543366",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.022233833224502304,
+   "feesBps": 10.000022233833223,
+   "fillRatio": 1.0,
+   "filledQty": 0.035817500499193466,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.1778706657919741,
+   "intendedNotional": 80.54729056009874,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.035817500499193466,
+   "spreadBps": -0.20010449901647642,
+   "totalBps": 9.977788400608722,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-174542:0",
+   "v2:syn-disciplined-ETHUSDT-174542:1",
+   "v2:syn-disciplined-ETHUSDT-174542:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2306.995,
+  "arrivalMs": 1704116142892,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-01",
+    "sha256": "b6c61ccd2a06c461da996e5f636206231a3a39e0d2faa4e7cbfcf8aec72da888",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-567585",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.02167321559045052,
+   "feesBps": 9.99997832678441,
+   "fillRatio": 1.0,
+   "filledQty": 0.024347418043354958,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 56.169371688929665,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.024347418043354958,
+   "spreadBps": -0.02167321559045052,
+   "totalBps": 9.978305111193958,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-333364:0",
+   "v2:syn-disciplined-ETHUSDT-333364:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2306.505,
+  "arrivalMs": 1706696468365,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-31",
+    "sha256": "c01b8f65673d9341d02a16d837eca64088b7357ce3514955648bc943710cccf7",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-575719",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.021677819905480972,
+   "feesBps": 10.000021677819905,
+   "fillRatio": 1.0,
+   "filledQty": 0.03089637641227607,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 71.26264667679682,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.03089637641227607,
+   "spreadBps": -0.021677819905480972,
+   "totalBps": 9.978343857914426,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-449801:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2206.37,
+  "arrivalMs": 1706189012709,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-25",
+    "sha256": "44af61c4238419290bfd7b2f91c955729c9cabfd4fa1941732a9028372d2de26",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-588172",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": 0.0,
+   "feesBps": 10.000000000000002,
+   "fillRatio": 1.0000000000000002,
+   "filledQty": 0.030922188194654858,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.34860468321233634,
+   "intendedNotional": 68.22578836704062,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.030922188194654854,
+   "spreadBps": 0.34860468321233634,
+   "totalBps": 10.000000000000002,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-277026:0",
+   "v2:syn-disciplined-ETHUSDT-277026:1",
+   "v2:syn-disciplined-ETHUSDT-277026:2",
+   "v2:syn-disciplined-ETHUSDT-277026:3",
+   "v2:syn-disciplined-ETHUSDT-277026:4",
+   "v2:syn-disciplined-ETHUSDT-277026:5"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2526.605,
+  "arrivalMs": 1705328788307,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-15",
+    "sha256": "48f93ec54bbb85f046983dbd9ef029cc0c1555a09481bf8b52b19ab75da597ce",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-606542",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.019789401192941272,
+   "feesBps": 10.000019789401192,
+   "fillRatio": 1.0,
+   "filledQty": 0.027066734808691047,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 68.38694750131285,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.027066734808691047,
+   "spreadBps": -0.019789401192941272,
+   "totalBps": 9.980230388208252,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-420827:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2640.395,
+  "arrivalMs": 1704970194750,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-11",
+    "sha256": "aefc017bf2fcf55f066f7f7648611f6a41d0322529e0a9a88b02df41eb377970",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-611830",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.495988289630839,
+   "feesBps": 9.99850401171037,
+   "fillRatio": 1.0,
+   "filledQty": 0.03247707819562124,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -1.4770517290021863,
+   "intendedNotional": 85.75231488232734,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.03247707819562124,
+   "spreadBps": -0.01893656062865268,
+   "totalBps": 8.502515722079531,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-780998:0",
+   "v2:syn-disciplined-ETHUSDT-780998:1",
+   "v2:syn-disciplined-ETHUSDT-780998:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2256.175,
+  "arrivalMs": 1706532177907,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-29",
+    "sha256": "d8abae6b6bdc19523f33f23ac7581e38587aa1a30502fbd62ba04ec6977c821f",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-612512",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.02216140148549821,
+   "feesBps": 10.000022161401485,
+   "fillRatio": 1.0,
+   "filledQty": 0.03153527947595043,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.10373813319782137,
+   "intendedNotional": 71.14910917165247,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.03153527947595043,
+   "spreadBps": 0.08157673171232317,
+   "totalBps": 9.977860759915988,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-442883:0",
+   "v2:syn-disciplined-ETHUSDT-442883:1",
+   "v2:syn-disciplined-ETHUSDT-442883:2",
+   "v2:syn-disciplined-ETHUSDT-442883:3",
+   "v2:syn-disciplined-ETHUSDT-442883:4"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2233.755,
+  "arrivalMs": 1706111852327,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-24",
+    "sha256": "82981a01217de60bbb29ede07c216f39db3c646c8264d6401c0a5138fb9c18ab",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-671127",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.022383833500581485,
+   "feesBps": 9.9999776161665,
+   "fillRatio": 1.0,
+   "filledQty": 0.02426248705518904,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.05263254913877648,
+   "intendedNotional": 54.196451771963794,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.02426248705518904,
+   "spreadBps": 0.03024871563819499,
+   "totalBps": 9.977593782665918,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-802483:0",
+   "v2:syn-disciplined-ETHUSDT-802483:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2307.665,
+  "arrivalMs": 1704788410708,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-09",
+    "sha256": "93e02bdc6517d885d3ce5e425a987c6f5a4526840eaeb9dd31e39ba8f9e1451a",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-727528",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.15166846140949608,
+   "feesBps": 9.999848331538592,
+   "fillRatio": 1.0,
+   "filledQty": 0.026157863664918374,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 60.36358645430386,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.026157863664918374,
+   "spreadBps": -0.15166846140949608,
+   "totalBps": 9.848179870129096,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-895637:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2602.15,
+  "arrivalMs": 1705018971350,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-12",
+    "sha256": "e30c3d9759dd190b55cf6349d685bf6fc10c956c70ea55c557e11fcb13f6a93e",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-736371",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.4611571200733657,
+   "feesBps": 10.000461157120073,
+   "fillRatio": 1.0,
+   "filledQty": 0.04087255525671525,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.17231164487468692,
+   "intendedNotional": 106.3565196612616,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.04087255525671525,
+   "spreadBps": -0.28884547519867876,
+   "totalBps": 9.539304037046707,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-377574:0",
+   "v2:syn-disciplined-ETHUSDT-377574:1",
+   "v2:syn-disciplined-ETHUSDT-377574:2",
+   "v2:syn-disciplined-ETHUSDT-377574:3",
+   "v2:syn-disciplined-ETHUSDT-377574:4",
+   "v2:syn-disciplined-ETHUSDT-377574:5",
+   "v2:syn-disciplined-ETHUSDT-377574:6"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2226.205,
+  "arrivalMs": 1704355385359,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-04",
+    "sha256": "88b1dfea6c6c21de43f4183dba03999c367a0be473dc6f26ff6a84793a00a177",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-778833",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.02245974651979103,
+   "feesBps": 9.999977540253479,
+   "fillRatio": 1.0,
+   "filledQty": 0.033355780926851236,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 74.25680627826085,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.033355780926851236,
+   "spreadBps": -0.02245974651979103,
+   "totalBps": 9.97751779373369,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-19370:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2544.395,
+  "arrivalMs": 1705499128761,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-17",
+    "sha256": "173e83721fdd5e3c2180510bc8e6edfb0e469c3a0d059381d8f0a4f548fe3a2b",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-826347",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.01965103688739028,
+   "feesBps": 10.000019651036887,
+   "fillRatio": 1.0,
+   "filledQty": 0.04727703223652126,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.01965103688560303,
+   "intendedNotional": 120.2914444374435,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.04727703223652126,
+   "spreadBps": -0.039302073772993315,
+   "totalBps": 9.980368614149496,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-960393:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2199.06,
+  "arrivalMs": 1704292867656,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-03",
+    "sha256": "9bec26b7e8e6d473ec5cd395a06f4648e87b5131b08411ce71dff0406ee049f4",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-839801",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": 0.04547397524496047,
+   "feesBps": 10.000045473975245,
+   "fillRatio": 1.0,
+   "filledQty": 0.05235622020366236,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 115.13446960106575,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.05235622020366236,
+   "spreadBps": 0.04547397524496047,
+   "totalBps": 10.045519449220205,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-732156:0",
+   "v2:syn-disciplined-ETHUSDT-732156:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2565.395,
+  "arrivalMs": 1705161493580,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-13",
+    "sha256": "4dab29b7a44b4f0f7acf9be0062ba85435b3e5c3ceaf3a39df8f23c0355c358e",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-870408",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.019490175977224324,
+   "feesBps": 9.999980509824024,
+   "fillRatio": 1.0,
+   "filledQty": 0.044046972685265605,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 112.99788349191695,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.044046972685265605,
+   "spreadBps": -0.019490175977224324,
+   "totalBps": 9.9804903338468,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-713506:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2467.245,
+  "arrivalMs": 1705748842965,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-20",
+    "sha256": "f3ae80263ea30bd5d71f317670ee428395d8c820ce2d2322565507a409067fcb",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-900490",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.020265518828122622,
+   "feesBps": 10.000020265518828,
+   "fillRatio": 1.0,
+   "filledQty": 0.037402502292826365,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 2.4723932969756657,
+   "intendedNotional": 92.28113676946438,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.037402502292826365,
+   "spreadBps": -2.492658815803788,
+   "totalBps": 9.979754746690704,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-61574:0",
+   "v2:syn-disciplined-ETHUSDT-61574:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2394.635,
+  "arrivalMs": 1704202194681,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-02",
+    "sha256": "61d2a38b40aed84b379007aaa93c433224cdc23ff6d00df568e55c9d0b2d92be",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-903097",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.020880008853579518,
+   "feesBps": 9.999979119991147,
+   "fillRatio": 1.0,
+   "filledQty": 0.043226547768836984,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.9187203895366094,
+   "intendedNotional": 103.51180421642896,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.043226547768836984,
+   "spreadBps": -0.9396003983901889,
+   "totalBps": 9.979099111137566,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-718636:0",
+   "v2:syn-disciplined-ETHUSDT-718636:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2270.355,
+  "arrivalMs": 1706370735207,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-27",
+    "sha256": "a6333a82ebe95e6f2d0a3f68b6c47d4e30401b319bf619adf925c99f2af72c6f",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-93540",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.022022987594931803,
+   "feesBps": 10.000022022987594,
+   "fillRatio": 1.0,
+   "filledQty": 0.03378508408349611,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.9910344417498983,
+   "intendedNotional": 76.70413457438582,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.03378508408349611,
+   "spreadBps": -1.01305742934483,
+   "totalBps": 9.977999035392664,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-897438:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2270.325,
+  "arrivalMs": 1706444438782,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-28",
+    "sha256": "a29b459980afee79559a1635d4b30cd09fbf16ce92eb218015c1ac097996ecce",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-951739",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.022023278605966725,
+   "feesBps": 10.000022023278607,
+   "fillRatio": 1.0,
+   "filledQty": 0.0441541822767197,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.1463007004279235,
+   "intendedNotional": 100.24434387739365,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.0441541822767197,
+   "spreadBps": -0.16832397903389026,
+   "totalBps": 9.97799874467264,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-877399:0",
+   "v2:syn-disciplined-ETHUSDT-877399:1",
+   "v2:syn-disciplined-ETHUSDT-877399:2",
+   "v2:syn-disciplined-ETHUSDT-877399:3",
+   "v2:syn-disciplined-ETHUSDT-877399:4",
+   "v2:syn-disciplined-ETHUSDT-877399:5"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2540.62,
+  "arrivalMs": 1705315513148,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-15",
+    "sha256": "48f93ec54bbb85f046983dbd9ef029cc0c1555a09481bf8b52b19ab75da597ce",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-961090",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.31488376852865535,
+   "feesBps": 9.99968511623147,
+   "fillRatio": 1.0,
+   "filledQty": 0.02645638594022555,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.7478489502564515,
+   "intendedNotional": 67.21562324745584,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.02645638594022555,
+   "spreadBps": -1.062732718785107,
+   "totalBps": 9.684801347702813,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-874725:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 2331.105,
+  "arrivalMs": 1705995691104,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-23",
+    "sha256": "3f6fe26ef8058ba038642d24fdbe54fb375f76b78c380d2ec5376e94e21ec219",
+    "source": "data.binance.vision",
+    "symbol": "ETHUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-ETHUSDT-974190",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.02144905527682854,
+   "feesBps": 10.000021449055275,
+   "fillRatio": 1.0,
+   "filledQty": 0.03555335052443694,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.06573878033485152,
+   "intendedNotional": 82.87859317426758,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.03555335052443694,
+   "spreadBps": 0.04428972505802296,
+   "totalBps": 9.978572393778446,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "ETHUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-ETHUSDT-611606:0",
+   "v2:syn-disciplined-ETHUSDT-611606:1",
+   "v2:syn-disciplined-ETHUSDT-611606:2"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 97.21000000000001,
+  "arrivalMs": 1704363685640,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-04",
+    "sha256": "7aa90c2c9528b4c6a8d6eb86ae5b616a613787a9ed86daedf1cc83ecf240b460",
+    "source": "data.binance.vision",
+    "symbol": "SOLUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-SOLUSDT-162070",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.0287007509506123,
+   "feesBps": 10.00102870075095,
+   "fillRatio": 1.0,
+   "filledQty": 0.2087735856576622,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 20.294880261781344,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.2087735856576622,
+   "spreadBps": -1.0287007509506123,
+   "totalBps": 8.972327949800338,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "SOLUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-SOLUSDT-555466:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 87.28,
+  "arrivalMs": 1706186662096,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-25",
+    "sha256": "d69710ecbd9e58a49790a5fa2e183fcaa949a2a2220bee4f81e3a3120b334b32",
+    "source": "data.binance.vision",
+    "symbol": "SOLUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-SOLUSDT-173757",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.1457378551793214,
+   "feesBps": 9.99885426214482,
+   "fillRatio": 1.0,
+   "filledQty": 0.12296692123422102,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 1.145737855177693,
+   "intendedNotional": 10.73255288532281,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.12296692123422102,
+   "spreadBps": -2.2914757103570147,
+   "totalBps": 8.8531164069655,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "SOLUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-SOLUSDT-178469:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 99.985,
+  "arrivalMs": 1704807765328,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-09",
+    "sha256": "5956d1d64bcfd994bef793b4ddd2ce1e7be4144fcd54d0814c75de9a1e421511",
+    "source": "data.binance.vision",
+    "symbol": "SOLUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-SOLUSDT-182391",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.5000750112512329,
+   "feesBps": 10.000500075011253,
+   "fillRatio": 1.0,
+   "filledQty": 0.12018727571790123,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.5000750112512329,
+   "intendedNotional": 12.016924762654355,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.12018727571790123,
+   "spreadBps": 0.0,
+   "totalBps": 9.50042506376002,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "SOLUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-SOLUSDT-679169:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 92.035,
+  "arrivalMs": 1705801626744,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-21",
+    "sha256": "21d6f79637b047d87a4716c0b2eebbde157b6a83a960e30615e005b24421911a",
+    "source": "data.binance.vision",
+    "symbol": "SOLUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-SOLUSDT-355851",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.5432715814630795,
+   "feesBps": 9.999456728418535,
+   "fillRatio": 1.0,
+   "filledQty": 0.13129473575834072,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 12.083711005518888,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.13129473575834072,
+   "spreadBps": -0.5432715814630795,
+   "totalBps": 9.456185146955457,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "SOLUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-SOLUSDT-339510:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 97.225,
+  "arrivalMs": 1705229718969,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-14",
+    "sha256": "3f21eabd986cd966f55c77dd5538eab5c99b5f7377a7b3a09ba8b3ca2fea32a0",
+    "source": "data.binance.vision",
+    "symbol": "SOLUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-SOLUSDT-822365",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.5142710208289702,
+   "feesBps": 10.000514271020828,
+   "fillRatio": 1.0,
+   "filledQty": 0.20569902270191212,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.5142710208289702,
+   "intendedNotional": 19.999087482193406,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.20569902270191212,
+   "spreadBps": 0.0,
+   "totalBps": 9.486243250191857,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "SOLUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-SOLUSDT-617670:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 89.66,
+  "arrivalMs": 1706266510444,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-26",
+    "sha256": "bab0790fc8309bd0a2b2f1dafb9608bfdcdbd794abed23f9df83bf4ec35ba223",
+    "source": "data.binance.vision",
+    "symbol": "SOLUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-SOLUSDT-851119",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -1.1153245594457846,
+   "feesBps": 9.998884675440555,
+   "fillRatio": 1.0,
+   "filledQty": 0.14926614998590335,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": -0.5576622797228923,
+   "intendedNotional": 13.383203007736093,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.14926614998590335,
+   "spreadBps": -0.5576622797228923,
+   "totalBps": 8.88356011599477,
+   "totalReason": null
+  },
+  "side": 1,
+  "symbol": "SOLUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-SOLUSDT-758567:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ {
+  "accountId": "demo-disciplined",
+  "arrivalMid": 98.525,
+  "arrivalMs": 1704466018202,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-05",
+    "sha256": "52624e2c196e933d2fa1cecdf5eac493f73593ce188a11e564ed543908bb9623",
+    "source": "data.binance.vision",
+    "symbol": "SOLUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-disciplined-SOLUSDT-880354",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": -0.5074854097940068,
+   "feesBps": 10.000507485409797,
+   "fillRatio": 1.0,
+   "filledQty": 0.10351195584043983,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 10.198515449179334,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.10351195584043983,
+   "spreadBps": -0.5074854097940068,
+   "totalBps": 9.493022075615787,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "SOLUSDT",
+  "tradeIds": [
+   "v2:syn-disciplined-SOLUSDT-3248:0"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ }
+]

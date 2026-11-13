@@ -32,18 +32,21 @@ describe('resolveAccount middleware', () => {
     const validDemoUsers = [
         'demo-disciplined',
         'demo-moderate',
-        'demo-aggressive',
-        'demo-bybit',
-        'demo-okx',
-        'demo-multi'
+        'demo-aggressive'
     ];
 
     it('Rule 1: Resolves valid demo slug without auth header', async () => {
-        // 4R-0b: demo-bybit/okx/multi are hidden (404 demo_unavailable, see hiddenDemos.test.ts); only the rest resolve.
-        for (const demoUser of validDemoUsers.filter(u => !['demo-bybit', 'demo-okx', 'demo-multi'].includes(u))) {
+        for (const demoUser of validDemoUsers) {
             const res = await request(app).get(`/test?userId=${demoUser}`);
             expect(res.status).toBe(200);
             expect(res.body).toEqual({ accountId: demoUser, isDemo: true });
+        }
+    });
+
+    it('a removed demo id (decision 8, 2026-11-13) is refused like any unknown id', async () => {
+        for (const removed of ['demo-bybit', 'demo-okx', 'demo-multi']) {
+            const res = await request(app).get(`/test?userId=${removed}`);
+            expect(res.status).toBe(403);
         }
     });
 

@@ -5,11 +5,11 @@ import { assertLocalMongoUri } from '../lib/localMongo'
 import { e2eBackendEnv } from './env'
 
 /**
- * Seeds the demo users into the e2e MongoDB, then verifies all six exist.
+ * Seeds the demo users into the e2e MongoDB, then verifies all three exist.
  * Written permission (Phase 3a.2): the seed may run ONLY against a local MongoDB. assertLocalMongoUri()
  * throws for anything else (Atlas included) before any child process is started.
  */
-const DEMO_USERS = ['demo-aggressive', 'demo-moderate', 'demo-disciplined', 'demo-bybit', 'demo-okx', 'demo-multi']
+const DEMO_USERS = ['demo-aggressive', 'demo-moderate', 'demo-disciplined']
 
 export default async function globalSetup() {
   const uri = assertLocalMongoUri(process.env.MONGODB_URI)

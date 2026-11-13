@@ -119,6 +119,17 @@ export default function WhaleCorrelation({ userId, dashboardMode }: { userId: st
 
   if (!data && !error) return null;
 
+  if (data?.available === false && (data as { reason?: string }).reason === 'not_computed_for_this_data') {
+    return (
+      <section data-testid="whale-not-computed" className="w-full bg-[rgba(26,25,23,0.8)] border border-[rgba(255,255,255,0.06)] rounded-[4px] p-[20px]">
+        <h2 className="text-[11px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-2">Whale Correlation</h2>
+        <p className="text-sm text-[#888078]">
+          Not computed for this data. These trades were rebuilt from real prints and were never matched against whale bursts; nothing is shown here rather than an empty result.
+        </p>
+      </section>
+    );
+  }
+
   if (data?.available === false) {
     return (
       <section className="w-full bg-[rgba(26,25,23,0.8)] border border-[rgba(255,255,255,0.06)] rounded-[4px] p-[20px]">

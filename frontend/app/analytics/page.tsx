@@ -5,6 +5,8 @@ import { makerRatioNote } from '../utils/makerAdvice';
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "../components/Navbar";
 import WhaleCorrelation from "./WhaleCorrelation";
+import NotComputed from "../components/NotComputed";
+import { isNotComputed, tradeSlippageBps } from "../utils/notComputed";
 import MarkoutCard from "./MarkoutCard";
 import type { MarkoutHorizon } from "../utils/markoutCopy";
 import { useAuth } from "../context/AuthContext";
@@ -63,9 +65,9 @@ interface AnalyticsData {
 }
 
 interface Trade {
-  slippageBps?: number;
-  arrivalSlippageBps?: number;
-  vwapSlippageBps?: number;
+  slippageBps?: number | null;
+  arrivalSlippageBps?: number | null;
+  vwapSlippageBps?: number | null;
   isMaker: boolean;
   feePaid?: number;
   fee?: number;
@@ -81,7 +83,7 @@ interface SymbolTableRow {
   avgScore: number;
   count: number;
   makerRatio: number;
-  avgSlippageBps: number;
+  avgSlippageBps: number | null;
   feeDragPercent: number;
 }
 
@@ -203,7 +205,8 @@ function AnalyticsContent() {
     
     const buckets: Record<string, number> = {};
     tradeData.forEach(t => {
-      const slip = Number(t.slippageBps ?? t.arrivalSlippageBps ?? t.vwapSlippageBps ?? 0);
+      const slip = tradeSlippageBps(t);
+      if (slip === null) return;                    // not computed: never counted in the 0 bucket
       const bucketIdx = Math.floor(slip / 5) * 5;
       const bucketName = `${bucketIdx} to ${bucketIdx + 5} bps`;
       buckets[bucketName] = (buckets[bucketName] || 0) + 1;
@@ -282,17 +285,19 @@ function AnalyticsContent() {
       count: number;
       totalNotional: number;
       totalSlippageBps: number;
+      slippageCount: number;
       totalFees: number;
     }> = {};
 
     tradeData.forEach((t) => {
       const sym = (t.symbol || '').replace('USDT', '');
       if (!computed[sym]) {
-        computed[sym] = { makerCount: 0, count: 0, totalNotional: 0, totalSlippageBps: 0, totalFees: 0 };
+        computed[sym] = { makerCount: 0, count: 0, totalNotional: 0, totalSlippageBps: 0, slippageCount: 0, totalFees: 0 };
       }
       computed[sym].count++;
       computed[sym].totalNotional += Number(t.notionalValue ?? t.notional ?? 0);
-      computed[sym].totalSlippageBps += Number(t.slippageBps ?? t.arrivalSlippageBps ?? t.vwapSlippageBps ?? 0);
+      const slip = tradeSlippageBps(t);
+      if (slip !== null) { computed[sym].totalSlippageBps += slip; computed[sym].slippageCount++; }
       computed[sym].totalFees += Number(t.feePaid ?? t.fee ?? 0);
       if (t.isMaker) computed[sym].makerCount++;
     });
@@ -308,7 +313,7 @@ function AnalyticsContent() {
           avgScore: sym.avgScore,
           count: sym.count,
           makerRatio: c && c.count > 0 ? (c.makerCount / c.count) * 100 : 0,
-          avgSlippageBps: c && c.count > 0 ? c.totalSlippageBps / c.count : 0,
+          avgSlippageBps: c && c.slippageCount > 0 ? c.totalSlippageBps / c.slippageCount : null,
           feeDragPercent: c && c.totalNotional > 0 ? (c.totalFees / c.totalNotional) * 100 : 0,
         };
       })
@@ -346,6 +351,21 @@ function AnalyticsContent() {
         <div className="flex flex-col items-center justify-center mt-32">
           <div className="text-3xl text-[#585450] mb-4">◎</div>
           <div className="font-playfair italic text-lg text-[#888078] mb-4">No analytics data found</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isNotComputed(data)) {
+    // A rebuilt demo (decision 11): every chart on this page reads per-trade v1 fields, so none is drawn.
+    return (
+      <div className="min-h-screen text-[#f0ece4] px-[24px] pt-[64px] pb-8 font-sans">
+        <div className="w-full space-y-[32px] mx-auto">
+          <Navbar userId={resolvedUserId || undefined} exchange={tradeData[0]?.exchange || 'binance'} currentPage="analytics" />
+          <NotComputed
+            title="Analytics"
+            detail={`The heatmap, symbol breakdown, score distribution and markouts need per-trade v1 fields, and these ${data.totalTrades} trades do not have them. The measured views are on the dashboard.`}
+          />
         </div>
       </div>
     );
@@ -489,8 +509,8 @@ function AnalyticsContent() {
                       {row.avgScore}
                     </td>
                     <td className="py-3 text-right text-[#b8b0a6]">{row.makerRatio.toFixed(1)}%</td>
-                    <td className={`py-3 text-right font-bold ${Math.abs(row.avgSlippageBps) > 5 ? 'text-[#ef4444]' : 'text-[#b8b0a6]'}`}>
-                      {row.avgSlippageBps.toFixed(1)}
+                    <td className={`py-3 text-right font-bold ${row.avgSlippageBps !== null && Math.abs(row.avgSlippageBps) > 5 ? 'text-[#ef4444]' : 'text-[#b8b0a6]'}`}>
+                      {row.avgSlippageBps !== null ? row.avgSlippageBps.toFixed(1) : '—'}
                     </td>
                     <td className={`py-3 text-right font-bold ${row.feeDragPercent > 0.05 ? 'text-[#ef4444]' : 'text-[#b8b0a6]'}`}>
                       {row.feeDragPercent.toFixed(4)}%

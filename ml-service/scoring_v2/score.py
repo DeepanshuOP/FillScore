@@ -17,7 +17,7 @@ from measure.fees import effective_rate
 from measure.service import check_data_source
 
 from .aggregate import score_account
-from .components import duration_bucket, fee_score, notional_bucket, slippage_score, spread_score, timing_score
+from .components import duration_bucket, fee_score, notional_bucket, slippage_score, spread_score, timing_cost_score, timing_score
 from .integrity import canonical_json, integrity_hash
 
 USD_PEGGED_QUOTES = ("USDT", "USDC", "FDUSD")
@@ -90,6 +90,7 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None, d
 
     anchors, profiles = version.get("anchors", {}), version.get("hourProfiles", {})
     by_event = version.get("spreadUnit") == "taker_event"
+    by_cost = version.get("timingUnit") == "excess_event_cost"
     orders: dict[tuple, dict] = {}
     events: dict[tuple, list[tuple[dict, float, float, float, float]]] = {}
     for t in sorted(trades, key=lambda x: (x["symbol"], str(x["orderId"]), _ms(x["executedAt"]), str(x["tradeId"]))):
@@ -103,8 +104,17 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None, d
         spread = None
         sym_anchors = anchors.get(sym)
         prof = profiles.get(sym)
-        timing = timing_score(t["executedAt"].hour, prof) if prof else None
-        fill = {"notional": notional, "spread": None, "timing": timing, "fees": _fee_unit(t, snap_for(t), version)}
+        if by_cost:
+            # v2.2.0: the hour's excess cost over the cheapest hours, less a floor, on the spread ladder of the
+            # fill's size class (ADR-0013). No profile or no floor stored for the symbol: not measured.
+            floor = (version.get("timingFloorBps") or {}).get(sym)
+            timing = (timing_cost_score(t["executedAt"].hour, prof, floor,
+                                        ((sym_anchors or {}).get("spread") or {}).get(notional_bucket(notional)),
+                                        int(version.get("timingReferenceHours", 3)))
+                      if prof and floor is not None else None)
+        else:
+            timing = timing_score(t["executedAt"].hour, prof) if prof else None
+        fill ={"notional": notional, "spread": None, "timing": timing, "fees": _fee_unit(t, snap_for(t), version)}
         o["fills"].append(fill)
         if eff is None or not mid or not tick or sym_anchors is None:
             continue

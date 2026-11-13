@@ -173,7 +173,7 @@ def test_demo_without_a_stored_run_or_fixture_is_not_generated(tmp_path):
     router, provider = make_router()
     db = AsyncMongoMockClient()["fillscore"]
     with patch("agents.council_service.DEMO_RUNS_DIR", tmp_path), pytest.raises(CouncilError) as info:
-        _flow(router, db, account="demo-okx")
+        _flow(router, db, account="demo-aggressive")
     assert info.value.code == "DEMO_NOT_GENERATED"
     assert provider.calls == []
 
@@ -184,8 +184,8 @@ def test_anonymous_demo_stream_says_not_generated_and_makes_no_calls(tmp_path, m
     with patch("agents.council_service._router", return_value=router), \
          patch("agents.persistence._get_db", return_value=(MagicMock(), db)), \
          patch("agents.council_service.DEMO_RUNS_DIR", tmp_path):
-        res = client.post("/ml/agents/council/stream", json={"userId": "demo-bybit", "symbol": "BTCUSDT"})
-        plain = client.post("/ml/agents/council", json={"userId": "demo-bybit", "symbol": "BTCUSDT"})
+        res = client.post("/ml/agents/council/stream", json={"userId": "demo-aggressive", "symbol": "BTCUSDT"})
+        plain = client.post("/ml/agents/council", json={"userId": "demo-aggressive", "symbol": "BTCUSDT"})
     assert "event: error" in res.text and "DEMO_NOT_GENERATED" in res.text
     assert "Demo analysis not generated yet" in res.text
     assert plain.status_code == 404 and plain.json()["detail"]["code"] == "DEMO_NOT_GENERATED"
@@ -247,9 +247,9 @@ def test_an_exhausted_router_budget_refuses_with_try_tomorrow_and_no_calls():
 def test_demo_runs_from_an_older_prompt_version_are_not_served(tmp_path):
     router, provider = make_router()
     db = AsyncMongoMockClient()["fillscore"]
-    asyncio.run(db["council_runs"].insert_one(_stored_run(router, account="demo-multi", prompt_version="0.9.0")))
+    asyncio.run(db["council_runs"].insert_one(_stored_run(router, account="demo-aggressive", prompt_version="0.9.0")))
     with patch("agents.council_service.DEMO_RUNS_DIR", tmp_path), pytest.raises(CouncilError) as info:
-        _flow(router, db, account="demo-multi")
+        _flow(router, db, account="demo-aggressive")
     assert info.value.code == "DEMO_NOT_GENERATED" and provider.calls == []
 
 

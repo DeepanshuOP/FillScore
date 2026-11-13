@@ -18,7 +18,7 @@ from config.env_loader import load_service_env  # noqa: E402
 from marketdata import binance_vision as bv  # noqa: E402
 from marketdata.enrich import _Bars, _days, _epoch, enrich_trade  # noqa: E402
 
-USERS = ["demo-disciplined", "demo-moderate", "demo-aggressive", "demo-bybit", "demo-okx", "demo-multi"]
+USERS = ["demo-disciplined", "demo-moderate", "demo-aggressive"]
 CACHE = ROOT.parent / ".work" / "marketcache"
 
 

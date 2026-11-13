@@ -34,5 +34,26 @@ def test_the_prompt_line_names_every_required_placeholder():
     assert prompt_line(packets(0, 0, 0, 0)) == ""
 
 
+def test_evidence_cited_checks_exactly_the_keys_the_rule_names():
+    """M3 step 4: a golden case built the way the dumper will build it (required_evidence.synthesis = required_keys of
+    its packet) passes a synthesis that states every required value as `render` shows it, and fails one that omits a
+    value, naming that key. evidence_cited itself is unchanged: it already reads required_evidence.synthesis."""
+    from evals.invariants import _ctx, _key_value, evidence_cited
+    pk = packets()
+    golden = {"packet": pk, "required_evidence": {"synthesis": required_keys(pk)}}
+    shown = {k: _key_value(_ctx(golden), k) for k in required_keys(pk)}
+    assert all(shown.values())                                        # every required key renders from the packet
+
+    def result(keys):
+        return {"grounding": {"per_agent": {"synthesis": {"values_cited": len(keys)}}},
+                "synthesis": {"headline": "Execution summary.", "narrative": " ".join(f"Value {shown[k]}." for k in keys),
+                              "observations": [], "findings": []}}
+
+    assert evidence_cited(result(list(shown)), golden).ok
+    for omitted in shown:
+        out = evidence_cited(result([k for k in shown if k != omitted]), golden)
+        assert not out.ok and omitted in out.detail, omitted
+
+
 def test_headline_table_covers_the_four_areas():
     assert [a for a, _, _ in HEADLINE] == ["fee", "liquidity", "alpha", "risk"]

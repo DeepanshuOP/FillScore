@@ -4,7 +4,7 @@ import { Trade } from '../models/Trade';
 
 loadEnv();
 
-const DEMO_USERS = ['demo-aggressive', 'demo-moderate', 'demo-disciplined', 'demo-bybit', 'demo-okx', 'demo-multi'];
+const DEMO_USERS = ['demo-aggressive', 'demo-moderate', 'demo-disciplined'];
 
 async function run() {
     console.log('Connecting to MongoDB...');

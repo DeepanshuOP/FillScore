@@ -16,6 +16,11 @@ PINNED = {
     # scripts/calibrate_v2.py --id v2.1.0 --symbols BTCUSDT ETHUSDT BNBUSDT SOLUSDT --start 2026-08-12 --end 2026-11-09
     #   --every 1 --discard-raw (rebuilt from the same day summaries after the review fixes: only codeHash changed)
     "v2.1.0": "63e20f1dc10b62e34bb43afdf0c875aee336b12145e4d750f2bef9e6fc0a57b0",
+    # M2 closing steps, ADR-0013: cost-based timing. Same 90 days as v2.1.0 (spread and slippage anchors identical),
+    # re-streamed into summary format 2:
+    # scripts/calibrate_v2.py --id v2.2.0 --symbols BTCUSDT ETHUSDT BNBUSDT SOLUSDT --start 2026-08-12 --end 2026-11-09
+    #   --every 1 --discard-raw
+    "v2.2.0": "a0fa45c7ab977bd7c3f3c1afa8afc83f7ee5810a44011896868ab9bb5c3c3e8d",
 }
 
 
@@ -70,6 +75,22 @@ def test_current_version_scores_spread_on_taker_events_over_90_days():
                 assert an is None or counts[comp][b] >= 200
         if v["hourProfiles"][sym] is not None:
             assert min(counts["profileDays"]) >= v["minProfileDays"]
+
+
+def test_v220_reproduces_the_v210_anchors_and_adds_a_cost_based_timing_rule():
+    # ADR-0013: same 90 days and same code for spread and slippage, so those anchors must equal v2.1.0's exactly; only
+    # the hour profile (now a cost in bps) and the timing rule are new.
+    old, new = load_version("v2.1.0"), load_version("v2.2.0")
+    assert new["calibrationWindow"] == old["calibrationWindow"]
+    assert new["calibrationRefs"] == old["calibrationRefs"]
+    for sym in old["anchors"]:
+        assert new["anchors"][sym] == old["anchors"][sym], sym
+    assert new["timingUnit"] == "excess_event_cost" and new["timingReferenceHours"] == 3 and new["timingFloorSteps"] == 1.0
+    for sym, prof in new["hourProfiles"].items():
+        assert len(prof) == 24 and all(x >= 0 for x in prof)
+        t = new["calibrationCounts"][sym]["timing"]
+        assert min(t["eventDays"]) >= new["minProfileDays"] and min(t["events"]) > 0
+        assert t["stepBps"] > 0 and new["timingFloorBps"][sym] == pytest.approx(t["stepBps"] * new["timingFloorSteps"])
 
 
 def test_bad_version_id_refused():

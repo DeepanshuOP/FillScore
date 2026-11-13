@@ -47,31 +47,6 @@ export const DEMO_PROFILES: DemoProfile[] = [
     tagline: 'Market orders. Night trading. High fee drag.',
     score: 60.67469266790485,
   },
-  {
-    id: 'demo-bybit',
-    exchange: 'bybit',
-    exchangeLabel: 'BYBIT',
-    exchangeColor: '#F7A600',
-    archetype: 'The Bybit Trader',
-    tagline: 'Spot fills on Bybit, scored on the same four components.',
-    score: 76.16413408878628,
-  },
-  {
-    id: 'demo-okx',
-    exchange: 'okx',
-    exchangeLabel: 'OKX',
-    exchangeColor: '#1E8FFF',
-    archetype: 'The OKX Trader',
-    tagline: 'Spot fills on OKX, scored on the same four components.',
-    score: 81.6589477402669,
-  },
-  {
-    id: 'demo-multi',
-    exchange: 'multi',
-    exchangeLabel: 'MULTI',
-    exchangeColor: '#2dd4bf',
-    archetype: 'The Multi-Exchange Trader',
-    tagline: 'Trades across Binance, Bybit, and OKX. Compare average slippage and execution quality by venue.',
-    score: 70.71963854879698,
-  },
 ];
+// demo-bybit, demo-okx and demo-multi were removed from the product on 2026-11-13 (decision 8).
+// demo-bybit returns in M6 with Bybit measurement.

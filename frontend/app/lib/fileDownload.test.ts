@@ -15,16 +15,16 @@ function deps(resp: () => Promise<Response>) {
     anchor, doc, clicks, revoked,
   };
 }
-const pdf = () => new Response('%PDF-1.3', { status: 200, headers: { 'content-type': 'application/pdf', 'content-disposition': 'attachment; filename="fillscore-audit-demo-okx-2026-11-05.pdf"' } });
+const pdf = () => new Response('%PDF-1.3', { status: 200, headers: { 'content-type': 'application/pdf', 'content-disposition': 'attachment; filename="fillscore-audit-demo-moderate-2026-11-05.pdf"' } });
 
 describe('fetchAndSave', () => {
   it('PDF response -> anchor appended before click, named from Content-Disposition, object URL revoked', async () => {
     const t = deps(async () => pdf());
-    const r = await fetchAndSave('http://x/api/audit/report?userId=demo-okx', { expectType: 'application/pdf', fallbackName: 'r.pdf' }, t.d);
+    const r = await fetchAndSave('http://x/api/audit/report?userId=demo-moderate', { expectType: 'application/pdf', fallbackName: 'r.pdf' }, t.d);
     expect(r).toEqual({ ok: true });
     expect(t.doc.body.appendChild).toHaveBeenCalledWith(t.anchor);
     expect(t.anchor.click).toHaveBeenCalledTimes(1);
-    expect(t.clicks).toEqual(['fillscore-audit-demo-okx-2026-11-05.pdf']);
+    expect(t.clicks).toEqual(['fillscore-audit-demo-moderate-2026-11-05.pdf']);
     expect(t.anchor.remove).toHaveBeenCalled();
     expect(t.revoked).toEqual(['blob:x']);
   });
@@ -53,9 +53,9 @@ describe('fetchAndSave', () => {
 describe('downloadReport', () => {
   it('sample/demo mode requests the report for the demo id, no token', async () => {
     const t = deps(async () => pdf());
-    const r = await downloadReport({ mode: 'demo', userId: 'demo-okx' }, { accessToken: null, refreshAccessToken: async () => null }, t.d, 'http://api/api');
+    const r = await downloadReport({ mode: 'demo', userId: 'demo-moderate' }, { accessToken: null, refreshAccessToken: async () => null }, t.d, 'http://api/api');
     expect(r.ok).toBe(true);
-    expect(t.d.fetch.mock.calls[0][0]).toBe('http://api/api/audit/report?userId=demo-okx');
+    expect(t.d.fetch.mock.calls[0][0]).toBe('http://api/api/audit/report?userId=demo-moderate');
   });
   it('demo mode without a resolved id reports an error instead of doing nothing', async () => {
     const t = deps(async () => pdf());

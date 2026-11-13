@@ -23,8 +23,8 @@ describe('buildDownloadUrl', () => {
   });
 
   it('works for demo downloads that carry a userId instead of a token', () => {
-    expect(buildDownloadUrl('http://api.test/api', '/audit/report', { userId: 'demo-okx' })).toBe(
-      'http://api.test/api/audit/report?userId=demo-okx'
+    expect(buildDownloadUrl('http://api.test/api', '/audit/report', { userId: 'demo-moderate' })).toBe(
+      'http://api.test/api/audit/report?userId=demo-moderate'
     );
   });
 });

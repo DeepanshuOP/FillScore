@@ -26,8 +26,8 @@ the next action in PROGRESS. Never rely on memory of an earlier session that is 
    approval first. New scoring is a separate, versioned score beside v1. The locked v1 demo grades,
    checked by `gradeInvariance.test.ts`:
    `demo-disciplined` 95.88542572161496 (A), `demo-moderate` 84.80888516669383 (B),
-   `demo-aggressive` 60.67469266790485 (C), `demo-bybit` 76.164 (B), `demo-okx` 81.659 (B),
-   `demo-multi` 70.720 (C).
+   `demo-aggressive` 60.67469266790485 (C). (`demo-bybit`, `demo-okx` and `demo-multi` were removed from the
+   product on 2026-11-13 by Deepanshu's decision; they are no longer published.)
 6. **No fabricated data.** A value that cannot be measured is shown as "insufficient data". Recorded
    LLM output is never edited.
 7. **Correlation, never causation.** Copy says "coincided with", never "caused" or "due to".

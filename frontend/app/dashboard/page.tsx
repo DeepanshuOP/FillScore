@@ -23,7 +23,9 @@ import { apiBase } from '../lib/apiBase';
 import { buildComponentCards, cardVisual, type ComponentMeans } from './componentCards';
 import { skippedNotice, type SkippedTrades } from './skipped';
 import ScoreV2Panel from './ScoreV2Panel';
-import { isHiddenDemo, multiVenueNotice } from '../utils/hiddenDemos';
+import OrdersPanel from './OrdersPanel';
+import NotComputed from '../components/NotComputed';
+import { NOT_COMPUTED, isNotComputed } from '../utils/notComputed';
 
 interface CostAttribution {
   slippageCost: number;
@@ -57,6 +59,8 @@ interface AuditSummary {
   recommendations: string[];
   skippedTrades?: SkippedTrades;
   createdAt: string;
+  /** False for a rebuilt demo: its trades carry no per-trade v1 fields (decision 11). Absent in old responses = true. */
+  v1Computed?: boolean;
 }
 
 const formatDate = (dateStr?: string) => {
@@ -179,6 +183,7 @@ function DashboardContent() {
   const [analytics, setAnalytics] = useState<any>(null);
   const [exchangeComparison, setExchangeComparison] = useState<any>(null);
   const [coach, setCoach] = useState<any>(null);
+  const [ordersSummary, setOrdersSummary] = useState<unknown>(null);
   const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [scoreV2, setScoreV2] = useState<{ status: number | null; body: unknown }>({ status: null, body: null });
   const [loading, setLoading] = useState(true);
@@ -240,9 +245,7 @@ function DashboardContent() {
         fetchFn(`${baseUrl}/audit/score${query}`),
         fetchFn(`${baseUrl}/attribution${query}`),
         fetchFn(`${baseUrl}/audit/analytics${query}`),
-        isHiddenDemo(effectiveUserId)
-          ? Promise.resolve(new Response(null, { status: 404 }))
-          : fetchFn(`${baseUrl}/audit/analytics/exchange-comparison${query}`),
+        fetchFn(`${baseUrl}/audit/analytics/exchange-comparison${query}`),
         fetchFn(`${baseUrl}/audit/coach${query}`),
         fetchFn(`${baseUrl}/audit/history${query}`)
       ]);
@@ -282,6 +285,13 @@ function DashboardContent() {
         setScoreV2({ status: v2.status, body: await v2.json().catch(() => null) });
       } catch {
         setScoreV2({ status: 500, body: null });
+      }
+      // Measured order views; a failure here never blocks the dashboard either.
+      try {
+        const o = await fetchFn(`${baseUrl}/audit/orders-summary${query}`);
+        setOrdersSummary(o.ok ? await o.json().catch(() => null) : null);
+      } catch {
+        setOrdersSummary(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -464,6 +474,7 @@ function DashboardContent() {
         {/* PLACEHOLDER for real content */}
         {audit && !loading && (() => {
           const cfg = gradeConfig[audit.fillGrade];
+          const v1Computed = audit.v1Computed !== false;
           return (
             <div>
               {dashboardMode === 'demo' && (
@@ -617,12 +628,18 @@ function DashboardContent() {
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' }}>
                       EST. EXECUTION COST
                     </div>
-                    <div style={{
-                      fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em',
-                      color: (attribution?.totalCost || 0) > 100 ? '#f97316' : (attribution?.totalCost || 0) > 50 ? '#fcd34d' : '#4ade80'
-                    }}>
-                      {formatCurrency(attribution?.totalCost || 0)}
-                    </div>
+                    {v1Computed && attribution ? (
+                      <div style={{
+                        fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em',
+                        color: attribution.totalCost > 100 ? '#f97316' : attribution.totalCost > 50 ? '#fcd34d' : '#4ade80'
+                      }}>
+                        {formatCurrency(attribution.totalCost)}
+                      </div>
+                    ) : (
+                      <div data-testid="est-cost-not-computed" style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', lineHeight: 1.4, color: '#888078' }}>
+                        {NOT_COMPUTED.charAt(0).toUpperCase() + NOT_COMPUTED.slice(1)}
+                      </div>
+                    )}
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#484844' }}>
                       this period
                     </div>
@@ -712,6 +729,12 @@ function DashboardContent() {
                 />
               </div>
 
+              {ordersSummary != null && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <OrdersPanel body={ordersSummary} />
+                </div>
+              )}
+
               <div style={{ marginBottom: '2.5rem' }}>
                 <AgentCouncil
                   userId={dashboardMode === 'real' ? undefined : audit.userId}
@@ -722,6 +745,14 @@ function DashboardContent() {
               </div>
 
               {/* SCORE BARS — Part 3 */}
+              {!v1Computed ? (
+                <div style={{ marginBottom: '2.5rem', marginTop: '2.5rem' }}>
+                  <NotComputed
+                    title="Component scores · v1"
+                    detail="The rule-based v1 components need per-trade fields that the rebuilt trades do not have. The measured components are in the v2 panel above."
+                  />
+                </div>
+              ) : (
               <div style={{ marginBottom: '2.5rem', marginTop: '2.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                   <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
@@ -825,9 +856,15 @@ function DashboardContent() {
                   </div>
                 </div>
               </div>
+              )}
 
               {/* EXECUTION COST BREAKDOWN */}
-              {attribution && (
+              {!v1Computed && (
+                <div style={{ marginBottom: '2.5rem' }}>
+                  <NotComputed title="Execution cost breakdown" detail="The breakdown is built from per-trade v1 fields, which the rebuilt trades do not have." />
+                </div>
+              )}
+              {v1Computed && attribution && (
                 <div style={{ marginBottom: '2.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890', textTransform: 'uppercase' }}>
@@ -980,12 +1017,12 @@ function DashboardContent() {
               </div>
 
               {/* EXCHANGE COMPARISON */}
-              {multiVenueNotice(resolvedUserId) && (
-                <div style={{ marginBottom: '2.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#a09890' }}>
-                  {multiVenueNotice(resolvedUserId)}
+              {isNotComputed(exchangeComparison) && (
+                <div style={{ marginBottom: '2.5rem' }}>
+                  <NotComputed title="Average slippage by venue" detail="It is built from per-trade v1 fields, which the rebuilt trades do not have." />
                 </div>
               )}
-              {exchangeComparison && (
+              {exchangeComparison && !isNotComputed(exchangeComparison) && (
                 <div style={{ marginBottom: '2.5rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
@@ -1175,7 +1212,12 @@ function DashboardContent() {
               )}
 
               {/* EXECUTION COACH */}
-              {coach && (
+              {isNotComputed(coach) && (
+                <div style={{ marginBottom: '3rem' }}>
+                  <NotComputed title="Execution patterns" detail="They are read from per-trade v1 fields, which the rebuilt trades do not have." />
+                </div>
+              )}
+              {coach && !isNotComputed(coach) && (
                 <div style={{ marginBottom: '3rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#c9b99a' }}>

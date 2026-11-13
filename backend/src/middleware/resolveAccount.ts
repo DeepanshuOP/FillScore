@@ -11,21 +11,16 @@ declare global {
     }
 }
 
-// The six known demo users: demo-disciplined, demo-moderate, demo-aggressive, demo-bybit, demo-okx, demo-multi.
+// The three known demo users: demo-disciplined, demo-moderate, demo-aggressive (rebuilt from real prints in M2).
+// demo-bybit, demo-okx and demo-multi were removed from the product on 2026-11-13 (Deepanshu's decision 8);
+// their Atlas data is kept. demo-bybit returns in M6 with Bybit measurement.
 // We use an explicit anchored set rather than a loose prefix match (like `startsWith('demo-')`)
 // to strictly prevent parameter injection, path traversal (e.g. 'demo-../admin'), or loose matching bugs.
 export const VALID_DEMO_USERS = new Set([
     'demo-disciplined',
     'demo-moderate',
-    'demo-aggressive',
-    'demo-bybit',
-    'demo-okx',
-    'demo-multi'
+    'demo-aggressive'
 ]);
-
-/** Simulated rolling demos hidden until 4R-2 rebuilds them (4R-0b decision). Direct requests get a clean 404. */
-export const HIDDEN_DEMO_IDS = ['demo-bybit', 'demo-okx', 'demo-multi'];
-export const isHiddenDemo = (id: unknown): boolean => typeof id === 'string' && HIDDEN_DEMO_IDS.includes(id);
 
 const READ_METHODS =new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -34,10 +29,6 @@ export const resolveAccount = (req: Request, res: Response, next: NextFunction):
     const requestedUserId = req.query.userId || req.params.userId || req.body?.userId;
 
     if (requestedUserId) {
-        if (isHiddenDemo(requestedUserId)) {
-            res.status(404).json({ error: 'demo_unavailable' });
-            return;
-        }
         if (typeof requestedUserId === 'string' && VALID_DEMO_USERS.has(requestedUserId)) {
             // F-08: demo accounts are read-only. Any mutating request on one is refused.
             if (!READ_METHODS.has(req.method)) {

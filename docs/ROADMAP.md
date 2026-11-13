@@ -17,7 +17,7 @@
 | Observability | ✅ Sentry ×3, Langfuse OTel tracing, structured logs |
 | AI layer | ✅ Placeholder grounding, claim check, counterfactual verifier with materiality gate, golden set with mutation-tested invariants, Council + single-call arm, ablation (prompt v1.5.0 results). Regime placeholder removed (4R-0c) |
 | Measurement | ⚠ **v1 is rule-based and partly inaccurate** (audit 2026-11). 4a added markouts and CS/AR spread estimates. **Scoring v2 ("measured") is the current focus** (§2) |
-| Demo data | ⚠ The Binance trio is anchored to real prices for MARKET fills only; LIMIT slippage is forced to 0. demo-bybit/okx/multi had simulated prices and are **hidden** (4R-0b/c). All demos are rebuilt on real prints in 4R-2 |
+| Demo data | ⚠ The Binance trio is anchored to real prices for MARKET fills only; LIMIT slippage is forced to 0. demo-bybit/okx/multi had simulated prices and were removed from the product on 2026-11-13 (data kept in Atlas; demo-bybit returns in M6). The Binance trio is rebuilt on real prints (M2, offline; seeded into Atlas after Deepanshu applies it) |
 | Real users | ⚠ **0 real trades scored so far.** Deepanshu places about 10 tiny real trades before 4R-1b closes |
 | Agent tooling | ✅ Guard hook (143 cases: blocks running protected scripts and printing secrets; allows reading), field registry, commit-msg hook |
 
@@ -164,7 +164,9 @@
 | ID | Item | Why | Milestone | Pillar |
 |---|---|---|---|---|
 | **A14** (new) | **Whale score v2 with the pre-fill rule**: only prints before the fill count as adverse; offline from public prints; versioned beside the old flag | EXP-003: more than half of the old "adverse" flags depended on bursts after the fill; the old flag is shown on the analytics panel and in the Council packet | M4 | Measured |
-| **A15** (new) | **Timing component decision** (Waiting for Deepanshu, item 7): the v2 hour profile mostly ranks volatility; option (b) builds it from the per-hour effective half-spread of taker events | LOG §L: on the rebuilt demos it reverses the profiles' order | M2 (before the re-lock) | Measured |
+| **A15** (new) | **Timing component: cost-based hour profile.** DECIDED 2026-11-13: v2.2.0 builds the profile from the median effective half-spread of taker events per hour; the hour is scored by its excess cost over the symbol's 3 cheapest hours, in bps, less a materiality floor of about one price step (never a rank over 24 hours). ADR-0013 | LOG §L: on the rebuilt demos the v2.1.0 profile reversed the profiles' order. Grades are accepted as they come out; the method is not tuned toward an expected order | M2 (before the re-lock) | Measured |
+| **A16** (new) | **Rebuilt demos: v1-only views read "not computed for this data"** (option A, decided 2026-11-13, minimal; M8 redesigns). The measured views (v2 components, order outcomes, resting time, shortfall, unfilled orders: `GET /api/audit/orders-summary`) take their place. A missing v1 slippage is `null`, never 0 | The rebuilt trades have no per-trade v1 fields (v1 enrichment would need invented arrival prices) | M2 closing task | Measured |
+| **A17** (new) | **demo-okx, demo-multi and demo-bybit removed from the product** (decision 8, 2026-11-13). Their Atlas data is kept. demo-bybit returns in M6 with Bybit measurement | OKX was unreachable and uncited; Bybit orders are not measured yet | M2; M6 | Measured |
 | **E7** (new) | `evals/ablation.py` tabulates per golden set, so the rebuilt-demo runs (4-6, golden v3) are never mixed with runs 1-3 | `scripts/rerecord_ablation_v2.sh` numbers new runs 4-6 to protect the recorded ones | M3 | Explained |
 
 **Positioning line, checked against the research:** no vendor found serves a retail or prosumer trader with an audit of their own fills from a read-only key; open-source TCA libraries cover FX and equities only; no vendor offers an MCP server for execution audits [§1, §7]. This is a statement about what a search found on 2026-11-11, not proof of absence.

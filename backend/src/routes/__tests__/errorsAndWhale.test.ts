@@ -78,10 +78,23 @@ describe('whale correlation for real accounts', () => {
         });
     });
 
-    it('still serves the demo accounts, marked available', async () => {
+    it('still serves a demo account that has whale-enriched trades, marked available', async () => {
+        await Trade.collection.insertOne({ accountId: 'demo-disciplined', userId: 'demo-disciplined', exchange: 'binance', symbol: 'BTCUSDT',
+            tradeId: 'w1', orderId: 'ow1', side: 'BUY', isMaker: false, dataSource: 'synthetic-demo', executionPrice: 42000, quantity: 0.01,
+            notional: 420, executedAt: new Date('2024-01-15T14:00:00Z'), whaleEnrichedAt: new Date('2025-01-01'), whaleEventCount: 0, whaleAdverse: false } as any);
+        try {
+            const res = await request(app).get('/api/audit/analytics/whale-correlation?userId=demo-disciplined');
+            expect(res.status).toBe(200);
+            expect(res.body.available).toBe(true);
+            expect(res.body).toHaveProperty('summaryBySymbol');
+        } finally {
+            await Trade.deleteMany({ accountId: 'demo-disciplined', tradeId: 'w1' });
+        }
+    });
+
+    it('a demo account whose trades were never whale-enriched says "not computed for this data", not "no whales"', async () => {
         const res = await request(app).get('/api/audit/analytics/whale-correlation?userId=demo-disciplined');
         expect(res.status).toBe(200);
-        expect(res.body.available).toBe(true);
-        expect(res.body).toHaveProperty('summaryBySymbol');
+        expect(res.body).toEqual({ available: false, reason: 'not_computed_for_this_data', symbols: [], summaryBySymbol: {}, trades: [] });
     });
 });

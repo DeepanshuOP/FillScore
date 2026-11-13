@@ -71,6 +71,8 @@ def render_json() -> str:
             "symbols": sorted(v["anchors"]), "calibrationFiles": len(v["calibrationRefs"]), "feeTable": v["feeTable"],
             "components": COMPONENT_DOCS, "anchorRule": ANCHOR_RULE,
             "spreadUnit": v.get("spreadUnit", "fill"), "minProfileDays": v.get("minProfileDays"),
+            "timingUnit": v.get("timingUnit", "hour_rank"), "timingReferenceHours": v.get("timingReferenceHours"),
+            "timingFloorSteps": v.get("timingFloorSteps"),
         },
     }
     return json.dumps(data, indent=2, sort_keys=True) + "\n"

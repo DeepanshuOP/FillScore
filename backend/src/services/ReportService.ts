@@ -135,14 +135,20 @@ export class ReportService {
     doc.fillColor(white).font('Courier-Bold').fontSize(18).text('EXECUTION COST BREAKDOWN', 50, cy);
     cy += 30;
 
-    const attr = attributionData || {};
     doc.fillColor(grey).font('Courier').fontSize(12);
-    doc.text(`Slippage cost : $${(attr.slippageCost || 0).toFixed(2)}`, 50, cy); cy += 16;
-    doc.text(`Fee cost      : $${(attr.feeCost || 0).toFixed(2)}`, 50, cy); cy += 16;
-    doc.text(`Timing cost   : $${(attr.timingCost || 0).toFixed(2)}`, 50, cy); cy += 16;
-    doc.text(`Spread cost   : $${(attr.spreadCost || 0).toFixed(2)}`, 50, cy); cy += 24;
-    doc.fillColor(gold).font('Courier-Bold').fontSize(12).text(`TOTAL COST    : $${(attr.totalCost || 0).toFixed(2)}`, 50, cy);
-    cy += 40;
+    if (!attributionData) {
+      // No per-trade v1 fields (a rebuilt demo): a value that was never computed is not printed as $0.00.
+      doc.text('Not computed for this data: the cost breakdown needs per-trade v1 fields.', 50, cy, { width: pageW - 100 });
+      cy += 40;
+    } else {
+      const attr = attributionData;
+      doc.text(`Slippage cost : $${(attr.slippageCost || 0).toFixed(2)}`, 50, cy); cy += 16;
+      doc.text(`Fee cost      : $${(attr.feeCost || 0).toFixed(2)}`, 50, cy); cy += 16;
+      doc.text(`Timing cost   : $${(attr.timingCost || 0).toFixed(2)}`, 50, cy); cy += 16;
+      doc.text(`Spread cost   : $${(attr.spreadCost || 0).toFixed(2)}`, 50, cy); cy += 24;
+      doc.fillColor(gold).font('Courier-Bold').fontSize(12).text(`TOTAL COST    : $${(attr.totalCost || 0).toFixed(2)}`, 50, cy);
+      cy += 40;
+    }
 
     doc.fillColor(white).font('Courier-Bold').fontSize(18).text('KEY METRICS', 50, cy);
     cy += 30;
@@ -172,6 +178,10 @@ export class ReportService {
 
     let ty = tableTop + 20;
 
+    if (worstTrades.length === 0) {
+      doc.fillColor(grey).font('Courier').fontSize(11)
+        .text('Not computed for this data: the trades have no per-trade v1 scores to rank.', 50, ty, { width: pageW - 100 });
+    }
     worstTrades.forEach((t, i) => {
       doc.rect(50, ty - 5, pageW - 100, 20).fill(i % 2 === 0 ? '#1a1917' : dark);
 

@@ -9,10 +9,9 @@ const LOCKED: Array<[string, string]> = [
     ['demo-disciplined', '95.88542572161496'],
     ['demo-moderate', '84.80888516669383'],
     ['demo-aggressive', '60.67469266790485'],
-    ['demo-bybit', '76.16413408878628'],
-    ['demo-okx', '81.6589477402669'],
-    ['demo-multi', '70.71963854879698'],
 ];
+// demo-bybit (76.164 B), demo-okx (81.659 B) and demo-multi (70.720 C) were removed from the product on 2026-11-13
+// (Deepanshu's decision 8). Their grades are not moved: they are no longer published. Their Atlas data is kept.
 
 describe('locked demo grades are unchanged by 4a', () => {
     const profiles = fs.readFileSync(path.join(ROOT, 'frontend/app/utils/demoProfiles.ts'), 'utf8');

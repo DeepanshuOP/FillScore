@@ -5,8 +5,8 @@
  *   npx ts-node src/scripts/seedDemoV2.ts            # dry run
  *   npx ts-node src/scripts/seedDemoV2.ts --apply    # Deepanshu only (docs/PROGRESS.md, "Waiting for Deepanshu")
  *
- * --apply replaces, for demo-aggressive, demo-moderate and demo-disciplined only, their trades, orders and fee
- * snapshots. Every document is checked first: its accountId must be the demo it belongs to, its dataSource
+ * --apply replaces, for demo-aggressive, demo-moderate and demo-disciplined only, their trades, orders, fee
+ * snapshots and order measurements. Every document is checked first: its accountId must be the demo it belongs to, its dataSource
  * 'synthetic-demo', and a fee snapshot must say 'published-schedule'. No other account can be touched: the plan and
  * the apply step both refuse any other id. Stored v1 audits are not touched (published grades are frozen).
  */
@@ -16,8 +16,11 @@ import { Types } from 'mongoose';
 
 export const REBUILT_DEMOS = ['demo-aggressive', 'demo-moderate', 'demo-disciplined'] as const;
 type Doc = Record<string, any>;
-export interface DemoFiles { trades: Doc[]; orders: Doc[]; fee_snapshots: Doc[] }
-export interface DemoPlan { trades: Doc[]; orders: Doc[]; feeSnapshots: Doc[]; counts: { trades: number; orders: number; feeSnapshots: number } }
+export interface DemoFiles { trades: Doc[]; orders: Doc[]; fee_snapshots: Doc[]; order_measurements: Doc[] }
+export interface DemoPlan {
+    trades: Doc[]; orders: Doc[]; feeSnapshots: Doc[]; orderMeasurements: Doc[];
+    counts: { trades: number; orders: number; feeSnapshots: number; orderMeasurements: number };
+}
 export type SeedPlan = Record<string, DemoPlan>;
 
 function isRebuilt(id: string): boolean {
@@ -53,12 +56,19 @@ export function planDemoSeed(byDemo: Record<string, DemoFiles>): SeedPlan {
             if (s.source !== 'published-schedule') throw new Error(`fee snapshot ${i}: a demo snapshot is a published schedule`);
             return { ...s, fetchedAt: toDate(s.fetchedAt, `fee snapshot ${i}`) };
         });
-        plan[demo] = { trades, orders, feeSnapshots, counts: { trades: trades.length, orders: orders.length, feeSnapshots: feeSnapshots.length } };
+        // The order measurements are what the production measurement job wrote for these orders in the offline build.
+        const orderMeasurements = f.order_measurements.map((m, i) => {
+            check(m, demo, `order measurement ${i}`, false);
+            return { ...m, measuredAt: toDate(m.measuredAt, `order measurement ${i}`) };
+        });
+        plan[demo] = { trades, orders, feeSnapshots, orderMeasurements, counts: { trades: trades.length, orders: orders.length,
+            feeSnapshots: feeSnapshots.length, orderMeasurements: orderMeasurements.length } };
     }
     return plan;
 }
 
-export interface SeedIO { replace: (collection: 'trades' | 'orders' | 'fee_snapshots', accountId: string, docs: Doc[]) => Promise<void> }
+type Collection = 'trades' | 'orders' | 'fee_snapshots' | 'order_measurements';
+export interface SeedIO { replace: (collection: Collection, accountId: string, docs: Doc[]) => Promise<void> }
 
 export async function applyDemoSeed(plan: SeedPlan, io: SeedIO): Promise<void> {
     const demos = Object.keys(plan).sort();
@@ -67,18 +77,19 @@ export async function applyDemoSeed(plan: SeedPlan, io: SeedIO): Promise<void> {
         await io.replace('trades', demo, plan[demo].trades);
         await io.replace('orders', demo, plan[demo].orders);
         await io.replace('fee_snapshots', demo, plan[demo].feeSnapshots);
+        await io.replace('order_measurements', demo, plan[demo].orderMeasurements);
     }
 }
 
-type ModelMap = Record<'trades' | 'orders' | 'fee_snapshots', any>;
-const COLLECTION_OF: Record<string, 'trades' | 'orders' | 'fee_snapshots'> = { trades: 'trades', orders: 'orders', feeSnapshots: 'fee_snapshots' };
+type ModelMap = Record<Collection, any>;
+const COLLECTION_OF: Record<string, Collection> = { trades: 'trades', orders: 'orders', feeSnapshots: 'fee_snapshots', orderMeasurements: 'order_measurements' };
 
 /** Every document the Mongoose schemas would reject, as "<collection> <demo> #<i>: <message>". The dry run prints
  *  these and refuses to continue, so a dry run that passes proves the apply cannot fail on validation. */
 export function validateWithModels(plan: SeedPlan, models: ModelMap): string[] {
     const errors: string[] = [];
     for (const [demo, p] of Object.entries(plan)) {
-        for (const key of ['trades', 'orders', 'feeSnapshots'] as const) {
+        for (const key of ['trades', 'orders', 'feeSnapshots', 'orderMeasurements'] as const) {
             const coll = COLLECTION_OF[key];
             p[key].forEach((doc, i) => {
                 const err = new models[coll](doc).validateSync();
@@ -93,7 +104,7 @@ export function validateWithModels(plan: SeedPlan, models: ModelMap): string[] {
  *  (with ids chosen here), and only then delete the account's other documents. If the insert fails, the documents it
  *  did insert are removed again, so the account keeps exactly its old documents (review M2, medium 2). */
 export function mongoReplace(models: ModelMap) {
-    return async (collection: 'trades' | 'orders' | 'fee_snapshots', accountId: string, docs: Doc[]): Promise<void> => {
+    return async (collection: Collection, accountId: string, docs: Doc[]): Promise<void> => {
         if (!isRebuilt(accountId)) throw new Error(`${accountId} is not a rebuilt demo account`);
         const m = models[collection];
         const withIds = docs.map(d => ({ ...d, _id: new Types.ObjectId() }));
@@ -111,7 +122,8 @@ export function mongoReplace(models: ModelMap) {
 
 export function readDemoFiles(outDir: string): Record<string, DemoFiles> {
     const read = (demo: string, name: string) => JSON.parse(fs.readFileSync(path.join(outDir, demo, `${name}.json`), 'utf8'));
-    return Object.fromEntries(REBUILT_DEMOS.map(d => [d, { trades: read(d, 'trades'), orders: read(d, 'orders'), fee_snapshots: read(d, 'fee_snapshots') }]));
+    return Object.fromEntries(REBUILT_DEMOS.map(d => [d, { trades: read(d, 'trades'), orders: read(d, 'orders'), fee_snapshots: read(d, 'fee_snapshots'),
+        order_measurements: read(d, 'order_measurements') }]));
 }
 
 async function run() {
@@ -119,10 +131,11 @@ async function run() {
     const outDir = path.resolve(__dirname, '../../../ml-service/demo_v2/out');
     const plan = planDemoSeed(readDemoFiles(outDir));
     for (const [demo, p] of Object.entries(plan)) console.log(`${demo}: ${JSON.stringify(p.counts)}`);
-    const [{ default: mongoose }, { loadEnv }, { Trade }, { Order }, { FeeSnapshot }] = await Promise.all([
+    const [{ default: mongoose }, { loadEnv }, { Trade }, { Order }, { FeeSnapshot }, { OrderMeasurement }] = await Promise.all([
         import('mongoose'), import('../config/env'), import('../models/Trade'), import('../models/Order'), import('../models/FeeSnapshot'),
+        import('../models/OrderMeasurement'),
     ]);
-    const models: ModelMap = { trades: Trade, orders: Order, fee_snapshots: FeeSnapshot };
+    const models: ModelMap = { trades: Trade, orders: Order, fee_snapshots: FeeSnapshot, order_measurements: OrderMeasurement };
     const errors = validateWithModels(plan, models);                 // no database needed
     if (errors.length) {
         console.error(`${errors.length} document(s) fail schema validation; nothing written:\n${errors.slice(0, 20).join('\n')}`);
@@ -135,8 +148,9 @@ async function run() {
     }
     await mongoose.connect(loadEnv().MONGODB_URI);
     for (const demo of Object.keys(plan)) {
-        const before = await Promise.all([Trade.countDocuments({ accountId: demo }), Order.countDocuments({ accountId: demo }), FeeSnapshot.countDocuments({ accountId: demo })]);
-        console.log(`${demo} before: trades ${before[0]}, orders ${before[1]}, fee snapshots ${before[2]}`);
+        const before = await Promise.all([Trade.countDocuments({ accountId: demo }), Order.countDocuments({ accountId: demo }),
+            FeeSnapshot.countDocuments({ accountId: demo }), OrderMeasurement.countDocuments({ accountId: demo })]);
+        console.log(`${demo} before: trades ${before[0]}, orders ${before[1]}, fee snapshots ${before[2]}, order measurements ${before[3]}`);
     }
     const replace = mongoReplace(models);
     await applyDemoSeed(plan, {

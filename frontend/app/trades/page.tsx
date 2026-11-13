@@ -12,6 +12,7 @@ import { resolveIdentityState } from '../utils/identityResolver'
 import { buildQuery } from '../utils/queryBuilder'
 import { apiBase } from '../lib/apiBase';
 import { showCsvExport } from '../utils/csvExport';
+import { NOT_COMPUTED } from '../utils/notComputed';
 
 interface Trade {
   _id: string
@@ -26,15 +27,16 @@ interface Trade {
   notionalValue: number
   isMaker: boolean
   feePaid: number
-  fillScore: number
+  // The per-trade v1 fields are absent on a rebuilt demo's trades (decision 11): they read "not computed", never 0.
+  fillScore: number | null
   fillGrade: 'A' | 'B' | 'C' | 'D' | 'F'
-  slippageScore: number
-  feeScore: number
-  timingScore: number
-  exchangeScore: number
-  slippageBps: number
-  spreadBps: number
-  arrivalPriceProxy: number
+  slippageScore: number | null
+  feeScore: number | null
+  timingScore: number | null
+  exchangeScore: number | null
+  slippageBps: number | null
+  spreadBps: number | null
+  arrivalPriceProxy: number | null
 }
 
 interface TradesResponse {
@@ -222,8 +224,8 @@ function TradesContent() {
     C: '#fcd34d', D: '#f97316', F: '#ef4444'
   }[g] ?? '#888078')
 
-  const scoreColor = (s: number) =>
-    s >= 80 ? '#4ade80' : s >= 60 ? '#fcd34d' :
+  const scoreColor = (s: number | null) =>
+    s == null ? '#888078' : s >= 80 ? '#4ade80' : s >= 60 ? '#fcd34d' :
     s >= 40 ? '#f97316' : '#ef4444'
 
   const formatPrice = (p: number | undefined | null) => {
@@ -264,10 +266,13 @@ function TradesContent() {
       av = new Date(a.executedAt).getTime()
       bv = new Date(b.executedAt).getTime()
     } else if (sortBy === 'fillScore') {
+      if (a.fillScore == null || b.fillScore == null) return (a.fillScore == null ? 1 : 0) - (b.fillScore == null ? 1 : 0)
       av = a.fillScore; bv = b.fillScore
     } else if (sortBy === 'notionalValue') {
       av = a.notionalValue; bv = b.notionalValue
     } else if (sortBy === 'slippageBps') {
+      // Not computed sorts last in either direction; it is never ranked as 0.
+      if (a.slippageBps == null || b.slippageBps == null) return (a.slippageBps == null ? 1 : 0) - (b.slippageBps == null ? 1 : 0)
       av = a.slippageBps; bv = b.slippageBps
     } else {
       av = a.feePaid; bv = b.feePaid
@@ -287,7 +292,7 @@ function TradesContent() {
   const scoredTrades = trades.filter(t => t.fillScore != null)
   const avgScore = scoredTrades.length
     ? Math.round(scoredTrades.reduce((s, t) => s + (t.fillScore ?? 0), 0) / scoredTrades.length)
-    : 0
+    : null                                           // no trade has a score: shown as not computed, never 0
 
   const FilterPill = ({ label, value, options, onChange }: { label: string, value: string, options: string[], onChange: (v: string) => void }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0', position: 'relative' }}>
@@ -383,7 +388,7 @@ function TradesContent() {
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.12em', color: '#888078' }}>BUY / SELL</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.88rem', fontWeight: 600, color: scoreColor(avgScore) }}>{avgScore}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.88rem', fontWeight: 600, color: scoreColor(avgScore) }} data-testid="trades-avg-score" title={avgScore === null ? NOT_COMPUTED : undefined}>{avgScore ?? '—'}</span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.12em', color: '#888078' }}>AVG SCORE</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
@@ -573,7 +578,7 @@ function TradesContent() {
                     <div className="hidden lg:block" style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888078' }}>
                       {trade.feePaid != null ? `$${trade.feePaid.toFixed(4)}` : '—'}
                     </div>
-                    <div className="hidden lg:block" style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: trade.slippageBps < 2 ? '#4ade80' : trade.slippageBps < 5 ? '#fcd34d' : '#f97316' }}>
+                    <div className="hidden lg:block" style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: trade.slippageBps === null ? '#888078' : trade.slippageBps < 2 ? '#4ade80' : trade.slippageBps < 5 ? '#fcd34d' : '#f97316' }} title={trade.slippageBps === null ? NOT_COMPUTED : undefined}>
                       {trade.slippageBps?.toFixed(1) ?? '—'}
                     </div>
                     <div className="hidden lg:block" style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: trade.isMaker ? '#c4a882' : '#888078' }}>
@@ -587,7 +592,7 @@ function TradesContent() {
                         {Math.round(trade.fillScore)}
                       </div>
                     ) : (
-                      <div title="Score pending enrichment"
+                      <div title={NOT_COMPUTED}
                         style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#3a3835', cursor: 'help' }}>
                         —
                       </div>
@@ -684,11 +689,11 @@ function TradesContent() {
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '1.5rem', background: 'rgba(255,255,255,0.07)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
               <div style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '4rem', lineHeight: 1, color: gradeColor(selectedTrade.fillGrade), filter: `drop-shadow(0 0 20px ${gradeColor(selectedTrade.fillGrade)}40)` }}>
-                {selectedTrade.fillGrade}
+                {selectedTrade.fillScore == null ? '—' : selectedTrade.fillGrade}
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-                <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '2rem', color: scoreColor(selectedTrade.fillScore) }}>
-                  {Math.round(selectedTrade.fillScore)}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888078', marginLeft: '2px' }}>/100</span>
+                <div data-testid="trade-score-detail" style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: selectedTrade.fillScore == null ? '0.9rem' : '2rem', color: selectedTrade.fillScore == null ? '#888078' : scoreColor(selectedTrade.fillScore) }}>
+                  {selectedTrade.fillScore == null ? NOT_COMPUTED : (<>{Math.round(selectedTrade.fillScore)}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888078', marginLeft: '2px' }}>/100</span></>)}
                 </div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.15em', color: '#888078' }}>FILL SCORE</div>
               </div>
@@ -706,7 +711,9 @@ function TradesContent() {
                   { label: "NOTIONAL", value: formatUsd(selectedTrade.notionalValue) },
                   { label: "FEE PAID", value: selectedTrade.feePaid != null ? `$${selectedTrade.feePaid.toFixed(4)}` : '—' },
                   { label: "SPREAD", value: `${selectedTrade.spreadBps?.toFixed(1) ?? '—'} bps` },
-                  { label: "SLIPPAGE", value: <span style={{color: selectedTrade.slippageBps < 2 ? '#4ade80' : selectedTrade.slippageBps < 5 ? '#fcd34d' : '#f97316'}}>{selectedTrade.slippageBps?.toFixed(2) ?? '—'} bps</span> },
+                  { label: "SLIPPAGE", value: selectedTrade.slippageBps === null
+                    ? <span style={{color: '#888078'}}>{NOT_COMPUTED}</span>
+                    : <span style={{color: selectedTrade.slippageBps < 2 ? '#4ade80' : selectedTrade.slippageBps < 5 ? '#fcd34d' : '#f97316'}}>{selectedTrade.slippageBps?.toFixed(2) ?? '—'} bps</span> },
                   { label: "ORDER TYPE", value: <span style={{color: selectedTrade.isMaker ? '#c4a882' : '#888078'}}>{selectedTrade.isMaker ? 'MAKER' : 'TAKER'}</span> }
                 ].map((row, i) => (
                   <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.875rem', borderBottom: i === 7 ? 'none' : '1px solid rgba(255,255,255,0.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
@@ -771,9 +778,9 @@ function TradesContent() {
                    <div key={bar.label} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#888078', width: '80px', flexShrink: 0 }}>{bar.label}</div>
                      <div style={{ flex: 1, height: '3px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                       <div style={{ height: '100%', width: `${bar.score ?? 0}%`, background: scoreColor(bar.score), borderRadius: '2px' }} />
+                       <div style={{ height: '100%', width: bar.score == null ? '0%' : `${bar.score}%`, background: scoreColor(bar.score), borderRadius: '2px' }} />
                      </div>
-                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: scoreColor(bar.score), width: '24px', textAlign: 'right', flexShrink: 0 }}>{Math.round(bar.score)}</div>
+                     <div title={bar.score == null ? NOT_COMPUTED : undefined} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: bar.score == null ? '#888078' : scoreColor(bar.score), width: '24px', textAlign: 'right', flexShrink: 0 }}>{bar.score == null ? '—' : Math.round(bar.score)}</div>
                    </div>
                  ))}
                </div>

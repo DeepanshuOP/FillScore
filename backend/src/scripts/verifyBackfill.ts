@@ -36,10 +36,7 @@ async function main() {
     const expectedCounts: Record<string, number> = {
         'demo-disciplined': 145,
         'demo-aggressive': 313,
-        'demo-moderate': 248,
-        'demo-okx': 50,
-        'demo-bybit': 50,
-        'demo-multi': 90
+        'demo-moderate': 248
     };
     
     console.log("\nDemo Trade Counts:");

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveDashboardMode } from './dashboardMode';
-import { HIDDEN_DEMO_IDS } from './hiddenDemos';
+const REMOVED_DEMO_IDS = ['demo-bybit', 'demo-okx', 'demo-multi'];   // removed 2026-11-13: unknown ids now
 
 describe('resolveDashboardMode', () => {
   it('urlUserId=demo-disciplined, no token, no storage -> demo', () => {
@@ -43,7 +43,7 @@ describe('resolveDashboardMode', () => {
     expect(resolveDashboardMode({ urlUserId: 'some-real-id', storageUserId: null, accessToken: null })).toBe('redirect');
   });
 
-  it.each([...HIDDEN_DEMO_IDS])('M3: guest with hidden id %s (url or storage) -> redirect', (id) => {
+  it.each(REMOVED_DEMO_IDS)('guest with removed demo id %s (url or storage) -> redirect', (id) => {
     expect(resolveDashboardMode({ urlUserId: id, storageUserId: null, accessToken: null })).toBe('redirect');
     expect(resolveDashboardMode({ urlUserId: null, storageUserId: id, accessToken: null })).toBe('redirect');
   });

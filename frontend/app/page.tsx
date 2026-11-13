@@ -5,7 +5,6 @@ import WaveBackground from '../components/ui/wave-background';
 import Navbar from './components/Navbar';
 import { DEMO_PROFILES, gradeFromScore } from './utils/demoProfiles';
 import { apiBase } from './lib/apiBase';
-import { visibleDemoProfiles } from './utils/hiddenDemos';
 
 export default function Home() {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -29,7 +28,7 @@ export default function Home() {
     let cancelled = false;
 
     Promise.all(
-      visibleDemoProfiles(DEMO_PROFILES).map(async (p) => {
+      DEMO_PROFILES.map(async (p) => {
         try {
           const res = await fetch(`${baseUrl}/audit/score?userId=${p.id}`);
           if (!res.ok) return null;
@@ -51,12 +50,12 @@ export default function Home() {
     return () => { cancelled = true; };
   }, []);
 
-  const demoProfiles = visibleDemoProfiles(DEMO_PROFILES).map((p) => {
+  const demoProfiles = DEMO_PROFILES.map((p) => {
     const live = liveStats[p.id];
     const score = live?.score ?? p.score;
     return {
       ...p,
-      grade: p.id === 'demo-multi' ? '3 EXCHANGES' : gradeFromScore(score),
+      grade: gradeFromScore(score),
       avgScore: Math.round(score),
       makerRatio: typeof live?.makerRatio === 'number' ? `${Math.round(live.makerRatio * 100)}%` : null,
     };
@@ -450,7 +449,6 @@ export default function Home() {
                       {demoProfiles.map((profile) => {
                         const isSelected = selectedDemo === profile.id
                         const gradeClr = (
-                          profile.grade === '3 EXCHANGES' ? '#2dd4bf' :
                           profile.grade === 'A' ? '#4ade80' :
                           profile.grade === 'B' ? '#86efac' :
                           profile.grade === 'C' ? '#fcd34d' :

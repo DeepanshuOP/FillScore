@@ -32,9 +32,10 @@ from measure.data.aggtrades import AggTradeWindow
 from .components import notional_bucket
 
 MIN_SAMPLES = 200
-MIN_PROFILE_DAYS = 30   # days with samples in an hour before that hour's profile value is used (M1.1)
+HOUR_EVENT_CAP = 4000   # per day and hour: finite event costs kept, as a deterministic stride (v2.2.0)
+MIN_PROFILE_DAYS = 30  # days with samples in an hour before that hour's profile value is used (M1.1)
 PCTS = (10, 50, 90, 99)
-SUMMARY_FORMAT = 1      # bump when day_summary changes, so stale summaries on disk are never merged
+SUMMARY_FORMAT = 2      # 2 = adds per-hour taker-event costs and the typical mid (v2.2.0). Bump when day_summary changes, so stale summaries on disk are never merged
 # One representative duration per slippage bucket (each falls inside its bucket; tested).
 DURATION_SAMPLE_MS = {"lt1s": 500, "1s-10s": 5_000, "10s-1m": 30_000, "1m-10m": 300_000, "10m-1h": 1_800_000, "ge1h": 7_200_000}
 
@@ -91,9 +92,16 @@ def taker_events(window: AggTradeWindow) -> tuple[np.ndarray, np.ndarray]:
     """(effective half-spread in bps of each taker event's VWAP against the mid strictly before its millisecond,
     notional of the event). NaN where no mid exists. All prints of one event share one millisecond, so they share
     one mid, exactly as all fills of one user order in one millisecond do (measure.enrich_fill)."""
+    eff, notional, _, _ = _events(window)
+    return eff, notional
+
+
+def _events(window: AggTradeWindow) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """(effective half-spread bps, notional, UTC hour of the first print, mid before the first print) per taker event."""
     n = len(window)
     if n == 0:
-        return np.zeros(0), np.zeros(0)
+        z = np.zeros(0)
+        return z, z, z.astype(np.int64), z
     starts = event_starts(window)
     gid = np.cumsum(starts) - 1
     ng = int(gid[-1]) + 1
@@ -106,7 +114,8 @@ def taker_events(window: AggTradeWindow) -> tuple[np.ndarray, np.ndarray]:
         vwap = notional / qty
         eff = side * (vwap - mids) / mids * 1e4
     eff = np.where(qty > 0, eff, np.nan)
-    return eff, notional
+    hours = ((window.ts_ms[first] // 3_600_000) % 24).astype(np.int64)
+    return eff, notional, hours, mids
 
 
 def _mid(window: AggTradeWindow, t: int) -> float | None:
@@ -164,17 +173,25 @@ def _bucket_ids(notional: np.ndarray) -> np.ndarray:
     return np.array([notional_bucket(float(v)) for v in notional], dtype=object)
 
 
-def day_summary(window: AggTradeWindow, tick: float, drift_step_ms: int = 60_000, hour_step_ms: int = 10_000) -> dict:
+def day_summary(window: AggTradeWindow, tick: float, drift_step_ms: int = 60_000, hour_step_ms: int = 10_000,
+                hour_event_cap: int = HOUR_EVENT_CAP) -> dict:
     """One day's prints -> the samples calibration needs: finite taker-event spreads per notional bucket, signed mid
     drifts per duration bucket, and per-hour quoted half-spread and absolute 1-minute return samples."""
-    eff, notional = taker_events(window)
+    eff, notional, hours, mids = _events(window)
     ok = np.isfinite(eff)
     buckets = _bucket_ids(notional[ok]) if ok.any() else np.array([], dtype=object)
     e = eff[ok]
-    spread = {b: e[buckets == b].astype(np.float64) for b in sorted(set(buckets.tolist()))}
+    hour_event, hour_n = {}, {}
+    for h in sorted(set(hours[ok].tolist())):
+        x = eff[ok & (hours == h)]
+        k = max(1, -(-len(x) // max(1, hour_event_cap)))      # ceil(n / cap): a deterministic stride, not a random sample
+        hour_event[int(h)], hour_n[int(h)] = x[::k].astype(np.float64), int(len(x))
+    fm = mids[np.isfinite(mids)]
+    spread ={b: e[buckets == b].astype(np.float64) for b in sorted(set(buckets.tolist()))}
     drift = {b: np.asarray(drift_samples(window, ms, drift_step_ms), dtype=np.float64) for b, ms in DURATION_SAMPLE_MS.items()}
     hs, hr = hour_samples(window, tick, hour_step_ms)
     return {"spread": spread, "drift": drift, "tick": float(tick), "events": int(len(eff)),
+            "mid": float(np.median(fm)) if len(fm) else None, "hourEvent": hour_event, "hourEventN": hour_n,
             "hourSpread": {int(h): np.asarray(v, dtype=np.float64) for h, v in hs.items()},
             "hourRet": {int(h): np.asarray(v, dtype=np.float64) for h, v in hr.items()}}
 
@@ -188,9 +205,9 @@ def summary_code_key() -> str:
     from measure import benchmarks
 
     from . import components
-    funcs = (day_summary, taker_events, event_starts, print_mids, drift_samples, hour_samples, _mid, _bucket_ids,
+    funcs = (day_summary, taker_events, _events, event_starts, print_mids, drift_samples, hour_samples, _mid, _bucket_ids,
              benchmarks.quote_at, benchmarks._last_on_side, components.notional_bucket)
-    consts = (benchmarks.MAX_QUOTE_AGE_MS, components.NOTIONAL_BUCKETS, DURATION_SAMPLE_MS, SUMMARY_FORMAT)
+    consts = (benchmarks.MAX_QUOTE_AGE_MS, components.NOTIONAL_BUCKETS, DURATION_SAMPLE_MS, SUMMARY_FORMAT, HOUR_EVENT_CAP)
     h = hashlib.sha256()
     for f in funcs:
         h.update(inspect.getsource(f).encode() + b"\0")
@@ -204,9 +221,12 @@ def save_summary(path, s: dict) -> None:
               "codeKey": np.array(str(s.get("codeKey", summary_code_key())))}
     if s.get("sha256"):
         arrays["sha256"] = np.array(str(s["sha256"]))         # the source file's checksum, for the version's refs
-    for kind in ("spread", "drift", "hourSpread", "hourRet"):
-        for key, v in s[kind].items():
+    arrays["mid"] = np.array(np.nan if s.get("mid") is None else s["mid"])
+    for kind in ("spread", "drift", "hourSpread", "hourRet", "hourEvent"):
+        for key, v in s.get(kind, {}).items():
             arrays[f"{kind}|{key}"] = np.asarray(v, dtype=np.float64)
+    for key, v in s.get("hourEventN", {}).items():
+        arrays[f"hourEventN|{key}"] = np.array(int(v))
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".part.npz")
@@ -218,14 +238,15 @@ def load_summary(path) -> dict:
     with np.load(Path(path), allow_pickle=False) as z:
         if int(z["format"]) != SUMMARY_FORMAT:
             raise ValueError(f"{path}: summary format {int(z['format'])}, expected {SUMMARY_FORMAT}")
-        s = {"tick": float(z["tick"]), "events": int(z["events"]), "spread": {}, "drift": {}, "hourSpread": {}, "hourRet": {}}
+        s = {"tick": float(z["tick"]), "events": int(z["events"]), "spread": {}, "drift": {}, "hourSpread": {}, "hourRet": {},
+             "hourEvent": {}, "hourEventN": {}, "mid": None if np.isnan(float(z["mid"])) else float(z["mid"])}
         if "sha256" in z.files:
             s["sha256"] = str(z["sha256"])
         s["codeKey"] = str(z["codeKey"]) if "codeKey" in z.files else ""      # "" = made before keys existed
         for name in z.files:
             if "|" in name:
                 kind, key = name.split("|", 1)
-                s[kind][int(key) if kind.startswith("hour") else key] = z[name]
+                s[kind][int(key) if kind.startswith("hour") else key] = int(z[name]) if kind == "hourEventN" else z[name]
     return s
 
 
@@ -236,7 +257,15 @@ def merge_summaries(summaries: list[dict], min_profile_days: int = MIN_PROFILE_D
     hs: dict[int, list[np.ndarray]] = defaultdict(list)
     hr: dict[int, list[np.ndarray]] = defaultdict(list)
     days_with = defaultdict(int)
+    he: dict[int, list[np.ndarray]] = defaultdict(list)
+    he_n: dict[int, int] = defaultdict(int)
+    he_days = defaultdict(int)
     for s in summaries:
+        for h, v in s.get("hourEvent", {}).items():
+            if len(v):
+                he[h].append(v)
+                he_n[h] += int(s.get("hourEventN", {}).get(h, len(v)))
+                he_days[h] += 1
         for b, v in s["spread"].items():
             spread[b].append(v)
         for b, v in s["drift"].items():
@@ -253,7 +282,13 @@ def merge_summaries(summaries: list[dict], min_profile_days: int = MIN_PROFILE_D
     profile = None
     if min(profile_days) >= max(1, min_profile_days):
         profile = [float(np.median(np.concatenate(hs[h])) + np.median(np.concatenate(hr[h]))) for h in range(24)]
-    return {"spread": {b: anchors_from(v) for b, v in sp.items()},
+    cost = None
+    if min(he_days[h] for h in range(24)) >= max(1, min_profile_days):
+        steps = [s["tick"] / s["mid"] * 1e4 for s in summaries if s.get("mid")]
+        cost = {"medianBps": [float(np.median(np.concatenate(he[h]))) for h in range(24)],
+                "events": [int(he_n[h]) for h in range(24)], "eventDays": [int(he_days[h]) for h in range(24)],
+                "stepBps": float(np.median(steps)) if steps else None}
+    return {"costProfile": cost, "spread": {b: anchors_from(v) for b, v in sp.items()},
             "slippage": {b: anchors_from(v) for b, v in dr.items()},
             "profile": profile, "profileDays": profile_days,
             "counts": {"spread": {b: int(len(v)) for b, v in sp.items()}, "slippage": {b: int(len(v)) for b, v in dr.items()},

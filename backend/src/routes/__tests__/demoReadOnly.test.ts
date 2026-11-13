@@ -50,19 +50,18 @@ describe('F-08 demo accounts are read-only', () => {
             expect(res.body.error).toBe('demo_read_only');
         });
 
-    // 4R-0b: the rolling demos are hidden; a write attempt is refused with 404 before it can reach the audit run.
+    // Decision 8 (2026-11-13): these three demos were removed from the product. They are unknown ids now.
     it.each(['demo-bybit', 'demo-okx', 'demo-multi'])(
-        'POST /api/audit/run?userId=%s answers 404 demo_unavailable', async (id) => {
+        'POST /api/audit/run?userId=%s is refused as an unknown id', async (id) => {
             const res = await request(app).post(`/api/audit/run?userId=${id}`);
-            expect(res.status).toBe(404);
-            expect(res.body.error).toBe('demo_unavailable');
+            expect(res.status).toBe(403);
         });
 
     it.each(['demo-bybit', 'demo-okx', 'demo-multi'])(
-        'GET /api/audit/share/%s answers 404 demo_unavailable', async (id) => {
+        'GET /api/audit/share/%s answers 404 "no longer available"', async (id) => {
             const res = await request(app).get(`/api/audit/share/${id}`);
             expect(res.status).toBe(404);
-            expect(res.body.error).toBe('demo_unavailable');
+            expect(res.body.error).toBe('This score card is no longer available.');
         });
 
     it('the locked demo audit is unchanged after a run attempt', async () => {
