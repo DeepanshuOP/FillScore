@@ -5,6 +5,15 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
 import { disconnectExchange, fetchAccountExport, deleteAccount } from '../lib/accountActions';
 import { EXCHANGES, ExchangeId } from '../utils/exchanges';
+import { apiBase } from '../lib/apiBase';
+import { listApiKeys, createApiKey, revokeApiKey, keyStatus, mcpApiUrl, mcpConfigSnippet, type ApiKeyView } from '../lib/apiKeys';
+
+const KEY_MESSAGES: Record<string, string> = {
+  max_keys: 'You already have 5 active keys. Revoke one first.',
+  reauth_required: 'Enter your password to create a key (or sign in again if you use Google or GitHub).',
+  invalid_request: 'Give the key a name of 1 to 40 characters.',
+};
+const fmtDate = (iso: string | null) => (iso ? iso.slice(0, 10) : 'never');
 
 const MESSAGES: Record<string, string> = {
   not_connected: 'That exchange is not connected.',
@@ -34,9 +43,39 @@ export default function SettingsPage() {
   const [password, setPassword] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);
 
+  const [keys, setKeys] = useState<ApiKeyView[]>([]);
+  const [keyName, setKeyName] = useState('');
+  const [keyDays, setKeyDays] = useState(90);
+  const [keyPassword, setKeyPassword] = useState('');
+  const [newKey, setNewKey] = useState<string | null>(null);   // shown once, in this tab only; never stored by the page
+
   useEffect(() => {
     if (!isLoading && !user) router.push('/login');
   }, [isLoading, user, router]);
+
+  useEffect(() => {
+    if (!user || !accessToken) return;
+    let current = true;
+    listApiKeys({ accessToken, refreshAccessToken }).then(r => { if (current && r.ok) setKeys(r.keys); });
+    return () => { current = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, accessToken]);
+
+  const reloadKeys = async () => { const r = await listApiKeys(auth); if (r.ok) setKeys(r.keys); };
+
+  const onCreateKey = () => run(async () => {
+    const r = await createApiKey({ name: keyName.trim(), expiresInDays: keyDays, password: keyPassword }, auth);
+    if (!r.ok) { setStatus(KEY_MESSAGES[r.error] ?? 'Could not create the key.'); return; }
+    setNewKey(r.key);
+    setKeyName(''); setKeyPassword('');
+    await reloadKeys();
+  });
+
+  const onRevokeKey = (id: string) => run(async () => {
+    const r = await revokeApiKey(id, auth);
+    setStatus(r.ok ? 'Key revoked. It stopped working at once.' : 'Could not revoke the key.');
+    await reloadKeys();
+  });
 
   const run = async (fn: () => Promise<void>) => {
     if (busy) return;
@@ -101,9 +140,69 @@ export default function SettingsPage() {
         <section style={card} aria-labelledby="settings-export">
           <h2 id="settings-export" style={heading}>DOWNLOAD YOUR DATA</h2>
           <p style={{ fontSize: '0.85rem', color: '#888078', marginTop: 0 }}>
-            A JSON copy of your trades, audits, score history and notes. API keys are never included.
+            A JSON copy of your trades, audits, score history and notes. Exchange keys are never included. Personal API keys appear by name, prefix and dates only.
           </p>
           <button type="button" style={button} disabled={busy} onClick={onExport}>Download my data</button>
+        </section>
+
+        <section style={card} aria-labelledby="settings-keys">
+          <h2 id="settings-keys" style={heading}>API KEYS FOR AI CLIENTS (READ-ONLY)</h2>
+          <p style={{ fontSize: '0.85rem', color: '#888078', marginTop: 0 }}>
+            A key lets an AI client that speaks the Model Context Protocol read your stored measurements of past executions through the
+            FillScore MCP server. It can only read, only the six tools of that server, and only your own account. It expires, you can revoke it
+            at any time, and you can have 5 active keys. FillScore keeps a hash of the key, not the key, so a key is shown once.
+          </p>
+
+          {newKey && (
+            <div role="alert" style={{ border: '1px solid rgba(196,168,130,0.5)', borderRadius: 2, padding: '0.75rem 1rem', marginBottom: '1rem' }}>
+              <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: '#ede8e0' }}>
+                Copy this key now. It is not shown again.
+              </p>
+              <pre data-testid="new-api-key" style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#c8bfb4' }}>
+                {mcpConfigSnippet(newKey, mcpApiUrl(apiBase(), typeof window !== 'undefined' ? window.location.origin : ''))}
+              </pre>
+              <button type="button" style={{ ...button, marginTop: '0.75rem' }} onClick={() => setNewKey(null)}>I have copied it</button>
+            </div>
+          )}
+
+          {keys.length > 0 && (
+            <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 1rem' }}>
+              {keys.map(k => {
+                const st = keyStatus(k);
+                return (
+                  <li key={k.id} style={{ display: 'flex', justifyContent: 'space-between', gap: '1rem', alignItems: 'center', padding: '0.5rem 0', borderTop: '1px solid rgba(255,255,255,0.06)', fontSize: '0.8rem' }}>
+                    <span>
+                      <strong style={{ fontWeight: 600 }}>{k.name}</strong>{' '}
+                      <span style={{ fontFamily: 'var(--font-mono)', color: '#c4a882' }}>{k.prefix}…</span><br />
+                      <span style={{ color: '#888078' }}>
+                        {st === 'active' ? `expires ${fmtDate(k.expiresAt)}` : st === 'revoked' ? `revoked ${fmtDate(k.revokedAt)}` : `expired ${fmtDate(k.expiresAt)}`}
+                        {' · '}created {fmtDate(k.createdAt)}{' · '}last used {fmtDate(k.lastUsedAt)}
+                      </span>
+                    </span>
+                    {st === 'active' && <button type="button" style={button} disabled={busy} onClick={() => onRevokeKey(k.id)}>Revoke</button>}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <label htmlFor="key-name" style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem' }}>Name (what the key is for)</label>
+          <input id="key-name" maxLength={40} value={keyName} onChange={e => setKeyName(e.target.value)}
+            style={{ width: '100%', padding: '8px 10px', background: '#0f0f0f', color: '#ede8e0', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '2px', marginBottom: '0.75rem' }} />
+          <label htmlFor="key-days" style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem' }}>Expires after</label>
+          <select id="key-days" value={keyDays} onChange={e => setKeyDays(Number(e.target.value))}
+            style={{ padding: '8px 10px', background: '#0f0f0f', color: '#ede8e0', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '2px', marginBottom: '0.75rem' }}>
+            <option value={30}>30 days</option>
+            <option value={90}>90 days</option>
+            <option value={180}>180 days</option>
+            <option value={365}>365 days</option>
+          </select>
+          <label htmlFor="key-password" style={{ display: 'block', fontSize: '0.8rem', marginBottom: '0.4rem' }}>
+            Password (leave empty if you sign in with Google or GitHub and signed in within the last 5 minutes)
+          </label>
+          <input id="key-password" type="password" autoComplete="current-password" value={keyPassword} onChange={e => setKeyPassword(e.target.value)}
+            style={{ width: '100%', padding: '8px 10px', background: '#0f0f0f', color: '#ede8e0', border: '1px solid rgba(255,255,255,0.15)', borderRadius: '2px', marginBottom: '0.75rem' }} />
+          <button type="button" style={button} disabled={busy || keyName.trim().length === 0} onClick={onCreateKey}>Create a read-only key</button>
         </section>
 
         <section style={{ ...card, borderColor: 'rgba(220,80,80,0.35)' }} aria-labelledby="settings-delete">

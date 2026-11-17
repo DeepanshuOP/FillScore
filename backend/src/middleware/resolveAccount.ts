@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccessToken } from '../utils/jwt';
 import { verifyDownloadToken, DownloadKind } from '../utils/downloadToken';
+import { authenticateKey } from '../services/apiKeys';
 
 declare global {
     namespace Express {
@@ -54,6 +55,21 @@ export const resolveAccount = (req: Request, res: Response, next: NextFunction):
     }
 
     const token = authHeader.split(' ')[1];
+    if (token.startsWith('fsk_')) {
+        // A personal API key (item 15): read-only, GET and HEAD on the MCP tool routes, rate-limited per key. The account is the
+        // key's owner. Any other route that reads a login token (requireAuth) refuses a key.
+        authenticateKey(token, req.method, `${req.baseUrl}${req.path}`).then((r) => {
+            if (!r.ok) {
+                if (r.retryAfterS) res.setHeader('Retry-After', String(r.retryAfterS));
+                res.status(r.status).json({ error: r.error });
+                return;
+            }
+            req.accountId = r.userId;
+            req.isDemo = false;
+            next();
+        }).catch(() => { res.status(500).json({ error: 'Internal Server Error' }); });
+        return;
+    }
     try {
         const payload = verifyAccessToken(token);
         req.accountId = payload.userId;

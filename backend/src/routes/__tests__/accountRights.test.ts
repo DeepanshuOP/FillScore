@@ -18,6 +18,7 @@ import { ExchangeConnection } from '../../models/ExchangeConnection';
 import { OAuthCode } from '../../models/OAuthCode';
 import { PasswordResetToken } from '../../models/PasswordResetToken';
 import { User } from '../../models/User';
+import { ApiKey } from '../../models/ApiKey';
 import { issueTokenPair } from '../../services/authService';
 import { encryptApiKey } from '../../utils/encryption';
 
@@ -40,6 +41,7 @@ async function seedAccount(id: string) {
         breakdown: { avgSlippageBps: 0, avgFeeDragBps: 2, makerRatio: 0, bestHour: 10, worstHour: 10, bestSymbol: 'BTCUSDT', worstSymbol: 'BTCUSDT' },
     });
     await AuditHistory.create({ accountId: id, dataSource: 'real-user', scoringVersion: '1.0.0', avgFillScore: 73.75, fillGrade: 'C', totalTrades: 2, snapshotAt: new Date() });
+    await ApiKey.create({ userId: id, name: 'seeded key', prefix: 'fsk_00000000', keyHash: crypto.randomBytes(32).toString('hex'), scope: 'read', expiresAt: new Date(Date.now() + 86400000) });
     await OAuthCode.create({ codeHash: crypto.randomBytes(32).toString('hex'), userId: id, expiresAt: new Date(Date.now() + 30000) });
     await PasswordResetToken.create({ userId: new mongoose.Types.ObjectId(id), tokenHash: crypto.randomBytes(32).toString('hex'), expiresAt: new Date(Date.now() + 60000) });
 }
@@ -152,7 +154,7 @@ describe('F-13 account rights', () => {
         it('with the password, removes every document that references the account and nothing else', async () => {
             const before = await leftovers(id);
             expect(Object.keys(before).sort()).toEqual(
-                ['audithistories', 'audits', 'emailverificationtokens', 'exchangeconnections', 'oauthcodes', 'passwordresettokens', 'refreshtokens', 'trades', 'users'].filter(n => n in before).sort());
+                ['api_keys', 'audithistories', 'audits', 'emailverificationtokens', 'exchangeconnections', 'oauthcodes', 'passwordresettokens', 'refreshtokens', 'trades', 'users'].filter(n => n in before).sort());
             expect(before.users).toBe(1);
 
             const res = await request(app).delete('/api/account').set('Authorization', `Bearer ${token}`).send({ password: PASSWORD });

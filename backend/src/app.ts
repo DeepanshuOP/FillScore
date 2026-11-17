@@ -16,6 +16,7 @@ import { onboardingRouter } from './routes/onboarding';
 import { preflightRouter } from './routes/preflight';
 import { healthRouter } from './routes/health';
 import { accountRouter } from './routes/account';
+import { apiKeysRouter } from './routes/apiKeys';
 import { resolveTrustProxyHops } from './utils/trustProxy';
 
 export function createApp(): Application {
@@ -50,6 +51,7 @@ export function createApp(): Application {
     app.use('/api/auth', authRouter);
     app.use('/api/onboarding', onboardingRouter);
     app.use('/api/account', accountRouter);
+    app.use('/api/keys', apiKeysRouter);                           // item 15: personal API keys for the MCP server
     app.use('/api/preflight', availabilityLimiter, preflightRouter);
 
     app.use(errorHandler);

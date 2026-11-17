@@ -87,6 +87,9 @@ Generated from the app (`npm run docs:routes`).
 |---|---|
 | DELETE | `/api/account/` |
 | GET | `/api/account/export` |
+| GET | `/api/keys/` |
+| POST | `/api/keys/` |
+| DELETE | `/api/keys/:id` |
 | GET | `/api/attribution/` |
 | GET | `/api/audit/` |
 | GET | `/api/audit/analytics` |

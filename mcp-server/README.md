@@ -19,7 +19,7 @@ ones FillScore's deterministic measurement code stored; the server computes, pre
 
 ```bash
 cd mcp-server && npm ci
-FILLSCORE_API_URL=https://<your FillScore API> FILLSCORE_TOKEN=<your access token> node server.mjs
+FILLSCORE_API_URL=https://<your FillScore API> FILLSCORE_API_KEY=<your personal API key> node server.mjs
 # or try it on a public demo account, no token:
 FILLSCORE_API_URL=https://<your FillScore API> FILLSCORE_DEMO_USER=demo-moderate node server.mjs
 ```
@@ -30,8 +30,12 @@ variables. Facts used to build this (read 2026-11-17): the MCP TypeScript SDK v1
 
 ## Limits, stated plainly
 
-- **The access token is short-lived.** FillScore has no long-lived personal API key yet, so a real account's token expires. Personal
-  API keys are a new kind of credential and need Deepanshu's decision (listed in `docs/PROGRESS.md`). Demo accounts need no token.
+- **Personal API keys.** Create one in FillScore under Settings, "API keys for AI clients (read-only)". The key is shown once. FillScore
+  stores only its SHA-256. A key can only read (GET and HEAD), only the six routes of the tools above, and only its owner's account.
+  It expires after 90 days unless you choose another time (1 to 365 days), you can revoke it at any time, you can have 5 active keys,
+  and each key is limited to 60 requests a minute. A key never works for creating, listing or revoking keys, for exchange keys, or for
+  any write. If you lose a key, revoke it and create another. Demo accounts need no key. `FILLSCORE_TOKEN` (a short-lived access
+  token) still works as the older way.
 - The URL must be `https` (plain `http` only for `localhost`), so the token is never sent in the clear.
 - The server reads what the API returns; it does not hold data of its own and writes nothing.
 - Numbers an AI client writes in its own words are the client's, not FillScore's; quote the tool output.

@@ -12,7 +12,8 @@ import { RefreshToken } from '../models/RefreshToken';
 import { PasswordResetToken } from '../models/PasswordResetToken';
 import { EmailVerificationToken } from '../models/EmailVerificationToken';
 import { OAuthCode } from '../models/OAuthCode';
-import { verifyPassword } from '../utils/password';
+import { ApiKey } from '../models/ApiKey';
+import { isReauthenticated, RECENT_LOGIN_S as RECENT_LOGIN_SECONDS } from '../services/reauth';
 import { clearRefreshCookie } from './auth';
 
 /**
@@ -27,7 +28,7 @@ import { clearRefreshCookie } from './auth';
 export const accountRouter = Router();
 
 /** A login this recent counts as re-authentication for password-less (OAuth) accounts. */
-export const RECENT_LOGIN_S = 5 * 60;
+export const RECENT_LOGIN_S = RECENT_LOGIN_SECONDS;
 
 const accountLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -42,12 +43,14 @@ accountRouter.get('/export', accountLimiter, requireAuth, async (req: Request, r
         const user = await User.findById(id, { email: 1, emailVerified: 1, createdAt: 1, authProviders: 1 }).lean();
         if (!user) return res.status(404).json({ error: 'not_found' });
 
-        const [trades, audits, history, connections] = await Promise.all([
+        const [trades, audits, history, connections, apiKeys] = await Promise.all([
             Trade.find({ accountId: id }, { __v: 0 }).sort({ executedAt: 1 }).lean(),
             Audit.find({ accountId: id }, { __v: 0 }).lean(),
             AuditHistory.find({ accountId: id }, { __v: 0 }).sort({ snapshotAt: 1 }).lean(),
             // Only which exchanges are connected — the encrypted key material never leaves the server.
             ExchangeConnection.find({ accountId: id }, { exchange: 1, createdAt: 1 }).lean(),
+            // Personal API keys: name, prefix and dates only. The key is not stored and its hash does not leave the server.
+            ApiKey.find({ userId: id }, { name: 1, prefix: 1, scope: 1, createdAt: 1, expiresAt: 1, revokedAt: 1, lastUsedAt: 1 }).lean(),
         ]);
 
         const body = {
@@ -59,6 +62,7 @@ accountRouter.get('/export', accountLimiter, requireAuth, async (req: Request, r
                 signInProviders: (user.authProviders || []).map(p => p.provider),
             },
             connections: connections.map((c: any) => ({ exchange: c.exchange, connectedAt: c.createdAt })),
+            apiKeys: apiKeys.map((k: any) => ({ name: k.name, prefix: k.prefix, scope: k.scope, createdAt: k.createdAt, expiresAt: k.expiresAt, revokedAt: k.revokedAt ?? null, lastUsedAt: k.lastUsedAt ?? null })),
             trades,
             audits,
             history,
@@ -82,15 +86,7 @@ accountRouter.delete('/', accountLimiter, requireAuth, async (req: Request, res:
         if (!user) return res.status(404).json({ error: 'not_found' });
 
         // Re-authentication: the password for password accounts; a recent login for OAuth-only ones.
-        const password = req.body?.password;
-        let reauthenticated = false;
-        if (user.passwordHash) {
-            reauthenticated = typeof password === 'string' && password.length > 0 && await verifyPassword(password, user.passwordHash);
-        } else {
-            const now = Math.floor(Date.now() / 1000);
-            reauthenticated = typeof req.authTime === 'number' && now - req.authTime <= RECENT_LOGIN_S;
-        }
-        if (!reauthenticated) {
+        if (!(await isReauthenticated(user, req.body?.password, req.authTime))) {
             return res.status(401).json({ error: 'reauth_required' });
         }
 
@@ -104,15 +100,16 @@ accountRouter.delete('/', accountLimiter, requireAuth, async (req: Request, res:
             PasswordResetToken.deleteMany({ userId: oid }),
             EmailVerificationToken.deleteMany({ userId: oid }),
             OAuthCode.deleteMany({ userId: id }),
+            ApiKey.deleteMany({ userId: id }),
         ]);
         await SyncJob.deleteMany({ accountId: id });
         await User.deleteOne({ _id: oid });
 
-        const [trades, audits, history, connections, refreshTokens, resetTokens, verifyTokens, oauthCodes] = results.map(r => r.deletedCount);
+        const [trades, audits, history, connections, refreshTokens, resetTokens, verifyTokens, oauthCodes, apiKeys] = results.map(r => r.deletedCount);
         clearRefreshCookie(res);
         return res.status(200).json({
             deleted: true,
-            removed: { trades, audits, history, connections, refreshTokens, resetTokens, verifyTokens, oauthCodes, user: 1 },
+            removed: { trades, audits, history, connections, refreshTokens, resetTokens, verifyTokens, oauthCodes, apiKeys, user: 1 },
         });
     } catch (error) {
         console.error('Error deleting account:', (error as Error)?.name);
