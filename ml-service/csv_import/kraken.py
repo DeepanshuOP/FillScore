@@ -14,6 +14,7 @@ from __future__ import annotations
 import calendar
 import csv
 import io
+import math
 import re
 from dataclasses import dataclass, field
 
@@ -46,6 +47,7 @@ class KrakenFill:
 class ParseResult:
     fills: list[KrakenFill] = field(default_factory=list)
     skipped: list[tuple[int, str]] = field(default_factory=list)      # (row number in the file, header = row 1; reason)
+    fee_known: bool = True                                            # False when the file has no fee column (fees are then not part of the check)
 
 
 def _norm_asset(a: str) -> str:
@@ -94,7 +96,10 @@ def _to_ms(s: str) -> int | None:
 
 def parse_trades(text: str) -> ParseResult:
     reader = csv.reader(io.StringIO(text.lstrip("﻿"), newline=""))
-    rows = list(reader)
+    try:
+        rows = list(reader)
+    except csv.Error:                    # for example a single field over the CSV module's limit of 131,072 characters
+        raise ValueError("the file could not be read as CSV") from None
     if not rows:
         raise ValueError("the file is empty")
     header = [h.strip().lower().replace("order-type", "ordertype") for h in rows[0]]
@@ -113,6 +118,9 @@ def parse_trades(text: str) -> ParseResult:
         except ValueError:
             out.skipped.append((n, "a number could not be read"))
             continue
+        if not all(math.isfinite(x) for x in (price, cost, fee, vol, margin)):   # inf and nan read as numbers but are not measurements
+            out.skipped.append((n, "a number could not be read"))
+            continue
         side = {"buy": 1, "sell": -1}.get(get("type").lower())
         if side is None:
             out.skipped.append((n, "unknown side"))
@@ -123,6 +131,9 @@ def parse_trades(text: str) -> ParseResult:
             continue
         if not (price > 0 and vol > 0 and fee >= 0 and cost >= 0):
             out.skipped.append((n, "price and volume must be positive"))
+            continue
+        if not (price * vol > 0 and math.isfinite(price * vol)):                 # an underflow would make the cost 0 and the fee rate undefined
+            out.skipped.append((n, "price x volume is too small or too large to measure"))
             continue
         sp = split_pair(get("pair"))
         if sp is None:

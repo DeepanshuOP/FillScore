@@ -19,6 +19,8 @@ A personal API key, `fsk_` + 8 hex characters (visible prefix) + `_` + 43 base64
 - **`lastUsedAt`,** written at most once a minute per key.
 - **Account isolation.** The account is the key owner's. A `userId` parameter naming another real account is refused (403), as for a login token. A key never reaches the routes that read a login token (`requireAuth`): it cannot create, list or revoke keys, read the account export, or touch exchange connections.
 - **Creating a key asks for re-authentication,** like deleting an account: the password for password accounts, a login in the last 5 minutes for OAuth-only accounts. A stolen 15-minute access token therefore cannot create a 90-day credential. (This goes beyond the approved list; it costs the user one password entry.)
+- **A password reset revokes the account's active keys** (reviewer finding, 2026-11-18): a key made by someone who held the account must not outlive a reset made because the account was lost. There is no "revoke all" button yet; each key has its own Revoke.
+- A missing or wrong password on creation answers 403 `reauth_required`, not 401: the web client reads a 401 as an expired login token and would retry, running the password check twice. The list returns the 50 newest keys.
 - **Account deletion removes the account's keys** (a test lists every collection after deletion).
 - One answer for an unknown, malformed, revoked or expired key (`invalid_api_key`), so the response does not say which.
 

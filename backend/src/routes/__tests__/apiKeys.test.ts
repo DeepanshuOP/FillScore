@@ -47,10 +47,12 @@ describe('personal API keys', () => {
             expect((await request(app).post('/api/keys').send({ name: 'x', password: PASSWORD })).status).toBe(401);
         });
         it('needs the password again (a stolen 15-minute token must not mint a 90-day key)', async () => {
+            // 403, not 401: the web client treats a 401 as an expired login token and retries after a refresh, which would run the password
+            // check twice and spend the request limit twice (review 2026-11-18)
             const none = await mint(tokenA, { password: undefined });
-            expect(none.status).toBe(401); expect(none.body.error).toBe('reauth_required');
+            expect(none.status).toBe(403); expect(none.body.error).toBe('reauth_required');
             const wrong = await mint(tokenA, { password: 'Wrong-password1!' });
-            expect(wrong.status).toBe(401);
+            expect(wrong.status).toBe(403); expect(wrong.body.error).toBe('reauth_required');
             expect(await ApiKey.countDocuments({ userId: idA })).toBe(0);
         });
         it('returns the key once; stores only its SHA-256 and a visible prefix; read scope; 90 days by default', async () => {
@@ -90,6 +92,13 @@ describe('personal API keys', () => {
             await ApiKey.updateOne({ userId: idA }, { expiresAt: new Date(Date.now() - 1000) });
             expect((await mint(tokenA, { name: 'new' })).status).toBe(201);
         });
+    });
+
+    it('lists at most the 50 newest keys', async () => {
+        const base = { userId: idA, name: 'k', prefix: 'fsk_00000000', scope: 'read', expiresAt: new Date(Date.now() + DAY) };
+        await ApiKey.insertMany(Array.from({ length: 60 }, (_, i) => ({ ...base, keyHash: `${i}`.padStart(64, '0'), createdAt: new Date(Date.now() - i * 1000), revokedAt: new Date() })));
+        const res = await request(app).get('/api/keys').set('Authorization', `Bearer ${tokenA}`);
+        expect(res.body.keys).toHaveLength(50);
     });
 
     describe('listing and revoking', () => {

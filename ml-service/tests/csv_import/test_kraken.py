@@ -70,6 +70,23 @@ def test_a_row_that_cannot_be_grounded_is_skipped_with_its_reason_and_row_number
     assert len(r.fills) == 1 and r.skipped == [(3, reason)]          # row 3 of the file: header is row 1
 
 
+def test_non_finite_numbers_and_an_underflowing_cost_are_skipped_never_measured():
+    # review finding 2026-11-18: price=inf with cost=inf was accepted (nan > inf is False in the cost check); fee=nan was accepted;
+    # 1e-200 x 1e-200 gave a cost of 0.0 and a division by zero.
+    bad = ['"T3","O1","XBT/USD","2024-01-15 14:00:01.1234","buy","market","inf","inf","6.72","0.1","0","",""',
+           '"T4","O1","XBT/USD","2024-01-15 14:00:01.1234","buy","market","42000.0","4200.0","nan","0.1","0","",""',
+           '"T5","O1","XBT/USD","2024-01-15 14:00:01.1234","buy","market","1e-200","1e-200","0","1e-200","0","",""',
+           '"T6","O1","XBT/USD","2024-01-15 14:00:01.1234","buy","market","42000.0","4200.0","6.72","nan","0","",""']
+    r = parse_trades(_csv(*bad, R1))
+    assert [n for n, _ in r.skipped] == [2, 3, 4, 5]
+    assert [f.txid for f in r.fills] == ["T1"]
+
+
+def test_a_field_over_the_csv_limit_is_a_refusal_with_a_reason_not_a_crash():
+    with pytest.raises(ValueError, match="CSV"):
+        parse_trades(_csv('"' + "x" * 200_000 + '","O1","XBT/USD","2024-01-15 14:00:01.1234","buy","market","1","1","0","1","0","",""'))
+
+
 def test_pair_names_in_both_forms_the_official_page_shows():
     # https://docs.kraken.com/api-reference/market-data/get-tradable-asset-pairs: XXBTZUSD has altname XBTUSD and wsname XBT/USD
     assert split_pair("XBT/USD") == ("XBT", "USD")

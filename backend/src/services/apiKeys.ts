@@ -54,7 +54,7 @@ export async function createKey(userId: string, name: string, expiresInDays: num
 export const publicView = (d: any) => ({ id: String(d._id), name: d.name, prefix: d.prefix, scope: d.scope, createdAt: d.createdAt, expiresAt: d.expiresAt, lastUsedAt: d.lastUsedAt ?? null, revokedAt: d.revokedAt ?? null });
 
 export async function listKeys(userId: string) {
-    return (await ApiKey.find({ userId }).sort({ createdAt: -1 }).lean()).map(publicView);
+    return (await ApiKey.find({ userId }).sort({ createdAt: -1 }).limit(50).lean()).map(publicView);       // the 50 newest; old revoked keys do not pile up in the answer
 }
 
 /** Revoke one of the user's own keys. False when there is no such key of this user (another user's key looks the same as none). */

@@ -157,6 +157,19 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
+# The CSV check body is refused above 400,000 bytes before it is read (a file may hold 200,000 characters; JSON escapes add some).
+from csv_import.bodylimit import BodyLimitMiddleware
+app.add_middleware(BodyLimitMiddleware, path="/ml/csv/check", limit=400_000)
+
+
+from fastapi.exceptions import RequestValidationError
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_error(_request: Request, exc: RequestValidationError) -> JSONResponse:
+    """A 422 names the field and the rule, never the value: the default body echoes the whole input (a CSV file would come back in full)."""
+    return JSONResponse(status_code=422, content={"detail": [{"loc": list(e.get("loc", ())), "msg": e.get("msg", ""), "type": e.get("type", "")} for e in exc.errors()]})
+
 
 # ---------------------------------------------------------------------------
 # Request / Response models
@@ -385,6 +398,57 @@ async def council_endpoint(req: CouncilRequest, request: Request) -> Any:
             detail=detail,
             headers=headers,
         )
+
+
+class CsvCheckRequest(BaseModel):
+    format: Literal["kraken", "mapped"]
+    csv: str = Field(max_length=300_000)             # a hard guard; the service refuses more than 200,000 characters with its own message
+    mapping: dict[str, str] | None = None
+
+
+@app.post("/ml/csv/check")
+async def csv_check_endpoint(req: CsvCheckRequest, request: Request) -> Any:
+    """Check a broker CSV (M6 §1): each fill against the public price at its second. Signed-in accounts only (a demo account is refused);
+    6 checks an hour and 20 a day per account; nothing is stored; no row of the file is logged or returned in an error."""
+    account_id = get_account_id(None, request)
+    if account_id in VALID_DEMO_USERS:
+        raise HTTPException(status_code=403, detail={"code": "demo_account", "message": "Demo accounts cannot check a file."})
+    from csv_import import gate, route_budget
+    busy = lambda msg: HTTPException(status_code=429, detail={"code": "csv_check_busy", "message": msg})
+    pause = gate.cooling()
+    if pause is not None:       # the market-data source asked for a pause: no check fetches anything until it is over
+        raise HTTPException(status_code=503, headers={"Retry-After": str(pause)}, detail={
+            "code": "market_data_busy", "message": "The public market-data source asked for a pause. Try again in a few minutes."})
+    # The slot is reserved before the work starts, so parallel requests cannot all pass; it is given back only for a refusal that happened
+    # before any market data was fetched (a bad file, or a source that asked for a pause).
+    status, wait = route_budget.reserve(account_id)
+    if status == "busy":
+        raise busy("A check of yours is still running. Wait for it to finish.")
+    if status == "limit":
+        raise HTTPException(status_code=429, headers={"Retry-After": str(wait)}, detail={
+            "code": "csv_check_limit", "message": f"At most {route_budget.PER_HOUR} checks an hour and {route_budget.PER_DAY} a day. Try again later."})
+    if not gate.try_enter():
+        route_budget.release(account_id, refund=True)
+        raise busy("The service is busy with other checks. Try again in a minute.")
+    from starlette.concurrency import run_in_threadpool
+    import measure.service as svc
+    from csv_import.service import CsvCheckError, run_check
+    refund = False
+    try:
+        return await run_in_threadpool(run_check, req.format, req.csv, req.mapping, svc.rest_source)
+    except CsvCheckError as e:
+        refund = True
+        extra = dict(e.extra)
+        retry = extra.pop("retry_after", None)
+        status_code = 413 if e.code == "file_too_large" else 503 if e.code == "market_data_busy" else 400
+        raise HTTPException(status_code=status_code, headers={"Retry-After": str(retry)} if retry else None,
+                            detail={"code": e.code, "message": e.message, **extra})
+    except Exception as e:      # nothing about the file or the cause is returned or logged beyond the error class
+        print(f"[csv_check] failed type={type(e).__name__}")
+        raise HTTPException(status_code=500, detail={"code": "internal", "message": "The file could not be checked."})
+    finally:
+        gate.leave()
+        route_budget.release(account_id, refund=refund)
 
 
 @app.post("/ml/agents/ask")

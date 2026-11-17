@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { User } from '../models/User';
 import { PasswordResetToken } from '../models/PasswordResetToken';
 import { RefreshToken } from '../models/RefreshToken';
+import { ApiKey } from '../models/ApiKey';
 import { sendEmail } from './emailService';
 import { env } from '../config/env';
 import { hashPassword } from '../utils/password';
@@ -91,4 +92,6 @@ export async function resetPassword(rawToken: string, newPassword: string): Prom
         { userId: claimed.userId, status: { $ne: 'revoked' } },
         { $set: { status: 'revoked' } }
     );
+    // A personal API key (item 15) is a credential made while signed in: it must not outlive a reset made because the account was lost.
+    await ApiKey.updateMany({ userId: String(claimed.userId), revokedAt: null }, { $set: { revokedAt: new Date() } });
 }

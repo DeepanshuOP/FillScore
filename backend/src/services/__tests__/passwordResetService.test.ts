@@ -4,6 +4,7 @@ import { requestPasswordReset, resetPassword } from '../passwordResetService';
 import { User } from '../../models/User';
 import { PasswordResetToken } from '../../models/PasswordResetToken';
 import { RefreshToken } from '../../models/RefreshToken';
+import { ApiKey } from '../../models/ApiKey';
 import * as emailService from '../emailService';
 import { hashPassword, verifyPassword } from '../../utils/password';
 import crypto from 'crypto';
@@ -153,6 +154,17 @@ describe('passwordResetService', () => {
         for (const t of tokens) {
             expect(t.status).toBe('revoked');
         }
+    });
+
+    it('9b. AFTER a successful reset, the user\'s personal API keys are revoked too (review 2026-11-18: a key made by someone who held the account must not outlive the reset); another user\'s keys stay', async () => {
+        const mk = (userId: string, hash: string) => ApiKey.create({ userId, name: 'k', prefix: 'fsk_00000000', keyHash: hash, scope: 'read', expiresAt: new Date(Date.now() + 86400000) });
+        const mine = await mk(String(testUser._id), 'a'.repeat(64));
+        const theirs = await mk('someone-else', 'b'.repeat(64));
+        await requestPasswordReset('reset_test@fillscore-test.local');
+        await resetPassword(extractTokenFromEmail(sendEmailMock.mock.calls[0]), 'NewStrongPass123!');
+        expect((await ApiKey.findById(mine._id))!.revokedAt).toBeInstanceOf(Date);
+        expect((await ApiKey.findById(theirs._id))!.revokedAt ?? null).toBeNull();
+        await ApiKey.deleteMany({});
     });
 
     it('10. two concurrent resetPassword calls with the same valid token -> exactly ONE succeeds, the other throws invalid_or_expired_token', async () => {

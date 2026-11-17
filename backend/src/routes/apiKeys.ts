@@ -45,7 +45,9 @@ apiKeysRouter.post('/', limiter, requireAuth, async (req: Request, res: Response
         if (!mongoose.isValidObjectId(id)) return res.status(404).json({ error: 'not_found' });
         const user = await User.findById(id);
         if (!user) return res.status(404).json({ error: 'not_found' });
-        if (!(await isReauthenticated(user, body.password, req.authTime))) return res.status(401).json({ error: 'reauth_required' });
+        // 403, not 401: the web client reads a 401 as an expired login token and retries after a refresh, which would run the password
+        // check twice and spend the request limit twice.
+        if (!(await isReauthenticated(user, body.password, req.authTime))) return res.status(403).json({ error: 'reauth_required' });
         const out = await createKey(id, body.name, body.expiresInDays ?? DEFAULT_EXPIRY_DAYS);
         if (!out.ok) return res.status(409).json({ error: out.error, message: `At most ${MAX_ACTIVE_KEYS} keys can be active at once. Revoke one first.` });
         res.setHeader('Cache-Control', 'no-store');

@@ -40,6 +40,12 @@ export default function ConnectPrompt() {
         SYNC AGAIN
       </Link>
 
+      <Link href="/check" style={{
+        fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#a78b71', textDecoration: 'none', letterSpacing: '0.05em', marginBottom: '1rem',
+      }}>
+        Trades in a broker app? Check a trade-history file
+      </Link>
+
       <Link href="/dashboard?userId=demo-disciplined&sample=1" style={{
         fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
         color: '#888078', textDecoration: 'none', letterSpacing: '0.05em',
