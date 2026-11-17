@@ -4,9 +4,11 @@ initSentry(); // no-op unless SENTRY_DSN is set
 import { loadEnv, env } from './config/env';
 import { connectDatabase } from './config/database';
 import { createApp } from './app';
+import { logSigningKeyStatus } from './services/signingKey';
 
 // Validate environment variables early
 loadEnv();
+logSigningKeyStatus(process.env.EVIDENCE_SIGNING_KEY); // one line, never the value
 
 const app = createApp();
 

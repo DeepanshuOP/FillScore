@@ -17,7 +17,8 @@ import { OrderMeasurement } from '../models/OrderMeasurement';
 import { ScoreV2 } from '../models/ScoreV2';
 import { DEMO_V2_GRADES } from '../data/demoV2Grades';
 import { summariseOrders } from '../services/orderSummary';
-import { buildPack, verifyPack, publicKeyFingerprint, PACK_STATEMENT } from '../services/evidencePack';
+import { normaliseSigningKey } from '../services/signingKey';
+import { buildPack,verifyPack, publicKeyFingerprint, PACK_STATEMENT } from '../services/evidencePack';
 
 export const evidenceRouter = Router();
 
@@ -30,7 +31,7 @@ const packCache = new TtlCache<{ pack: unknown; files: Record<string, string> }>
 const BEST_EXECUTION_STATEMENT = 'This summary supports your documentation of execution quality. It lists how the account\'s orders ended, what they cost against the market prices '
     + 'recorded at their arrival, and what could not be measured. It records the past and makes no statement about rules or regulation.';
 
-const signingKey = (): string => (process.env.EVIDENCE_SIGNING_KEY ?? '').replace(/\\n/g, '\n').trim();
+const signingKey = (): string => normaliseSigningKey(process.env.EVIDENCE_SIGNING_KEY);
 /** The public half of the signing key. Only an Ed25519 key is a signing key here: anything else is "not configured" (it would be mislabelled). */
 const publicKeyOf = (priv: string): string => {
     const k = crypto.createPrivateKey(priv);

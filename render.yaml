@@ -42,6 +42,9 @@ services:
         sync: false # at least 32 random characters, must equal the ml-service value and differ from JWT_ACCESS_SECRET
       - key: ENCRYPTION_KEY
         sync: false
+      # Signs evidence packs (Ed25519 private key, PEM with its BEGIN/END lines). Name only; the value is typed in the dashboard.
+      - key: EVIDENCE_SIGNING_KEY
+        sync: false
       - key: BINANCE_API_KEY
         sync: false
       - key: BINANCE_API_SECRET

@@ -31,7 +31,14 @@ do_or_print() { if [ "$RUN" = 1 ]; then echo "+ $*"; "$@"; else echo "would run:
 
 step "0. preconditions (read-only)"
 if [ -z "${GROQ_API_KEY:-}" ]; then echo "GROQ_API_KEY is not set"; [ "$RUN" = 1 ] && exit 1; else echo "GROQ_API_KEY: set"; fi
-if [ -z "${MONGODB_URI:-}" ]; then echo "MONGODB_URI is not set"; [ "$RUN" = 1 ] && exit 1; else echo "MONGODB_URI: set"; fi
+# ml-service reads MONGODB_URI (evals/*.py, whale/*.py). Older shells may export MONGO_URI or MONGODB_URL: accept those
+# and map them to MONGODB_URI for the child processes. Only the variable NAME is printed, never its value.
+MONGO_VAR=""
+for v in MONGODB_URI MONGO_URI MONGODB_URL; do
+  if [ -n "${!v:-}" ]; then MONGO_VAR="$v"; break; fi
+done
+if [ -z "$MONGO_VAR" ]; then echo "no Mongo variable is set (looked for MONGODB_URI, MONGO_URI, MONGODB_URL)"; [ "$RUN" = 1 ] && exit 1
+else echo "Mongo connection read from variable: $MONGO_VAR (name only)"; export MONGODB_URI="${!MONGO_VAR}"; fi
 # Read-only check that the rebuilt demos are seeded (demo-moderate has 245 orders after seedDemoV2 --apply).
 if [ -n "${MONGODB_URI:-}" ]; then
   n=$(.venv/bin/python -c "import os; from pymongo import MongoClient; c = MongoClient(os.environ['MONGODB_URI'], serverSelectionTimeoutMS=8000); print(c.get_database(os.environ.get('MONGO_DB_NAME', 'fillscore')).orders.count_documents({'accountId': 'demo-moderate'}))" 2>/dev/null || echo "?")
