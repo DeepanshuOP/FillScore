@@ -39,6 +39,17 @@ def _none(cal: Calibration, applies: bool, reason: str, **extra) -> dict:
             "highBps": None, "level": 1 - cal.data["alpha"], "bucket": None, "context": None, "reason": reason, **extra}
 
 
+def applies_to(cal: Calibration, symbol: str, order_type: str | None) -> bool:
+    """True when the model can give a number for this order before any market context is read: a MARKET order of a
+    calibrated symbol. Used to avoid a market-data request for an order that cannot get a value anyway."""
+    return order_type == "MARKET" and symbol in cal.data["symbols"]
+
+
+def unavailable(cal: Calibration, reason: str) -> dict:
+    """The field when the market context could not be read at measurement time (a source failure, not a property of the order)."""
+    return _none(cal, True, reason)
+
+
 def expected_for_order(cal: Calibration, *, symbol: str, order_type: str | None, notional: float, quantity: float,
                        context: tuple[float, float] | None) -> dict:
     """`context` = (hour volatility in bps, hour volume in base units) from expected_cost.features.hour_context."""

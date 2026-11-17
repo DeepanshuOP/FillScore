@@ -48,6 +48,35 @@ def test_score_stores_a_result_and_verify_matches(client):
     assert v["match"] is True and v["storedHash"] == body["integrityHash"]
 
 
+def _om(account, i, paid=1.0, expected=0.5, notional=1000.0):
+    return {"accountId": account, "exchange": "binance", "symbol": "BTCUSDT", "orderId": str(i),
+            "shortfall": {"executionBps": paid, "intendedNotional": notional, "fillRatio": 1.0},
+            "expectedCost": {"applies": True, "expectedBps": expected, "version": "ec1.0.0", "calibrationSha256": "ab" * 32}}
+
+
+def test_cost_vs_expected_is_stored_beside_the_grade_for_a_real_account(client):
+    # 20 market orders of 1000 USD, each paid 1.0 bps against 0.5 expected: paid 1.0, expected 0.5, excess 0.5 (equal
+    # orders, so every bootstrap resample gives 0.5); paid USD = 1.0 * 20000 / 1e4 = 2.0; expected USD = 1.0.
+    # Another account's 25 orders must not enter.
+    client.db.order_measurements.insert_many([_om("acct-1", i) for i in range(20)] + [_om("acct-2", i, paid=9.0) for i in range(25)])
+    t = tok({"typ": "measure", "accountId": "acct-1"})
+    body = post(client, "/internal/score-v2", t).json()
+    c = body["costVsExpected"]
+    assert c["insufficient"] is False and c["n"] == 20
+    assert (c["paidBps"], c["expectedBps"], c["excessBps"]) == (pytest.approx(1.0), pytest.approx(0.5), pytest.approx(0.5))
+    assert (c["paidUsd"], c["expectedUsd"]) == (pytest.approx(2.0), pytest.approx(1.0))
+    stored = client.db.scores_v2.find_one({"accountId": "acct-1"})
+    assert stored["costVsExpected"]["n"] == 20
+    # it sits beside the grade: the integrity hash is the same with or without it
+    assert post(client, "/internal/verify-v2", t).json()["match"] is True
+
+
+def test_cost_vs_expected_says_insufficient_data_below_twenty_orders(client):
+    client.db.order_measurements.insert_many([_om("acct-1", i) for i in range(3)])
+    c = post(client, "/internal/score-v2", tok({"typ": "measure", "accountId": "acct-1"})).json()["costVsExpected"]
+    assert c["insufficient"] is True and c["n"] == 3
+
+
 def test_verify_without_score_is_404(client):
     assert post(client, "/internal/verify-v2", tok({"typ": "measure", "accountId": "acct-1"})).status_code == 404
 

@@ -12,6 +12,7 @@ export interface ScoreV2Document {
     integrityHash: string;
     inputKeys: string[];
     computedAt: Date;
+    costVsExpected?: Record<string, unknown> | null;
     result: {
         components: Record<string, { score: number | null; measured: number; unmeasured: number; reason: string | null }>;
         composite: number | null;
@@ -32,6 +33,8 @@ const ScoreV2Schema = new Schema<ScoreV2Document>({
     inputKeys: { type: [String], default: [] },
     computedAt: { type: Date, required: true },
     result: { type: Schema.Types.Mixed, required: true },
+    // Cost vs expected (M3 §2), stored beside the grade by /internal/score-v2; not part of the grade or its integrity hash.
+    costVsExpected: { type: Schema.Types.Mixed },
 }, { timestamps: false, collection: 'scores_v2' });
 
 export const ScoreV2 = mongoose.model<ScoreV2Document>('ScoreV2', ScoreV2Schema);

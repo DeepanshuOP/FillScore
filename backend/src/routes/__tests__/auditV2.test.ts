@@ -63,6 +63,23 @@ describe('GET /api/audit/v2 and /api/audit/verify', () => {
         expect(other.status).toBe(403);
     });
 
+    it('a real account gets its own cost vs expected beside the grade (measured from Binance klines), never another account\'s', async () => {
+        const cvs = (paidBps: number) => ({ insufficient: false, n: 25, excluded: { outsideModel: 0, noExpectedCost: 0, partlyFilled: 0 }, level: 0.9,
+            version: 'ec1.0.0', calibrationSha256: 'ab'.repeat(32), paidBps, expectedBps: 0.5, excessBps: paidBps - 0.5, lowBps: 0.1, highBps: 0.9 });
+        await ScoreV2.create([{ ...doc(idA, 'a'.repeat(64)), costVsExpected: cvs(1.25) }, { ...doc(idB, 'b'.repeat(64)), costVsExpected: cvs(7.5) }]);
+        const res = await request(app).get('/api/audit/v2').set('Authorization', `Bearer ${tokenA}`);
+        expect(res.status).toBe(200);
+        expect(res.body.costVsExpected.paidBps).toBe(1.25);
+        expect(res.body.costVsExpected.n).toBe(25);
+    });
+
+    it('a real account whose score has no cost vs expected answers without the field (the panel then says "insufficient data")', async () => {
+        await ScoreV2.create(doc(idA, 'a'.repeat(64)));
+        const res = await request(app).get('/api/audit/v2').set('Authorization', `Bearer ${tokenA}`);
+        expect(res.status).toBe(200);
+        expect(res.body.costVsExpected).toBeUndefined();
+    });
+
     it('demo accounts: v2 not available yet, said plainly, while the old demo data (no orders) is in the database', async () => {
         const res = await request(app).get('/api/audit/v2?userId=demo-moderate');
         expect(res.status).toBe(404);

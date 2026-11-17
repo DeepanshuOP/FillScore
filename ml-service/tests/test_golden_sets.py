@@ -23,6 +23,21 @@ def _mk_set(root, name, golden, manifest):
     json.dump(manifest, open(os.path.join(d, "MANIFEST.json"), "w"))
 
 
+def test_single_call_result_is_owned_by_the_set_with_its_single_prompt_version():
+    # M6 follow-up (2026-11-18): the single-call arm stamps SINGLE_PROMPT_VERSION (1.2.0 for v3), not the Council's prompt
+    # version (1.7.0), so the stamp must be matched against the manifest's single_prompt_version. Before the fix the
+    # nine single recordings of the ablation re-record "matched no golden set".
+    m = {"prompt_version": "1.7.0", "single_prompt_version": "1.2.0", "metrics_version": "1.3.0"}
+    single = {"arm": "single_call", "prompt_version": "1.2.0"}
+    assert golden_sets.stamp_matches(single, m)
+    assert not golden_sets.stamp_matches({"arm": "single_call", "prompt_version": "1.1.0"}, m)
+    # recordings made before the single prompt had its own version carry the Council version: still owned by that set
+    assert golden_sets.stamp_matches({"arm": "single_call", "prompt_version": "1.7.0"}, m)
+    # a Council result never matches on the single version
+    assert not golden_sets.stamp_matches({"arm": "council", "prompt_version": "1.2.0", "metrics_version": "1.3.0"}, m)
+    assert golden_sets.stamp_matches({"arm": "council", "prompt_version": "1.7.0", "metrics_version": "1.3.0"}, m)
+
+
 def _stamped(res, prompt, metrics):
     res = json.loads(json.dumps(res))
     res["prompt_version"], res["metrics_version"] = prompt, metrics

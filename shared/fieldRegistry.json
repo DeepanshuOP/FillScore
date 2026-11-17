@@ -89,7 +89,8 @@
     "integrityHash": {"type": "string", "nullable": false, "owner": "ml-service/main.py"},
     "inputKeys": {"type": "array", "nullable": false, "owner": "ml-service/main.py"},
     "computedAt": {"type": "datetime", "nullable": false, "owner": "ml-service/main.py"},
-    "result": {"type": "object", "nullable": false, "owner": "ml-service/main.py", "keys": ["components", "composite", "grade", "band", "reason", "orders", "fills"]}
+    "result": {"type": "object", "nullable": false, "owner": "ml-service/main.py", "keys": ["components", "composite", "grade", "band", "reason", "orders", "fills"]},
+    "costVsExpected": {"type": "object", "nullable": true, "owner": "ml-service/main.py"}
   },
   "OrderMeasurement": {
     "accountId": {"type": "string", "nullable": false, "owner": "ml-service/measure/service.py"},
@@ -117,6 +118,17 @@
     "orderId": {"type": "string", "nullable": false, "owner": "backend/src/routes/explain.ts"},
     "state": {"type": "string", "nullable": false, "owner": "backend/src/routes/explain.ts"},
     "updatedAt": {"type": "datetime", "nullable": false, "owner": "backend/src/routes/explain.ts"}
+  },
+  "ApiKey": {
+    "userId": {"type": "string", "nullable": false, "owner": "backend/src/services/apiKeys.ts"},
+    "name": {"type": "string", "nullable": false, "owner": "backend/src/services/apiKeys.ts"},
+    "prefix": {"type": "string", "nullable": false, "owner": "backend/src/services/apiKeys.ts"},
+    "keyHash": {"type": "string", "nullable": false, "owner": "backend/src/services/apiKeys.ts"},
+    "scope": {"type": "string", "nullable": false, "owner": "backend/src/services/apiKeys.ts"},
+    "createdAt": {"type": "datetime", "nullable": false, "owner": "backend/src/services/apiKeys.ts"},
+    "expiresAt": {"type": "datetime", "nullable": false, "owner": "backend/src/services/apiKeys.ts"},
+    "revokedAt": {"type": "datetime", "nullable": true, "owner": "backend/src/services/apiKeys.ts"},
+    "lastUsedAt": {"type": "datetime", "nullable": true, "owner": "backend/src/services/apiKeys.ts"}
   },
   "AnalyticsDaily": {
     "day": {"type": "string", "nullable": false, "owner": "backend/src/routes/analytics.ts"},

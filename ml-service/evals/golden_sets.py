@@ -42,7 +42,12 @@ def load_golden(name: str = "v1", root: str | None = None) -> dict[str, dict]:
 
 def stamp_matches(res: dict, manifest: dict) -> bool:
     """True when the result carries the manifest's prompt version (and its metrics version, if it carries one)."""
-    if res.get("prompt_version") != manifest.get("prompt_version"):
+    accepted = {manifest.get("prompt_version")}
+    if res.get("arm") == "single_call":
+        # The single-call arm stamps SINGLE_PROMPT_VERSION; recordings made before it had its own version carry the
+        # Council's, so both count (the metrics rule below is unchanged).
+        accepted.add(manifest.get("single_prompt_version"))
+    if res.get("prompt_version") not in accepted:
         return False
     mv = res.get("metrics_version")
     return mv is None or mv == manifest.get("metrics_version")

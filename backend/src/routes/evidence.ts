@@ -93,7 +93,10 @@ evidenceRouter.get('/pack', packLimiter, resolveAccount, async (req: Request, re
             }
         } else {
             const s = await ScoreV2.findOne({ accountId }).sort({ computedAt: -1 }).lean();
-            if (s) scoring = { version: s.scoringVersion, versionFileSha256: s.versionFileSha256, measureVersion: s.measureVersion, integrityHash: s.integrityHash, computedAt: s.computedAt, ...(s.result as object) };
+            if (s) {
+                scoring = { version: s.scoringVersion, versionFileSha256: s.versionFileSha256, measureVersion: s.measureVersion, integrityHash: s.integrityHash, computedAt: s.computedAt, ...(s.result as object) };
+                costVsExpected = s.costVsExpected ?? null;
+            }
         }
         const docs = ms.map(m => ({ exchange: m.exchange, symbol: m.symbol, orderId: m.orderId, version: m.version, side: m.side, tradeIds: m.tradeIds, arrivalMs: m.arrivalMs,
             endMs: m.endMs, endBasis: m.endBasis, arrivalMid: m.arrivalMid, endMid: m.endMid, shortfall: m.shortfall, expectedCost: m.expectedCost ?? null,

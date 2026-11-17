@@ -215,7 +215,10 @@ async def internal_measure(body: MeasureRequest, request: Request) -> dict:
     import time as _time
     from starlette.concurrency import run_in_threadpool
     import measure.service as svc
-    return await run_in_threadpool(svc.measure_account, _get_db(), account_id, svc.rest_source, int(_time.time() * 1000))
+    from expected_cost.runtime import kline_expected_cost_hook
+    # Cost vs expected for real accounts: the hour before each order comes from Binance public 1-minute klines (no key).
+    return await run_in_threadpool(svc.measure_account, _get_db(), account_id, svc.rest_source, int(_time.time() * 1000),
+                                   expected_cost=kline_expected_cost_hook())
 
 
 def _service_account(body: MeasureRequest, request: Request) -> str:
@@ -241,6 +244,11 @@ async def internal_score_v2(body: MeasureRequest, request: Request) -> dict:
     def run():
         doc = score_account_v2(_get_db(), account_id, ver.load_version(SCORING_V2_VERSION),
                                ver.version_file_sha256(SCORING_V2_VERSION), int(_time.time() * 1000))
+        # Cost vs expected (M3 §2) for this account's own measured orders: stored beside the grade, outside its integrity hash
+        # (the score never reads it). Fewer than 20 usable market orders: "insufficient data".
+        from expected_cost.aggregate import cost_vs_expected
+        rows = list(_get_db().order_measurements.find({"accountId": account_id}, {"shortfall": 1, "expectedCost": 1}))
+        doc["costVsExpected"] = cost_vs_expected(rows)
         _get_db().scores_v2.insert_one(dict(doc))
         doc["computedAt"] = doc["computedAt"].isoformat()
         return doc

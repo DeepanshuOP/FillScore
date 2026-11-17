@@ -24,7 +24,8 @@ def client(monkeypatch):
     db = mongomock.MongoClient().db
     calls = []
 
-    def fake_measure(d, account_id, source, now_ms, limit=500):
+    def fake_measure(d, account_id, source, now_ms, limit=500, expected_cost=None):
+        assert callable(expected_cost)          # the runtime job always carries the kline hour-context hook
         calls.append(account_id)
         return {"measured": 0, "orders": 0, "skipped": {}, "pending": 0, "measureVersion": "1.0.0"}
 

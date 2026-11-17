@@ -272,6 +272,7 @@ auditRouter.get('/v2', resolveAccount, async (req: Request, res: Response) => {
         return res.status(200).json({
             label: 'v2 (measured)', scoringVersion: s.scoringVersion, versionFileSha256: s.versionFileSha256,
             measureVersion: s.measureVersion, integrityHash: s.integrityHash, computedAt: s.computedAt, result: s.result,
+            ...(s.costVsExpected ? { costVsExpected: s.costVsExpected } : {}),   // beside the grade; not in its hash
         });
     } catch (error: any) {
         console.error('Error fetching v2 score:', error?.name);
