@@ -1,5 +1,11 @@
 import PDFDocument from 'pdfkit';
 import { formatBps } from '../utils/formatBps';
+import type { MeasuredReport } from './reportMeasured';
+
+const usd = (v: number) => `${v < 0 ? '-' : ''}$${Math.abs(v).toFixed(2)}`;
+const fmtMs = (ms: number) => ms < 1000 ? `${Math.round(ms)} ms` : ms < 60000 ? `${(ms / 1000).toFixed(1)} s` : `${(ms / 60000).toFixed(1)} min`;
+const TERM_LINES: Array<[string, string]> = [['execution', 'Execution'], ['spread', 'Spread'], ['impactTiming', 'Impact and timing'],
+  ['opportunity', 'Unfilled orders'], ['fees', 'Fees']];
 
 /** Host of the configured site (FRONTEND_URL); empty when unset, so no domain we do not own is printed. */
 function siteHost(): string {
@@ -75,6 +81,19 @@ export class ReportService {
     // Thin line below
     doc.moveTo(50, 510).lineTo(pageW - 50, 510).lineWidth(0.5).stroke(grey);
 
+    // Measured data (a rebuilt demo): the big grade is the frozen v1 grade of the earlier data, and says so.
+    const m: MeasuredReport | undefined = auditData.measured;
+    if (m) {
+      doc.fillColor(grey).font('Courier').fontSize(8).text('Published grade of the earlier demo data (scoring v1), kept unchanged',
+        50, 518, { align: 'center', width: pageW - 100 });
+      const v = m.v2;
+      const v2Line = v && v.grade
+        ? `Scoring ${v.scoringVersion} (measured, current data): ${v.grade} ${v.composite == null ? '' : v.composite.toFixed(1) + ' / 100'}`
+          + (v.band ? ` (band ${v.band[0].toFixed(1)} to ${v.band[1].toFixed(1)})` : '')
+        : 'Scoring v2 (measured, current data): insufficient data';
+      doc.fillColor(white).font('Courier').fontSize(11).text(v2Line, 50, 540, { align: 'center', width: pageW - 100 });
+    }
+
     // Period and Exchange
     const startStr = auditData.period?.start ? new Date(auditData.period.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '';
     const endStr = auditData.period?.end ? new Date(auditData.period.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
@@ -117,6 +136,32 @@ export class ReportService {
 
     // Compute component scores from audit.breakdown (same formula as dashboard)
     const bd = auditData.breakdown || {};
+    if (m) {
+      // Measured data: the rows are the scoring v2 components of the current fills and orders, not the v1 audit.
+      doc.fillColor(grey).font('Courier').fontSize(10).text(
+        `Scoring ${m.v2?.scoringVersion ?? 'v2'} (measured), equal weights. Timing is information only.`, 50, 72, { width: pageW - 100 });
+      if (m.components.length === 0) {
+        doc.fillColor(grey).font('Courier').fontSize(12).text('Insufficient data: no measured score yet.', 50, cy, { width: pageW - 100 });
+        cy += 40;
+      }
+      for (const c of m.components) {
+        const s = c.score;
+        doc.fillColor(white).font('Courier-Bold').fontSize(12).text(c.label.toUpperCase(), 50, cy, { width: 140, lineBreak: false });
+        doc.fillColor(grey).font('Courier').fontSize(12).text(m.weight == null ? '' : `${Math.round(m.weight * 100)}%`, 200, cy);
+        doc.fillColor(gold).font('Courier-Bold').fontSize(12).text(s == null ? 'n/a' : Math.round(s).toString(), 250, cy);
+        doc.fillColor(white).font('Courier').fontSize(12).text(s == null ? 'INSUFFICIENT DATA' : getRating(s), 300, cy, { width: 200 });
+        const barY = cy + 16;
+        doc.rect(50, barY, 400, 4).fill('#1a1917');
+        if (s != null) doc.rect(50, barY, 400 * (Math.max(0, Math.min(100, s)) / 100), 4).fill(getBarColor(s));
+        const note = [`${c.measured} measured`,
+          c.key === 'fees' && m.demo ? 'fees generated at the published rate: not independently measured' : '',
+          c.reason ?? ''].filter(Boolean).join(' · ');
+        doc.fillColor(grey).font('Courier').fontSize(9).text(note, 50, barY + 10, { width: pageW - 100 });
+        cy = barY + 36;
+      }
+      if (m.timingNote) { doc.fillColor(grey).font('Courier').fontSize(10).text(m.timingNote, 50, cy, { width: pageW - 100 }); cy += 24; }
+    }
+    if (!m) {
     const slippageScore = Math.min(100, Math.max(0, Math.round(100 - ((bd.avgSlippageBps || 0) * 6))));
     const feeScore = Math.min(100, Math.max(0, Math.round((bd.makerRatio || 0) * 100)));
     const timingScore = Math.min(100, Math.max(0, (bd.worstHour >= 22 || bd.worstHour <= 7) ? 65 : 85));
@@ -131,13 +176,33 @@ export class ReportService {
     drawRow('FEE EFF.', '25%', feeScore, feeRatio);
     drawRow('TIMING', '25%', timingScore, timingPeak);
     drawRow('SPREAD', '15%', spreadScore, spreadAvg);
+    }
 
     cy += 30;
     doc.fillColor(white).font('Courier-Bold').fontSize(18).text('EXECUTION COST BREAKDOWN', 50, cy);
     cy += 30;
 
     doc.fillColor(grey).font('Courier').fontSize(12);
-    if (!attributionData) {
+    if (m) {
+      const sf = m.shortfall;
+      if (!sf || !sf.totals) {
+        doc.text(sf ? 'Insufficient data: the measured orders state no intended notional.' : 'Insufficient data: no order was measured.',
+          50, cy, { width: pageW - 100 });
+        cy += 40;
+      } else {
+        doc.fontSize(10).text(`Measured over ${sf.n} orders. USD, and bps of the intended notional of those orders.`, 50, cy, { width: pageW - 100 });
+        cy += 24;
+        doc.fontSize(12);
+        for (const [key, label] of TERM_LINES) {
+          const t = (sf.totals as any)[key] as { usd: number; bps: number } | null;
+          doc.text(`${label.padEnd(18)}: ${t ? `${usd(t.usd)} (${formatBps(t.bps)})` : 'insufficient data'}`, 50, cy); cy += 16;
+        }
+        cy += 8;
+        const tot = sf.totals.total;
+        doc.fillColor(gold).font('Courier-Bold').fontSize(12).text(`${'TOTAL'.padEnd(18)}: ${tot ? `${usd(tot.usd)} (${formatBps(tot.bps)})` : 'insufficient data'}`, 50, cy);
+        cy += 40;
+      }
+    } else if (!attributionData) {
       // No per-trade v1 fields (a rebuilt demo): a value that was never computed is not printed as $0.00.
       doc.text('Not computed for this data: the cost breakdown needs per-trade v1 fields.', 50, cy, { width: pageW - 100 });
       cy += 40;
@@ -164,10 +229,11 @@ export class ReportService {
       doc.text(`Total Volume    : $${(auditData.totalNotional || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}`, 50, cy); cy += 16;
       doc.text(`Trades Analysed : ${auditData.totalTrades || 0}`, 50, cy); cy += 16;
     }
-    if (bd.bestSymbol) { doc.text(`Best Symbol     : ${bd.bestSymbol}`, 50, cy); cy += 16; }
-    if (bd.worstSymbol) { doc.text(`Worst Symbol    : ${bd.worstSymbol}`, 50, cy); cy += 16; }
-    if (bd.bestHour != null) { doc.text(`Best Hour       : ${bd.bestHour.toString().padStart(2, '0')}:00 UTC`, 50, cy); cy += 16; }
-    if (bd.worstHour != null) { doc.text(`Worst Hour      : ${bd.worstHour.toString().padStart(2, '0')}:00 UTC`, 50, cy); }
+    // Best and worst symbol and hour come from the per-trade v1 scores, which the measured data does not have.
+    if (!m && bd.bestSymbol) { doc.text(`Best Symbol     : ${bd.bestSymbol}`, 50, cy); cy += 16; }
+    if (!m && bd.worstSymbol) { doc.text(`Worst Symbol    : ${bd.worstSymbol}`, 50, cy); cy += 16; }
+    if (!m && bd.bestHour != null) { doc.text(`Best Hour       : ${bd.bestHour.toString().padStart(2, '0')}:00 UTC`, 50, cy); cy += 16; }
+    if (!m && bd.worstHour != null) { doc.text(`Worst Hour      : ${bd.worstHour.toString().padStart(2, '0')}:00 UTC`, 50, cy); }
 
     // ─────────────────────────────────────────────────────────
     // PAGE 3 — WORST TRADES TABLE
@@ -337,11 +403,22 @@ export class ReportService {
     doc.addPage({ size: 'A4', margin: 50 });
     drawBackground();
 
-    doc.fillColor(white).font('Courier-Bold').fontSize(18).text('INSIGHTS & EXECUTION PATTERNS', 50, 50);
+    doc.fillColor(white).font('Courier-Bold').fontSize(18).text(m ? 'ORDER OUTCOMES' : 'INSIGHTS & EXECUTION PATTERNS', 50, 50);
 
     let ry = 90;
 
-    const recs: string[] = auditData.recommendations || [];
+    if (m) {
+      // The stored v1 recommendation lines describe the earlier trades, so the measured order statistics stand here.
+      doc.fillColor(white).font('Courier').fontSize(12);
+      const o = m.orders;
+      doc.text(o ? `${o.total} orders: ${o.filled} filled, ${o.partial} partly filled, ${o.unfilled} unfilled, ${o.open} open.`
+                 : 'Insufficient data: no orders are stored for this account.', 50, ry, { width: pageW - 100 });
+      ry = doc.y + 12;
+      doc.text(m.restingMs ? `Limit orders rested a median of ${fmtMs(m.restingMs.medianMs ?? 0)} (90th percentile ${fmtMs(m.restingMs.p90Ms ?? 0)}).`
+                           : 'Resting time: insufficient data.', 50, ry, { width: pageW - 100 });
+    }
+
+    const recs: string[] = m ? [] : (auditData.recommendations || []);
     recs.forEach((rec: string, idx: number) => {
       doc.fillColor(gold).font('Courier-Bold').fontSize(36).text((idx + 1).toString().padStart(2, '0'), 50, ry);
       ry += 44;

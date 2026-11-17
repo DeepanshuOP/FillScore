@@ -24,6 +24,7 @@ import { ScoreV2 } from '../models/ScoreV2';
 import { Order } from '../models/Order';
 import { OrderMeasurement } from '../models/OrderMeasurement';
 import { summariseOrders } from '../services/orderSummary';
+import { buildMeasuredReport } from '../services/reportMeasured';
 import { summariseTrades } from '../services/tradeSummary';
 import { DEMO_V2_GRADES } from '../data/demoV2Grades';
 import { callMlInternal, mlServiceSecret } from '../services/measureTrigger';
@@ -405,6 +406,16 @@ auditRouter.get('/report', resolveDownloadAccount('report'), async (req: Request
         const reportAudit = await descriptiveAudit(latestAudit, accountId);
         if (!(await v1Flag(req, accountId))) {
             reportAudit.current = summariseTrades(await Trade.find({ accountId }, { notional: 1, isMaker: 1 }).lean(), await Order.countDocuments({ accountId }));
+            // The rows and totals of the report come from the current data (v2 components, order shortfall); the v1 audit
+            // is only the published grade of the earlier data and is labelled so (reportMeasured.ts).
+            const orders = await Order.find({ accountId }).lean();
+            const demoGrade = (DEMO_V2_GRADES as Record<string, any>)[accountId];
+            reportAudit.measured = buildMeasuredReport({
+                v2: orders.length > 0 && demoGrade ? { scoringVersion: demoGrade.scoringVersion, result: demoGrade.result } : null,
+                orders: orders.length > 0 ? summariseOrders(orders as any, (await OrderMeasurement.find({ accountId }).lean()) as any) : null,
+                demo: !!req.isDemo,
+                v1: { grade: latestAudit.fillGrade, score: latestAudit.avgFillScore },
+            });
         }
         const doc = ReportService.generateReport(reportAudit, attribution, worstTrades, comparisonData);
         

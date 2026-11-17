@@ -8,12 +8,28 @@
   Y      a constant of order one, fitted by least squares through the origin on the part of the realised cost above s/2.
 
 The square-root form is the "square-root law" of market impact: impact grows with the square root of the participation
-rate. Sources: Toth, Lemperiere, Deremble, de Lataillade, Kockelkoren, Bouchaud, "Anomalous price impact and the critical
-nature of liquidity in financial markets", Phys. Rev. X 1, 021006 (2011), DOI 10.1103/PhysRevX.1.021006; Almgren, Thum,
-Hauptmann, Li, "Direct estimation of equity market impact", Risk 18(7), 2005. Both records were verified against OpenAlex on
-2026-11-14 (LOG §P); their text was not read in this session, so this module claims only the square-root shape and a fitted
-constant, and the exponent is not fitted: it is fixed at 1/2. The exponent that Almgren et al. report for equity temporary
-impact has to be read from the paper before any statement about it is published.
+rate. Sources, both read in full on 2026-11-17 (LOG §Q):
+
+* Toth, Lemperiere, Deremble, de Lataillade, Kockelkoren, Bouchaud, "Anomalous price impact and the critical nature of
+  liquidity in financial markets", Phys. Rev. X 1, 021006 (2011), arXiv:1105.1694v3, DOI 10.1103/PhysRevX.1.021006.
+  Section 1 (Introduction), Eq. (1): Delta(Q) = Y sigma sqrt(Q / V). Delta is the average relative price change between
+  the first and the last trade of a metaorder of size Q; sigma is the daily volatility and V the daily traded volume,
+  "both quantities measured contemporaneously to the trade"; "the numerical constant Y is of order unity". The same
+  section says the exponent is "more generally described as a power-law relation Delta(Q) ~ Q^delta, with delta in the
+  range 0.4 to 0.7". (Y = 1.59 in the caption of their Fig. 5 belongs to a numerical model with delta = 0.7, not to market
+  data, and is not used here.)
+* Donier and Bonart, "A million metaorder analysis of market impact on the Bitcoin", arXiv:1412.4503v3 (v3 dated 21 September
+  2015; a preprint, no journal record was verified). Section 1, Eq. (1): I(Q) ~ +/- Y sigma (Q / V_D)^delta, with V_D the daily traded volume,
+  delta about 1/2. Section 4.1, Eq. (4): <I(Q)> ~ Ytilde Q^delta with delta about 0.5 and Ytilde about 4.5e-2 on Bitcoin/USD
+  (MtGox), a Y-ratio of about 0.9. Section 4.3: the daily Y-ratio is close to Gaussian with mean 0.9 and standard
+  deviation 0.35, "of order unity ... essentially in the interval [0, 2]".
+
+What this module takes from them: the shape sigma sqrt(Q / V) and that the multiplier is of order one. What it does not
+take: the value of Y. The papers measure the impact of a metaorder (first to last price) with daily sigma and V; this model
+describes the cost of one order against the arrival mid-price plus half the spread, with the volatility and volume of the
+hour before the order. The horizon and the quantity are different, so Y is fitted on our own events (and reported with its
+held-out coverage), and the exponent is fixed at 1/2, not fitted. Almgren, Thum, Hauptmann, Li, "Direct estimation of
+equity market impact", Risk 18(7), 2005, is NOT cited for any equation: its PDF could not be read (HTTP 403 on 2026-11-17).
 """
 from __future__ import annotations
 
