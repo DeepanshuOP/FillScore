@@ -17,6 +17,7 @@ import { preflightRouter } from './routes/preflight';
 import { healthRouter } from './routes/health';
 import { accountRouter } from './routes/account';
 import { apiKeysRouter } from './routes/apiKeys';
+import { billingRouter, billingWebhook } from './routes/billing';
 import { resolveTrustProxyHops } from './utils/trustProxy';
 
 export function createApp(): Application {
@@ -32,6 +33,10 @@ export function createApp(): Application {
     if (trustedHops > 0) {
         app.set('trust proxy', trustedHops);
     }
+
+    // Stripe's webhook needs the RAW body (the signature is over it), so it is mounted before the global 10 kb JSON parser inside setupSecurity.
+    // It has its own 64 kb limit and rate limit and answers 404 without reading anything while billing is off (the default).
+    app.post('/api/billing/webhook', ...billingWebhook);
 
     setupSecurity(app);
     app.use(cookieParser());
@@ -52,6 +57,7 @@ export function createApp(): Application {
     app.use('/api/onboarding', onboardingRouter);
     app.use('/api/account', accountRouter);
     app.use('/api/keys', apiKeysRouter);                           // item 15: personal API keys for the MCP server
+    app.use('/api/billing', billingRouter);                        // M9: checkout (404 while BILLING_ENABLED is not "true")
     app.use('/api/preflight', availabilityLimiter, preflightRouter);
 
     app.use(errorHandler);

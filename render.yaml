@@ -42,6 +42,16 @@ services:
         sync: false # at least 32 random characters, must equal the ml-service value and differ from JWT_ACCESS_SECRET
       - key: ENCRYPTION_KEY
         sync: false
+      # Billing (M9) is prepared and OFF. Only the exact value "true" turns it on; it needs the three Stripe values below, typed in the
+      # dashboard (names only here), and a Stripe account that does not exist yet.
+      - key: BILLING_ENABLED
+        value: "false"
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_PRICE_ID
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
       # Scheduled re-sync of accounts whose data is older than 24 hours (runs only while this free instance is awake). "false" turns it off.
       - key: RESYNC_ENABLED
         value: "true"

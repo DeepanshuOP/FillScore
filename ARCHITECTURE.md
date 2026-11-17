@@ -107,6 +107,8 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/api/keys/` |
 | POST | `/api/keys/` |
 | DELETE | `/api/keys/:id` |
+| POST | `/api/billing/checkout` |
+| POST | `/api/billing/webhook` |
 | GET | `/api/attribution/` |
 | GET | `/api/audit/` |
 | GET | `/api/audit/analytics` |
@@ -284,7 +286,9 @@ and erasure are `GET /api/account/export` and `DELETE /api/account/`.
 - **Council replay** endpoint does not exist; runs are persisted but not replayable.
 - **State is per instance:** rate limiters, the API-key limiter, the CSV-check budget and the Council run budget live in memory, and the
   scheduled re-sync runs only while the free instance is awake. Running more than one instance needs a shared store (ROADMAP G1).
-- **No billing or quotas per plan** (ROADMAP G3); Stripe is prepared behind a feature flag that is off (M9).
+- **No billing or quotas per plan** (ROADMAP G3). Stripe is prepared behind `BILLING_ENABLED` (off): `POST /api/billing/checkout` and
+  `POST /api/billing/webhook` answer 404 while it is off; the webhook verifies Stripe's signature and only sets `users.plan`. No Stripe
+  account exists, so it has never met the real service, and no route checks the plan yet.
 - **Prompt injection:** the Council receives numeric packets only; Ask answers come from deterministic tools with output guards that were
   red-teamed offline (113 cases, `docs/milestones/M5.md`); there is no `ENCRYPTION_KEY` rotation tooling (ROADMAP C6, G4).
 - **Cost vs expected is fitted on January 2024 only;** the Kraken file reading is built from documentation and not yet checked against a
