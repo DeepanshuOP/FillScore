@@ -28,7 +28,7 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
-See "Next concrete action" in `docs/PROGRESS.md`: priority 2 (client-side evidence verification), 3 (MCP personal API keys), 4 (M6 §1 CSV route and panel, review), then the rest of M6, M7, M9; stop at M8. M3-M5 are pushed. Waiting for Deepanshu: item 10 (both ablation days) and the push of the newer local commits.
+See "Next concrete action" in `docs/PROGRESS.md`: M7 (zkTLS feasibility spike first), then M9; stop at M8. Done since the last push (local commits, not pushed): cost vs expected for real accounts, the `/verify` page, personal API keys, the broker-file check, the scheduled re-sync and stale-data line, CCXT shadow mode. Waiting for Deepanshu: item 10 (both ablation days), 16 (funding costs: a decision), 17 (a live CCXT shadow run), and the push.
 
 ## Known issues
 - The bar-based spread estimators (Corwin–Schultz, Abdi–Ranaldo) read volatility, not spread, on liquid pairs. Measurement v2 replaces them with aggressor-side prints (ADR-0008).
