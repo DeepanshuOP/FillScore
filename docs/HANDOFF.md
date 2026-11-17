@@ -27,7 +27,7 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
-See "Next concrete action" in `docs/PROGRESS.md`.
+See "Next concrete action" in `docs/PROGRESS.md` (M5 part 2: rate limits and caching, the read-only MCP server, "Ask your execution", the red-team in CI, analytics). M3 and M4 are done and reviewed; M5 part 1 (signed evidence packs) is committed (`af3f2e7`). Local commits are not pushed. Waiting for Deepanshu: items 10, 12, 13 and the push.
 
 ## Known issues
 - The bar-based spread estimators (Corwin–Schultz, Abdi–Ranaldo) read volatility, not spread, on liquid pairs. Measurement v2 replaces them with aggressor-side prints (ADR-0008).
