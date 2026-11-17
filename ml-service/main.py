@@ -17,7 +17,7 @@ from datetime import datetime, timezone
 
 _PROCESS_START = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from pymongo import MongoClient
 
 from agents.schemas import CouncilResult
@@ -38,7 +38,7 @@ from config.flags import council_enabled, council_maintenance_message
 from config.budget import council_budget
 from agents.errors import (
     CouncilError, classify_exception, safe_message, refusal_message,
-    RATE_LIMIT_EXHAUSTED, DAILY_BUDGET_EXHAUSTED, NO_DATA, DEMO_NOT_GENERATED, DB_UNAVAILABLE, MODEL_UNAVAILABLE,
+    RATE_LIMIT_EXHAUSTED, DAILY_BUDGET_EXHAUSTED, NO_DATA, DEMO_NOT_GENERATED, DB_UNAVAILABLE, MODEL_UNAVAILABLE, ASK_NOT_AVAILABLE_FOR_DEMO,
 )
 
 def get_account_id(requested_user_id: str | None, req: Request) -> str:
@@ -264,6 +264,11 @@ async def internal_verify_v2(body: MeasureRequest, request: Request) -> dict:
     return out
 
 
+class AskRequest(BaseModel):
+    userId: str | None = None                       # only a demo id is accepted here (and refused: no model runs for demo data)
+    question: str = Field(max_length=2000)
+
+
 class CouncilRequest(BaseModel):
     userId: str | None = None
     symbol: str
@@ -338,6 +343,7 @@ async def ready() -> JSONResponse:
 _HTTP_STATUS_FOR_CODE = {
     NO_DATA: 404,
     DEMO_NOT_GENERATED: 404,
+    ASK_NOT_AVAILABLE_FOR_DEMO: 403,
     RATE_LIMIT_EXHAUSTED: 429,
     DAILY_BUDGET_EXHAUSTED: 429,
     DB_UNAVAILABLE: 503,
@@ -371,6 +377,26 @@ async def council_endpoint(req: CouncilRequest, request: Request) -> Any:
             detail=detail,
             headers=headers,
         )
+
+
+@app.post("/ml/agents/ask")
+async def ask_endpoint(req: AskRequest, request: Request) -> Any:
+    """Ask your execution (M5): a question about the caller's own past executions, answered from deterministic tools only. The
+    answer's numbers are tool values; advice, causes, links and markup are removed in code. Demo accounts are refused."""
+    if not council_enabled():
+        return _council_maintenance_response()
+    account_id = get_account_id(req.userId, request)
+    from agents.ask_service import ask_account
+    try:
+        return await ask_account(account_id, req.question)
+    except Exception as e:
+        code = classify_exception(e)
+        print(f"[ask] failed code={code} type={type(e).__name__}")
+        headers = None
+        retry_after = getattr(e, "retry_after_s", None)
+        if retry_after:
+            headers = {"Retry-After": str(retry_after)}
+        raise HTTPException(status_code=_HTTP_STATUS_FOR_CODE.get(code, 500), detail={"code": code, "message": safe_message(code)}, headers=headers)
 
 
 @app.get("/ml/agents/council/budget")

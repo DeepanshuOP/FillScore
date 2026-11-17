@@ -25,6 +25,7 @@ import { skippedNotice, type SkippedTrades } from './skipped';
 import ScoreV2Panel from './ScoreV2Panel';
 import OrdersPanel from './OrdersPanel';
 import ExplainPanel from './ExplainPanel';
+import AskPanel from './AskPanel';
 import { track } from '../lib/track';
 import { describeHeaderStats, tradesCardCopy, type CurrentFigures } from './headerStats';
 import NotComputed from '../components/NotComputed';
@@ -764,6 +765,12 @@ function DashboardContent() {
                     readOnly={dashboardMode !== 'real'}
                     request={explainRequest}
                   />
+                </div>
+              )}
+
+              {dashboardMode === 'real' && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <AskPanel mlBaseUrl={process.env.NEXT_PUBLIC_ML_URL ?? 'http://localhost:8000'} accessToken={accessToken} />
                 </div>
               )}
 

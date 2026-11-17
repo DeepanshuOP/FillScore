@@ -14,6 +14,7 @@ NO_DATA = "NO_DATA"
 MODEL_UNAVAILABLE = "MODEL_UNAVAILABLE"
 INTERNAL = "INTERNAL"
 DAILY_BUDGET_EXHAUSTED = "DAILY_BUDGET_EXHAUSTED"
+ASK_NOT_AVAILABLE_FOR_DEMO = "ASK_NOT_AVAILABLE_FOR_DEMO"
 DEMO_NOT_GENERATED = "DEMO_NOT_GENERATED"
 
 _MESSAGES = {
@@ -24,6 +25,7 @@ _MESSAGES = {
     INTERNAL: "The Council hit an unexpected problem. Please try again.",
     DAILY_BUDGET_EXHAUSTED: "The daily AI budget has been reached. Please try again tomorrow.",
     DEMO_NOT_GENERATED: "Demo analysis not yet generated for the current demo data.",
+    ASK_NOT_AVAILABLE_FOR_DEMO: "Questions are not available on demo accounts: demo data is read-only and no model is run for it.",
 }
 
 _RATE_LIMIT_MARKERS = ("429", "too many requests", "rate limit", "rate_limit", "max retries exceeded")

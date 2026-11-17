@@ -63,7 +63,8 @@ class HTTPError(Exception):
 
 def agent_of(kwargs) -> str:
     system = kwargs["messages"][0]["content"].lower()
-    for marker, name in (("judge", "synthesis"), ("you are the prosecution", "prosecution"),
+    for marker, name in (("ask planner", "ask_planner"), ("ask answerer", "ask_answerer"),    # M5 "Ask your execution"
+                         ("judge", "synthesis"), ("you are the prosecution", "prosecution"),
                          ("you are the defense", "defense"), ("liquidity scout", "liquidity_scout"),
                          ("alpha architect", "alpha_architect"), ("risk auditor", "risk_auditor"),
                          ("fee optimizer", "fee_optimizer"),
@@ -76,6 +77,8 @@ def agent_of(kwargs) -> str:
 DEFAULT_ANSWERS = {
     "liquidity_scout": LIQUIDITY, "alpha_architect": ALPHA, "risk_auditor": RISK, "fee_optimizer": FEE,
     "prosecution": PROSECUTION, "defense": DEFENSE, "synthesis": SYNTHESIS,
+    "ask_planner": {"tools": ["score", "costs"]},
+    "ask_answerer": {"answer": "The measured score was {{score.grade}} at {{score.composite_score}} and the orders cost {{costs.total_cost_usd}}."},
 }
 
 
