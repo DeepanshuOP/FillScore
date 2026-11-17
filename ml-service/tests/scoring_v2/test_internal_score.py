@@ -77,6 +77,27 @@ def test_cost_vs_expected_says_insufficient_data_below_twenty_orders(client):
     assert c["insufficient"] is True and c["n"] == 3
 
 
+def test_delete_account_data_removes_only_the_callers_council_runs_and_traces(client):
+    # security review M9: account deletion in the backend could not reach these two collections
+    db = client.db
+    for acct in ("acct-1", "acct-2"):
+        db.council_runs.insert_many([{"run_id": f"{acct}-r{i}", "accountId": acct} for i in range(3)])
+        # a trace document holds `run_id` only (agents/persistence.py save_agent_trace): it is found through the account's runs
+        db.council_traces.insert_many([{"run_id": f"{acct}-r{i % 3}", "agent_name": "x", "n": i} for i in range(5)])
+    t = tok({"typ": "measure", "accountId": "acct-1"})
+    r = post(client, "/internal/delete-account-data", t)
+    assert r.status_code == 200 and r.json() == {"deleted": {"council_runs": 3, "council_traces": 5}}
+    assert db.council_runs.count_documents({"accountId": "acct-1"}) == 0 and db.council_traces.count_documents({"run_id": {"$regex": "^acct-1-"}}) == 0
+    assert db.council_runs.count_documents({"accountId": "acct-2"}) == 3 and db.council_traces.count_documents({"run_id": {"$regex": "^acct-2-"}}) == 5
+
+
+def test_delete_account_data_refuses_user_tokens_other_accounts_and_demo_accounts(client):
+    assert post(client, "/internal/delete-account-data", tok({"typ": "access", "userId": "acct-1"})).status_code == 401
+    assert post(client, "/internal/delete-account-data", None).status_code == 401
+    assert post(client, "/internal/delete-account-data", tok({"typ": "measure", "accountId": "acct-2"})).status_code == 403
+    assert post(client, "/internal/delete-account-data", tok({"typ": "measure", "accountId": "demo-moderate"}), "demo-moderate").status_code == 400
+
+
 def test_verify_without_score_is_404(client):
     assert post(client, "/internal/verify-v2", tok({"typ": "measure", "accountId": "acct-1"})).status_code == 404
 

@@ -10,7 +10,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { userId } = await params;
-  const res = await fetch(`${serverApiBase()}/audit/share/${userId}`, { next: { revalidate: 3600 } });
+  const res = await fetch(`${serverApiBase()}/audit/share/${encodeURIComponent(userId)}`, { next: { revalidate: 3600 } });   // encoded: a decoded "../" must not reach another route (security review M9)
   if (!res.ok) return { title: 'FillScore' };
   
   const data = await res.json();
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function SharePage({ params }: Props) {
   const { userId } = await params;
-  const res = await fetch(`${serverApiBase()}/audit/share/${userId}`, { next: { revalidate: 60 } });
+  const res = await fetch(`${serverApiBase()}/audit/share/${encodeURIComponent(userId)}`, { next: { revalidate: 60 } });
   
   if (!res.ok) {
     return (

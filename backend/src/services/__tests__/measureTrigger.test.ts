@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import jwt from 'jsonwebtoken';
-import { mintMeasureToken, requestMeasurement, requestScore, MEASURE_TOKEN_TTL_S, mlServiceSecret, mlServiceSecretProblem, resetSecretWarningForTests, callMlInternal } from '../measureTrigger';
+import { mintMeasureToken, requestMeasurement, requestScore, MEASURE_TOKEN_TTL_S, mlServiceSecret, mlServiceSecretProblem, resetSecretWarningForTests, callMlInternal, requestMlDataDeletion } from '../measureTrigger';
 
 const SECRET = 's'.repeat(40);
 
@@ -41,6 +41,24 @@ describe('mlServiceSecret (M1.1: the service token has its own key, fail closed)
     });
 });
 const ok = (body: Record<string, unknown>) => new Response(JSON.stringify(body), { status: 200, headers: { 'content-type': 'application/json' } });
+
+describe('requestMlDataDeletion (account deletion reaches the ml-service; security review M9)', () => {
+    it('posts to /internal/delete-account-data with a measure token for the account, and says "done"', async () => {
+        let seen: { url: string; auth: string } | null = null;
+        const fetchImpl = (async (url: string, init: RequestInit) => { seen = { url, auth: String((init.headers as Record<string, string>).Authorization) }; return new Response('{}', { status: 200 }); }) as unknown as typeof fetch;
+        expect(await requestMlDataDeletion('acct-1', { baseUrl: 'http://ml.test/', secret: SECRET, fetchImpl })).toBe('done');
+        expect(seen!.url).toBe('http://ml.test/internal/delete-account-data');
+        const claims = jwt.verify(seen!.auth.replace('Bearer ', ''), SECRET, { algorithms: ['HS256'] }) as jwt.JwtPayload;
+        expect(claims).toMatchObject({ typ: 'measure', accountId: 'acct-1' });
+    });
+    it('is "skipped" when the ml-service is not configured and "failed" on an error or a network failure, and never throws', async () => {
+        expect(await requestMlDataDeletion('a', {})).toBe('skipped');
+        const bad = (async () => new Response('x', { status: 500 })) as unknown as typeof fetch;
+        const down = (async () => { throw new Error('ECONNREFUSED'); }) as unknown as typeof fetch;
+        expect(await requestMlDataDeletion('a', { baseUrl: 'http://ml.test', secret: SECRET, fetchImpl: bad })).toBe('failed');
+        expect(await requestMlDataDeletion('a', { baseUrl: 'http://ml.test', secret: SECRET, fetchImpl: down })).toBe('failed');
+    });
+});
 
 describe('measure token', () => {
     it('is HS256, typ "measure", carries the account, and lives at most 5 minutes', () => {

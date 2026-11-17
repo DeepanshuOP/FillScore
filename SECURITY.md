@@ -29,7 +29,11 @@ providers.
 | Exchange API keys, secrets, OKX passphrases | Database leak, over-privileged keys | Stored only as AES-256-GCM payloads. A key is accepted only if the exchange itself reports it is read-only (Binance `apiRestrictions`, Bybit `query-api`, OKX `account/config`); keys with trading or withdrawal rights are refused and never stored. |
 | Sessions | Token theft, replay, CSRF | 15 minute access tokens; refresh tokens in HTTP-only cookies, stored as SHA-256 hashes, rotated on use with family revocation on reuse; `Origin` check on refresh, logout and OAuth exchange. |
 | OAuth sign-in | Token leakage through URLs, account takeover | No token is ever placed in a URL; the callback hands over a 30 second single-use code. Providers must report a verified email, and an unverified local password is discarded when a provider claims the same address. |
-| Per-user data | Cross-tenant reads | Identity comes only from the JWT. The sole request parameter that selects an account is a known `demo-*` slug. Every query is scoped by `accountId`. |
+| Per-user data | Cross-tenant reads | Identity comes only from the JWT or a personal API key, never from a request parameter. The sole request parameter that selects an account is one of the three public `demo-*` slugs. Every query is scoped by `accountId`. |
+| Personal API keys (MCP server) | Leaked or over-broad key | Read-only: GET and HEAD on six routes only, SHA-256 hash stored (the key is shown once), expiring (90 days by default), revocable, 5 per user, rate-limited per key, revoked on a password reset and deleted with the account; creating one asks for the password again; a key never reaches the routes that read a login token (ADR-0016). |
+| Evidence packs | A pack edited after signing | Ed25519 signature over a manifest of every file with its SHA-256; checked in the browser (nothing uploaded) or offline; "valid" only against a key the user trusts. |
+| Account data | Data left behind after erasure | `DELETE /api/account/` removes the account's trades, audits, orders, measurements, v2 scores, review states, commission snapshots, keys and sessions, and asks the ml-service to remove its Council runs and traces. `GET /api/account/export` returns the same data (hashes of keys never leave the server). |
+| Error and log content | Secrets in logs | A body that does not parse is a 400, and errors are logged by name and code only, never as objects that may hold request data; Sentry scrubs bodies, headers, cookies and query strings on all three tiers. |
 | File downloads | Bearer tokens cannot be sent by `window.open` | One-minute, single-purpose link tokens signed with a key derived from (not equal to) the access secret. |
 | Council output | Invented numbers, leaked errors | Language models receive aggregate, de-identified packet statistics (no identifiers, keys or notes). Numbers reach users only via a deterministic renderer; stray numerals are regenerated, then redacted; claimed effects are recomputed by replaying the user's trades. Errors reach the browser only as typed codes with fixed messages. |
 | Service availability and cost | Abuse of the LLM allowance | Council run budget (per account and per day), plus rate limits on every route group. |
@@ -40,11 +44,15 @@ providers.
 
 These are real gaps, listed so nobody has to guess.
 
-- Rate limits and the Council run budget are held in memory, so they are per instance.
-- There is no `ENCRYPTION_KEY` rotation tooling yet; rotating the key means re-connecting exchanges.
+- Rate limits, the failed-login limit per account, the API-key limit, the CSV-check budget and the Council run budget are held in memory, so they are per instance and reset on a deploy. The per-IP limits rest on `X-Forwarded-For` behind two proxies; a client that reaches the API host directly can vary the address, which is why login has a limit per account as well (10 failures in 15 minutes; it also lets someone lock a login for 15 minutes on purpose).
+- There is no `ENCRYPTION_KEY` rotation tooling yet; rotating the key means re-connecting exchanges. The AES-GCM payloads carry no additional authenticated data, so someone with write access to the database could move one account's encrypted key onto another account (changing that needs a migration).
+- Registration says when an email already exists, and the login path for an unknown email takes a different time from a known one.
+- `POST /api/onboarding/sync` has no cooldown beyond the per-account lock.
+- Access to the API host by its own address, without the Vercel front, is possible; the Node 20 runtime has reached end of life (see `docs/PROGRESS.md`, waiting items 20 and 21).
+- Billing code exists behind `BILLING_ENABLED` (off); account deletion does not cancel a Stripe subscription, which must be added before billing is turned on.
 - There is no separate "reader" model that sanitises free text before it reaches a language model.
   Today the Council receives numeric packets only, and trade notes are never sent to it.
-- There is no error tracking or audit log of administrative actions.
+- Error tracking exists (Sentry on all three tiers, scrubbed; see `docs/OBSERVABILITY.md`), but there is no audit log of administrative actions.
 - Bybit and OKX key checks follow each exchange's documented permission fields but have not yet been
   exercised against live keys in this repository.
 - The git history contains credentials that were later moved to the environment. They have been

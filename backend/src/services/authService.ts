@@ -99,28 +99,22 @@ export async function rotateRefresh(rawRefreshToken: string) {
 
     // 2. Hash it to look up the document
     const tokenHash = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
-    const tokenDoc = await RefreshToken.findOne({ tokenHash });
+    // 3. Claim the token ATOMICALLY: only an active token can be turned into a rotated one, and only once. A find-then-save here let two
+    //    requests with the same token both pass (security review, M9) and left two live chains in one family.
+    const tokenDoc = await RefreshToken.findOneAndUpdate({ tokenHash, status: 'active' }, { $set: { status: 'rotated' } }, { new: true });
 
     if (!tokenDoc) {
-        throw new Error('Invalid refresh token');
-    }
-
-    // 3. REUSE DETECTION CRITICAL PATH
-    if (tokenDoc.status === 'rotated') {
-        // This token was already used! Compromise detected.
-        // Revoke the ENTIRE family.
-        await RefreshToken.updateMany({ family: tokenDoc.family }, { $set: { status: 'revoked' } });
-        throw new Error('reuse_detected');
-    }
-
-    if (tokenDoc.status === 'revoked') {
+        const seen = await RefreshToken.findOne({ tokenHash });
+        if (!seen) throw new Error('Invalid refresh token');
+        // REUSE DETECTION CRITICAL PATH: a token that was already used (or lost the race just now) is a compromise: revoke the ENTIRE family.
+        if (seen.status === 'rotated') {
+            await RefreshToken.updateMany({ family: seen.family }, { $set: { status: 'revoked' } });
+            throw new Error('reuse_detected');
+        }
         throw new Error('token_revoked');
     }
 
-    // 4. Legitimate rotation
-    // Mark old token as rotated
-    tokenDoc.status = 'rotated';
-    await tokenDoc.save();
+    // 4. The old token is now marked rotated (above). Issue the new pair.
 
     // 5. Issue new pair
     const accessToken = signAccessToken({ userId: payload.userId, auth_time: payload.auth_time });

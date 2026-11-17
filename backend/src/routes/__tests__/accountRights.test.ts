@@ -41,6 +41,11 @@ async function seedAccount(id: string) {
         breakdown: { avgSlippageBps: 0, avgFeeDragBps: 2, makerRatio: 0, bestHour: 10, worstHour: 10, bestSymbol: 'BTCUSDT', worstSymbol: 'BTCUSDT' },
     });
     await AuditHistory.create({ accountId: id, dataSource: 'real-user', scoringVersion: '1.0.0', avgFillScore: 73.75, fillGrade: 'C', totalTrades: 2, snapshotAt: new Date() });
+    // Measurement data keyed by accountId (security review M9: deletion and export used to miss all five of these collections)
+    const db = mongoose.connection.db!;
+    for (const c of ['orders', 'fee_snapshots', 'order_measurements', 'scores_v2', 'exception_reviews']) {
+        await db.collection(c).insertOne({ accountId: id, seededBy: 'accountRights.test', orderId: 'o-1', symbol: 'BTCUSDT', exchange: 'binance' });
+    }
     await ApiKey.create({ userId: id, name: 'seeded key', prefix: 'fsk_00000000', keyHash: crypto.randomBytes(32).toString('hex'), scope: 'read', expiresAt: new Date(Date.now() + 86400000) });
     await OAuthCode.create({ codeHash: crypto.randomBytes(32).toString('hex'), userId: id, expiresAt: new Date(Date.now() + 30000) });
     await PasswordResetToken.create({ userId: new mongoose.Types.ObjectId(id), tokenHash: crypto.randomBytes(32).toString('hex'), expiresAt: new Date(Date.now() + 60000) });
@@ -121,6 +126,9 @@ describe('F-13 account rights', () => {
             expect(body.trades).toHaveLength(2);
             expect(body.trades.every((t: any) => t.accountId === id)).toBe(true);
             expect(body.audits).toHaveLength(1);
+            // the measured data: orders, their measurements, the account's commission rates, the v2 scores and the review states
+            for (const k of ['orders', 'orderMeasurements', 'feeSnapshots', 'scoresV2', 'exceptionReviews']) expect(body[k], k).toHaveLength(1);
+            expect(JSON.stringify(body)).not.toContain('keyHash');
             expect(body.history).toHaveLength(1);
             expect(body.notes).toEqual([{ tradeId: `${id}-t1`, note: 'chased the pump' }]);
             expect(body.connections).toEqual([{ exchange: 'bybit', connectedAt: expect.any(String) }]);
@@ -154,7 +162,7 @@ describe('F-13 account rights', () => {
         it('with the password, removes every document that references the account and nothing else', async () => {
             const before = await leftovers(id);
             expect(Object.keys(before).sort()).toEqual(
-                ['api_keys', 'audithistories', 'audits', 'emailverificationtokens', 'exchangeconnections', 'oauthcodes', 'passwordresettokens', 'refreshtokens', 'trades', 'users'].filter(n => n in before).sort());
+                ['api_keys', 'audithistories', 'audits', 'emailverificationtokens', 'exception_reviews', 'exchangeconnections', 'fee_snapshots', 'oauthcodes', 'order_measurements', 'orders', 'passwordresettokens', 'refreshtokens', 'scores_v2', 'trades', 'users'].filter(n => n in before).sort());
             expect(before.users).toBe(1);
 
             const res = await request(app).delete('/api/account').set('Authorization', `Bearer ${token}`).send({ password: PASSWORD });

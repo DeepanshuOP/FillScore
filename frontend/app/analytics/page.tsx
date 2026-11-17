@@ -8,6 +8,7 @@ import WhaleCorrelation from "./WhaleCorrelation";
 import NotComputed from "../components/NotComputed";
 import { isNotComputed, tradeSlippageBps } from "../utils/notComputed";
 import MarkoutCard from "./MarkoutCard";
+import { bestHourLabel, worstHourLabel, weakHourLabel } from "./heatmapCopy";
 import type { MarkoutHorizon } from "../utils/markoutCopy";
 import { useAuth } from "../context/AuthContext";
 import { authFetch } from "../lib/authFetch";
@@ -404,17 +405,17 @@ function AnalyticsContent() {
             <div className="flex flex-col items-start md:items-end gap-1">
               {bestCell && (
                 <div className="text-xs text-[#888078]">
-                  Best execution window: <span className="text-[#a78b71]">{DAYS[bestCell.day]} {bestCell.hour.toString().padStart(2, '0')}:00 UTC</span>
+                  <span className="text-[#a78b71]">{bestHourLabel(DAYS, bestCell)}</span>
                 </div>
               )}
               {worstCell && (
                 <div className="text-xs text-[#888078]">
-                  Worst execution window: <span className="text-[#f97316]">{DAYS[worstCell.day]} {worstCell.hour.toString().padStart(2, '0')}:00 UTC</span>
+                  <span className="text-[#f97316]">{worstHourLabel(DAYS, worstCell)}</span>
                 </div>
               )}
               {weakZone && (
                 <div className="text-xs text-[#ef4444] mt-0.5">
-                  You frequently perform poorly during {DAYS[weakZone.day]} {weakZone.hour.toString().padStart(2, '0')}:00 UTC
+                  {weakHourLabel(DAYS, weakZone)}
                 </div>
               )}
             </div>

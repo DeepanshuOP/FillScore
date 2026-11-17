@@ -1,4 +1,6 @@
+import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
+import { KeyRateLimiter } from '../services/apiKeys';
 import { register, login, rotateRefresh, logout } from '../services/authService';
 import { requestPasswordReset, resetPassword } from '../services/passwordResetService';
 import { authLimiter } from '../middleware/security';
@@ -13,6 +15,9 @@ import { User } from '../models/User';
 import { getRefreshCookieOptions } from '../utils/cookieConfig';
 
 const router = Router();
+
+/** Failed logins per account (a hash of the email): 10 in 15 minutes, in memory (one instance). */
+export const loginFailures = new KeyRateLimiter(10, 15 * 60_000);
 
 // SameSite=None is REQUIRED in production because the frontend (Vercel) and API (Railway) are different sites; None requires Secure.
 const setRefreshCookie = (res: Response, token: string, isOAuthCallback: boolean = false) => {
@@ -69,7 +74,24 @@ router.post('/login', authLimiter, async (req: Request, res: Response): Promise<
             return;
         }
 
-        const result = await login(email, password);
+        // A limit per ACCOUNT, because the per-IP limit rests on X-Forwarded-For, which a client reaching the API host directly can vary
+        // (security review, M9). Only failures count; a success clears them.
+        const accountKey = crypto.createHash('sha256').update(email.trim().toLowerCase()).digest('hex');
+        const wait = loginFailures.blocked(accountKey);
+        if (wait !== null) {
+            res.setHeader('Retry-After', String(wait));
+            res.status(429).json({ error: 'Too many failed attempts for this account. Try again later.', code: 'ACCOUNT_RATE_LIMIT' });
+            return;
+        }
+
+        let result;
+        try {
+            result = await login(email, password);
+        } catch (e: any) {
+            if (e?.message === 'Invalid email or password') loginFailures.take(accountKey);
+            throw e;
+        }
+        loginFailures.clear(accountKey);
         setRefreshCookie(res, result.refreshToken);
 
         res.status(200).json({

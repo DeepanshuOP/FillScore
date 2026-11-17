@@ -87,6 +87,18 @@ export async function requestScore(accountId: string, opts: MeasureOptions): Pro
     }
 }
 
+/** Account deletion (GDPR): ask the ml-service to delete the account's Council runs and traces. Never rejects and never blocks the deletion:
+ *  the answer says "skipped" (not configured), "done" or "failed" so the response can state what happened. */
+export async function requestMlDataDeletion(accountId: string, opts: { baseUrl?: string; secret?: string; fetchImpl?: typeof fetch }): Promise<'skipped' | 'done' | 'failed'> {
+    if (!opts.baseUrl || !opts.secret) return 'skipped';
+    try {
+        const res = await callMlInternal('/internal/delete-account-data', accountId, opts);
+        return res.ok ? 'done' : 'failed';
+    } catch {
+        return 'failed';
+    }
+}
+
 /** Never rejects: it runs unawaited after a sync, and an unhandled rejection would kill Node 20. */
 export async function requestMeasurement(accountId: string, opts: MeasureOptions): Promise<MeasureResult> {
     if (!opts.baseUrl || !opts.secret) return { status: 'skipped', calls: 0 };

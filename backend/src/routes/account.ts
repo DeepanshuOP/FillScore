@@ -13,6 +13,12 @@ import { PasswordResetToken } from '../models/PasswordResetToken';
 import { EmailVerificationToken } from '../models/EmailVerificationToken';
 import { OAuthCode } from '../models/OAuthCode';
 import { ApiKey } from '../models/ApiKey';
+import { Order } from '../models/Order';
+import { OrderMeasurement } from '../models/OrderMeasurement';
+import { FeeSnapshot } from '../models/FeeSnapshot';
+import { ScoreV2 } from '../models/ScoreV2';
+import { ExceptionReview } from '../models/ExceptionReview';
+import { mlServiceSecret, requestMlDataDeletion } from '../services/measureTrigger';
 import { isReauthenticated, RECENT_LOGIN_S as RECENT_LOGIN_SECONDS } from '../services/reauth';
 import { clearRefreshCookie } from './auth';
 
@@ -43,7 +49,7 @@ accountRouter.get('/export', accountLimiter, requireAuth, async (req: Request, r
         const user = await User.findById(id, { email: 1, emailVerified: 1, createdAt: 1, authProviders: 1 }).lean();
         if (!user) return res.status(404).json({ error: 'not_found' });
 
-        const [trades, audits, history, connections, apiKeys] = await Promise.all([
+        const [trades, audits, history, connections, apiKeys, orders, orderMeasurements, feeSnapshots, scoresV2, exceptionReviews] = await Promise.all([
             Trade.find({ accountId: id }, { __v: 0 }).sort({ executedAt: 1 }).lean(),
             Audit.find({ accountId: id }, { __v: 0 }).lean(),
             AuditHistory.find({ accountId: id }, { __v: 0 }).sort({ snapshotAt: 1 }).lean(),
@@ -51,6 +57,12 @@ accountRouter.get('/export', accountLimiter, requireAuth, async (req: Request, r
             ExchangeConnection.find({ accountId: id }, { exchange: 1, createdAt: 1 }).lean(),
             // Personal API keys: name, prefix and dates only. The key is not stored and its hash does not leave the server.
             ApiKey.find({ userId: id }, { name: 1, prefix: 1, scope: 1, createdAt: 1, expiresAt: 1, revokedAt: 1, lastUsedAt: 1 }).lean(),
+            // The measured data (security review, M9: these were missing from the export and from the deletion)
+            Order.find({ accountId: id }, { __v: 0 }).sort({ createdAt: 1 }).lean(),
+            OrderMeasurement.find({ accountId: id }, { __v: 0 }).sort({ symbol: 1, orderId: 1 }).lean(),
+            FeeSnapshot.find({ accountId: id }, { __v: 0 }).lean(),
+            ScoreV2.find({ accountId: id }, { __v: 0 }).sort({ computedAt: 1 }).lean(),
+            ExceptionReview.find({ accountId: id }, { __v: 0 }).lean(),
         ]);
 
         const body = {
@@ -66,6 +78,11 @@ accountRouter.get('/export', accountLimiter, requireAuth, async (req: Request, r
             trades,
             audits,
             history,
+            orders,
+            orderMeasurements,
+            feeSnapshots,
+            scoresV2,
+            exceptionReviews,
             notes: trades.filter(t => t.note).map(t => ({ tradeId: t.tradeId, note: t.note })),
         };
 
@@ -101,15 +118,23 @@ accountRouter.delete('/', accountLimiter, requireAuth, async (req: Request, res:
             EmailVerificationToken.deleteMany({ userId: oid }),
             OAuthCode.deleteMany({ userId: id }),
             ApiKey.deleteMany({ userId: id }),
+            Order.deleteMany({ accountId: id }),
+            OrderMeasurement.deleteMany({ accountId: id }),
+            FeeSnapshot.deleteMany({ accountId: id }),
+            ScoreV2.deleteMany({ accountId: id }),
+            ExceptionReview.deleteMany({ accountId: id }),
         ]);
         await SyncJob.deleteMany({ accountId: id });
         await User.deleteOne({ _id: oid });
 
-        const [trades, audits, history, connections, refreshTokens, resetTokens, verifyTokens, oauthCodes, apiKeys] = results.map(r => r.deletedCount);
+        const [trades, audits, history, connections, refreshTokens, resetTokens, verifyTokens, oauthCodes, apiKeys, orders, orderMeasurements, feeSnapshots, scoresV2, exceptionReviews] = results.map(r => r.deletedCount);
         clearRefreshCookie(res);
+        // The ml-service keeps Council runs and traces keyed by the account id: ask it to delete them too (best effort; the answer says whether it did).
+        const mlService = await requestMlDataDeletion(id, { baseUrl: process.env.ML_SERVICE_URL, secret: mlServiceSecret() });
         return res.status(200).json({
             deleted: true,
-            removed: { trades, audits, history, connections, refreshTokens, resetTokens, verifyTokens, oauthCodes, apiKeys, user: 1 },
+            removed: { trades, audits, history, connections, refreshTokens, resetTokens, verifyTokens, oauthCodes, apiKeys, orders, orderMeasurements, feeSnapshots, scoresV2, exceptionReviews, user: 1 },
+            mlService,
         });
     } catch (error) {
         console.error('Error deleting account:', (error as Error)?.name);

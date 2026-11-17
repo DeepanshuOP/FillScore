@@ -134,6 +134,18 @@ describe('authService', () => {
             await expect(rotateRefresh(rawToken3)).rejects.toThrow('token_revoked');
         });
 
+        it('two refreshes of one token at the same moment: exactly one is served, the other is reuse and the whole family is revoked (security review M9: rotation was find-then-save)', async () => {
+            const { refreshToken: raw } = await register('race@test.local', 'Pass!123456');
+            const results = await Promise.allSettled([rotateRefresh(raw), rotateRefresh(raw), rotateRefresh(raw)]);
+            const served = results.filter(r => r.status === 'fulfilled');
+            expect(served).toHaveLength(1);                               // never two live chains out of one token
+            const refused = results.filter(r => r.status === 'rejected') as PromiseRejectedResult[];
+            expect(refused.every(r => /reuse_detected|token_revoked/.test(String(r.reason.message)))).toBe(true);
+            const family = (await RefreshToken.findOne({ tokenHash: crypto.createHash('sha256').update(raw).digest('hex') }))!.family;
+            const live = await RefreshToken.countDocuments({ family, status: 'active' });
+            expect(live).toBe(0);                                         // reuse detection fired: the winner's new token is revoked too
+        });
+
         it('Re-presenting a revoked-by-logout token does not trigger reuse detection', async () => {
             const { refreshToken: rawToken } = await register('revoked@test.local', 'Pass!123456');
             

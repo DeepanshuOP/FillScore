@@ -4,8 +4,9 @@ dotenv.config();
 export interface Env {
     MONGODB_URI: string;
     PORT: string;
-    BINANCE_API_KEY: string;
-    BINANCE_API_SECRET: string;
+    /** Not required (security review M9): no service code uses them; only the local script test-ingestion.ts reads them. */
+    BINANCE_API_KEY?: string;
+    BINANCE_API_SECRET?: string;
     ENCRYPTION_KEY: string;
     JWT_ACCESS_SECRET: string;
     JWT_REFRESH_SECRET: string;
@@ -33,12 +34,13 @@ export function parseAllowedOrigins(originsStr?: string): string[] {
 
 const DEPLOY_MARKERS = ['RENDER', 'RENDER_SERVICE_ID', 'FILLSCORE_DEPLOY'];
 
-export function loadEnv(): Readonly<Env> {
+/** A JWT secret shorter than this is reported at boot (the key name and its length, never the value). */
+export const JWT_SECRET_MIN_LEN = 32;
+
+export function loadEnv(warn: (message: string) => void = console.warn): Readonly<Env> {
     const requiredVars = [
-        'MONGODB_URI', 
-        'PORT', 
-        'BINANCE_API_KEY', 
-        'BINANCE_API_SECRET', 
+        'MONGODB_URI',
+        'PORT',
         'ENCRYPTION_KEY',
         'JWT_ACCESS_SECRET',
         'JWT_REFRESH_SECRET',
@@ -75,11 +77,18 @@ export function loadEnv(): Readonly<Env> {
         throw new Error(`NODE_ENV must be "production" in a deployed environment (${deployMarker} is set)`);
     }
 
+    // A short secret lets anyone forge a login token. Reported, not refused, so that a deploy with an older, shorter secret does not stop;
+    // the secrets of a real deployment should be 32 or more random characters (docs/PROGRESS.md, waiting item 20).
+    for (const name of ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET']) {
+        const len = (process.env[name] as string).length;
+        if (len < JWT_SECRET_MIN_LEN) warn(`[config] ${name} is only ${len} characters; use at least ${JWT_SECRET_MIN_LEN} random characters`);
+    }
+
     const config: Env = {
         MONGODB_URI: process.env.MONGODB_URI as string,
         PORT: process.env.PORT as string,
-        BINANCE_API_KEY: process.env.BINANCE_API_KEY as string,
-        BINANCE_API_SECRET: process.env.BINANCE_API_SECRET as string,
+        BINANCE_API_KEY: process.env.BINANCE_API_KEY,
+        BINANCE_API_SECRET: process.env.BINANCE_API_SECRET,
         ENCRYPTION_KEY: process.env.ENCRYPTION_KEY as string,
         JWT_ACCESS_SECRET: process.env.JWT_ACCESS_SECRET as string,
         JWT_REFRESH_SECRET: process.env.JWT_REFRESH_SECRET as string,

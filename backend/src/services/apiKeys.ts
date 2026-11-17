@@ -70,6 +70,15 @@ export class KeyRateLimiter {
     constructor(private limitPerWindow = 60, private windowMs = 60_000, private now: () => number = Date.now) {}
     configure(o: { limit?: number; windowMs?: number }) { if (o.limit !== undefined) this.limitPerWindow = o.limit; if (o.windowMs !== undefined) this.windowMs = o.windowMs; }
     reset() { this.hits.clear(); }
+    /** Forget one key (for example after a successful login). */
+    clear(id: string) { this.hits.delete(id); }
+    /** Seconds to wait when the key is at its limit in the current window, else null. Does not count a hit. */
+    blocked(id: string): number | null {
+        const h = this.hits.get(id);
+        const t = this.now();
+        if (!h || t - h.start >= this.windowMs || h.n < this.limitPerWindow) return null;
+        return Math.max(1, Math.ceil((h.start + this.windowMs - t) / 1000));
+    }
     take(id: string): { ok: true } | { ok: false; retryAfterS: number } {
         const t = this.now();
         if (this.hits.size > 10_000) for (const [k, v] of this.hits) if (t - v.start >= this.windowMs) this.hits.delete(k);

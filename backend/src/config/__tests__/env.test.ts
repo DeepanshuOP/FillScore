@@ -36,6 +36,36 @@ describe('Environment Validation', () => {
         expect(config.PORT).toBe('3001');
     });
 
+    const baseEnv = () => {
+        Object.assign(process.env, {
+            MONGODB_URI: 'mongodb://localhost:27017/test', PORT: '3001', ENCRYPTION_KEY: TEST_ENC_KEY,
+            JWT_ACCESS_SECRET: 'a'.repeat(40), JWT_REFRESH_SECRET: 'b'.repeat(40),
+            GOOGLE_CLIENT_ID: 'g', GOOGLE_CLIENT_SECRET: 'g', GITHUB_CLIENT_ID: 'h', GITHUB_CLIENT_SECRET: 'h',
+        });
+        delete process.env.BINANCE_API_KEY;
+        delete process.env.BINANCE_API_SECRET;
+    };
+
+    it('1b. A Binance API key is NOT required to boot: no code path uses one, and requiring it forced a live exchange key into production (security review M9)', () => {
+        baseEnv();
+        expect(() => loadEnv()).not.toThrow();
+    });
+
+    it('1c. A JWT secret shorter than 32 characters is reported once by name and length, never by value', () => {
+        baseEnv();
+        process.env.JWT_ACCESS_SECRET = 'short-secret-value';
+        const warnings: string[] = [];
+        loadEnv((m: string) => warnings.push(m));
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]).toContain('JWT_ACCESS_SECRET');
+        expect(warnings[0]).toContain(String('short-secret-value'.length));
+        expect(warnings[0]).not.toContain('short-secret-value');
+        const none: string[] = [];
+        baseEnv();
+        loadEnv((m: string) => none.push(m));
+        expect(none).toEqual([]);
+    });
+
     it('2. Throws synchronously with missing variable name when a required var is entirely missing', () => {
         delete process.env.MONGODB_URI;
         process.env.PORT = '3001';

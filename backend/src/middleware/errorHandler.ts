@@ -5,7 +5,18 @@ import { hashAccountId } from '../observability/requestLog';
 
 export function errorHandler(err: any, req: Request, res: Response, next: NextFunction) {
     const requestId = (req as Request & { requestId?: string }).requestId ?? crypto.randomUUID();
-    console.error(`[RequestID: ${requestId}] Unhandled Error:`, err);
+
+    // A body that does not parse, or is too large, is the client's mistake: a 4xx, not logged and not sent to Sentry. body-parser attaches the raw
+    // body to these errors, and it may hold a password or an exchange secret (security review, M9).
+    if (err?.type === 'entity.parse.failed') {
+        return res.status(400).json({ error: 'The request body is not valid JSON', code: 'INVALID_JSON', requestId });
+    }
+    if (err?.type === 'entity.too.large') {
+        return res.status(413).json({ error: 'The request body is too large', code: 'PAYLOAD_TOO_LARGE', requestId });
+    }
+
+    // Only the error's name and code are logged: the error object may carry request data (a body, a query, a database message).
+    console.error(`[RequestID: ${requestId}] Unhandled Error: ${String(err?.name ?? 'Error')}${err?.code ? ` code=${String(err.code)}` : ''}`);
     // No-op unless Sentry was initialised (SENTRY_DSN); tagged with the same id as the log line.
     captureWithRequestId(err, requestId, hashAccountId((req as Request & { accountId?: string }).accountId));
 

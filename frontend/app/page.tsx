@@ -93,8 +93,8 @@ export default function Home() {
     {
       id: 'okx' as const,
       name: 'OKX',
-      desc: 'Unified account. Spot + derivatives. Low fees.',
-      tags: ['Spot', 'Derivatives', 'Low Fees']
+      desc: 'Spot and derivatives platform',
+      tags: ['Spot', 'Derivatives']
     }
   ];
 
@@ -185,7 +185,7 @@ export default function Home() {
                lineHeight: 1.85, 
                color: '#a09890'
              }}>
-            Transaction cost analysis for retail crypto traders, graded against public Binance market data. See the slippage and fees on each past trade, and when you traded.
+            Transaction cost analysis for retail crypto traders, measured against public Binance market data. See what your past orders cost: the spread, the price movement, unfilled orders and fees.
           </p>
 
           {/* 4. Stat strip */}

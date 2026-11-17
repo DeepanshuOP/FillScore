@@ -285,6 +285,23 @@ async def internal_verify_v2(body: MeasureRequest, request: Request) -> dict:
     return out
 
 
+@app.post("/internal/delete-account-data")
+async def internal_delete_account_data(body: MeasureRequest, request: Request) -> dict:
+    """Delete the account's Council runs and traces (keyed by `accountId`) when the backend deletes the account (GDPR erasure; security
+    review M9). Service token only; a demo account is refused; only the token's own account is touched."""
+    account_id = _service_account(body, request)
+    from starlette.concurrency import run_in_threadpool
+
+    def run():
+        db = _get_db()
+        # a trace holds only its run id (agents/persistence.py): delete the traces of this account's runs first, then the runs
+        run_ids = [d["run_id"] for d in db.council_runs.find({"accountId": account_id}, {"run_id": 1}) if d.get("run_id")]
+        traces = db.council_traces.delete_many({"run_id": {"$in": run_ids}}).deleted_count if run_ids else 0
+        return {"council_runs": db.council_runs.delete_many({"accountId": account_id}).deleted_count, "council_traces": traces}
+
+    return {"deleted": await run_in_threadpool(run)}
+
+
 class AskRequest(BaseModel):
     userId: str | None = None                       # only a demo id is accepted here (and refused: no model runs for demo data)
     question: str = Field(max_length=2000)
