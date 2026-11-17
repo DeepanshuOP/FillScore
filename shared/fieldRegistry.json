@@ -117,5 +117,10 @@
     "orderId": {"type": "string", "nullable": false, "owner": "backend/src/routes/explain.ts"},
     "state": {"type": "string", "nullable": false, "owner": "backend/src/routes/explain.ts"},
     "updatedAt": {"type": "datetime", "nullable": false, "owner": "backend/src/routes/explain.ts"}
+  },
+  "AnalyticsDaily": {
+    "day": {"type": "string", "nullable": false, "owner": "backend/src/routes/analytics.ts"},
+    "event": {"type": "string", "nullable": false, "owner": "backend/src/routes/analytics.ts"},
+    "count": {"type": "number", "nullable": false, "owner": "backend/src/routes/analytics.ts"}
   }
 }

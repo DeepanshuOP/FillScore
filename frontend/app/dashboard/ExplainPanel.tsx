@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
+import { track } from '../lib/track';
 import { describeQueue, describeRankings, describeReplay, nextStates, PANEL_COPY, type RankingsApi, type VenueApi } from './explainView';
 
 type Json = { status: number; body: unknown };
@@ -67,6 +68,7 @@ export default function ExplainPanel({ query, readOnly, request }: Props) {
     const key = `${symbol}:${orderId}`;
     if (replay?.key === key) { replaySeq.current++; setReplay(null); return; }
     const seq = ++replaySeq.current;
+    track('replay_open');
     let res: Json;
     try { res = await request(withParams(`/audit/orders/${encodeURIComponent(orderId)}/replay`, query, { symbol })); }
     catch { res = { status: 500, body: null }; }

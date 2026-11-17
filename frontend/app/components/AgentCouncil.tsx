@@ -1,6 +1,7 @@
 "use client";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { waitForHealthy } from "../utils/serviceWarmup";
+import { track } from "../lib/track";
 import {
   councilMaintenanceMessage,
   councilErrorMessage,
@@ -136,6 +137,7 @@ export default function AgentCouncil({
     if (running) return;
     reset();
     setRunning(true);
+    if (!userId) track(runMode === "quick" ? "quick_audit" : "deep_audit");   // anonymous daily counter; demo views are not counted
 
     // Verify ml-service is reachable before attempting stream
     const healthy = await waitForHealthy(`${mlBaseUrl}/health`, { onSlow: () => setWaking(true) });

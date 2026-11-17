@@ -113,6 +113,7 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/api/evidence/public-key` |
 | GET | `/api/evidence/pack` |
 | POST | `/api/evidence/verify` |
+| POST | `/api/analytics/event` |
 | POST | `/api/auth/forgot-password` |
 | GET | `/api/auth/github` |
 | GET | `/api/auth/github/callback` |

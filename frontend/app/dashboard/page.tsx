@@ -25,6 +25,7 @@ import { skippedNotice, type SkippedTrades } from './skipped';
 import ScoreV2Panel from './ScoreV2Panel';
 import OrdersPanel from './OrdersPanel';
 import ExplainPanel from './ExplainPanel';
+import { track } from '../lib/track';
 import { describeHeaderStats, tradesCardCopy, type CurrentFigures } from './headerStats';
 import NotComputed from '../components/NotComputed';
 import { NOT_COMPUTED, isNotComputed } from '../utils/notComputed';
@@ -228,6 +229,7 @@ function DashboardContent() {
     try {
       const r = await downloadReport({ mode: dashboardMode, userId: resolvedUserId }, { accessToken, refreshAccessToken });
       if (!r.ok) setDownloadError(r.message ?? 'Could not prepare the report. Please try again.');
+      else track('report_download');
     } catch {
       setDownloadError('Could not prepare the report. Please try again.');
     } finally {
@@ -273,6 +275,7 @@ function DashboardContent() {
       if (!res.ok) throw new Error('Failed to fetch audit data');
       const data = await res.json();
       setAudit(data);
+      track('dashboard_view');
       if (attrRes.ok) {
         const attrData = await attrRes.json();
         setAttribution(attrData);
