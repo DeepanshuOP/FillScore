@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="light dark">
+<title>FillScore scorecard</title>
+<style>
+  body { margin: 0; padding: 12px 14px; font: 14px/1.5 system-ui, sans-serif; }
+  .headline { font-size: 1.6rem; font-weight: 600; margin: 0 0 6px; }
+  .line { margin: 0 0 4px; }
+  .component { margin: 0 0 2px; font-variant-numeric: tabular-nums; }
+  .cost { margin: 10px 0 6px; }
+  .small { font-size: 12px; opacity: 0.75; margin: 6px 0 0; }
+  .label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; opacity: 0.7; margin: 10px 0 2px; }
+</style>
+</head>
+<body>
+<div id="root"><p class="small">Waiting for the scorecard.</p></div>
+<script>
+(function () {
+/*__VIEW__*/
+  var root = document.getElementById('root');
+
+  function add(cls, text) {
+    var p = document.createElement('p');
+    p.className = cls;
+    p.textContent = text;           // text only: nothing from the result is ever parsed as markup
+    root.appendChild(p);
+  }
+
+  function render(model) {
+    root.replaceChildren();
+    add('headline', model.headline);
+    model.lines.forEach(function (l) { add('line', l); });
+    if (model.components.length) { add('label', 'Components'); model.components.forEach(function (c) { add('component', c); }); }
+    if (model.cost) add('cost', model.cost);
+    if (model.integrity) add('small', model.integrity);
+    if (model.note) add('small', model.note);
+  }
+
+  function send(msg) { window.parent.postMessage(msg, '*'); }
+
+  window.addEventListener('message', function (ev) {
+    if (ev.source !== window.parent) return;                       // only the host that embeds this page
+    var m = ev.data;
+    if (!m || typeof m !== 'object' || m.jsonrpc !== '2.0') return;
+    if (m.id === 0 && m.result) { send({ jsonrpc: '2.0', method: 'ui/notifications/initialized' }); return; }
+    if (m.method === 'ui/notifications/tool-result' && m.params) {
+      var text = null;
+      var content = Array.isArray(m.params.content) ? m.params.content : [];
+      for (var i = 0; i < content.length; i++) if (content[i] && content[i].type === 'text') { text = content[i].text; break; }
+      var parsed = null;
+      try { parsed = JSON.parse(text); } catch (e) { parsed = null; }
+      render(describeScorecard(parsed));
+    }
+  });
+
+  send({ jsonrpc: '2.0', id: 0, method: 'ui/initialize',
+    params: { appCapabilities: {}, appInfo: { name: 'FillScore scorecard', version: '0.1.0' }, protocolVersion: '/*__PROTOCOL__*/' } });
+})();
+</script>
+</body>
+</html>

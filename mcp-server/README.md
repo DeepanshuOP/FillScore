@@ -15,6 +15,18 @@ ones FillScore's deterministic measurement code stored; the server computes, pre
 | `fillscore_rankings` | Execution cost by symbol or hour; groups with fewer than 20 orders are "too few to tell" |
 | `fillscore_venue_comparison` | The account's own fills across venues, matched by symbol and size bucket |
 
+## The scorecard as an MCP App
+
+In a client that supports MCP Apps, `fillscore_score` also shows an interactive card inside the conversation: the grade, the score band, the
+counts, each component, the cost against the modelled expectation (or "insufficient data"), and the integrity hash. The card is a view of the
+tool's own result. It makes no request, loads nothing from the network (the server declares no content-security-policy origins, so the host
+keeps its closed default), renders text only, and accepts messages only from the window that embeds it. A client without the extension shows
+the tool's text as before. Facts used (MCP Apps specification 2026-01-26, read 2026-11-18): the resource is `ui://fillscore/scorecard.html`
+with MIME type `text/html;profile=mcp-app`, the tool names it in `_meta.ui.resourceUri`, and the page speaks the specification's
+`ui/initialize`, `ui/notifications/initialized` and `ui/notifications/tool-result` messages over `postMessage`.
+Not yet tried in a real client (none was available to the author); the protocol and the page are tested against the specification's message
+shapes with a fake host.
+
 ## Run it
 
 ```bash

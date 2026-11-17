@@ -8,6 +8,7 @@
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { createTools } from './lib.mjs';
+import { APP_MIME, APP_TOOL, SCORECARD_URI, buildScorecardHtml } from './app.mjs';
 
 let tools;
 try {
@@ -19,6 +20,11 @@ try {
 
 const server = new McpServer({ name: 'fillscore', version: '0.1.0' });
 for (const t of tools) {
-  server.registerTool(t.name, { description: t.description, inputSchema: t.inputSchema }, async (args) => t.handler(args ?? {}));
+  // MCP App (M7): the scorecard tool names its interactive view; a client without MCP Apps support ignores this and shows the text.
+  const config = { description: t.description, inputSchema: t.inputSchema, ...(t.name === APP_TOOL ? { _meta: { ui: { resourceUri: SCORECARD_URI } } } : {}) };
+  server.registerTool(t.name, config, async (args) => t.handler(args ?? {}));
 }
+// The view: a page with no network access (no csp is declared) that only renders the tool's own result.
+server.registerResource('FillScore scorecard', SCORECARD_URI, { mimeType: APP_MIME, description: 'The measured score of the account, as an interactive card' },
+  async () => ({ contents: [{ uri: SCORECARD_URI, mimeType: APP_MIME, text: buildScorecardHtml() }] }));
 await server.connect(new StdioServerTransport());
