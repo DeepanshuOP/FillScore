@@ -1,0 +1,18 @@
+{
+  "name": "fillscore-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A read-only MCP server over a FillScore account's stored measurements of past executions",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "^4.4.3"
+  }
+}

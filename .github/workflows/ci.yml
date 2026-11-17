@@ -93,6 +93,22 @@ jobs:
       - run: npm run build
         working-directory: frontend
 
+  mcp:   # the read-only MCP server (mcp-server/): tools, and the real server process end to end
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: mcp-server/package-lock.json
+      - run: npm ci
+        working-directory: mcp-server
+      - run: npm test
+        working-directory: mcp-server
+      - run: npm audit --omit=dev --audit-level=high
+        working-directory: mcp-server
+
   ml-service:
     runs-on: ubuntu-24.04
     env:
@@ -130,7 +146,7 @@ jobs:
         working-directory: ml-service
 
   e2e:
-    needs: [backend, frontend, ml-service]
+    needs: [backend, frontend, ml-service, mcp]
     runs-on: ubuntu-24.04
     services:
       mongo:

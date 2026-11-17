@@ -8,6 +8,8 @@
 import crypto from 'crypto';
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
+import rateLimit from 'express-rate-limit';
+import { TtlCache } from '../services/ttlCache';
 import { resolveAccount, VALID_DEMO_USERS } from '../middleware/resolveAccount';
 import { parseOrReject } from '../validation/schemas';
 import { Order } from '../models/Order';
@@ -18,6 +20,12 @@ import { summariseOrders } from '../services/orderSummary';
 import { buildPack, verifyPack, publicKeyFingerprint, PACK_STATEMENT } from '../services/evidencePack';
 
 export const evidenceRouter = Router();
+
+// Heavier than a read (a database read, a hash of every file, a signature): their own limiters, counted per IP before the account
+// is looked up; and the same pack is served for a minute per account and kind, so repeated clicks cost one build.
+const packLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Too many requests', code: 'RATE_LIMIT' } });
+const verifyLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { error: 'Too many requests', code: 'RATE_LIMIT' } });
+const packCache = new TtlCache<{ pack: unknown; files: Record<string, string> }>(60_000, 200);
 
 const BEST_EXECUTION_STATEMENT = 'This summary supports your documentation of execution quality. It lists how the account\'s orders ended, what they cost against the market prices '
     + 'recorded at their arrival, and what could not be measured. It records the past and makes no statement about rules or regulation.';
@@ -49,13 +57,18 @@ evidenceRouter.get('/public-key', (_req: Request, res: Response) => {
     }
 });
 
-evidenceRouter.get('/pack', resolveAccount, async (req: Request, res: Response) => {
+evidenceRouter.get('/pack', packLimiter, resolveAccount, async (req: Request, res: Response) => {
     const key = signingKey();
     if (!key) return notConfigured(res);
     try {
         const q = parseOrReject(packQuerySchema, req.query, res);
         if (!q) return;
         const accountId = req.accountId!;
+        // The key (account id, kind, a hash of the signing key) keeps one account's pack from ever being served to another and a
+        // rotated key from serving an old signature.
+        const cacheKey = `${accountId}:${q.kind}:${crypto.createHash('sha256').update(key).digest('hex').slice(0, 12)}`;
+        const hit = packCache.get(cacheKey);
+        if (hit) return res.status(200).json(hit);
         const isDemo = VALID_DEMO_USERS.has(accountId);
         const [ms, orders] = await Promise.all([
             OrderMeasurement.find({ accountId }).sort({ symbol: 1, orderId: 1 }).lean(),
@@ -101,6 +114,7 @@ evidenceRouter.get('/pack', resolveAccount, async (req: Request, res: Response) 
                 scoring: scoring ? { version: scoring.version, integrityHash: scoring.integrityHash, grade: (scoring as any).grade ?? null, composite: (scoring as any).composite ?? null } : null },
             generatedAt: new Date().toISOString(), files,
         }, key);
+        packCache.set(cacheKey, { pack, files });
         return res.status(200).json({ pack, files });
     } catch (err) {
         console.error('GET /evidence/pack error:', (err as Error)?.name);
@@ -108,7 +122,7 @@ evidenceRouter.get('/pack', resolveAccount, async (req: Request, res: Response) 
     }
 });
 
-evidenceRouter.post('/verify', (req: Request, res: Response) => {
+evidenceRouter.post('/verify', verifyLimiter, (req: Request, res: Response) => {
     const body = parseOrReject(verifyBodySchema, req.body, res);
     if (!body) return;
     const key = signingKey();

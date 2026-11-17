@@ -85,6 +85,21 @@ describe('evidence pack routes', () => {
         expect(v.body).toMatchObject({ valid: true, problems: [], trustedKeyChecked: true });
     });
 
+    it('a repeat download within a minute is the same signed pack (cached per account); another account gets its own', async () => {
+        process.env.EVIDENCE_SIGNING_KEY = KEY.priv;
+        const a1 = (await request(app).get('/api/evidence/pack').set(h())).body;
+        const a2 = (await request(app).get('/api/evidence/pack').set(h())).body;
+        expect(a2.pack.manifest.generatedAt).toBe(a1.pack.manifest.generatedAt);
+        expect(a2.pack.signature).toBe(a1.pack.signature);
+        const tokenB = (await issueTokenPair(idB)).accessToken;
+        const b = (await request(app).get('/api/evidence/pack').set({ Authorization: `Bearer ${tokenB}` })).body;
+        expect(JSON.parse(b.files['order_measurements.json']).map((o: any) => o.orderId)).toEqual(['b1']);
+        expect(b.pack.manifest.meta.account).not.toBe(a1.pack.manifest.meta.account);
+        // the cache is keyed by kind too: the best-execution pack is not the scorecard
+        const be = (await request(app).get('/api/evidence/pack?kind=best-execution').set(h())).body;
+        expect(be.pack.manifest.meta.kind).toBe('best-execution');
+    });
+
     it('verify names a changed file and a changed manifest', async () => {
         process.env.EVIDENCE_SIGNING_KEY = KEY.priv;
         const { pack, files } = (await request(app).get('/api/evidence/pack').set(h())).body;
