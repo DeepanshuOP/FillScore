@@ -5,152 +5,84 @@
 ![Node.js](https://img.shields.io/badge/Node.js-20+-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
-FillScore answers the question retail crypto traders ignore — not whether you were directionally right, but HOW WELL you actually executed. It grades every trade on arrival slippage, maker share, UTC session and an estimated spread against public Binance market data, producing an A–F FillScore. It is explicitly NOT a signal or prediction tool.
+FillScore is an independent, open-source **execution auditor** for crypto traders. It does not ask whether you were right about the market. It asks how well your orders were executed, and it answers from real public market data. You connect a **read-only** exchange key, FillScore reads your own past trades, and it measures what each order cost: the spread you paid, how far the price moved with you, what unfilled orders cost, and your fees against the rates your account qualifies for.
 
-## The Execution Council
+**FillScore audits the past. It never predicts, signals or advises.** Every number shown to a user comes from deterministic, tested code. Language models may explain a finding; they never produce a number.
 
-The flagship feature of FillScore is the Execution Council, a multi-agent system that audits historical trades.
+## Three pillars
 
-```text
-       [ Deterministic Trade Packet ]
-                    │
-   ┌────────────────┼──────────────────┐
-   │                │                  │
-   ▼                ▼                  ▼
-[Liquidity]       [Fee]             [Risk]        [Alpha]
-  Scout         Optimizer           Auditor      Architect
-   │                │                  │              │
-   └────────┬───────┴──────────┬───────┴──────────────┘
-            ▼                  ▼
-      [Prosecution]        [Defense]
-      (Argues bad)        (Argues good)
-            │                  │
-            └────────┬──────────┘
-                     ▼
-            [Verification Gate]
-          (Counterfactual Replay)
-                     │
-                     ▼
-            [Synthesis Agent]
-          (Verdict & Recommendations)
-```
+1. **Measured.** Institutional transaction-cost analysis, on public data: Binance publishes every trade with its aggressor side, so the spread is *measured* from real prints, not inferred. Effective and realized spread, price impact, order-level implementation shortfall (including orders that never filled), real fee rates. Each number carries lineage: the public data files and their SHA-256. Method: [`docs/methodology/`](docs/methodology/) and the `/methodology` page, both generated from the code.
+2. **Explained.** Plain-language findings whose numbers are true by construction: the model writes placeholders, code inserts the values, a claim check removes causal language, and a deterministic counterfactual replay verifies proposed findings. Ask a question about your own executions ("Ask your execution"): the answer comes from deterministic tools only.
+3. **Verifiable.** Versioned scores with integrity hashes that FillScore can recompute from the stored inputs (`/api/audit/verify`), and **signed evidence packs** (an Ed25519 signature over a manifest of every file with its SHA-256) that anyone can check in the browser (`/verify`, nothing is uploaded) or offline with one Node script.
 
-**Key Properties:**
-- **Compute-then-judge:** LLMs never write numbers. They write `{{namespace.key}}` placeholders naming deterministic packet keys, and a deterministic renderer inserts the formatted values.
-- **Blocking grounding:** Any numeral in LLM text that the renderer did not insert is a violation: one regeneration with feedback, then the offending sentences are deleted and recorded.
-- **Adversarial debate:** Prosecution and defense argue over each verdict before synthesis.
-- **Verification gate:** The synthesis proposes structured recommendations from a closed set of action types. Code replays the user's own past trades for the audited period to recompute the effect, and a finding passes only if it is material and consistent with its siblings. Rejected items get one forced re-reason, then are dropped. The dollar figure shown is the recomputed one.
-- **Eval:** Single temporal cutoff at 2024-01-15 (not true walk-forward). The harness call was fixed in Phase 1c, but its trade projection still reads outdated field names (F-11), so the eval has not been re-run; the tables below predate Phase 1c.
-- **Zero cost:** Free tiers only ($0/run): Groq and, when `GEMINI_API_KEY` is set, Google Gemini. Models are routed by `ml-service/agents/llm_router.py` from `ml-service/config/llm_routes.yaml`.
+## What it does today
 
-## FillScore Grading
+- **Connect** Binance, Bybit or OKX with a read-only key. Each key is checked against the exchange and refused if it can trade or withdraw (fail closed). Keys are stored AES-256-GCM encrypted and never returned or logged.
+- **Two scores, labelled.** *v1* is the original rule-based score (frozen; published grades never change). *v2* is measured: execution cost, fees and unfilled orders, equal weights, scored against data-derived anchors; timing is reported but not scored; a minimum of 20 fills and a bootstrap interval. Measurement is built for Binance; Bybit and OKX fills are synced, but their orders are not measured yet.
+- **Cost against expectation.** For market orders: what they cost against the modelled cost of a taker event of the same size in the hour before the order (square-root impact model, fitted on January 2024, with a conformal interval), or "insufficient data". Real accounts read the hour from Binance's public 1-minute klines.
+- **Explain and act.** A queue of orders that met a stated rule, with review states; a replay of one order with each figure linked to its stored source; rankings that say "too few to tell"; a matched comparison of your own fills across venues; PDF report and CSV export.
+- **Quick and Deep audits.** One model call (default) or the nine-call Agent Council (opt-in, budgeted), both behind the same grounding, claim check and verification.
+- **A broker-file check.** Choose a Kraken Trades CSV, or map the columns of another broker's file (the only way a Coinbase file is read), and each fill is compared with the public price at its second. Nothing is stored. The Kraken reading is built from Kraken's documentation and is **not yet checked against a real file**.
+- **Fresh data.** A scheduled re-sync of accounts older than 24 hours (only while the free instance is awake) and a "data last synced" line that says what stale data means.
+- **For AI clients.** A read-only [MCP server](mcp-server/) with personal API keys (read-only, hashed, expiring, revocable), and an interactive scorecard that MCP-Apps clients show inside the conversation.
+- **Open-source library.** [`fillscore-metrics`](packages/fillscore-metrics/): the measurement formulas as a dependency-free Python package, generated from the service's own code so it cannot drift.
+- **Demo accounts.** Three Binance demos (`demo-disciplined`, `demo-moderate`, `demo-aggressive`). Their trading behaviour is **synthetic**; every fill price comes from real public prints of January 2024. They are read-only.
 
-FillScore assesses execution quality across four deterministic metrics:
+## What it does not do, stated plainly
 
-| Component | Weight | Description |
-| :--- | :--- | :--- |
-| **Slippage** | 35% | Implementation shortfall against arrival price |
-| **Fees** | 25% | Exchange fees paid vs optimal routing |
-| **Timing Quality** | 25% | Micro-reversion and order scheduling |
-| **Spread Cost** | 15% | Cost of crossing the bid-ask spread |
+- **No real user has been scored yet.** The first real-account validation is a one-command harness (`ml-service/scripts/validate_real_account.py`) that waits for real trades.
+- **The Kraken file reading and the CCXT comparison have not met a real file or a live account** (see `docs/PROGRESS.md`).
+- **Perpetual funding costs, an EVM DEX wallet audit and cryptographic proof of where trades came from are not built.** The reasons (a read-only-key rule, an unvalidated detector, an unfinished protocol) are in [`docs/research/ZKTLS_FEASIBILITY.md`](docs/research/ZKTLS_FEASIBILITY.md) and `docs/milestones/M6.md`, `M7.md`.
+- **Correlation, never causation.** "The price moved with your trade" is what the data shows; it does not say your trade moved it.
+- The cost-vs-expected model is fitted on one month (January 2024) and says so.
+- The Council's ablation (single call against nine calls) is small and on synthetic users; re-recording is in progress. Do not read a result into the old tables.
 
-**Grade Bands:** A ≥ 90 | B ≥ 75 | C ≥ 60 | D ≥ 40 | F < 40
-
-## Tech Stack
+## Tech stack
 
 | Layer | Technology | Port |
 | :--- | :--- | :--- |
-| **Frontend** | Next.js 16, React 19, TypeScript, Tailwind CSS 4 (Neural Noir design) | 3000 |
-| **Backend** | Node.js 20, Express, Mongoose, MongoDB Atlas | 3001 |
-| **ML Service** | Python 3.11, FastAPI scaffold, LangGraph, Motor | 8000 |
+| Frontend | Next.js 16, React 19, TypeScript | 3000 |
+| Backend | Node.js 20, Express, Mongoose, MongoDB Atlas | 3001 |
+| ML service | Python 3.11, FastAPI, numpy | 8000 |
+| MCP server | Node.js 20, MCP SDK | stdio |
 
-## Quick Start
+## Quick start
 
-**Prerequisites:** Node.js 20+, Python 3.11+, MongoDB Atlas free tier, Groq API key (free).
+**Prerequisites:** Node.js 20+, Python 3.11+, a MongoDB Atlas free-tier database. A Groq key (free) is needed only for the Council and Ask features.
 
-**Clone and setup:**
 ```bash
 git clone https://github.com/DeepanshuOP/FillScore.git
 cd FillScore
+# copy the .env.example files (backend/, ml-service/) to .env and fill them in; the values never go on a command line
+scripts/dev.sh        # starts the frontend, backend and ml-service; logs in .work/logs/
 ```
 
-**Backend:**
-```bash
-cd backend
-cp .env.example .env   # add MONGODB_URI + GROQ_API_KEY
-npm install
-npm run dev
-```
+The demo accounts need data in the database, which the project owner seeds deliberately (the seed scripts are guarded and must not be run
+against data you care about; see [CONTRIBUTING.md](CONTRIBUTING.md)). The checks, with the exact commands that CI runs, are in
+[CONTRIBUTING.md](CONTRIBUTING.md). A small, polite load test is in [`scripts/k6_smoke.js`](scripts/k6_smoke.js) (local targets only).
 
-**Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-**ML service (Agent Council):**
-```bash
-cd ml-service
-pip install -r requirements.txt
-python -m agents.council   # runs a council on demo-aggressive
-```
-
-**Seed demo data (empty database only):**
-```bash
-cd backend
-npm run seed          # overwrites the six demo accounts; never run it against data you care about
-npm run verify-seed   # confirms 6 demo users, all grades locked
-```
-
-**Run the checks:** see [CONTRIBUTING.md](CONTRIBUTING.md) for the exact commands. The same ones run in CI.
-
-## Features
-
-- **Exchange connections:** Binance, Bybit and OKX through read-only keys. Each key is checked against the exchange itself and refused if it can trade or withdraw; keys are stored AES-256-GCM encrypted.
-- **Real score history:** every audit run appends an immutable snapshot, and the dashboard trend plots only stored results.
-- **Multi-exchange venue comparison** with measured average slippage by venue (bps, unmatched trades)
-- **Whale correlation:** real Binance aggTrades via REST, burst-detection algorithm, adverse selection scoring per trade (sample accounts only; connected accounts get an explicit "unavailable")
-- **PDF audit report and CSV export** for signed-in users, shareable scorecard (OpenGraph) for the sample accounts
-- **Execution Coach mode**, with every figure labelled by the period it covers
-- **Trade Journal** (annotate trades with notes via `PATCH /api/audit/trades/:id/note`)
-- **Agent Council streaming UI** (SSE, Neural Noir design, cards light up sequentially)
-- **Accounts:** email and password with verification, Google and GitHub sign-in, password reset, rotating sessions
-- **Tested across all three services** (backend, frontend, ml-service) with CI on every push and pull request
-
-## Research
-
-FillScore is the subject of an ongoing research paper examining verifiable LLM-based execution auditing. Results from an older commit, using a single temporal cutoff (2024-01-15) with n=3 consistency runs per profile. These tables predate Phase 1c and will be re-run. The E1 value of 1.0 was inflated: number-free and failed outputs scored 1.0.
-
-| User Profile | Score (Grade) | E1 Faithfulness | E2 Consistency | E3 Utility (Pass Rate) | % Vacuous | Actionable Recs |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **demo-disciplined** | 95.89 (A) | 1.0 | 100% | 100% | 88.89% | 1/9 |
-| **demo-moderate** | 84.81 (B) | 1.0 | 100% | n/a (0 actionable) | 100.00% | 0/9 |
-| **demo-aggressive** | 60.67 (C) | 1.0 | 100% | 100% | 22.22% | 7/9 |
-
-*Note: whale-adversity vs slippage showed no statistically significant relationship on this dataset (Mann-Whitney p>0.13 across all symbols); the null result is an honest finding documented in `ml-service/eval/artifacts/whale_slippage_results.md`.*
-
-## Repo Structure
+## Repo structure
 
 ```text
 FillScore/
-├── backend/                  # Node.js/Express API, database models
-├── frontend/                 # Next.js UI, Neural Noir components
-└── ml-service/               # Python ML/Eval Service
-    ├── agents/               # Council logic, LangGraph, persistence
-    ├── eval/                 # Evaluation harness, paper artifacts
-    └── whale/                # Whale correlation algorithms, REST connectors
+├── backend/                  # Express API: accounts, keys, sync, audit routes, evidence packs, API keys
+├── frontend/                 # Next.js app: dashboard, /verify, /check, /methodology, settings
+├── ml-service/               # FastAPI: measurement (measure/), scoring_v2/, expected_cost/, agents/ (Council, Ask),
+│                             #   csv_import/, dp_baselines/, whale/ (older study)
+├── mcp-server/               # read-only MCP server and the scorecard MCP App
+├── packages/fillscore-metrics/  # the open-source formulas
+├── shared/                   # the field registry
+└── docs/                     # roadmap, milestones, methodology, research record, decisions (ADRs)
 ```
 
 ## Documentation
 
-- [ARCHITECTURE.md](ARCHITECTURE.md): how the three services fit together, the API surface, the data model, and what is not built yet
-- [SECURITY.md](SECURITY.md): threat model, known limits, and how to report a vulnerability
+- [ARCHITECTURE.md](ARCHITECTURE.md): how the services fit together, the API surface (test-enforced), the data model, what is not built
+- [SECURITY.md](SECURITY.md): threat model, known limits, how to report a vulnerability
 - [CONTRIBUTING.md](CONTRIBUTING.md): the product rules and how to run the checks
-- [docs/DEPLOY.md](docs/DEPLOY.md): the deploy guide (Render for backend and ml-service, Vercel for the frontend)
-- [docs/FIRST_REAL_USER.md](docs/FIRST_REAL_USER.md): first real user on the deployed stack
-- [docs/ROADMAP.md](docs/ROADMAP.md): the roadmap and task register
-- [docs/research/](docs/research/): the research record (findings, experiments, decisions, the 2026-11 audit)
+- [docs/DEPLOY.md](docs/DEPLOY.md): Render (backend and ml-service) and Vercel (frontend)
+- [docs/ROADMAP.md](docs/ROADMAP.md), [docs/milestones/](docs/milestones/): the roadmap and one report per milestone
+- [docs/research/](docs/research/): the research record: findings, experiments, decisions, the 2026-11 audit, market research
 
 ## License
 
@@ -158,4 +90,4 @@ MIT, see [LICENSE](LICENSE).
 
 ## Disclaimer
 
-FillScore audits historical execution quality. It does not provide trading signals, investment advice, or future price predictions. Demo data is synthetic trader populations evaluated against real Binance market microstructure (January 2024), except the three multi-venue demo accounts (Bybit, OKX, multi), whose prices are simulated and which are hidden.
+FillScore audits historical execution quality. It does not provide trading signals, investment advice, or predictions of future prices. The demo accounts are synthetic trader behaviour evaluated against real Binance public prints (January 2024).

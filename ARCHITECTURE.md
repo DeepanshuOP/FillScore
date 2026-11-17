@@ -16,18 +16,25 @@ this file changing. Regenerate the backend table with `npm run docs:routes` in `
               ▼                                              ▼
         Express API (:3001) ───── MongoDB Atlas ◄───── FastAPI ml-service (:8000)
               │                    (db: fillscore)            │
-              ├─► Binance / Bybit / OKX (read-only keys)      └─► Groq / Gemini free tiers (llm_routes.yaml)
-              └─► Binance public klines (arrival price, VWAP, spread proxy)
+              ├─► Binance / Bybit / OKX (read-only keys)      ├─► Groq / Gemini free tiers (llm_routes.yaml)
+              │    └─ after each sync: POST /internal/measure  └─► Binance public data: REST aggTrades and 1m klines
+              │       and /internal/score-v2 (service token)        (no key); data.binance.vision daily files (offline)
+              └─► Binance public klines (arrival price, VWAP, spread proxy; v1 enrichment)
+
+ AI client ──► mcp-server (stdio) ──► Express API (personal read-only API key; GET on six routes only)
 ```
 
 | Tier | Stack | Responsibility |
 |---|---|---|
-| Frontend | Next.js 16, React 19, TypeScript, Tailwind 4, Recharts | UI, auth state, SSE client for the Council |
-| Backend | Node 20, Express 4, Mongoose 8, zod, PDFKit | Auth, exchange sync, scoring, audits, exports |
-| ml-service | Python 3.11, FastAPI, LangGraph, Motor/PyMongo | Agent Council, evaluation harness, whale analysis |
+| Frontend | Next.js 16, React 19, TypeScript, Tailwind 4, Recharts | UI, auth state, SSE client for the Council, browser-side check of evidence packs |
+| Backend | Node 20, Express 4, Mongoose 8, zod, PDFKit | Auth, exchange sync (button and schedule), v1 scoring, audit and explain routes, evidence packs, API keys, exports |
+| ml-service | Python 3.11, FastAPI, numpy, LangGraph, PyMongo | Measurement v2, Scoring v2, expected cost, Agent Council and Ask, broker-file check, evaluation harness |
+| mcp-server | Node 20, MCP SDK | A read-only MCP server and the scorecard MCP App |
+| packages/fillscore-metrics | Python, no dependencies | The measurement formulas, generated from the service code |
 
-Identity is always taken from the JWT (`resolveAccount`), never from a request parameter. The only
-parameter that selects an account is `userId=demo-*`, and only the six known demo slugs are accepted.
+Identity is always taken from the JWT (`resolveAccount`) or a personal API key, never from a request parameter.
+The only parameter that selects an account is `userId=demo-*`, and only the three known demo slugs are
+accepted (`demo-disciplined`, `demo-moderate`, `demo-aggressive`).
 
 ## 2. Backend (`backend/src`)
 
@@ -38,13 +45,19 @@ parameter that selects an account is `userId=demo-*`, and only the six known dem
 | `config/` | `env.ts` fail-fast env validation, `ingestion.ts` (symbols, window), `versions.ts` (`SCORING_VERSION`), `passport.ts` |
 | `middleware/` | `security.ts` (helmet, CORS, rate limiters), `csrf.ts` (Origin check), `requireAuth.ts`, `resolveAccount.ts` (incl. `resolveDownloadAccount`), `errorHandler.ts` |
 | `routes/` | `auth`, `audit`, `onboarding`, `attribution`, `preflight`, `health`, `connect` (retired, answers 410) |
-| `services/` | Exchange clients (`BinanceClient`, `BybitClient`, `OKXClient`), `keyValidation` (read-only checks), `TradeIngestionService`, `SyncService`, `MarketDataService`, `ReportService` (PDF), `authService`, `oauthService`, `oauthCodeService`, `emailVerificationService`, `passwordResetService`, `emailService` |
+| `services/` | Exchange clients (`BinanceClient`, `BybitClient`, `OKXClient`), `keyValidation` (read-only checks), `TradeIngestionService`, `SyncService`, `SyncJobService` (lock, status, freshness), `syncPipeline` (the steps of one background sync, shared by the button and the schedule), `resyncScheduler` (stale accounts, at most 3 a tick), `measureTrigger` (calls the ml-service after a sync), `MarketDataService`, `ReportService` (PDF), `evidencePack` and `signingKey` (Ed25519 packs), `apiKeys` and `reauth` (personal API keys), `orderSummary`, `exceptionQueue`, `orderReplay`, `rankWithNoise`, `venueComparison` (M4 explain routes), `ccxtShadow` (pure comparison with CCXT, offline), `authService`, `oauthService`, `oauthCodeService`, `emailVerificationService`, `passwordResetService`, `emailService` |
 | `scoring/` | `engine.ts` (per-trade score), `audit.ts` (account summary), `attribution.ts` (cost decomposition), `history.ts` (snapshots), `coach.ts` |
 | `validation/` | zod schemas and `parseOrReject` |
 | `utils/` | `encryption.ts` (AES-256-GCM), `jwt.ts`, `downloadToken.ts`, `password.ts`, `cookieConfig.ts`, `listRoutes.ts` |
 | `scripts/` | Seeding, backfills, probes. Several are destructive; read before running |
 
 ### Scoring
+
+Two scores, labelled in the UI. **v2 (measured)** is computed by the ml-service from stored measurements (section 3) under a committed
+version file (`ml-service/scoring_v2/versions/v2.3.0.json`): execution cost, fees and unfilled orders, equal weights; timing is reported
+and not scored; at least 20 fills; a bootstrap band; an integrity hash that `GET /api/audit/verify` recomputes. The backend only stores
+and serves it (`scores_v2`, `GET /api/audit/v2`), with the cost-vs-expected figure beside it (not part of the grade or its hash).
+**v1 (rule-based)** is below; it is frozen and its published demo grades never change.
 
 Four components, weights fixed in `scoring/engine.ts`: slippage 35%, fees 25%, timing 25%, spread 15%.
 Grade bands: A ≥ 90, B ≥ 75, C ≥ 60, D ≥ 40, F below. Account summaries sort trades by id before
@@ -61,6 +74,10 @@ aggregating so results are deterministic. `POST /api/audit/run` is the only writ
   single-use code that the frontend exchanges for an access token.
 - Email/password sign-ups receive a verification link. When a provider later claims the same
   address, an unverified password is discarded and its sessions are revoked.
+- **Personal API keys** (ADR-0016) for the MCP server: `fsk_` + 8 hex + 43 base64url characters, shown once, stored as SHA-256 with a
+  visible prefix, read-only (GET and HEAD on six routes), 90 days by default, revocable, 5 active per user, 60 requests a minute per key.
+  Creating one asks for the password again. A key never reaches the routes that read a login token (`requireAuth`), so it cannot create,
+  list or revoke keys, export the account or touch exchange connections. A password reset revokes the user's keys.
 - Browsers cannot send `Authorization` on `window.open`, so PDF and CSV downloads use a one-minute
   link token (`POST /api/audit/download-token`) signed with a key derived from, but not equal to,
   the access secret.
@@ -161,6 +178,16 @@ Generated from the app (`npm run docs:routes`).
 | POST | `/internal/measure` | Measurement v2 of the account's pending fills and orders (service token `typ: measure` from the backend only; ADR-0011) |
 | POST | `/internal/score-v2` | Score the account under the current Scoring v2 version and store it in `scores_v2` (same service token) |
 | POST | `/internal/verify-v2` | Recompute the stored v2 score's integrity hash from its stored inputs and the version file (same service token) |
+| POST | `/ml/csv/check` | Check a broker file (`kraken` or `mapped`): each fill against the public price at its second. Signed-in accounts only (demo ids refused); 200,000 characters, 200 fills, 6 checks an hour and 20 a day per account, one at a time per account, 2 at once in the service; nothing stored; a 418 or 429 from the market-data source pauses all checks |
+
+Measurement and scoring (`ml-service`): `measure/` is the measurement layer. Pure formulas (`metrics.py`, `orders.py`, `fees.py`, registered in
+`registry.py`, which generates the methodology page); data (`data/`: data.binance.vision daily files with mandatory checksums, REST aggTrades
+windows with a gap check, public 1-minute klines, a Parquet cache); `service.py` is the idempotent job (the trade rows are the outbox) that
+measures fills and orders and stores them in `order_measurements` with lineage. `scoring_v2/` calibrates and applies the versioned score.
+`expected_cost/` holds the square-root impact model, split conformal intervals and the hook that supplies the hour before an order (daily
+files offline, klines in production). `csv_import/` reads broker files and compares fills with public prices. `dp_baselines/` is a tested
+differential-privacy mechanism that no route uses. `demo_v2/` rebuilds the three demos from real prints (offline). The open-source
+`packages/fillscore-metrics` is generated from `measure/` by `scripts/sync_metrics_package.py`.
 
 Pipeline: deterministic metric packets (`agents/metrics`) → four specialists (liquidity, fee, alpha,
 risk) → bounded two-round prosecution/defense debate → synthesis (structured recommendations) →
@@ -191,8 +218,12 @@ analytics card.
 | `/` | Landing page, demo account cards |
 | `/signup`, `/login`, `/forgot-password`, `/reset-password`, `/verify-email` | Account flows |
 | `/onboarding` | Connect Binance, Bybit or OKX with a read-only key, then sync |
-| `/dashboard` | Score, attribution, trend from stored history, coach, Council |
+| `/dashboard` | Both scores, cost vs expected, measured order views, the explain panel, Ask, Quick/Deep Council, data freshness, the broker-file check |
 | `/analytics`, `/trades` | Deep dive, trade blotter, CSV export, trade notes |
+| `/verify` | Check a signed evidence pack in the browser (WebCrypto Ed25519, `@noble/ed25519` fallback); nothing is uploaded |
+| `/check` | The broker-file check for people whose trades are in a broker app |
+| `/methodology` | The method and the scoring version, generated from the code |
+| `/settings` | Disconnect an exchange, download or delete your data, personal API keys |
 | `/share/[userId]` | Public score card for demo accounts, with Open Graph image |
 | `/terms`, `/privacy` | Legal pages |
 | `/api/preflight` | Server route that probes Binance, Bybit and OKX reachability from the frontend host |
@@ -207,6 +238,10 @@ analytics card.
 | `trades` | Native `fee` and `notional`; `dataSource` immutable; `exchange` is `binance`, `bybit` or `okx` |
 | `audits` | One canonical document per account (unique `accountId`) |
 | `audithistories` | Append-only snapshots, edits refused, deletes allowed for erasure |
+| `orders`, `fee_snapshots` | Binance orders and the account's commission rates, from the sync |
+| `order_measurements` | One measurement per order (shortfall terms, `expectedCost`, lineage refs), written by the ml-service |
+| `scores_v2` | Scoring v2 results with `costVsExpected` beside them, written by the ml-service |
+| `exceptionreviews`, `analyticsdailies`, `syncjobs`, `api_keys` | Review states; anonymous daily counters; the sync lock and status; personal API keys (hash only) |
 | `marketcaches` | Kline cache, 24 hour TTL |
 | `council_runs` | Persisted Council runs (written by ml-service; `created_at` is an ISO string) |
 
@@ -230,6 +265,8 @@ Canonical v1 demo scores (the frozen, published audits): `demo-disciplined` 95.8
 | Auth: JWT, rotation, OAuth, CSRF origin check, email verification, password reset | Built |
 | PDF and CSV for signed-in users | Built (link tokens) |
 | Agent Council, evaluation harness, cost telemetry | Built |
+| Measurement v2, Scoring v2.3.0, expected cost, explain routes, evidence packs and `/verify`, MCP server and API keys, broker-file check, scheduled re-sync | Built (reports in `docs/milestones/`) |
+| Perpetual funding costs; EVM DEX wallet audit; cryptographic proof of where trades came from; CCXT for Bybit and OKX | Not built (`docs/PROGRESS.md` waiting items 16 and 19, `docs/research/ZKTLS_FEASIBILITY.md`); CCXT shadow comparison built, not yet run live |
 | CI (backend, frontend, ml-service tests, typecheck, frontend build, gitleaks secret scan of the full history) | Built (`.github/workflows/ci.yml`) |
 | Whale correlation | Sample accounts only; connected accounts get an explicit "unavailable" response |
 
@@ -245,11 +282,13 @@ and erasure are `GET /api/account/export` and `DELETE /api/account/`.
   are specified in `docs/superpowers/specs/2026-11-07-measurement-v2-design.md`.
 - **Demo data is only partly real** (see §5). No real-user trade has been scored yet.
 - **Council replay** endpoint does not exist; runs are persisted but not replayable.
-- **State is per instance:** rate limiters and the Council run budget live in memory. Running more
-  than one instance needs a shared store (ROADMAP G1).
-- **No billing or quotas per plan** (ROADMAP G3).
-- **No prompt-injection isolation layer** beyond the Council only receiving numeric packets, and no
-  `ENCRYPTION_KEY` rotation tooling (ROADMAP C6, G4).
+- **State is per instance:** rate limiters, the API-key limiter, the CSV-check budget and the Council run budget live in memory, and the
+  scheduled re-sync runs only while the free instance is awake. Running more than one instance needs a shared store (ROADMAP G1).
+- **No billing or quotas per plan** (ROADMAP G3); Stripe is prepared behind a feature flag that is off (M9).
+- **Prompt injection:** the Council receives numeric packets only; Ask answers come from deterministic tools with output guards that were
+  red-teamed offline (113 cases, `docs/milestones/M5.md`); there is no `ENCRYPTION_KEY` rotation tooling (ROADMAP C6, G4).
+- **Cost vs expected is fitted on January 2024 only;** the Kraken file reading is built from documentation and not yet checked against a
+  real file; the MCP App has not been tried in a real client.
 - **Bybit and OKX** connectors have not been run against live keys.
 - **Git history** contains credentials from before they were moved to the environment. They are
   rotated, and the history is deliberately not purged (clones and forks keep it; ROADMAP R6-G13).

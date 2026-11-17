@@ -23,3 +23,8 @@ fd6b578fd874a2499e0915623c38b8ed9de18ce5:.github/workflows/ci.yml:generic-api-ke
 42ddb1341bb27cab46106fd72a6d182bed76ae1e:frontend/lib/localMongo.test.ts:mongodb-uri-credentials:19
 42ddb1341bb27cab46106fd72a6d182bed76ae1e:frontend/lib/localMongo.test.ts:mongodb-uri-credentials:32
 ac6110240403a712ae3dad7879bd7037b092280a:backend/src/config/__tests__/hardening.test.ts:mongodb-uri-credentials:82
+
+# Dummy personal-API-key strings in a unit test of the Settings helpers (checked 2026-11-18): 'fsk_ab12cd34_' plus 43 letters A and the
+# text 'fsk_ab12cd34_secret'. Neither is a key of any account; the tests check that a key is passed through and printed in the config snippet.
+16c53e585f19e3b56d6a30162e3a2d28d73d0443:frontend/app/lib/apiKeys.test.ts:generic-api-key:31
+16c53e585f19e3b56d6a30162e3a2d28d73d0443:frontend/app/lib/apiKeys.test.ts:generic-api-key:87
