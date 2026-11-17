@@ -128,7 +128,6 @@ const HOURS = Array.from({ length: 24 }, (_, i) => i);
 function AnalyticsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const userId = searchParams.get("userId");
 
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [tradeData, setTradeData] = useState<Trade[]>([]);

@@ -116,7 +116,7 @@ export default function OnboardingPage() {
         setApiPassphrase('');
         setErrorMsg(null);
       }
-    } catch (err: any) {
+    } catch {
       setErrorMsg(mapOnboardingError('network_error', undefined, selected?.name));
     } finally {
       setSubmitting(false);

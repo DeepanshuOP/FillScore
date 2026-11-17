@@ -4,15 +4,11 @@ import { ExchangeConnection } from '../models/ExchangeConnection';
 import { encryptApiKey } from '../utils/encryption';
 import { requireAuth } from '../middleware/requireAuth';
 import { validateBinanceKey, validateBybitKey, validateOKXKey } from '../services/keyValidation';
-import { syncAccountTrades } from '../services/SyncService';
-import { acquireSyncLock, runSyncJob, getSyncStatus, JobControl, JobOutcome } from '../services/SyncJobService';
+import { getSyncStatus } from '../services/SyncJobService';
+import { startBackgroundSync } from '../services/syncPipeline';
 import { parseOrReject, connectBodySchema, syncBodySchema } from '../validation/schemas';
-import { MarketDataService } from '../services/MarketDataService';
-import { executeAuditPipeline, NoScorableTradesError } from './audit';
-import { INGEST_DAYS_BACK } from '../config/ingestion';
 import { User } from '../models/User';
 import mongoose from 'mongoose';
-import { mlServiceSecret, requestMeasurement, requestScore } from '../services/measureTrigger';
 
 export const onboardingRouter = Router();
 
@@ -114,38 +110,6 @@ onboardingRouter.delete('/connections/:exchange', requireAuth, async (req: Reque
     }
 });
 
-/** The slow part of a sync, run in-process after the POST has returned 202. */
-async function performSync(accountId: string, ctl: JobControl): Promise<JobOutcome> {
-    const marketDataService = new MarketDataService();
-    const report = await syncAccountTrades(accountId, INGEST_DAYS_BACK, { onProgress: ctl.progress, deadlineMs: ctl.deadlineMs });
-    if (report.refused?.length && report.refused.length === (await ExchangeConnection.countDocuments({ accountId }))) {
-        const r = report.refused[0];
-        return { state: 'needs_attention', result: { error: r.reason, exchange: r.exchange, disable: r.disable ?? [], enable: r.enable ?? [], refused: report.refused } };
-    }
-    // Past the deadline: no enrichment or audit starts; the next sync resumes from the stored coverage.
-    if (Date.now() >= ctl.deadlineMs) {
-        return { state: 'partial', partialReason: 'time_cap', partialMessage: report.partialMessage, result: { lookbackDays: report.lookbackDays, effectiveDays: report.effectiveDays, invalidSymbols: report.invalidSymbols ?? [], refused: report.refused ?? [], auditSkipped: true } };
-    }
-    await marketDataService.enrichAllPendingTrades(accountId, ctl.deadlineMs);
-    if (Date.now() >= ctl.deadlineMs) {
-        return { state: 'partial', partialReason: 'time_cap', result: { lookbackDays: report.lookbackDays, effectiveDays: report.effectiveDays, invalidSymbols: report.invalidSymbols ?? [], refused: report.refused ?? [], auditSkipped: true } };
-    }
-    const base = {
-        lookbackDays: report.lookbackDays, effectiveDays: report.effectiveDays,
-        invalidSymbols: report.invalidSymbols ?? [], refused: report.refused ?? [],
-    };
-    const state = report.partial ? 'partial' as const : 'done' as const;
-    const partial = { partialReason: report.partialReason, partialMessage: report.partialMessage };
-    try {
-        const { savedAudit, tradesScored, totalIngested } = await executeAuditPipeline(accountId);
-        return { state, ...partial, result: { ...base, tradesIngested: totalIngested, tradesScored, fillScore: savedAudit.avgFillScore, grade: savedAudit.fillGrade } };
-    } catch (e: any) {
-        if (e instanceof NoScorableTradesError) return { state, ...partial, result: { ...base, noScorableTrades: true, skippedTrades: e.skippedTrades } };
-        if (e.message === 'no_trades_found') return { state, ...partial, result: { ...base, noTrades: true } };
-        throw e;
-    }
-}
-
 onboardingRouter.post('/sync', requireAuth, accountExists, async (req: Request, res: Response) => {
     try {
         const accountId = req.userId!;
@@ -163,19 +127,10 @@ onboardingRouter.post('/sync', requireAuth, accountExists, async (req: Request, 
         if (body.extraSymbols !== undefined) await ExchangeConnection.updateMany({ accountId, exchange: 'binance' }, { $set: { extraSymbols: body.extraSymbols } });
 
         const lookbackDays = (await getSyncStatus(accountId)).lookbackDays;
-        const lock = await acquireSyncLock(accountId, lookbackDays);
-        if (!lock) return res.status(409).json({ error: 'sync_in_progress', status: await getSyncStatus(accountId) });
-
-        runSyncJob(accountId, lock.syncId, ctl => performSync(accountId, ctl))
-            // M1: measure the new fills (measurement v2). Never rejects; pending trades are retried by the next sync.
-            .then(() => requestMeasurement(accountId, { baseUrl: process.env.ML_SERVICE_URL, secret: mlServiceSecret() }))
-            .then(async r => {
-                if (r.status === 'skipped') return;
-                console.log(`[measure_v2] ${r.status} calls=${r.calls}`);
-                if (r.status === 'done') console.log(`[score_v2] ${await requestScore(accountId, { baseUrl: process.env.ML_SERVICE_URL, secret: mlServiceSecret() })}`);
-            })
-            .catch(e => console.error('[SyncJob] unexpected:', e?.name));
-        return res.status(202).json({ syncId: lock.syncId });
+        // The same lock and steps as the scheduled re-sync (services/syncPipeline.ts).
+        const started = await startBackgroundSync(accountId, lookbackDays);
+        if (!started) return res.status(409).json({ error: 'sync_in_progress', status: await getSyncStatus(accountId) });
+        return res.status(202).json({ syncId: started.syncId });
     } catch (error: any) {
         console.error('Error starting sync in onboarding:', error);
         return res.status(500).json({ error: 'Internal server error while syncing' });

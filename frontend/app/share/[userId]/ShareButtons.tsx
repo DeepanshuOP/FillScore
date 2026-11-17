@@ -39,7 +39,7 @@ export default function ShareButtons({ shareUrl, grade, score }: ShareButtonsPro
         text: shareText,
         url: currentUrl,
       });
-    } catch (err) {
+    } catch {
       console.log('Share canceled or failed');
     }
   };

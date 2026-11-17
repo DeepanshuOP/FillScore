@@ -121,6 +121,7 @@ const RESULT_FIELDS: [agent: string, key: string, ratingField: string][] = [
 ];
 
 /** The four specialist cards rebuilt from the final Council result (the `complete` event). */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- the Council result is wide JSON from the ml-service; each field is read defensively below
 export function verdictCardsFromResult(result: Record<string, any>): Record<string, CouncilAgentCard> {
     const cards: Record<string, CouncilAgentCard> = {};
     if (result?.mode === 'quick') return cards;          // a Quick audit has no specialists: no empty "done" cards

@@ -85,17 +85,24 @@ export async function runSyncJob(accountId: string, syncId: string, work: (ctl: 
     }
 }
 
+export const STALE_AFTER_HOURS = 24;
+
 export async function getSyncStatus(accountId: string) {
     const job = await SyncJob.findOne({ accountId }).lean();
     // 3a G5 #6: the connections' current lookback wins unless a job is running (it ran with its own value)
-    const conns = await ExchangeConnection.find({ accountId }, { lookbackDays: 1 }).lean();
+    const conns = await ExchangeConnection.find({ accountId }, { lookbackDays: 1, lastSyncAt: 1 }).lean();
     const currentLookback = conns.length ? Math.max(...conns.map(c => c.lookbackDays ?? INGEST_DAYS_BACK)) : undefined;
+    // How fresh the data is: the newest successful sync of any connection. Never synced (or no connection): unknown, so not "stale".
+    const times = conns.map(c => c.lastSyncAt?.getTime()).filter((t): t is number => typeof t === 'number');
+    const lastSyncAt = times.length ? new Date(Math.max(...times)) : undefined;
+    const freshness = { lastSyncAt, stale: lastSyncAt ? Date.now() - lastSyncAt.getTime() > STALE_AFTER_HOURS * 3600_000 : null, staleAfterHours: STALE_AFTER_HOURS };
     if (!job) {
         const lookbackDays = currentLookback;
-        return { state: 'idle' as const, symbolsDone: 0, symbolsTotal: 0, tradesAdded: 0, lookbackDays };
+        return { state: 'idle' as const, symbolsDone: 0, symbolsTotal: 0, tradesAdded: 0, lookbackDays, ...freshness };
     }
     const lost = job.state === 'running' && job.syncLockExpiresAt.getTime() < Date.now();
     return {
+        ...freshness,
         state: lost ? ('failed' as const) : job.state,
         syncId: job.syncId,
         symbolsDone: job.symbolsDone, symbolsTotal: job.symbolsTotal, tradesAdded: job.tradesAdded,

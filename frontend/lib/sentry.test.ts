@@ -6,6 +6,7 @@ vi.mock('@sentry/nextjs', () => ({ init }))
 import { beforeSend, FILTERED } from './sentryScrub'
 import { initSentry } from './sentryInit'
 
+/* eslint-disable @typescript-eslint/no-explicit-any -- the scrubbed event is read back loosely on purpose */
 describe('frontend Sentry scrubber', () => {
   it('removes bodies, cookies, auth headers, secret-named fields, exchange payloads, URIs and identity', () => {
     const e: any = beforeSend({

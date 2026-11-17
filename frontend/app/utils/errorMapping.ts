@@ -11,7 +11,6 @@ export function mapOnboardingError(code: string, status?: number, exchange: stri
       if (parts.length) return `This key can do more than read your trades. ${parts.join(' ')} Create a read-only key and nothing else.`;
     }
     // falls through to the generic wording when the API did not name the permissions
-    // eslint-disable-next-line no-fallthrough
     case 'key_not_read_only_generic':
       return exchange === 'Binance'
         ? "This key has trading or withdrawal permissions enabled. Create a new key with ONLY 'Enable Reading' turned on."

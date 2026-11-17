@@ -24,10 +24,15 @@ export function scrubValue(node: unknown): unknown {
   return node
 }
 
+// Sentry's own event types are wide and vary by SDK version; the event is handled as loose JSON and scrubbed by key and value.
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export function beforeSend<T extends Record<string, any>>(event: T): T | null {
   const e: Record<string, any> = { ...event }
   if (e.request && typeof e.request === 'object') {
-    const { data: _d, cookies: _c, query_string: _q, ...rest } = e.request
+    const rest = { ...e.request }
+    delete rest.data          // request bodies, cookies and query strings never leave the browser
+    delete rest.cookies
+    delete rest.query_string
     e.request = rest
   }
   delete e.user

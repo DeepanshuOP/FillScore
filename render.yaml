@@ -42,6 +42,9 @@ services:
         sync: false # at least 32 random characters, must equal the ml-service value and differ from JWT_ACCESS_SECRET
       - key: ENCRYPTION_KEY
         sync: false
+      # Scheduled re-sync of accounts whose data is older than 24 hours (runs only while this free instance is awake). "false" turns it off.
+      - key: RESYNC_ENABLED
+        value: "true"
       # Signs evidence packs (Ed25519 private key, PEM with its BEGIN/END lines). Name only; the value is typed in the dashboard.
       - key: EVIDENCE_SIGNING_KEY
         sync: false

@@ -84,7 +84,7 @@ export function filenameFrom(cd: string | null, fallback: string): string {
 }
 
 const errorText = (v: unknown): string =>
-  typeof v === 'string' ? v : v && typeof v === 'object' && typeof (v as any).message === 'string' ? (v as any).message : '';
+  typeof v === 'string' ? v : v && typeof v === 'object' && typeof (v as { message?: unknown }).message === 'string' ? (v as { message: string }).message : '';
 
 /**
  * Fetches a file as a blob and saves it through an anchor. Never throws and never leaves the caller

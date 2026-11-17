@@ -111,7 +111,7 @@ function TradesContent() {
       
       setNoteStatus('saved')
       setTimeout(() => setNoteStatus(''), 2000)
-    } catch (e) {
+    } catch {
       setNoteStatus('error')
       setTimeout(() => setNoteStatus(''), 2000)
     } finally {

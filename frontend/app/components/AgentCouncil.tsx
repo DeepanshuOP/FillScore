@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { waitForHealthy } from "../utils/serviceWarmup";
 import { track } from "../lib/track";
 import {
@@ -115,7 +115,6 @@ export default function AgentCouncil({
     fetch(`${mlBaseUrl}/health`).catch(() => {});
   }, [mlBaseUrl]);
   const [error, setError] = useState<string | null>(null);
-  const esRef = useRef<EventSource | null>(null);
 
   const reset = () => {
     setResultMode(null);
@@ -201,7 +200,7 @@ export default function AgentCouncil({
             try {
               const payload = JSON.parse(dataStr);
               handleEvent(eventType, payload);
-            } catch (_) {}
+            } catch {}
             eventType = "";
             dataStr = "";
           }
@@ -289,9 +288,6 @@ export default function AgentCouncil({
     }
   }
 
-  const allDone = Object.keys(cards).length === 4 &&
-    Object.values(cards).every((c) => c.status === "done");
-
   return (
     <div className="bg-[#161614] border border-[rgba(255,255,255,0.08)] rounded p-6 space-y-5">
       {/* Header */}
@@ -371,7 +367,6 @@ export default function AgentCouncil({
         {AGENT_ORDER.map((agent) => {
           const card = cards[agent];
           const isRunning = card?.status === "running" || activeAgent === agent;
-          const isEmpty = !card;
 
           return (
             <div

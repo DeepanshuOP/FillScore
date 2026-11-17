@@ -132,7 +132,7 @@ export default async function Image({ params }: Props) {
       ),
       { ...size }
     );
-  } catch (err) {
+  } catch {
     // Fallback on error
     return new ImageResponse(
       (

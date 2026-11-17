@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- the test doubles stand in for DOM objects (anchor, document) and a typed fetch */
 import { describe, it, expect, vi } from 'vitest';
 import { fetchAndSave, downloadReport } from './downloads';
 

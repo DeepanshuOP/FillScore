@@ -44,8 +44,8 @@ export default function SignupPage() {
 
       await login(data.accessToken);
       window.location.href = '/dashboard';
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong');
+    } catch (err) {
+      setError((err instanceof Error && err.message) || 'Something went wrong');
     } finally {
       setLoading(false);
     }

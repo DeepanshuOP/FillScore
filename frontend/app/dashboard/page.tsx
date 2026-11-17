@@ -8,7 +8,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, ReferenceLine
 } from 'recharts';
-import { Clock, ArrowLeftRight, Tag, Activity, AlertTriangle } from 'lucide-react';
+import { Clock, ArrowLeftRight, Tag, AlertTriangle } from 'lucide-react';
 import AgentCouncil from '../components/AgentCouncil';
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/authFetch';
@@ -26,6 +26,8 @@ import ScoreV2Panel from './ScoreV2Panel';
 import OrdersPanel from './OrdersPanel';
 import ExplainPanel from './ExplainPanel';
 import AskPanel from './AskPanel';
+import CsvCheckPanel from './CsvCheckPanel';
+import SyncFreshness from './SyncFreshness';
 import { track } from '../lib/track';
 import { describeHeaderStats, tradesCardCopy, type CurrentFigures } from './headerStats';
 import NotComputed from '../components/NotComputed';
@@ -69,15 +71,6 @@ interface AuditSummary {
   /** Present for a rebuilt demo: figures from its current fills and orders (the stored audit describes the earlier trades). */
   current?: CurrentFigures;
 }
-
-const formatDate = (dateStr?: string) => {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric'
-  });
-};
 
 const formatCurrency = (val: number) =>
   new Intl.NumberFormat('en-US', {
@@ -184,7 +177,7 @@ const getExchangeColor = (exchange: string) => {
 function DashboardContent() {
   const [audit, setAudit] = useState<AuditSummary | null>(null);
   const [attribution, setAttribution] = useState<CostAttribution | null>(null);
-  const [analytics, setAnalytics] = useState<any>(null);
+  const [, setAnalytics] = useState<unknown>(null);   // fetched for the page's other panels; this page itself reads nothing from it
   const [exchangeComparison, setExchangeComparison] = useState<any>(null);
   const [coach, setCoach] = useState<any>(null);
   const [ordersSummary, setOrdersSummary] = useState<unknown>(null);
@@ -497,6 +490,7 @@ function DashboardContent() {
           const tradesCard = tradesCardCopy(v1Computed);
           return (
             <div>
+              {dashboardMode === 'real' && <SyncFreshness accessToken={accessToken} refreshAccessToken={refreshAccessToken} />}
               {dashboardMode === 'demo' && (
                 <div style={{
                   background: 'rgba(167, 139, 113, 0.1)',
@@ -771,6 +765,12 @@ function DashboardContent() {
               {dashboardMode === 'real' && (
                 <div style={{ marginBottom: '2rem' }}>
                   <AskPanel mlBaseUrl={process.env.NEXT_PUBLIC_ML_URL ?? 'http://localhost:8000'} accessToken={accessToken} />
+                </div>
+              )}
+
+              {dashboardMode === 'real' && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <CsvCheckPanel mlBaseUrl={process.env.NEXT_PUBLIC_ML_URL ?? 'http://localhost:8000'} accessToken={accessToken} refreshAccessToken={refreshAccessToken} />
                 </div>
               )}
 

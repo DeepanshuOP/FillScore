@@ -64,8 +64,8 @@ function ResetPasswordContent() {
       }
 
       setSuccess(true);
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again.');
+    } catch (err) {
+      setError((err instanceof Error && err.message) || 'Something went wrong. Please try again.');
     } finally {
       setLoading(false);
     }

@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
-    } catch (err) {
+    } catch {
       // Ignore network or server errors to maintain non-enumerable contract
     } finally {
       setLoading(false);

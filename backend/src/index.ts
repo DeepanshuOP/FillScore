@@ -5,6 +5,9 @@ import { loadEnv, env } from './config/env';
 import { connectDatabase } from './config/database';
 import { createApp } from './app';
 import { logSigningKeyStatus } from './services/signingKey';
+import { startResyncScheduler } from './services/resyncScheduler';
+import { startBackgroundSync } from './services/syncPipeline';
+import { getSyncStatus } from './services/SyncJobService';
 
 // Validate environment variables early
 loadEnv();
@@ -18,6 +21,10 @@ const startServer = async () => {
         app.listen(parseInt(env.PORT, 10), () => {
             console.log(`Listening on port ${env.PORT}`);
         });
+        // Scheduled re-sync of stale accounts (M6). RESYNC_ENABLED=false turns it off. It runs only while this instance is awake.
+        if (process.env.RESYNC_ENABLED !== 'false' && process.env.NODE_ENV !== 'test') {
+            startResyncScheduler(async (id) => startBackgroundSync(id, (await getSyncStatus(id)).lookbackDays));
+        }
     } catch (error) {
         console.error('Server failed to start', error);
         process.exit(1);

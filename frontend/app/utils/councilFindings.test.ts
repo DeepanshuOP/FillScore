@@ -116,6 +116,7 @@ describe('splitFindings', () => {
   it('drops unverified and non-finite findings', () => {
     const keep = f({});
     const out = splitFindings({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- a null effect is not in the type; the test feeds it on purpose
       findings: [keep, f({ verified: false }), f({ effect_usd: NaN }), f({ effect_usd: null })] as any,
       observations: [{ action_type: 'none', text: 'o' }],
     });

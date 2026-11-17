@@ -9,6 +9,7 @@ describe('dashboard component cards', () => {
     expect(cards.map(c => c.score)).toEqual(['50', '100', '70', '88'])
   })
   it('SPREAD card never shows fee drag and nothing says "Exchange spread cost"', () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- avgFeeDragBps is not an input of the cards; the test checks it is ignored
     const cards = buildComponentCards({ ...base, avgFeeDragBps: 10, componentMeans: { slippage: 50, fees: 100, timing: 70, spread: 88 } } as any)
     const spread = cards.find(c => c.key === 'exchange')!
     expect(spread.value).not.toMatch(/drag|bps/i)
