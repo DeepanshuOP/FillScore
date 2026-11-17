@@ -7,6 +7,8 @@ import { errorHandler } from './middleware/errorHandler';
 import { requestLog } from './observability/requestLog';
 import { connectRouter } from './routes/connect';
 import { auditRouter } from './routes/audit';
+import { explainRouter } from './routes/explain';
+import { evidenceRouter } from './routes/evidence';
 import { attributionRouter } from './routes/attribution';
 import { authRouter } from './routes/auth';
 import { onboardingRouter } from './routes/onboarding';
@@ -40,6 +42,8 @@ export function createApp(): Application {
     app.use('/api/connect', connectRouter);
     // Every audit route lives at exactly one path, so one limiter covers them all.
     app.use('/api/audit', auditReadLimiter, auditRouter);
+    app.use('/api/audit', auditReadLimiter, explainRouter);   // M4: exception queue, order replay, rankings, venue comparison
+    app.use('/api/evidence', auditReadLimiter, evidenceRouter);   // M5: signed evidence packs, public key, verify
     app.use('/api/attribution', attributionRouter);
     app.use('/api/auth', authRouter);
     app.use('/api/onboarding', onboardingRouter);
