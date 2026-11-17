@@ -28,7 +28,7 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
-See "Next concrete action" in `docs/PROGRESS.md`: M7 (zkTLS feasibility spike first), then M9; stop at M8. Done since the last push (local commits, not pushed): cost vs expected for real accounts, the `/verify` page, personal API keys, the broker-file check, the scheduled re-sync and stale-data line, CCXT shadow mode. Waiting for Deepanshu: item 10 (both ablation days), 16 (funding costs: a decision), 17 (a live CCXT shadow run), and the push.
+**M8: stop for Deepanshu** (design and UI is collaborative; not started). M0 to M7 and M9 are done; the final report is `docs/FINAL_REPORT.md`. Done since the last push (local commits, not pushed): cost vs expected for real accounts, the `/verify` page, personal API keys, the broker-file check, scheduled re-sync and stale-data line, CCXT shadow mode, the metrics package, the MCP App, a DP mechanism, Stripe (off), the security review fixes, launch drafts. Waiting for Deepanshu: item 10 (both ablation days; then `golden/v3` flip and the first `evidence_cited` numbers), 16 (funding costs), 17 (live CCXT run), 19 (EVM DEX audit), 20 to 22 (secret lengths, Node runtime, pre-launch steps), and the push. Do not touch `ml-service/evals/recordings/` or `golden/v3` until he reports both days done.
 
 ## Known issues
 - The bar-based spread estimators (Corwin–Schultz, Abdi–Ranaldo) read volatility, not spread, on liquid pairs. Measurement v2 replaces them with aggressor-side prints (ADR-0008).
