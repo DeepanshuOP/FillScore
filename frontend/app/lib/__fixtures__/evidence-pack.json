@@ -1,0 +1,32 @@
+{
+ "pack": {
+  "manifest": {
+   "packVersion": "1.0.0",
+   "generatedAt": "2026-11-18T00:00:00.000Z",
+   "meta": {
+    "kind": "scorecard",
+    "fixture": true
+   },
+   "files": [
+    {
+     "name": "limits.txt",
+     "bytes": 59,
+     "sha256": "f61b0a4d0a8ad46bc55bfc860810cd3c62733050305a4cd0650999ddfe550426"
+    },
+    {
+     "name": "scorecard.json",
+     "bytes": 79,
+     "sha256": "748027a4d597ebb8b113afbe1073ab1e015319e38cf0b9ce2583c55b73e8b34a"
+    }
+   ],
+   "signedBy": "993a80b17c57a4ad",
+   "statement": "Test fixture for the verify page. It is not a FillScore pack."
+  },
+  "signature": "r+OyrTgFddz9TT2i3EhlrPe75ezM/q35Fk6fHzJlJiNIMKB1ERhTqnF4bhKEeGuSkTdZ7muYzbW/N7mgub1uAw==",
+  "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMCowBQYDK2VwAyEAbBMSVpbSFaT2Yww9XsXaOhX7wia+faGECFR8xR7k3TE=\n-----END PUBLIC KEY-----\n"
+ },
+ "files": {
+  "scorecard.json": "{\n \"test\": \"fixture\",\n \"grade\": \"A\",\n \"note\": \"a fixture, not a real account\"\n}",
+  "limits.txt": "Fixture limits. Non-ASCII on purpose: é · — 日本語.\n"
+ }
+}

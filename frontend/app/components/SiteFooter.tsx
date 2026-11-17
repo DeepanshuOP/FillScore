@@ -13,6 +13,7 @@ export default function SiteFooter() {
     }}>
       <span title={`build ${frontendCommit().slice(0, 7)}`}>FillScore audits past execution. Not financial advice.</span>
       <Link href="/methodology" style={linkStyle}>Methodology</Link>
+      <Link href="/verify" style={linkStyle}>Check a pack</Link>
       <Link href="/terms" style={linkStyle}>Terms</Link>
       <Link href="/privacy" style={linkStyle}>Privacy</Link>
     </footer>
