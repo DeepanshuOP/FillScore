@@ -129,17 +129,66 @@ async def serve_demo_run(account_id: str, symbol: str) -> CouncilResult:
     return result
 
 
-async def council_flow(account_id: str, symbol: str, on_event: EventSink = None, llm=None) -> CouncilResult:
-    from agents import persistence
-    from config.budget import council_budget
-    from config.versions import METRICS_VERSION, PROMPT_VERSION
+MODES = ("quick", "deep")
 
+
+async def _replay_quick(result: dict, on_event: EventSink) -> None:
+    """The events a client needs to render a Quick result: its synthesis, the gate, and the whole result."""
+    if on_event is None:
+        return
+    from agents.council import synthesis_event
+    from agents.schemas import SynthesisOutput
+
+    synth = SynthesisOutput.model_validate(result["synthesis"])
+    await on_event("synthesis_done", synthesis_event(synth, result["degraded"], result.get("degraded_reasons", [])))
+    await on_event("gate_done", {"verification": result["verification"], "grounding": result["grounding"], "claims": result["claims"]})
+    await on_event("complete", result)
+
+
+async def _run_quick(account_id, symbol, packets, hashes, trades, llm, on_event) -> dict:
+    """One model call through the same grounding, verification and claim check as a Council run (agents.single_call), stored
+    in council_runs with `mode: "quick"` so that the content-hash cache can serve it again."""
+    from agents import persistence
+    from agents.single_call import run_single_call
+    from config.versions import METRICS_VERSION, SINGLE_PROMPT_VERSION
+
+    fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = packets
+    out = await run_single_call(account_id, symbol, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt, llm, trades)
+    out.update({"mode": "quick", "cached": False, "metrics_version": METRICS_VERSION, "n_calls_expected": 1,
+                "degraded_reasons": out.get("degraded_reasons", []), "run_id": None})
+    try:
+        out["run_id"] = await persistence.save_council_run(
+            account_id=account_id, user_id=account_id, symbol=symbol, council_result_dict=out, grounding=out["grounding"],
+            packet_hashes=hashes, model_usage=out.get("modelUsage", {}), total_latency_ms=out["totalLatencyMs"],
+            prompt_version=SINGLE_PROMPT_VERSION, verification=out["verification"],
+            extra={"mode": "quick", "degraded": out["degraded"], "degraded_reasons": out["degraded_reasons"],
+                   "n_calls_expected": 1, "n_calls_ok": out["n_calls_ok"], "metrics_version": METRICS_VERSION,
+                   "claim_rules_version": out.get("claim_rules_version"), "route_config_hash": out.get("route_config_hash"),
+                   "trace_id": out.get("trace_id"), "llm_calls": out.get("llm_calls", [])})
+    except Exception as exc:        # a failed save never hides a finished audit; it only means no cache entry
+        print(f"[quick] save failed type={type(exc).__name__}")
+    await _replay_quick(out, on_event)
+    return out
+
+
+async def council_flow(account_id: str, symbol: str, on_event: EventSink = None, llm=None, mode: str = "deep"):
+    """One audit of an account's past executions. mode "deep" is the 9-call Council (returns a CouncilResult); "quick" is the
+    single-call audit (returns a dict with mode "quick"). Both read the same packets, use the same content-hash cache (a
+    run of one mode never serves the other), and draw on the same budget: Deep costs 9 units, Quick 1 (config.budget).
+    A demo account is never run live in either mode: its stored Council run is served."""
+    from agents import persistence
+    from config.budget import DEEP_UNITS, QUICK_UNITS, council_budget
+    from config.versions import METRICS_VERSION, PROMPT_VERSION, SINGLE_PROMPT_VERSION
+
+    if mode not in MODES:
+        raise ValueError(f"unknown audit mode {mode!r}; expected one of {MODES}")
     if account_id in VALID_DEMO_USERS:
         result = await serve_demo_run(account_id, symbol)
         await _replay(result, on_event)
         return result
 
-    (fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt), trades = await load_packets(account_id, symbol)
+    packets, trades = await load_packets(account_id, symbol)
+    fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt = packets
     if fee_pkt.trade_count == 0:
         raise CouncilError(NO_DATA)
 
@@ -150,14 +199,22 @@ async def council_flow(account_id: str, symbol: str, on_event: EventSink = None,
         "liquidity": liquidity_pkt.content_hash,
         "alpha": alpha_pkt.content_hash,
     }
+    quick = mode == "quick"
     doc = await persistence.find_cached_run(
-        account_id, symbol, hashes, PROMPT_VERSION, METRICS_VERSION, llm.config.hash,
+        account_id, symbol, hashes, SINGLE_PROMPT_VERSION if quick else PROMPT_VERSION, METRICS_VERSION, llm.config.hash,
+        mode=mode,
     )
     if doc and doc.get("council_result"):
-        cached = _as_cached(doc["council_result"], doc.get("run_id"))
-        if cached is not None:
-            await _replay(cached, on_event)
-            return cached
+        if quick:
+            cached = {**doc["council_result"], "cached": True, "run_id": doc.get("run_id")}
+            if not cached.get("degraded"):
+                await _replay_quick(cached, on_event)
+                return cached
+        else:
+            cached = _as_cached(doc["council_result"], doc.get("run_id"))
+            if cached is not None:
+                await _replay(cached, on_event)
+                return cached
 
     # Checked before the per-account quota, so a refused run costs the user nothing.
     problem = await llm.capacity_problem()
@@ -165,11 +222,15 @@ async def council_flow(account_id: str, symbol: str, on_event: EventSink = None,
         raise CouncilError(MODEL_UNAVAILABLE)
     if problem is not None:
         raise CouncilError(DAILY_BUDGET_EXHAUSTED)
-    decision = council_budget.try_acquire(account_id)
+    decision = council_budget.try_acquire(account_id, QUICK_UNITS if quick else DEEP_UNITS)
     if not decision.allowed:
         code = RATE_LIMIT_EXHAUSTED if decision.reason == "account" else DAILY_BUDGET_EXHAUSTED
-        raise CouncilError(code, retry_after_s=decision.retry_after_s)
+        # A refused Deep audit says whether the cheaper Quick audit would still be allowed: never a silent failure.
+        raise CouncilError(code, retry_after_s=decision.retry_after_s,
+                           quick_available=None if quick else bool(council_budget.status(account_id)["quickAvailable"]))
 
+    if quick:
+        return await _run_quick(account_id, symbol, packets, hashes, trades, llm, on_event)
     return await run_council_pipeline(
         account_id, account_id, symbol, fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt,
         llm=llm, on_event=on_event, trades=trades,

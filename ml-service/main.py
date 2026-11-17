@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import os
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator, Literal
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request, Depends
@@ -37,7 +37,7 @@ from config.demo_users import VALID_DEMO_USERS
 from config.flags import council_enabled, council_maintenance_message
 from config.budget import council_budget
 from agents.errors import (
-    CouncilError, classify_exception, safe_message,
+    CouncilError, classify_exception, safe_message, refusal_message,
     RATE_LIMIT_EXHAUSTED, DAILY_BUDGET_EXHAUSTED, NO_DATA, DEMO_NOT_GENERATED, DB_UNAVAILABLE, MODEL_UNAVAILABLE,
 )
 
@@ -267,6 +267,9 @@ async def internal_verify_v2(body: MeasureRequest, request: Request) -> dict:
 class CouncilRequest(BaseModel):
     userId: str | None = None
     symbol: str
+    # "quick": one model call (the product default; the dashboard sends it). "deep": the 9-call Council, opt-in and budgeted.
+    # A request without a mode keeps the Council behaviour that older callers (evals, scripts) rely on.
+    mode: Literal["quick", "deep"] = "deep"
 
 
 class HealthResponse(BaseModel):
@@ -342,15 +345,16 @@ _HTTP_STATUS_FOR_CODE = {
 }
 
 
-@app.post("/ml/agents/council", response_model=CouncilResult)
-async def council_endpoint(req: CouncilRequest, request: Request) -> CouncilResult:
-    """Run the Agent Council (same pipeline as the stream endpoint, without events)."""
+@app.post("/ml/agents/council", response_model=None)
+async def council_endpoint(req: CouncilRequest, request: Request) -> Any:
+    """Run one audit (same pipeline as the stream endpoint, without events). mode "deep": a CouncilResult; mode "quick":
+    the single-call result (`mode: "quick"`, no specialist verdicts)."""
     if not council_enabled():
         return _council_maintenance_response()
     account_id = get_account_id(req.userId, request)
     from agents.council_service import council_flow
     try:
-        return await council_flow(account_id, req.symbol)
+        return await council_flow(account_id, req.symbol, mode=req.mode)
     except Exception as e:
         code = classify_exception(e)
         print(f"[council] failed code={code} type={type(e).__name__}")
@@ -358,11 +362,26 @@ async def council_endpoint(req: CouncilRequest, request: Request) -> CouncilResu
         retry_after = getattr(e, "retry_after_s", None)
         if retry_after:
             headers = {"Retry-After": str(retry_after)}
+        quick_available = getattr(e, "quick_available", None)
+        detail = {"code": code, "message": refusal_message(code, quick_available)}
+        if quick_available is not None:
+            detail["quick_available"] = quick_available
         raise HTTPException(
             status_code=_HTTP_STATUS_FOR_CODE.get(code, 500),
-            detail={"code": code, "message": safe_message(code)},
+            detail=detail,
             headers=headers,
         )
+
+
+@app.get("/ml/agents/council/budget")
+async def council_budget_status(request: Request, userId: str = None):
+    """What is left of the audit budget for this account and for the day, in units (Deep 9, Quick 1), and whether one more
+    Deep or Quick audit would be allowed now. A demo account never runs live."""
+    account_id = get_account_id(userId, request)
+    body = council_budget.status(account_id)
+    if account_id in VALID_DEMO_USERS:
+        body = {**body, "demo": True}
+    return body
 
 
 @app.get("/ml/agents/council/runs")
@@ -412,12 +431,16 @@ async def council_stream(request: CouncilRequest, req: Request):
 
         async def runner():
             try:
-                await council_flow(account_id, symbol, on_event=sink)
+                await council_flow(account_id, symbol, on_event=sink, mode=request.mode)
             except Exception as e:
                 code = classify_exception(e)
                 # Class name only: exception text can contain connection strings or credentials
                 print(f"[council] stream failed code={code} type={type(e).__name__}")
-                await queue.put(("error", {"code": code, "message": safe_message(code)}))
+                quick_available = getattr(e, "quick_available", None)
+                payload = {"code": code, "message": refusal_message(code, quick_available)}
+                if quick_available is not None:
+                    payload["quick_available"] = quick_available
+                await queue.put(("error", payload))
             finally:
                 await queue.put(None)
 

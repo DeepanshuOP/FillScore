@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { describeV2, describeVerify, isScored, V2Response } from './scoreV2';
+import { describeV2, describeVerify, isScored, verifyBadge, V2Response } from './scoreV2';
 
 const scored = (status: number, body: unknown) => {
   const v = describeV2(status, body);
@@ -102,6 +102,60 @@ describe('describeV2 under v2.3.0', () => {
   it('a rebuilt demo marks its fee component as not independently measured, in the new names too', () => {
     const v = scored(200, { ...shortfallBody(), computedAt: null, demo: { dataSource: 'synthetic-demo', basis: 'offline build' } });
     expect(v.components.find(c => c.key === 'fees')!.value).toBe('100 (not independently measured)');
+  });
+});
+
+// M3 §2: the letter compresses near the top on liquid pairs, so the line beside it is what the market orders cost against
+// what taker events of the same size cost in the same hour. Past tense, with its interval, or "insufficient data".
+describe('cost vs expected beside the letter', () => {
+  const cve = { insufficient: false, n: 88, level: 0.9, paidBps: 0.43, expectedBps: 0.31, excessBps: 0.12, lowBps: -0.05, highBps: 0.29,
+    version: 'ec1.0.0', calibrationSha256: 'a'.repeat(64), excluded: { outsideModel: 157, noExpectedCost: 0 } };
+  it('states paid, expected, the difference and its interval, in past tense', () => {
+    const v = scored(200, { ...shortfallBody(), costVsExpected: cve });
+    expect(v.costVsExpected).toBe('Market orders cost 0.43 bps against 0.31 bps, the modelled cost of a taker event of the same size in the hour before the order '
+      + "(fitted on January 2024) (difference +0.12 bps; 90% interval -0.05 bps to +0.29 bps, a bootstrap over orders that leaves out the model's own error; 88 orders).");
+  });
+  it('a positive lower bound carries its plus sign too', () => {
+    const v = scored(200, { ...shortfallBody(), costVsExpected: { ...cve, excessBps: 0.2, lowBps: 0.05, highBps: 0.35 } });
+    expect(v.costVsExpected).toContain('90% interval +0.05 bps to +0.35 bps');
+  });
+  it('a negative difference carries its own sign, and there is no plus sign on it', () => {
+    const v = scored(200, { ...shortfallBody(), costVsExpected: { ...cve, paidBps: 0.2, excessBps: -0.11, lowBps: -0.3, highBps: 0.07 } });
+    expect(v.costVsExpected).toContain('difference -0.11 bps; 90% interval -0.30 bps to +0.07 bps');
+  });
+  it('says "insufficient data" with the reason when the audit could not state it', () => {
+    const v = scored(200, { ...shortfallBody(), costVsExpected: { insufficient: true, n: 3, reason: 'fewer than 20 market orders have an expected cost (found 3)', excluded: {} } });
+    expect(v.costVsExpected).toBe('Cost vs expected: insufficient data (fewer than 20 market orders have an expected cost (found 3)).');
+  });
+  it('says "insufficient data" when the response carries no such block (an account without market context)', () => {
+    expect(scored(200, shortfallBody()).costVsExpected)
+      .toBe('Cost vs expected: insufficient data (no market context was stored for these orders).');
+  });
+  it('adds no line for the older score versions, and never changes the grade', () => {
+    expect(scored(200, base()).costVsExpected).toBeNull();
+    expect(scored(200, { ...shortfallBody(), costVsExpected: cve }).headline).toBe('A · 93 / 100');
+  });
+  it('does not state the interval when the audit gave none', () => {
+    const v = scored(200, { ...shortfallBody(), costVsExpected: { ...cve, lowBps: null, highBps: null } });
+    expect(v.costVsExpected).toContain('(difference +0.12 bps; no interval; 88 orders).');
+  });
+});
+
+// M4 §5: "Verified" is shown only after the verify route answered match: true in this session. Nothing else earns the word.
+describe('verifyBadge', () => {
+  it('is "Not checked" until a check ran, and for any answer that is not a match', () => {
+    expect(verifyBadge(null, null, true)).toEqual({ label: 'Not checked', tone: 'neutral' });
+    expect(verifyBadge(404, null, true)).toEqual({ label: 'Not checked', tone: 'neutral' });
+    expect(verifyBadge(503, null, true)).toEqual({ label: 'Not checked', tone: 'neutral' });
+  });
+  it('is "Verified" only for a 200 with match true, and "Verification failed" for a 200 without', () => {
+    expect(verifyBadge(200, { match: true }, true)).toEqual({ label: 'Verified', tone: 'good' });
+    expect(verifyBadge(200, { match: false }, true)).toEqual({ label: 'Verification failed', tone: 'bad' });
+    expect(verifyBadge(200, {}, true)).toEqual({ label: 'Verification failed', tone: 'bad' });
+  });
+  it('a demo grade has no verify route: it says where its hash comes from, never "Verified"', () => {
+    expect(verifyBadge(200, { match: true }, false)).toEqual({ label: 'Offline build, hash recorded', tone: 'neutral' });
+    expect(verifyBadge(null, null, false)).toEqual({ label: 'Offline build, hash recorded', tone: 'neutral' });
   });
 });
 

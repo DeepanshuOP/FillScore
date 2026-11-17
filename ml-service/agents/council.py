@@ -489,14 +489,16 @@ def enforce_specialists(verdicts: dict, passed: set[str], ctx: dict, ledger) -> 
             cleaned = fallback_sentence(label, str(getattr(v, rating_field)), ctx, _SPECIALIST_AGENT[key], field_name, metric)
             ledger.add_fallback(_SPECIALIST_AGENT[key], field_name)
         out[key] = v.model_copy(update={field_name: cleaned})
-    kept = []
-    for i, text in enumerate(verdicts["risk"].flags):
-        cleaned, flags = claims_mod.redact_claims(text, passed, f"risk.flags.{i}")
-        reds += [f.to_dict() for f in flags]
-        if not flags:
-            kept.append(text)
-    if len(kept) != len(verdicts["risk"].flags):
-        out["risk"] = verdicts["risk"].model_copy(update={"flags": kept})
+    for key in ("liquidity", "alpha", "risk", "fee"):          # every specialist's flags are model sentences shown on its card
+        v = out[key]
+        kept = []
+        for i, text in enumerate(v.flags):
+            _cleaned, flags = claims_mod.redact_claims(text, passed, f"{key}.flags.{i}")
+            reds += [f.to_dict() for f in flags]
+            if not flags:
+                kept.append(text)
+        if len(kept) != len(v.flags):
+            out[key] = v.model_copy(update={"flags": kept})
     return out, reds
 
 
@@ -658,7 +660,10 @@ async def _run_council_pipeline(
                   "specialist_redactions": spec_reds}
     else:
         synth, verification = _default_synthesis(), summarise([], None)
-        claims = {**claims_mod.ClaimsLedger().to_dict(), "specialist_redactions": []}
+        # A degraded run is still returned and shown: the specialists that did answer get the same claim check.
+        spec, spec_reds = enforce_specialists({"liquidity": liquidity_v, "alpha": alpha_v, "risk": risk_v, "fee": fee_v}, set(), run.ctx, run.ledger)
+        liquidity_v, alpha_v, risk_v, fee_v = spec["liquidity"], spec["alpha"], spec["risk"], spec["fee"]
+        claims = {**claims_mod.ClaimsLedger().to_dict(), "specialist_redactions": spec_reds}
     synth = override_synthesis_cost(synth, fee_pkt)
     if degraded:
         synth = synth.model_copy(update={"overallRating": None})
@@ -718,6 +723,7 @@ async def _run_council_pipeline(
                     "n_calls_expected": n_expected,
                     "n_calls_ok": n_ok,
                     "metrics_version": METRICS_VERSION,
+                    "claim_rules_version": CLAIM_RULES_VERSION,
                     "route_config_hash": llm.config.hash,
                     "trace_id": trace_id,
                     "llm_calls": list(run.telemetry),

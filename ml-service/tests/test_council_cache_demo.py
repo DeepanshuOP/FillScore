@@ -20,7 +20,7 @@ from mongomock_motor import AsyncMongoMockClient
 import main
 from agents.errors import CouncilError
 from config.budget import council_budget
-from config.versions import METRICS_VERSION, PROMPT_VERSION
+from config.versions import CLAIM_RULES_VERSION, METRICS_VERSION, PROMPT_VERSION
 from tests.council_fakes import DAY, ROUTES, make_packets, make_router
 
 client = TestClient(main.app)
@@ -72,7 +72,7 @@ def _stored_run(router, account=USER, created=None, degraded=False, **overrides)
     doc = {
         "run_id": "stored-1", "accountId": account, "symbol": "BTCUSDT",
         "created_at": (created or datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),
-        "prompt_version": PROMPT_VERSION, "metrics_version": METRICS_VERSION,
+        "prompt_version": PROMPT_VERSION, "metrics_version": METRICS_VERSION, "claim_rules_version": CLAIM_RULES_VERSION,
         "route_config_hash": router.config.hash, "degraded": degraded,
         "packet_hashes": {"fee": fee.content_hash, "risk": risk.content_hash,
                           "liquidity": liq.content_hash, "alpha": alpha.content_hash},

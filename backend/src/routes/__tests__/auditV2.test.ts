@@ -82,6 +82,10 @@ describe('GET /api/audit/v2 and /api/audit/verify', () => {
             expect(res.body.integrityHash).toBe(g.integrityHash);
             expect(res.body.scoringVersion).toBe(g.scoringVersion);
             expect(res.body.computedAt).toBeNull();
+            // M3 §2: the cost against expectation travels beside the grade, never inside `result` (the grade and its hash do not depend on it)
+            expect(g.costVsExpected).toBeDefined();
+            expect(res.body.costVsExpected).toEqual(g.costVsExpected);
+            expect(res.body.result).not.toHaveProperty('costVsExpected');
             expect(res.body.demo).toEqual({ dataSource: 'synthetic-demo', basis: expect.stringContaining('offline build') });
             const other = await request(app).get('/api/audit/v2?userId=demo-okx');      // a removed demo id: refused
             expect(other.status).toBe(403);

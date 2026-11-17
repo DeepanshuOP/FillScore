@@ -87,6 +87,21 @@ test('v2.3.0 panel: dollar costs beside the letter, components named after the s
   for (const name of ['Execution cost', 'Fees', 'Unfilled orders']) expect(text).toContain(name)
   expect(text).not.toMatch(/Slippage|Spread:/)                  // the old component names are gone from the panel
   await expect(page.getByTestId('score-v2-timing')).toHaveText('Timing, not scored: No material difference between hours.')
+  // M3 §2: cost vs expected beside the letter, past tense, with its interval (numbers come from the offline build; the pattern is checked, not the values)
+  await expect(page.getByTestId('score-v2-cost-vs-expected')).toHaveText(
+    /^Market orders cost -?[\d.]+ bps against -?[\d.]+ bps, the modelled cost of a taker event of the same size in the hour before the order \(fitted on January 2024\) \(difference [+-]?[\d.]+ bps; 90% interval [+-]?[\d.]+ bps to [+-]?[\d.]+ bps, a bootstrap over orders that leaves out the model's own error; \d+ orders\)\.$/)
+})
+
+test('M4 panel on a rebuilt demo: insufficient data for the queue, "too few to tell" in the rankings, no review controls, offline-build badge', async ({ page }) => {
+  await page.goto(`/dashboard?userId=${ID}`)
+  const panel = page.getByTestId('explain-panel')
+  await expect(panel).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByTestId('explain-queue-note')).toContainText(/^Insufficient data: fewer than 20 measured orders/)
+  await expect(page.getByTestId('explain-rankings')).toContainText('too few to tell')
+  await expect(panel.getByRole('button', { name: /Mark reviewed|Dismiss|Reopen/ })).toHaveCount(0)     // a demo account is read-only
+  await expect(page.getByTestId('score-v2-badge')).toHaveText('Offline build, hash recorded')
+  const text = await panel.innerText()
+  expect(text).not.toMatch(/\bshould\b|\bbecause\b|\bcaused by\b/i)
 })
 
 test('analytics of a rebuilt demo says not computed instead of drawing empty charts', async ({ page }) => {

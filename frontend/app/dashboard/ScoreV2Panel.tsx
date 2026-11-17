@@ -1,7 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { describeV2, describeVerify, isScored } from './scoreV2';
+import { describeV2, describeVerify, isScored, verifyBadge } from './scoreV2';
 import { leadBreakdown } from './ordersView';
 
 interface Props {
@@ -24,6 +24,7 @@ const TEXT = { fontFamily: 'var(--font-inter)', fontSize: '0.85rem', lineHeight:
 export default function ScoreV2Panel({ status, body, onVerify, ordersBody }: Props) {
   const [verifyMsg, setVerifyMsg] = useState<string | null>(null);
   const [verifying, setVerifying] = useState(false);
+  const [verifyRes, setVerifyRes] = useState<{ status: number; body: unknown } | null>(null);
   if (status === null) return null;
   const v = describeV2(status, body);
   const lead = leadBreakdown(ordersBody);
@@ -39,6 +40,9 @@ export default function ScoreV2Panel({ status, body, onVerify, ordersBody }: Pro
             <div style={{ display: 'flex', alignItems: 'baseline', gap: '1rem', flexWrap: 'wrap' }}>
               <span style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.5rem', color: '#ede8e0' }}>{v.headline}</span>
               {v.range && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#888078' }}>{v.range}</span>}
+              {v.costVsExpected && (
+                <span data-testid="score-v2-cost-vs-expected" style={{ ...TEXT, flexBasis: '100%', color: '#ede8e0' }}>{v.costVsExpected}</span>
+              )}
             </div>
             {lead && (
               <div data-testid="score-v2-costs" style={{ minWidth: '15rem' }}>
@@ -68,6 +72,11 @@ export default function ScoreV2Panel({ status, body, onVerify, ordersBody }: Pro
           <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888078' }}>
             <span>version {v.version}</span>
             <span>hash {v.hashShort}</span>
+            {(() => {
+              const badge = verifyBadge(verifyRes?.status ?? null, verifyRes?.body ?? null, !!onVerify);
+              const color = badge.tone === 'good' ? '#4ade80' : badge.tone === 'bad' ? '#ef4444' : '#888078';
+              return <span data-testid="score-v2-badge" style={{ color, border: `1px solid ${color}`, borderRadius: '2px', padding: '0.05rem 0.4rem' }}>{badge.label}</span>;
+            })()}
             <Link href="/methodology" style={{ color: '#a78b71' }}>methodology</Link>
             {onVerify && (
               <button
@@ -77,8 +86,10 @@ export default function ScoreV2Panel({ status, body, onVerify, ordersBody }: Pro
                   setVerifying(true);
                   try {
                     const r = await onVerify();
+                    setVerifyRes(r);
                     setVerifyMsg(describeVerify(r.status, r.body));
                   } catch {
+                    setVerifyRes({ status: 503, body: null });
                     setVerifyMsg(describeVerify(503, null));
                   } finally {
                     setVerifying(false);

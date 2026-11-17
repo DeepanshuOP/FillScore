@@ -20,6 +20,9 @@ export interface OrderMeasurementDocument {
     shortfall: Record<string, unknown> | null;
     unmeasuredReason: string | null;
     marketDataRefs: Array<Record<string, unknown>>;
+    /** What taker events of the same size cost in the same hour (ml-service/expected_cost/model.py); absent when no
+     *  market context source ran. A past-tense benchmark, never a forecast. */
+    expectedCost?: Record<string, unknown> | null;
     measuredAt: Date;
 }
 
@@ -39,6 +42,7 @@ const OrderMeasurementSchema = new Schema<OrderMeasurementDocument>({
     shortfall: { type: Schema.Types.Mixed, default: null },
     unmeasuredReason: { type: String, default: null },
     marketDataRefs: { type: [Schema.Types.Mixed] as any, default: [] },
+    expectedCost: { type: Schema.Types.Mixed },
     measuredAt: { type: Date, required: true },
 }, { timestamps: false, collection: 'order_measurements' });
 

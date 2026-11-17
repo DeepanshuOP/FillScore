@@ -73,6 +73,27 @@ def _dt(s: str) -> datetime:
     return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%fZ")      # naive UTC, as Mongo returns it
 
 
+WINDOW_START_MS = int(datetime(2024, 1, 1, tzinfo=timezone.utc).timestamp() * 1000)
+
+
+def expected_cost_hook(tapes: DayTapes):
+    """The `expected_cost` hook of the measurement job for the offline build: the hour before an order's arrival comes from
+    the cached daily tapes (nothing before 1 January 2024 is borrowed, so an order in the first hour of the window has no
+    context and the model says so), and the model is the committed calibration expected_cost/versions/ec1.0.0.json."""
+    from expected_cost.features import hour_context
+    from expected_cost.model import expected_for_order, load_calibration
+
+    cal = load_calibration()
+
+    def hook(info: dict) -> dict:
+        t = info["arrivalMs"]
+        w = tapes(info["symbol"], max(t - 62 * 60_000, WINDOW_START_MS), t)
+        sf = info["shortfall"]
+        return expected_for_order(cal, symbol=info["symbol"], order_type=info["orderType"], notional=sf.get("intendedNotional") or 0.0,
+                                  quantity=info["orderedQty"] or 0.0, context=hour_context(w, t))
+    return hook
+
+
 def measure_offline(demo: str, out: dict, tapes: DayTapes):
     """Measure one rebuilt demo with the production job on an in-memory database. Returns (db, now_ms, reports)."""
     import mongomock
@@ -87,7 +108,7 @@ def measure_offline(demo: str, out: dict, tapes: DayTapes):
     now = int(datetime(2024, 3, 1, tzinfo=timezone.utc).timestamp() * 1000)
     reports = []
     while True:
-        r = measure_account(db, demo, tapes, now, data_source="synthetic-demo")
+        r = measure_account(db, demo, tapes, now, data_source="synthetic-demo", expected_cost=expected_cost_hook(tapes))
         reports.append(r)
         if r["measured"] == 0 or r["pending"] == 0:
             break
@@ -105,8 +126,11 @@ def score_offline(demo: str, out: dict, tapes: DayTapes) -> dict:
     # The order measurements the production job wrote into the in-memory database: the seed script stores them in
     # `order_measurements`, so the dashboard's order views read the same documents as for a real account.
     oms = sorted((_plain(d) for d in db.order_measurements.find({"accountId": demo})), key=lambda d: (d["symbol"], d["orderId"]))
+    from expected_cost.aggregate import cost_vs_expected
+    # Beside the grade, never inside `result`: the v2.3.0 grade and its integrity hash do not depend on it.
     return {"scoringVersion": s["scoringVersion"], "versionFileSha256": s["versionFileSha256"],
             "measureVersion": s["measureVersion"], "integrityHash": s["integrityHash"], "result": s["result"],
+            "costVsExpected": cost_vs_expected(oms),
             "measured": sum(r["measured"] for r in reports), "orders": sum(r["orders"] for r in reports),
             "unmeasuredFills": unmeasured, "skipped": reports[-1]["skipped"], "orderMeasurements": oms}
 

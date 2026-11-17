@@ -105,6 +105,14 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/api/audit/v2` |
 | GET | `/api/audit/orders-summary` |
 | GET | `/api/audit/verify` |
+| GET | `/api/audit/exceptions` |
+| PATCH | `/api/audit/exceptions/:orderId` |
+| GET | `/api/audit/orders/:orderId/replay` |
+| GET | `/api/audit/rankings` |
+| GET | `/api/audit/venue-comparison` |
+| GET | `/api/evidence/public-key` |
+| GET | `/api/evidence/pack` |
+| POST | `/api/evidence/verify` |
 | POST | `/api/auth/forgot-password` |
 | GET | `/api/auth/github` |
 | GET | `/api/auth/github/callback` |
@@ -139,8 +147,9 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/health` | Model names and feature flags |
 | GET | `/ready` | Mongo reachable and `GROQ_API_KEY` set |
 | GET | `/version` | Service version |
-| POST | `/ml/agents/council` | Run the Council, return the full result |
-| POST | `/ml/agents/council/stream` | Same run, streamed as server-sent events |
+| POST | `/ml/agents/council` | One audit, return the full result. Body `mode`: `quick` (one model call, no specialists; the dashboard default) or `deep` (the 9-call Council; the API default). Deep costs 9 budget units, Quick 1; a refused Deep run answers 429 with `quick_available` |
+| POST | `/ml/agents/council/stream` | Same run, streamed as server-sent events (Quick: `synthesis_done`, `gate_done`, `complete`) |
+| GET | `/ml/agents/council/budget` | What is left of the account's and the day's audit budget, in units, and whether one more Deep or Quick audit is allowed |
 | GET | `/ml/agents/council/runs` | Past runs for the account |
 | GET | `/ml/agents/council/runs/{run_id}` | One persisted run |
 | GET | `/ml/agents/council/telemetry` | Token and latency summary |

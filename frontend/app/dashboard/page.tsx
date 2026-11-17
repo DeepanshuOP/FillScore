@@ -1,7 +1,7 @@
 'use client';
 
 import { formatPeriodLabel } from '../utils/periodLabel';
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Navbar from '../components/Navbar';
 import {
@@ -24,6 +24,7 @@ import { buildComponentCards, cardVisual, type ComponentMeans } from './componen
 import { skippedNotice, type SkippedTrades } from './skipped';
 import ScoreV2Panel from './ScoreV2Panel';
 import OrdersPanel from './OrdersPanel';
+import ExplainPanel from './ExplainPanel';
 import { describeHeaderStats, tradesCardCopy, type CurrentFigures } from './headerStats';
 import NotComputed from '../components/NotComputed';
 import { NOT_COMPUTED, isNotComputed } from '../utils/notComputed';
@@ -199,6 +200,18 @@ function DashboardContent() {
   const { accessToken, isLoading: authLoading, refreshAccessToken } = useAuth();
   const searchParams = useSearchParams();
   const [dashboardMode, setDashboardMode] = useState<'demo' | 'real' | null>(null);
+
+  // M4 panel: one request helper; a signed-in account sends its token, a demo account is read-only and sends none.
+  const explainRequest = useCallback(async (path: string, init?: { method?: string; body?: unknown }) => {
+    const url = `${apiBase()}${path}`;
+    const options: RequestInit = init?.body !== undefined
+      ? { method: init.method ?? 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(init.body) }
+      : { method: init?.method };
+    const r = dashboardMode === 'real'
+      ? await authFetch(url, options, { accessToken, refreshAccessToken })
+      : await fetch(url, options);
+    return { status: r.status, body: await r.json().catch(() => null) };
+  }, [dashboardMode, accessToken, refreshAccessToken]);
 
   const handleShare = () => {
     if (!resolvedUserId) return;
@@ -723,6 +736,7 @@ function DashboardContent() {
 
               <div style={{ marginBottom: '2rem' }}>
                 <ScoreV2Panel
+                  key={`${dashboardMode}:${(scoreV2.body as { integrityHash?: string } | null)?.integrityHash ?? 'none'}`}   // a new hash resets "Verified"
                   status={scoreV2.status}
                   body={scoreV2.body}
                   ordersBody={ordersSummary}
@@ -736,6 +750,17 @@ function DashboardContent() {
               {ordersSummary != null && (
                 <div style={{ marginBottom: '2rem' }}>
                   <OrdersPanel body={ordersSummary} />
+                </div>
+              )}
+
+              {ordersSummary != null && dashboardMode !== null && (
+                <div style={{ marginBottom: '2rem' }}>
+                  <ExplainPanel
+                    key={`${dashboardMode}:${buildQuery(dashboardMode, resolvedUserId)}`}   // a new account starts with an empty panel
+                    query={buildQuery(dashboardMode, resolvedUserId)}
+                    readOnly={dashboardMode !== 'real'}
+                    request={explainRequest}
+                  />
                 </div>
               )}
 

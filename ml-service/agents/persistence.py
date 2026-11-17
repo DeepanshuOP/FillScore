@@ -16,7 +16,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from config.versions import PROMPT_VERSION
+from config.versions import CLAIM_RULES_VERSION, PROMPT_VERSION
 from config.demo_users import VALID_DEMO_USERS
 
 
@@ -241,11 +241,14 @@ async def find_cached_run(
     route_config_hash: str,
     now: Optional[datetime] = None,
     max_age_days: int = CACHE_MAX_AGE_DAYS,
+    mode: str = "deep",
 ) -> Optional[dict]:
     """
     Content-hash cache (Phase 1b.5): the newest NON-degraded run for this account and symbol with
     the same 4 packet hashes, prompt version, metrics version and route config hash, created less
     than max_age_days ago. created_at is an ISO-8601 UTC string, so string order is time order.
+    `mode` (M3 §3): a Quick run is never served for a Deep request or the reverse. Runs stored before the
+    modes existed carry no `mode` and are Deep.
     """
     now = now or datetime.now(timezone.utc)
     cutoff = (now - timedelta(days=max_age_days)).isoformat()
@@ -257,6 +260,10 @@ async def find_cached_run(
         "metrics_version": metrics_version,
         "route_config_hash": route_config_hash,
         "created_at": {"$gt": cutoff},
+        "mode": "quick" if mode == "quick" else {"$ne": "quick"},
+        # A cached run is not checked again, so it must have been made under the claim rules in force now. A run stored
+        # before the rules were versioned has no stamp: it was made under 1.0.0 and never matches.
+        "claim_rules_version": CLAIM_RULES_VERSION,
     }
     for key in ("fee", "risk", "liquidity", "alpha"):
         query[f"packet_hashes.{key}"] = packet_hashes[key]

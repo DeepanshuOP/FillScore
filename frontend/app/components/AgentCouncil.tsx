@@ -4,6 +4,8 @@ import { waitForHealthy } from "../utils/serviceWarmup";
 import {
   councilMaintenanceMessage,
   councilErrorMessage,
+  auditModeLabel,
+  quickOffer,
   councilOfflineMessage,
   councilVerdictView,
   flagLabel,
@@ -87,6 +89,12 @@ export default function AgentCouncil({
   mlBaseUrl?: string;
   accessToken?: string | null;
 }) {
+  // M3 §3: Quick (one model call) is the default; Deep (the 9-call Council) is opt-in and budgeted. A demo account is never
+  // run live: it shows its recorded Deep audit, so it has no toggle.
+  const [mode, setMode] = useState<"quick" | "deep">("quick");
+  const [resultMode, setResultMode] = useState<"quick" | "deep" | null>(null);
+  const [modeLabel, setModeLabel] = useState<string | null>(null);
+  const [offerQuick, setOfferQuick] = useState(false);
   const [cards, setCards] = useState<Record<string, AgentCard>>({});
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
   const [synthesis, setSynthesis] = useState<SynthesisResult | null>(null);
@@ -109,6 +117,9 @@ export default function AgentCouncil({
   const esRef = useRef<EventSource | null>(null);
 
   const reset = () => {
+    setResultMode(null);
+    setModeLabel(null);
+    setOfferQuick(false);
     setCards({});
     setActiveAgent(null);
     setSynthesis(null);
@@ -121,7 +132,7 @@ export default function AgentCouncil({
     setError(null);
   };
 
-  const runAnalysis = useCallback(async () => {
+  const runAnalysis = useCallback(async (runMode: "quick" | "deep" = mode) => {
     if (running) return;
     reset();
     setRunning(true);
@@ -142,7 +153,7 @@ export default function AgentCouncil({
         headers["Authorization"] = `Bearer ${accessToken}`;
       }
       
-      const payload: any = { symbol };
+      const payload: any = { symbol, mode: userId ? "deep" : runMode };
       if (userId) {
         payload.userId = userId;
       }
@@ -204,7 +215,7 @@ export default function AgentCouncil({
     } finally {
       setRunning(false);
     }
-  }, [userId, symbol, mlBaseUrl, running]);
+  }, [userId, symbol, mlBaseUrl, running, mode]);
 
   function handleEvent(eventType: string, payload: any) {
     if (eventType === "agent_start") {
@@ -253,6 +264,8 @@ export default function AgentCouncil({
       // The final event carries the whole result, identical to the non-stream endpoint. It is
       // the source of truth: every number on the panel is re-read from it.
       setCards(verdictCardsFromResult(payload));
+      setResultMode(payload.mode === "quick" ? "quick" : "deep");
+      setModeLabel(userId ? null : auditModeLabel(payload));
       setSynthesis({
         ...payload.synthesis,
         degraded: payload.degraded,
@@ -269,7 +282,8 @@ export default function AgentCouncil({
       setTradeCount(typeof payload.tradeContext?.trade_count === "number" ? payload.tradeContext.trade_count : null);
       setActiveAgent(null);
     } else if (eventType === "error") {
-      setError(councilErrorMessage(payload.code));
+      setError(councilErrorMessage(payload.code, typeof payload.quick_available === "boolean" ? payload.quick_available : undefined));
+      setOfferQuick(quickOffer(payload));
     }
   }
 
@@ -290,7 +304,7 @@ export default function AgentCouncil({
           <p className="text-[#888078] text-[11px] mt-1">{COUNCIL_DISCLAIMER}</p>
         </div>
         <button
-          onClick={runAnalysis}
+          onClick={() => runAnalysis()}
           disabled={running}
           className={`px-4 py-2 rounded text-xs font-mono tracking-wider font-semibold transition-all duration-200 inline-flex items-center justify-center ${
             running
@@ -298,9 +312,35 @@ export default function AgentCouncil({
               : "bg-[rgba(167,139,113,0.15)] hover:bg-[rgba(167,139,113,0.25)] text-[#e8d5b7] border border-[rgba(167,139,113,0.35)] shadow-sm"
           }`}
         >
-          {running ? "ANALYSING…" : "RUN ANALYSIS"}
+          {running ? "ANALYSING…" : userId ? "RUN ANALYSIS" : mode === "quick" ? "RUN QUICK AUDIT" : "RUN DEEP AUDIT"}
         </button>
       </div>
+
+      {!userId && (
+        <div data-testid="audit-mode" className="flex flex-wrap items-center gap-3 text-xs font-mono text-[#888078]">
+          <div role="group" aria-label="Audit mode" className="inline-flex border border-[rgba(255,255,255,0.1)] rounded overflow-hidden">
+            {(["quick", "deep"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                aria-pressed={mode === m}
+                disabled={running}
+                onClick={() => setMode(m)}
+                className={`px-3 py-1.5 tracking-wider ${mode === m ? "bg-[rgba(167,139,113,0.2)] text-[#e8d5b7]" : "text-[#888078]"}`}
+              >
+                {m === "quick" ? "Quick" : "Deep"}
+              </button>
+            ))}
+          </div>
+          <span>
+            {mode === "quick"
+              ? "Usually one model call (a second one only when a replay check needs it). The default."
+              : "The full Council: nine model calls, four specialists and a debate. It uses nine times the budget of a Quick audit."}
+          </span>
+        </div>
+      )}
+
+      {modeLabel && <p data-testid="audit-mode-label" className="text-[#888078] text-[11px] font-mono">{modeLabel}</p>}
 
       {waking && (
         <div role="status" className="text-[#c4a882] text-xs font-mono bg-[rgba(167,139,113,0.08)] border border-[rgba(167,139,113,0.25)] rounded px-4 py-3">
@@ -309,13 +349,23 @@ export default function AgentCouncil({
       )}
 
       {error && (
-        <div className="text-red-400 text-xs font-mono bg-red-400/10 border border-red-400/20 rounded px-4 py-3">
-          {error}
+        <div className="text-red-400 text-xs font-mono bg-red-400/10 border border-red-400/20 rounded px-4 py-3 space-y-2">
+          <p>{error}</p>
+          {offerQuick && !running && (
+            <button
+              type="button"
+              data-testid="run-quick-instead"
+              onClick={() => { setMode("quick"); runAnalysis("quick"); }}
+              className="px-3 py-1.5 rounded border border-[rgba(167,139,113,0.35)] text-[#e8d5b7] bg-[rgba(167,139,113,0.15)]"
+            >
+              RUN A QUICK AUDIT INSTEAD
+            </button>
+          )}
         </div>
       )}
 
-      {/* 2×2 specialist grid */}
-      <div className="grid grid-cols-2 gap-3">
+      {/* 2×2 specialist grid: a Quick audit has no specialists to show */}
+      <div className={`grid grid-cols-2 gap-3 ${userId || (resultMode ?? mode) === "deep" ? "" : "hidden"}`}>
         {AGENT_ORDER.map((agent) => {
           const card = cards[agent];
           const isRunning = card?.status === "running" || activeAgent === agent;

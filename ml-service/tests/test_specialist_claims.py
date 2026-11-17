@@ -6,6 +6,8 @@ were taker orders" in fee.recommendedAction, because enforce_claims scrubbed syn
 spelling. Both are fixed under claim rules 1.1.0; 1.0.0 behaves as before."""
 import asyncio
 
+import pytest
+
 from agents.claims import flag_sentences
 from agents.council import run_council_pipeline
 from tests.council_fakes import ALPHA, FEE, LIQUIDITY, RISK, make_packets, make_router
@@ -40,6 +42,24 @@ def test_a_causal_risk_flag_is_dropped_and_the_others_stay():
     out = _run(risk_auditor=dict(RISK, flags=["Concentration was high due to the top symbol.", "Adverse rate was low."]))
     assert out["risk"]["flags"] == ["Adverse rate was low."]
     assert [r["field"] for r in out["claims"]["specialist_redactions"]] == ["risk.flags.0"]
+
+
+@pytest.mark.parametrize("agent,base", [("liquidity_scout", LIQUIDITY), ("alpha_architect", ALPHA), ("fee_optimizer", FEE)])
+def test_the_flags_of_every_specialist_are_checked_not_only_the_risk_auditor(agent, base):
+    """Review finding 1 (2026-11-17): liquidity, alpha and fee flags are model sentences shown on the cards too."""
+    key = {"liquidity_scout": "liquidity", "alpha_architect": "alpha", "fee_optimizer": "fee"}[agent]
+    out = _run(**{agent: dict(base, flags=["Costs were high due to the top symbol.", "The adverse rate was low."])})
+    assert out[key]["flags"] == ["The adverse rate was low."]
+    assert [r["field"] for r in out["claims"]["specialist_redactions"]] == [f"{key}.flags.0"]
+
+
+def test_a_degraded_run_still_gets_the_specialist_check():
+    """Review finding 2: a run with a failed call is returned and shown, so the surviving specialists' text is checked too."""
+    out = _run(risk_auditor=RuntimeError("model down"),
+               fee_optimizer=dict(FEE, recommendedAction="Fees were high because most fills were taker orders."))
+    assert out["degraded"] is True
+    assert "because" not in out["fee"]["recommendedAction"].lower()
+    assert any(r["field"] == "fee.recommendedAction" for r in out["claims"]["specialist_redactions"])
 
 
 def test_a_non_breaking_hyphen_does_not_hide_a_named_term():

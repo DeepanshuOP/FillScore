@@ -7,6 +7,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -52,6 +64,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 33.81619463214744,
+    "volume": 13259.837000000003
+   },
+   "expectedBps": 1.6404501198957546,
+   "highBps": 3.2887237363520203,
+   "level": 0.9,
+   "lowBps": -0.007823496560511067,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -99,6 +126,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -144,6 +183,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 111.24108901371459,
+    "volume": 99461.05699999997
+   },
+   "expectedBps": 1.6369566572835794,
+   "highBps": 3.2852302737398453,
+   "level": 0.9,
+   "lowBps": -0.01131695917268627,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -189,6 +243,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 189.95287237080814,
+    "volume": 256214.59200000015
+   },
+   "expectedBps": 1.6382950986099558,
+   "highBps": 3.2865687150662213,
+   "level": 0.9,
+   "lowBps": -0.009978517846309876,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -235,6 +304,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 29.562168161695432,
+    "volume": 7837.949000000001
+   },
+   "expectedBps": 1.641113178094372,
+   "highBps": 3.2893867945506376,
+   "level": 0.9,
+   "lowBps": -0.007160438361893728,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -281,6 +365,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 28.47403013429236,
+    "volume": 9977.151000000002
+   },
+   "expectedBps": 1.6400259372984252,
+   "highBps": 3.288299553754691,
+   "level": 0.9,
+   "lowBps": -0.008247679157840526,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -333,6 +432,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 137.70696024203377,
+    "volume": 63404.67100000002
+   },
+   "expectedBps": 1.6513857221602377,
+   "highBps": 3.2996593386165034,
+   "level": 0.9,
+   "lowBps": 0.0031121057039720235,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -378,6 +492,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 45.75685423633933,
+    "volume": 10955.425000000003
+   },
+   "expectedBps": 1.6420012109320778,
+   "highBps": 3.2902748273883438,
+   "level": 0.9,
+   "lowBps": -0.006272405524187841,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -423,6 +552,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 55.16737769030174,
+    "volume": 21137.191000000006
+   },
+   "expectedBps": 1.643452604197556,
+   "highBps": 3.2917262206538216,
+   "level": 0.9,
+   "lowBps": -0.004821012258709789,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -468,6 +612,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 51.854026695523366,
+    "volume": 25122.644999999986
+   },
+   "expectedBps": 1.6406279962179047,
+   "highBps": 3.28890161267417,
+   "level": 0.9,
+   "lowBps": -0.007645620238361017,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -514,6 +673,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 126.90712475870056,
+    "volume": 121162.119
+   },
+   "expectedBps": 1.6429994998663213,
+   "highBps": 3.291273116322587,
+   "level": 0.9,
+   "lowBps": -0.0052741165899443665,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -560,6 +734,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 32.22461334485158,
+    "volume": 12762.082999999999
+   },
+   "expectedBps": 1.6409843499648582,
+   "highBps": 3.2892579664211237,
+   "level": 0.9,
+   "lowBps": -0.007289266491407487,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -608,6 +797,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 35.516421604270384,
+    "volume": 14462.023000000005
+   },
+   "expectedBps": 1.6368624046428026,
+   "highBps": 3.2851360210990683,
+   "level": 0.9,
+   "lowBps": -0.011411211813463051,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -655,6 +859,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 45.269357014665985,
+    "volume": 16845.865999999998
+   },
+   "expectedBps": 1.6401118147283311,
+   "highBps": 3.288385431184597,
+   "level": 0.9,
+   "lowBps": -0.00816180172793457,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -701,6 +920,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 41.200095895747744,
+    "volume": 11419.765000000003
+   },
+   "expectedBps": 1.6439110752965262,
+   "highBps": 3.2921846917527917,
+   "level": 0.9,
+   "lowBps": -0.0043625411597394415,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -748,6 +982,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 52.33974441642557,
+    "volume": 19130.717
+   },
+   "expectedBps": 1.6470648427368466,
+   "highBps": 3.295338459193112,
+   "level": 0.9,
+   "lowBps": -0.0012087737194190762,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -793,6 +1042,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 33.852714150318896,
+    "volume": 15411.721
+   },
+   "expectedBps": 1.6341971671346145,
+   "highBps": 3.28247078359088,
+   "level": 0.9,
+   "lowBps": -0.014076449321651197,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -841,6 +1105,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -888,6 +1164,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 40.47272418159617,
+    "volume": 18854.39999999999
+   },
+   "expectedBps": 1.6377804430113267,
+   "highBps": 3.2860540594675927,
+   "level": 0.9,
+   "lowBps": -0.010493173444938941,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -933,6 +1224,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "no market context for the hour before the order (too few minutes with trades, or no data)",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -979,6 +1282,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 51.63295593954812,
+    "volume": 15879.800000000003
+   },
+   "expectedBps": 1.649300997798636,
+   "highBps": 3.2975746142549016,
+   "level": 0.9,
+   "lowBps": 0.0010273813423702371,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1026,6 +1344,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 52.97271262102654,
+    "volume": 15344.511
+   },
+   "expectedBps": 1.642129749910717,
+   "highBps": 3.2904033663669825,
+   "level": 0.9,
+   "lowBps": -0.00614386654554866,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1072,6 +1405,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1117,6 +1462,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 59.124212414673686,
+    "volume": 42841.22299999998
+   },
+   "expectedBps": 1.6412605177477053,
+   "highBps": 3.2895341342039712,
+   "level": 0.9,
+   "lowBps": -0.007013098708560372,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1162,6 +1522,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1208,6 +1580,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 56.98078744763663,
+    "volume": 19266.17299999999
+   },
+   "expectedBps": 1.6435015965633029,
+   "highBps": 3.2917752130195685,
+   "level": 0.9,
+   "lowBps": -0.004772019892962831,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1260,6 +1647,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 35.41439405449612,
+    "volume": 12426.653000000002
+   },
+   "expectedBps": 1.6362418751895462,
+   "highBps": 3.284515491645812,
+   "level": 0.9,
+   "lowBps": -0.012031741266719465,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1307,6 +1709,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 60.37417362435295,
+    "volume": 26348.870000000014
+   },
+   "expectedBps": 1.6383791139691528,
+   "highBps": 3.2866527304254185,
+   "level": 0.9,
+   "lowBps": -0.009894502487112877,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1385,6 +1802,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 63.346635261312876,
+    "volume": 39653.166000000005
+   },
+   "expectedBps": 1.6388103353768153,
+   "highBps": 3.2870839518330808,
+   "level": 0.9,
+   "lowBps": -0.00946328107945038,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1430,6 +1862,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 121.06968216424983,
+    "volume": 53253.06099999999
+   },
+   "expectedBps": 1.6611117508078428,
+   "highBps": 3.3093853672641087,
+   "level": 0.9,
+   "lowBps": 0.012838134351577102,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1484,6 +1931,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 61.840664042174886,
+    "volume": 37233.45400000001
+   },
+   "expectedBps": 1.6385214161863502,
+   "highBps": 3.286795032642616,
+   "level": 0.9,
+   "lowBps": -0.009752200269915523,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1531,6 +1993,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 43.038228577332816,
+    "volume": 14792.59
+   },
+   "expectedBps": 1.6448227799045754,
+   "highBps": 3.2930963963608413,
+   "level": 0.9,
+   "lowBps": -0.0034508365516903172,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1582,6 +2059,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 75.04910937352214,
+    "volume": 45725.865000000005
+   },
+   "expectedBps": 1.637985035168474,
+   "highBps": 3.2862586516247396,
+   "level": 0.9,
+   "lowBps": -0.010288581287791754,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1627,6 +2119,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 46.591942772930565,
+    "volume": 22678.947
+   },
+   "expectedBps": 1.6389862321228226,
+   "highBps": 3.2872598485790885,
+   "level": 0.9,
+   "lowBps": -0.009287384333443116,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1672,6 +2179,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 45.687418841867924,
+    "volume": 14190.305000000002
+   },
+   "expectedBps": 1.6486302891943758,
+   "highBps": 3.2969039056506415,
+   "level": 0.9,
+   "lowBps": 0.0003566727381101309,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1719,6 +2241,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 35.61084870122788,
+    "volume": 11159.211000000001
+   },
+   "expectedBps": 1.6391788314385802,
+   "highBps": 3.2874524478948457,
+   "level": 0.9,
+   "lowBps": -0.009094785017685458,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1772,6 +2309,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 64.3642806159082,
+    "volume": 24892.284000000003
+   },
+   "expectedBps": 1.643559523805187,
+   "highBps": 3.2918331402614527,
+   "level": 0.9,
+   "lowBps": -0.004714092651078694,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1819,6 +2371,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 41.19776590482357,
+    "volume": 11452.434
+   },
+   "expectedBps": 1.649187586039486,
+   "highBps": 3.297461202495752,
+   "level": 0.9,
+   "lowBps": 0.0009139695832203198,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1865,6 +2432,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 35.86554537188523,
+    "volume": 24028.275
+   },
+   "expectedBps": 1.633364843511255,
+   "highBps": 3.281638459967521,
+   "level": 0.9,
+   "lowBps": -0.014908772945010584,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1910,6 +2492,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 61.312618970946545,
+    "volume": 33684.527999999984
+   },
+   "expectedBps": 1.6429847144116543,
+   "highBps": 3.2912583308679197,
+   "level": 0.9,
+   "lowBps": -0.00528890204461141,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -1955,6 +2552,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 71.50700747844819,
+    "volume": 24185.781999999992
+   },
+   "expectedBps": 1.6511247507492128,
+   "highBps": 3.2993983672054785,
+   "level": 0.9,
+   "lowBps": 0.002851134292947144,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2003,6 +2615,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 101.9464371639221,
+    "volume": 43927.501000000004
+   },
+   "expectedBps": 1.651909579898431,
+   "highBps": 3.3001831963546966,
+   "level": 0.9,
+   "lowBps": 0.003635963442165213,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2065,6 +2692,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2110,6 +2749,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 58.52543924291697,
+    "volume": 38973.34200000002
+   },
+   "expectedBps": 1.6403658343386995,
+   "highBps": 3.2886394507949652,
+   "level": 0.9,
+   "lowBps": -0.007907782117566153,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2156,6 +2810,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 46.65310124445772,
+    "volume": 24191.743000000006
+   },
+   "expectedBps": 1.6368159837938436,
+   "highBps": 3.2850896002501093,
+   "level": 0.9,
+   "lowBps": -0.011457632662422057,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2210,6 +2879,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 576.1927791206286,
+    "volume": 399663.21800000017
+   },
+   "expectedBps": 1.6830122087213648,
+   "highBps": 3.3312858251776305,
+   "level": 0.9,
+   "lowBps": 0.03473859226509912,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2255,6 +2939,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 42.703913613556374,
+    "volume": 28103.500000000007
+   },
+   "expectedBps": 1.6381087016276228,
+   "highBps": 3.2863823180838887,
+   "level": 0.9,
+   "lowBps": -0.010164914828642901,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2305,6 +3004,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2350,6 +3061,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 43.10606756628349,
+    "volume": 25982.745
+   },
+   "expectedBps": 1.6328701120515812,
+   "highBps": 3.281143728507847,
+   "level": 0.9,
+   "lowBps": -0.01540350440468452,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2395,6 +3121,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 36.45329884687742,
+    "volume": 20732.325000000004
+   },
+   "expectedBps": 1.6374642024282096,
+   "highBps": 3.285737818884475,
+   "level": 0.9,
+   "lowBps": -0.01080941402805613,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2440,6 +3181,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 190.3130253519064,
+    "volume": 94152.54200000007
+   },
+   "expectedBps": 1.6562282913245039,
+   "highBps": 3.30450190778077,
+   "level": 0.9,
+   "lowBps": 0.007954674868238198,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2485,6 +3241,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 50.45911700322414,
+    "volume": 23935.317000000006
+   },
+   "expectedBps": 1.644224762443658,
+   "highBps": 3.2924983788999236,
+   "level": 0.9,
+   "lowBps": -0.004048854012607794,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2530,6 +3301,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 42.20011440252544,
+    "volume": 13244.82
+   },
+   "expectedBps": 1.641344081217728,
+   "highBps": 3.289617697673994,
+   "level": 0.9,
+   "lowBps": -0.006929535238537676,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2580,6 +3366,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2626,6 +3424,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2672,6 +3482,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 55.1311805958056,
+    "volume": 31722.995999999992
+   },
+   "expectedBps": 1.639894237584041,
+   "highBps": 3.2881678540403065,
+   "level": 0.9,
+   "lowBps": -0.008379378872224619,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2723,6 +3548,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 46.631270250214556,
+    "volume": 19194.241
+   },
+   "expectedBps": 1.6361630961726084,
+   "highBps": 3.284436712628874,
+   "level": 0.9,
+   "lowBps": -0.012110520283657333,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2770,6 +3610,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 56.37633786570423,
+    "volume": 24016.345
+   },
+   "expectedBps": 1.6458250603803313,
+   "highBps": 3.294098676836597,
+   "level": 0.9,
+   "lowBps": -0.002448556075934416,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2817,6 +3672,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 36.96725101393044,
+    "volume": 17506.696
+   },
+   "expectedBps": 1.6363929884365538,
+   "highBps": 3.2846666048928195,
+   "level": 0.9,
+   "lowBps": -0.011880628019711903,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2864,6 +3734,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 54.45094543701973,
+    "volume": 15893.077000000001
+   },
+   "expectedBps": 1.6430774795886773,
+   "highBps": 3.2913510960449432,
+   "level": 0.9,
+   "lowBps": -0.005196136867588352,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2911,6 +3796,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -2958,6 +3855,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 57.23519733973787,
+    "volume": 22611.228
+   },
+   "expectedBps": 1.6476121056731856,
+   "highBps": 3.2958857221294515,
+   "level": 0.9,
+   "lowBps": -0.000661510783080077,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3003,6 +3915,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 48.51302411056866,
+    "volume": 18387.702999999998
+   },
+   "expectedBps": 1.6469323277359245,
+   "highBps": 3.2952059441921904,
+   "level": 0.9,
+   "lowBps": -0.0013412887203412271,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3051,6 +3978,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 203.91807613474165,
+    "volume": 118484.9
+   },
+   "expectedBps": 1.6603027687178222,
+   "highBps": 3.3085763851740877,
+   "level": 0.9,
+   "lowBps": 0.012029152261556542,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3099,6 +4041,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 33.47105542900863,
+    "volume": 18438.298
+   },
+   "expectedBps": 1.632337105499363,
+   "highBps": 3.280610721955629,
+   "level": 0.9,
+   "lowBps": -0.01593651095690274,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3144,6 +4101,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 34.26761699506264,
+    "volume": 12967.006000000005
+   },
+   "expectedBps": 1.6361851083975578,
+   "highBps": 3.2844587248538235,
+   "level": 0.9,
+   "lowBps": -0.01208850805870787,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3190,6 +4162,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 63.28522936939241,
+    "volume": 2133.3445399999996
+   },
+   "expectedBps": 0.03737968353866027,
+   "highBps": 0.4316359860136712,
+   "level": 0.9,
+   "lowBps": -0.35687661893635064,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3235,6 +4222,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 15.752150890794065,
+    "volume": 757.1781700000005
+   },
+   "expectedBps": 0.017864633189237693,
+   "highBps": 0.4121209356642486,
+   "level": 0.9,
+   "lowBps": -0.3763916692857732,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3281,6 +4283,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3343,6 +4357,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 41.49613828333175,
+    "volume": 969.0649399999978
+   },
+   "expectedBps": 0.030789232412323272,
+   "highBps": 0.4250455348873342,
+   "level": 0.9,
+   "lowBps": -0.36346707006268764,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3390,6 +4419,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 20.328348806049537,
+    "volume": 564.7833199999991
+   },
+   "expectedBps": 0.02633768271930085,
+   "highBps": 0.4205939851943118,
+   "level": 0.9,
+   "lowBps": -0.36791861975571005,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3441,6 +4485,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 41.34465208597104,
+    "volume": 1040.8036899999997
+   },
+   "expectedBps": 0.04258603291965117,
+   "highBps": 0.4368423353946621,
+   "level": 0.9,
+   "lowBps": -0.35167026955535974,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3486,6 +4545,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3531,6 +4602,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3585,6 +4668,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 63.75997517813374,
+    "volume": 2129.173939999996
+   },
+   "expectedBps": 0.04533324458598589,
+   "highBps": 0.43958954706099684,
+   "level": 0.9,
+   "lowBps": -0.348923057889025,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3632,6 +4730,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 36.031082390187436,
+    "volume": 925.1559199999996
+   },
+   "expectedBps": 0.04105698425610842,
+   "highBps": 0.43531328673111935,
+   "level": 0.9,
+   "lowBps": -0.3531993182189025,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3677,6 +4790,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 26.25705031931325,
+    "volume": 809.0706299999983
+   },
+   "expectedBps": 0.02681559674300807,
+   "highBps": 0.421071899218019,
+   "level": 0.9,
+   "lowBps": -0.3674407057320028,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3724,6 +4852,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 24.89534138215826,
+    "volume": 673.1179499999989
+   },
+   "expectedBps": 0.03054013749769187,
+   "highBps": 0.4247964399727028,
+   "level": 0.9,
+   "lowBps": -0.36371616497731907,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3771,6 +4914,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 73.33084199501366,
+    "volume": 2588.218169999999
+   },
+   "expectedBps": 0.0480347041902138,
+   "highBps": 0.4422910066652247,
+   "level": 0.9,
+   "lowBps": -0.34622159828479715,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3816,6 +4974,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 27.781526451139648,
+    "volume": 878.4290899999982
+   },
+   "expectedBps": 0.02962807906175878,
+   "highBps": 0.4238843815367697,
+   "level": 0.9,
+   "lowBps": -0.36462822341325213,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3861,6 +5034,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 41.9159839121089,
+    "volume": 1481.0260099999964
+   },
+   "expectedBps": 0.030470328771953492,
+   "highBps": 0.4247266312469644,
+   "level": 0.9,
+   "lowBps": -0.36378597370305743,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3910,6 +5098,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -3957,6 +5157,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 64.82013994217661,
+    "volume": 1299.8096900000007
+   },
+   "expectedBps": 0.060779166550533385,
+   "highBps": 0.4550354690255443,
+   "level": 0.9,
+   "lowBps": -0.33347713592447753,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4002,6 +5217,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 88.09514691100863,
+    "volume": 3922.6101800000047
+   },
+   "expectedBps": 0.045081160668542515,
+   "highBps": 0.43933746314355343,
+   "level": 0.9,
+   "lowBps": -0.3491751418064684,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4047,6 +5277,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 57.06802005668598,
+    "volume": 3235.1602799999955
+   },
+   "expectedBps": 0.03310740683707222,
+   "highBps": 0.4273637093120831,
+   "level": 0.9,
+   "lowBps": -0.3611488956379387,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4092,6 +5337,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 55.048641961690485,
+    "volume": 1845.1863699999992
+   },
+   "expectedBps": 0.0428045226678895,
+   "highBps": 0.4370608251429004,
+   "level": 0.9,
+   "lowBps": -0.35145177980712144,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4137,6 +5397,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 70.3570307950215,
+    "volume": 2016.194930000001
+   },
+   "expectedBps": 0.04999576624598926,
+   "highBps": 0.4442520687210002,
+   "level": 0.9,
+   "lowBps": -0.34426053622902164,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4186,6 +5461,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 35.41998750892532,
+    "volume": 1006.5323500000003
+   },
+   "expectedBps": 0.03648928272661946,
+   "highBps": 0.43074558520163037,
+   "level": 0.9,
+   "lowBps": -0.3577670197483915,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4231,6 +5521,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 36.93193034412253,
+    "volume": 857.4093399999997
+   },
+   "expectedBps": 0.04514218328891136,
+   "highBps": 0.43939848576392226,
+   "level": 0.9,
+   "lowBps": -0.3491141191860996,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4277,6 +5582,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4323,6 +5640,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 37.019043621607466,
+    "volume": 1067.7784000000001
+   },
+   "expectedBps": 0.03016495891560591,
+   "highBps": 0.4244212613906168,
+   "level": 0.9,
+   "lowBps": -0.36409134355940503,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4368,6 +5700,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 40.925618218829555,
+    "volume": 1041.8783999999996
+   },
+   "expectedBps": 0.04406094965473856,
+   "highBps": 0.4383172521297495,
+   "level": 0.9,
+   "lowBps": -0.35019535282027237,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4416,6 +5763,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 28.776806362365598,
+    "volume": 829.7629999999996
+   },
+   "expectedBps": 0.03382173329854316,
+   "highBps": 0.4280780357735541,
+   "level": 0.9,
+   "lowBps": -0.36043456917646777,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4465,6 +5827,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 55.22047375222597,
+    "volume": 1872.2138799999996
+   },
+   "expectedBps": 0.037835955760466514,
+   "highBps": 0.4320922582354774,
+   "level": 0.9,
+   "lowBps": -0.3564203467145444,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4511,6 +5888,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 22.358426781105962,
+    "volume": 403.3050999999995
+   },
+   "expectedBps": 0.028582209607101214,
+   "highBps": 0.42283851208211215,
+   "level": 0.9,
+   "lowBps": -0.3656740928679097,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4556,6 +5948,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4601,6 +6005,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4654,6 +6070,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4703,6 +6131,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4749,6 +6189,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 31.29944008556023,
+    "volume": 941.8502399999986
+   },
+   "expectedBps": 0.027616324699355536,
+   "highBps": 0.42187262717436647,
+   "level": 0.9,
+   "lowBps": -0.3666399777756554,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4794,6 +6249,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 45.65382514606273,
+    "volume": 1627.7011799999996
+   },
+   "expectedBps": 0.0303509946457187,
+   "highBps": 0.42460729712072964,
+   "level": 0.9,
+   "lowBps": -0.3639053078292922,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4842,6 +6312,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 36.135346655251865,
+    "volume": 1309.6375600000001
+   },
+   "expectedBps": 0.032581437259609485,
+   "highBps": 0.4268377397346204,
+   "level": 0.9,
+   "lowBps": -0.36167486521540143,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4888,6 +6373,18 @@
   "endMid": 45128.615000000005,
   "endMs": 1704243653155,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4931,6 +6428,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 42.60376455877087,
+    "volume": 509.9377199999991
+   },
+   "expectedBps": 0.0627672203571935,
+   "highBps": 0.45702352283220443,
+   "level": 0.9,
+   "lowBps": -0.3314890821178174,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -4979,6 +6491,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 76.08935590495125,
+    "volume": 1671.0704399999943
+   },
+   "expectedBps": 0.06288869909648678,
+   "highBps": 0.45714500157149773,
+   "level": 0.9,
+   "lowBps": -0.3313676033785241,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5024,6 +6551,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5071,6 +6610,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 31.17865757891306,
+    "volume": 522.0446899999994
+   },
+   "expectedBps": 0.04624300882651818,
+   "highBps": 0.4404993113015291,
+   "level": 0.9,
+   "lowBps": -0.34801329364849276,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5117,6 +6671,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 26.047567872876844,
+    "volume": 627.9240599999997
+   },
+   "expectedBps": 0.03596057711286371,
+   "highBps": 0.43021687958787463,
+   "level": 0.9,
+   "lowBps": -0.3582957253621472,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5167,6 +6736,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 50.51965518855424,
+    "volume": 2917.965809999999
+   },
+   "expectedBps": 0.023057948948500495,
+   "highBps": 0.4173142514235114,
+   "level": 0.9,
+   "lowBps": -0.3711983535265104,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5212,6 +6796,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 35.18947365419156,
+    "volume": 748.7297899999985
+   },
+   "expectedBps": 0.04642890717717099,
+   "highBps": 0.44068520965218194,
+   "level": 0.9,
+   "lowBps": -0.3478273952978399,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5259,6 +6858,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 35.435396053706306,
+    "volume": 948.7570300000006
+   },
+   "expectedBps": 0.03906561680995969,
+   "highBps": 0.4333219192849706,
+   "level": 0.9,
+   "lowBps": -0.35519068566505124,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5304,6 +6918,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5349,6 +6975,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 79.24360801938754,
+    "volume": 3321.2186799999995
+   },
+   "expectedBps": 0.03526929305176788,
+   "highBps": 0.4295255955267788,
+   "level": 0.9,
+   "lowBps": -0.358987009423243,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5396,6 +7037,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 18.73283947828613,
+    "volume": 397.5076199999997
+   },
+   "expectedBps": 0.034364603260990736,
+   "highBps": 0.42862090573600165,
+   "level": 0.9,
+   "lowBps": -0.3598916992140202,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5442,6 +7098,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 65.24503666419713,
+    "volume": 2579.132329999994
+   },
+   "expectedBps": 0.04294911625515466,
+   "highBps": 0.4372054187301656,
+   "level": 0.9,
+   "lowBps": -0.35130718621985624,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5488,6 +7159,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5534,6 +7217,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 48.05302004184006,
+    "volume": 1412.9411400000006
+   },
+   "expectedBps": 0.0381265822717097,
+   "highBps": 0.4323828847467206,
+   "level": 0.9,
+   "lowBps": -0.35612972020330125,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5581,6 +7279,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 28.414164501243345,
+    "volume": 707.8980799999994
+   },
+   "expectedBps": 0.02922962000256797,
+   "highBps": 0.4234859224775789,
+   "level": 0.9,
+   "lowBps": -0.36502668247244296,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5626,6 +7339,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 41.01208240208345,
+    "volume": 1083.0681399999996
+   },
+   "expectedBps": 0.041110264513802314,
+   "highBps": 0.43536656698881326,
+   "level": 0.9,
+   "lowBps": -0.3531460379612086,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5671,6 +7399,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 33.92449893293887,
+    "volume": 886.7187399999996
+   },
+   "expectedBps": 0.03984925918031004,
+   "highBps": 0.434105561655321,
+   "level": 0.9,
+   "lowBps": -0.35440704329470085,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5720,6 +7463,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 227.56668730807584,
+    "volume": 9794.377330000036
+   },
+   "expectedBps": 0.06597703852746617,
+   "highBps": 0.4602333410024771,
+   "level": 0.9,
+   "lowBps": -0.32827926394754475,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5765,6 +7523,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5812,6 +7582,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "no market context for the hour before the order (too few minutes with trades, or no data)",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5861,6 +7643,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 29.55074209830444,
+    "volume": 1032.7595499999977
+   },
+   "expectedBps": 0.024838077726273715,
+   "highBps": 0.41909438020128464,
+   "level": 0.9,
+   "lowBps": -0.3694182247487372,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5907,6 +7704,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 412.0797881994074,
+    "volume": 14585.260050000115
+   },
+   "expectedBps": 0.09382110090796862,
+   "highBps": 0.48807740338297956,
+   "level": 0.9,
+   "lowBps": -0.3004352015670423,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -5955,6 +7767,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 61.616807528928625,
+    "volume": 2548.2379500000015
+   },
+   "expectedBps": 0.04219295198178875,
+   "highBps": 0.43644925445679966,
+   "level": 0.9,
+   "lowBps": -0.3520633504932222,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6000,6 +7827,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6050,6 +7889,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 35.19202314940132,
+    "volume": 821.598019999999
+   },
+   "expectedBps": 0.03158480276082236,
+   "highBps": 0.4258411052358333,
+   "level": 0.9,
+   "lowBps": -0.36267149971418855,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6095,6 +7949,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 29.919107333698395,
+    "volume": 944.5449799999997
+   },
+   "expectedBps": 0.025470054443251386,
+   "highBps": 0.4197263569182623,
+   "level": 0.9,
+   "lowBps": -0.3687862480317595,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6143,6 +8012,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 37.46844124208437,
+    "volume": 903.1117999999975
+   },
+   "expectedBps": 0.037466597339289434,
+   "highBps": 0.43172289981430034,
+   "level": 0.9,
+   "lowBps": -0.3567897051357215,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6188,6 +8072,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 40.403256618622216,
+    "volume": 830.8969499999989
+   },
+   "expectedBps": 0.04512498284881625,
+   "highBps": 0.43938128532382714,
+   "level": 0.9,
+   "lowBps": -0.3491313196261947,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6234,6 +8133,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 25.572369506648176,
+    "volume": 832.184839999999
+   },
+   "expectedBps": 0.024028616974492177,
+   "highBps": 0.4182849194495031,
+   "level": 0.9,
+   "lowBps": -0.37022768550051877,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6280,6 +8194,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6334,6 +8260,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 167.75421974155515,
+    "volume": 10025.353620000024
+   },
+   "expectedBps": 0.0449955704965517,
+   "highBps": 0.43925187297156265,
+   "level": 0.9,
+   "lowBps": -0.3492607319784592,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6382,6 +8323,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 18.113351353832215,
+    "volume": 461.4089399999997
+   },
+   "expectedBps": 0.023108428171097033,
+   "highBps": 0.41736473064610796,
+   "level": 0.9,
+   "lowBps": -0.3711478743039139,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6428,6 +8384,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 40.58385300214227,
+    "volume": 1393.670109999999
+   },
+   "expectedBps": 0.032247651625749975,
+   "highBps": 0.4265039541007609,
+   "level": 0.9,
+   "lowBps": -0.3620086508492609,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6473,6 +8444,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 84.395067603147,
+    "volume": 3688.0385400000023
+   },
+   "expectedBps": 0.04279173239705397,
+   "highBps": 0.4370480348720649,
+   "level": 0.9,
+   "lowBps": -0.35146457007795695,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6521,6 +8507,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 75.47253297397374,
+    "volume": 2148.0048000000074
+   },
+   "expectedBps": 0.05159154282464147,
+   "highBps": 0.4458478452996524,
+   "level": 0.9,
+   "lowBps": -0.34266475965036947,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6568,6 +8569,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 37.286470071078604,
+    "volume": 1520.4025599999977
+   },
+   "expectedBps": 0.026187964485001013,
+   "highBps": 0.4204442669600119,
+   "level": 0.9,
+   "lowBps": -0.36806833799000993,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6613,6 +8629,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 77.29287640764782,
+    "volume": 1738.1383799999933
+   },
+   "expectedBps": 0.04546155204950644,
+   "highBps": 0.4397178545245174,
+   "level": 0.9,
+   "lowBps": -0.34879475042550445,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6661,6 +8692,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 36.655231438496735,
+    "volume": 876.0716699999991
+   },
+   "expectedBps": 0.04318327548490326,
+   "highBps": 0.43743957795991417,
+   "level": 0.9,
+   "lowBps": -0.3510730269901077,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6706,6 +8752,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 42.703762812465236,
+    "volume": 1204.7843699999985
+   },
+   "expectedBps": 0.037444201564604616,
+   "highBps": 0.4317005040396155,
+   "level": 0.9,
+   "lowBps": -0.3568121009104063,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6751,6 +8812,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 28.202554305542527,
+    "volume": 1004.55111
+   },
+   "expectedBps": 0.030729280736097028,
+   "highBps": 0.42498558321110796,
+   "level": 0.9,
+   "lowBps": -0.3635270217389139,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6798,6 +8874,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 72.70994298448542,
+    "volume": 2779.22202
+   },
+   "expectedBps": 0.03968734865279867,
+   "highBps": 0.4339436511278096,
+   "level": 0.9,
+   "lowBps": -0.35456895382221226,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6843,6 +8934,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6890,6 +8993,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6940,6 +9055,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 44.589569581817265,
+    "volume": 1499.3758999999961
+   },
+   "expectedBps": 0.03830762603069978,
+   "highBps": 0.4325639285057107,
+   "level": 0.9,
+   "lowBps": -0.35594867644431116,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -6985,6 +9115,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 28.189099721106597,
+    "volume": 700.690639999999
+   },
+   "expectedBps": 0.03280701129739784,
+   "highBps": 0.42706331377240875,
+   "level": 0.9,
+   "lowBps": -0.3614492911776131,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7030,6 +9175,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 36.892505083394155,
+    "volume": 1196.3911700000006
+   },
+   "expectedBps": 0.02625593151858259,
+   "highBps": 0.4205122339935935,
+   "level": 0.9,
+   "lowBps": -0.36800037095642835,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7075,6 +9235,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7120,6 +9292,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 25.18930757753345,
+    "volume": 526.5743099999995
+   },
+   "expectedBps": 0.03872881438207321,
+   "highBps": 0.43298511685708413,
+   "level": 0.9,
+   "lowBps": -0.3555274880929377,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7170,6 +9357,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 29.740721609579882,
+    "volume": 1364.6222499999978
+   },
+   "expectedBps": 0.02854528133182363,
+   "highBps": 0.4228015838068345,
+   "level": 0.9,
+   "lowBps": -0.3657110211431873,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7215,6 +9417,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7260,6 +9474,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 78.56603664338435,
+    "volume": 2673.376520000005
+   },
+   "expectedBps": 0.05114949749920142,
+   "highBps": 0.44540579997421237,
+   "level": 0.9,
+   "lowBps": -0.3431068049758095,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7307,6 +9536,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7353,6 +9594,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7399,6 +9652,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 32.687899718031744,
+    "volume": 5370.132200000001
+   },
+   "expectedBps": 0.06851877980701605,
+   "highBps": 0.6935505278587248,
+   "level": 0.9,
+   "lowBps": -0.5565129682446928,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7446,6 +9714,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7494,6 +9774,18 @@
   "endMid": 2241.1949999999997,
   "endMs": 1704618403990,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7537,6 +9829,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7582,6 +9886,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 46.24808322654179,
+    "volume": 10888.99849999999
+   },
+   "expectedBps": 0.06458670074362056,
+   "highBps": 0.6896184487953294,
+   "level": 0.9,
+   "lowBps": -0.5604450473080882,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7628,6 +9947,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 49.221193081158525,
+    "volume": 14563.320599999986
+   },
+   "expectedBps": 0.05799425828906825,
+   "highBps": 0.683026006340777,
+   "level": 0.9,
+   "lowBps": -0.5670374897626406,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7674,6 +10008,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 67.78085495536841,
+    "volume": 23644.139100000015
+   },
+   "expectedBps": 0.06288188367830773,
+   "highBps": 0.6879136317300165,
+   "level": 0.9,
+   "lowBps": -0.5621498643734011,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7719,6 +10068,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 29.30608026178516,
+    "volume": 9536.431899999994
+   },
+   "expectedBps": 0.055718319597065497,
+   "highBps": 0.6807500676487743,
+   "level": 0.9,
+   "lowBps": -0.5693134284546433,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7764,6 +10128,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 55.86421849482714,
+    "volume": 11089.496099999995
+   },
+   "expectedBps": 0.07372743693004462,
+   "highBps": 0.6987591849817534,
+   "level": 0.9,
+   "lowBps": -0.5513043111216642,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7810,6 +10189,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 37.70054658315848,
+    "volume": 6649.540500000001
+   },
+   "expectedBps": 0.08123322248189149,
+   "highBps": 0.7062649705336003,
+   "level": 0.9,
+   "lowBps": -0.5437985255698173,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7855,6 +10249,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 31.03459855617057,
+    "volume": 8193.588299999992
+   },
+   "expectedBps": 0.054114772446489726,
+   "highBps": 0.6791465204981986,
+   "level": 0.9,
+   "lowBps": -0.570916975605219,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7901,6 +10310,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 52.36051310765315,
+    "volume": 11696.199900000014
+   },
+   "expectedBps": 0.06055650289273662,
+   "highBps": 0.6855882509444454,
+   "level": 0.9,
+   "lowBps": -0.5644752451589722,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7946,6 +10370,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 30.587164753808125,
+    "volume": 5857.472999999998
+   },
+   "expectedBps": 0.056827806420354524,
+   "highBps": 0.6818595544720634,
+   "level": 0.9,
+   "lowBps": -0.5682039416313542,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -7992,6 +10431,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8041,6 +10492,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 56.15236163298839,
+    "volume": 11119.965499999993
+   },
+   "expectedBps": 0.08633368738311718,
+   "highBps": 0.711365435434826,
+   "level": 0.9,
+   "lowBps": -0.5386980606685916,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8087,6 +10553,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 30.614723735834676,
+    "volume": 7225.284799999998
+   },
+   "expectedBps": 0.06690868215728774,
+   "highBps": 0.6919404302089965,
+   "level": 0.9,
+   "lowBps": -0.5581230658944211,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8133,6 +10614,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 49.74965471305709,
+    "volume": 12265.558199999994
+   },
+   "expectedBps": 0.06495595814533872,
+   "highBps": 0.6899877061970475,
+   "level": 0.9,
+   "lowBps": -0.5600757899063701,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8179,6 +10675,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 63.12062054857936,
+    "volume": 20938.451900000025
+   },
+   "expectedBps": 0.06333585718540741,
+   "highBps": 0.6883676052371162,
+   "level": 0.9,
+   "lowBps": -0.5616958908663015,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8224,6 +10735,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 51.82382826412591,
+    "volume": 15507.570999999987
+   },
+   "expectedBps": 0.0677522747674995,
+   "highBps": 0.6927840228192083,
+   "level": 0.9,
+   "lowBps": -0.5572794732842093,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8274,6 +10800,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 42.79913050591329,
+    "volume": 15106.264100000004
+   },
+   "expectedBps": 0.06158337875231473,
+   "highBps": 0.6866151268040235,
+   "level": 0.9,
+   "lowBps": -0.5634483692993941,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8319,6 +10860,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 94.20306154400211,
+    "volume": 24903.714
+   },
+   "expectedBps": 0.08040798561189219,
+   "highBps": 0.705439733663601,
+   "level": 0.9,
+   "lowBps": -0.5446237624398166,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8364,6 +10920,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 73.71419706387363,
+    "volume": 21721.126499999995
+   },
+   "expectedBps": 0.06483828766117035,
+   "highBps": 0.6898700357128792,
+   "level": 0.9,
+   "lowBps": -0.5601934603905384,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8410,6 +10981,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 29.05008422469523,
+    "volume": 11352.456700000002
+   },
+   "expectedBps": 0.046918459109344765,
+   "highBps": 0.6719502071610536,
+   "level": 0.9,
+   "lowBps": -0.578113288942364,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8456,6 +11042,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8503,6 +11101,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 57.30472173843896,
+    "volume": 11048.325899999996
+   },
+   "expectedBps": 0.08157277634827102,
+   "highBps": 0.7066045243999798,
+   "level": 0.9,
+   "lowBps": -0.5434589717034378,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8549,6 +11162,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 40.62910028729644,
+    "volume": 13707.229400000004
+   },
+   "expectedBps": 0.06576809004223128,
+   "highBps": 0.6907998380939401,
+   "level": 0.9,
+   "lowBps": -0.5592636580094775,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8597,6 +11225,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 29.825373960153936,
+    "volume": 8496.880099999998
+   },
+   "expectedBps": 0.051487067751182856,
+   "highBps": 0.6765188158028916,
+   "level": 0.9,
+   "lowBps": -0.573544680300526,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8642,6 +11285,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 242.24596908016446,
+    "volume": 122587.50940000018
+   },
+   "expectedBps": 0.07978108374076741,
+   "highBps": 0.7048128317924762,
+   "level": 0.9,
+   "lowBps": -0.5452506643109414,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8687,6 +11345,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 66.31965901796018,
+    "volume": 22401.55350000001
+   },
+   "expectedBps": 0.06966170010540709,
+   "highBps": 0.6946934481571159,
+   "level": 0.9,
+   "lowBps": -0.5553700479463017,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8734,6 +11407,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 36.52219141404477,
+    "volume": 11244.692999999996
+   },
+   "expectedBps": 0.057198191277312585,
+   "highBps": 0.6822299393290214,
+   "level": 0.9,
+   "lowBps": -0.5678335567743962,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8779,6 +11467,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8825,6 +11525,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 39.673118955242785,
+    "volume": 8187.273099999994
+   },
+   "expectedBps": 0.06774224227031277,
+   "highBps": 0.6927739903220216,
+   "level": 0.9,
+   "lowBps": -0.557289505781396,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8870,6 +11585,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 64.04380055754923,
+    "volume": 34665.0767000001
+   },
+   "expectedBps": 0.05283339282306821,
+   "highBps": 0.677865140874777,
+   "level": 0.9,
+   "lowBps": -0.5721983552286406,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8915,6 +11645,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 52.974639987236614,
+    "volume": 14266.091399999992
+   },
+   "expectedBps": 0.0640817068717428,
+   "highBps": 0.6891134549234517,
+   "level": 0.9,
+   "lowBps": -0.5609500411799659,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -8960,6 +11705,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 28.30174560916028,
+    "volume": 13189.024199999998
+   },
+   "expectedBps": 0.04575254181674656,
+   "highBps": 0.6707842898684554,
+   "level": 0.9,
+   "lowBps": -0.5792792062349622,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9005,6 +11765,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 77.28180357727027,
+    "volume": 27405.839900000014
+   },
+   "expectedBps": 0.06899989430823683,
+   "highBps": 0.6940316423599456,
+   "level": 0.9,
+   "lowBps": -0.556031853743472,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9050,6 +11825,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 215.15655791092655,
+    "volume": 77109.89959999999
+   },
+   "expectedBps": 0.11025063322712592,
+   "highBps": 0.7352823812788347,
+   "level": 0.9,
+   "lowBps": -0.5147811148245829,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9095,6 +11885,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 23.078631751848768,
+    "volume": 7920.5893
+   },
+   "expectedBps": 0.04706376687755996,
+   "highBps": 0.6720955149292688,
+   "level": 0.9,
+   "lowBps": -0.5779679811741488,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9140,6 +11945,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 65.68896564894322,
+    "volume": 15748.408299999997
+   },
+   "expectedBps": 0.07059594154924566,
+   "highBps": 0.6956276896009544,
+   "level": 0.9,
+   "lowBps": -0.5544358065024632,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9186,6 +12006,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 25.400791986435344,
+    "volume": 4540.797099999999
+   },
+   "expectedBps": 0.05878472694175488,
+   "highBps": 0.6838164749934637,
+   "level": 0.9,
+   "lowBps": -0.566247021109954,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9231,6 +12066,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 24.39103485591567,
+    "volume": 7078.918399999997
+   },
+   "expectedBps": 0.04705687726172486,
+   "highBps": 0.6720886253134337,
+   "level": 0.9,
+   "lowBps": -0.5779748707899839,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9277,6 +12127,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 108.66370375418009,
+    "volume": 48416.97140000005
+   },
+   "expectedBps": 0.07492628038715095,
+   "highBps": 0.6999580284388598,
+   "level": 0.9,
+   "lowBps": -0.5501054676645578,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9324,6 +12189,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9369,6 +12246,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 51.268041681944204,
+    "volume": 10821.360299999997
+   },
+   "expectedBps": 0.08076849996983157,
+   "highBps": 0.7058002480215404,
+   "level": 0.9,
+   "lowBps": -0.5442632480818772,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9414,6 +12306,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 32.60132871617442,
+    "volume": 11487.149699999998
+   },
+   "expectedBps": 0.047113952553207744,
+   "highBps": 0.6721457006049165,
+   "level": 0.9,
+   "lowBps": -0.5779177954985011,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9459,6 +12366,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 56.40139674790894,
+    "volume": 10876.89639999999
+   },
+   "expectedBps": 0.07621176684454116,
+   "highBps": 0.7012435148962499,
+   "level": 0.9,
+   "lowBps": -0.5488199812071677,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9505,6 +12427,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 48.70789941588089,
+    "volume": 14016.977899999989
+   },
+   "expectedBps": 0.058322852505711426,
+   "highBps": 0.6833546005574203,
+   "level": 0.9,
+   "lowBps": -0.5667088955459973,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9550,6 +12487,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9597,6 +12546,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9643,6 +12604,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 52.76293123062933,
+    "volume": 11375.929699999991
+   },
+   "expectedBps": 0.0710685055548498,
+   "highBps": 0.6961002536065586,
+   "level": 0.9,
+   "lowBps": -0.553963242496859,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9688,6 +12664,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 76.36022122164829,
+    "volume": 27919.06939999997
+   },
+   "expectedBps": 0.07108862105873684,
+   "highBps": 0.6961203691104456,
+   "level": 0.9,
+   "lowBps": -0.553943126992972,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9735,6 +12726,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9780,6 +12783,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 27.527918749593407,
+    "volume": 11307.539500000004
+   },
+   "expectedBps": 0.04634519986847882,
+   "highBps": 0.6713769479201876,
+   "level": 0.9,
+   "lowBps": -0.57868654818323,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9825,6 +12843,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 48.122274724975895,
+    "volume": 12810.957099999992
+   },
+   "expectedBps": 0.07322281891543957,
+   "highBps": 0.6982545669671484,
+   "level": 0.9,
+   "lowBps": -0.5518089291362692,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9872,6 +12905,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 46.291511118178036,
+    "volume": 13557.991599999996
+   },
+   "expectedBps": 0.06598476437261298,
+   "highBps": 0.6910165124243218,
+   "level": 0.9,
+   "lowBps": -0.5590469836790958,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9920,6 +12968,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -9965,6 +13025,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10012,6 +13084,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 47.338004170239444,
+    "volume": 16576.045199999986
+   },
+   "expectedBps": 0.055816239622618835,
+   "highBps": 0.6808479876743276,
+   "level": 0.9,
+   "lowBps": -0.56921550842909,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10057,6 +13144,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10108,6 +13207,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 46.30516176737244,
+    "volume": 8216.032600000002
+   },
+   "expectedBps": 0.07372183885338747,
+   "highBps": 0.6987535869050963,
+   "level": 0.9,
+   "lowBps": -0.5513099091983213,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10153,6 +13267,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10224,6 +13350,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 19.168911917048444,
+    "volume": 5062.655400000001
+   },
+   "expectedBps": 0.045782179544905564,
+   "highBps": 0.6708139275966144,
+   "level": 0.9,
+   "lowBps": -0.5792495685068032,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10270,6 +13411,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 35.43413575627568,
+    "volume": 7033.865399999997
+   },
+   "expectedBps": 0.0567861808149336,
+   "highBps": 0.6818179288666424,
+   "level": 0.9,
+   "lowBps": -0.5682455672367752,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10316,6 +13472,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10365,6 +13533,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 87.82306722914801,
+    "volume": 16887.20780000003
+   },
+   "expectedBps": 0.08740112650586501,
+   "highBps": 0.7124328745575739,
+   "level": 0.9,
+   "lowBps": -0.5376306215458437,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10411,6 +13594,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 31.710835258662065,
+    "volume": 8177.835399999996
+   },
+   "expectedBps": 0.054715301234072145,
+   "highBps": 0.6797470492857809,
+   "level": 0.9,
+   "lowBps": -0.5703164468176367,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10456,6 +13654,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10502,6 +13712,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 18.323518966828477,
+    "volume": 5850.183499999998
+   },
+   "expectedBps": 0.045615797852340545,
+   "highBps": 0.6706475459040493,
+   "level": 0.9,
+   "lowBps": -0.5794159501993683,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10547,6 +13772,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 26.88654557390461,
+    "volume": 5972.515699999999
+   },
+   "expectedBps": 0.06231200025216964,
+   "highBps": 0.6873437483038785,
+   "level": 0.9,
+   "lowBps": -0.5627197477995391,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10592,6 +13832,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 151.45643600956925,
+    "volume": 267376.31
+   },
+   "expectedBps": 0.6643262245166499,
+   "highBps": 2.6194623770973493,
+   "level": 0.9,
+   "lowBps": -1.2908099280640497,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10638,6 +13893,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 163.3129450995783,
+    "volume": 242401.27
+   },
+   "expectedBps": 0.7224130831574321,
+   "highBps": 2.6775492357381316,
+   "level": 0.9,
+   "lowBps": -1.2327230694232676,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10684,6 +13954,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10731,6 +14013,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 134.17389342510816,
+    "volume": 212662.89999999997
+   },
+   "expectedBps": 0.6667132076055216,
+   "highBps": 2.6218493601862214,
+   "level": 0.9,
+   "lowBps": -1.288422944975178,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10780,6 +14077,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 103.12760805746238,
+    "volume": 214370.58999999997
+   },
+   "expectedBps": 0.6323087940731872,
+   "highBps": 2.587444946653887,
+   "level": 0.9,
+   "lowBps": -1.3228273585075123,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10826,6 +14138,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 94.6487723493202,
+    "volume": 124499.23
+   },
+   "expectedBps": 0.6643544678415675,
+   "highBps": 2.619490620422267,
+   "level": 0.9,
+   "lowBps": -1.290781684739132,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10872,6 +14199,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 95.92470847676816,
+    "volume": 178138.08999999997
+   },
+   "expectedBps": 0.6676486134942341,
+   "highBps": 2.6227847660749335,
+   "level": 0.9,
+   "lowBps": -1.2874875390864655,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10917,6 +14259,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 96.19748082984715,
+    "volume": 185040.53
+   },
+   "expectedBps": 0.6582408593739939,
+   "highBps": 2.6133770119546935,
+   "level": 0.9,
+   "lowBps": -1.2968952932067057,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -10962,6 +14319,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 117.36985117550729,
+    "volume": 188867.64999999997
+   },
+   "expectedBps": 0.6715786915283184,
+   "highBps": 2.626714844109018,
+   "level": 0.9,
+   "lowBps": -1.2835574610523812,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11008,6 +14380,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11055,6 +14439,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 99.59203180660198,
+    "volume": 215373.00000000003
+   },
+   "expectedBps": 0.6399120812715671,
+   "highBps": 2.5950482338522667,
+   "level": 0.9,
+   "lowBps": -1.3152240713091325,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11103,6 +14502,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 82.39210119193918,
+    "volume": 306897.8999999999
+   },
+   "expectedBps": 0.5995398226814598,
+   "highBps": 2.5546759752621595,
+   "level": 0.9,
+   "lowBps": -1.3555963298992397,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11148,6 +14562,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11195,6 +14621,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11242,6 +14680,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 95.19419055266927,
+    "volume": 94048.31999999996
+   },
+   "expectedBps": 0.6615826873138915,
+   "highBps": 2.616718839894591,
+   "level": 0.9,
+   "lowBps": -1.2935534652668081,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11287,6 +14740,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 97.78331666324141,
+    "volume": 170635.27999999997
+   },
+   "expectedBps": 0.666913553397617,
+   "highBps": 2.6220497059783168,
+   "level": 0.9,
+   "lowBps": -1.2882225991830825,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11334,6 +14802,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11380,6 +14860,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 120.58075567322578,
+    "volume": 242095.33000000005
+   },
+   "expectedBps": 0.6724796525767092,
+   "highBps": 2.627615805157409,
+   "level": 0.9,
+   "lowBps": -1.2826565000039905,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11425,6 +14920,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11470,6 +14977,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 97.88441745893618,
+    "volume": 133704.34999999998
+   },
+   "expectedBps": 0.6797019391526496,
+   "highBps": 2.634838091733349,
+   "level": 0.9,
+   "lowBps": -1.27543421342805,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11515,6 +15037,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 113.24117581575355,
+    "volume": 205390.02
+   },
+   "expectedBps": 0.6842698105201445,
+   "highBps": 2.639405963100844,
+   "level": 0.9,
+   "lowBps": -1.2708663420605553,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11560,6 +15097,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 69.93163652291999,
+    "volume": 97102.43999999996
+   },
+   "expectedBps": 0.6529922448781568,
+   "highBps": 2.6081283974588563,
+   "level": 0.9,
+   "lowBps": -1.302143907702543,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11607,6 +15159,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 88.49057261884369,
+    "volume": 224280.78000000003
+   },
+   "expectedBps": 0.6031409111036372,
+   "highBps": 2.558277063684337,
+   "level": 0.9,
+   "lowBps": -1.3519952414770624,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11652,6 +15219,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11698,6 +15277,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11743,6 +15334,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 187.89333562570033,
+    "volume": 409120.7999999999
+   },
+   "expectedBps": 0.7248024423385226,
+   "highBps": 2.6799385949192223,
+   "level": 0.9,
+   "lowBps": -1.230333710242177,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11788,6 +15394,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 210.76564237598595,
+    "volume": 548166.440000001
+   },
+   "expectedBps": 0.6823313461185467,
+   "highBps": 2.6374674986992463,
+   "level": 0.9,
+   "lowBps": -1.2728048064621529,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11834,6 +15455,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 98.99422177080571,
+    "volume": 274111.49000000005
+   },
+   "expectedBps": 0.602767896363711,
+   "highBps": 2.5579040489444105,
+   "level": 0.9,
+   "lowBps": -1.3523682562169888,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11880,6 +15516,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 108.15209199629251,
+    "volume": 232249.7200000001
+   },
+   "expectedBps": 0.6532987333451008,
+   "highBps": 2.6084348859258,
+   "level": 0.9,
+   "lowBps": -1.3018374192355988,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11925,6 +15576,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 116.49504901479003,
+    "volume": 251567.4499999999
+   },
+   "expectedBps": 0.6344277832644454,
+   "highBps": 2.589563935845145,
+   "level": 0.9,
+   "lowBps": -1.3207083693162542,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -11970,6 +15636,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 111.79971800742567,
+    "volume": 244168.09999999995
+   },
+   "expectedBps": 0.6734890398568603,
+   "highBps": 2.6286251924375597,
+   "level": 0.9,
+   "lowBps": -1.2816471127238394,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12015,6 +15696,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 132.34830076104245,
+    "volume": 369969.48
+   },
+   "expectedBps": 0.6554336801821523,
+   "highBps": 2.610569832762852,
+   "level": 0.9,
+   "lowBps": -1.2997024723985473,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12060,6 +15756,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 91.28417040710681,
+    "volume": 133498.77
+   },
+   "expectedBps": 0.684224691705166,
+   "highBps": 2.6393608442858656,
+   "level": 0.9,
+   "lowBps": -1.2709114608755336,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12105,6 +15816,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 91.45482111941328,
+    "volume": 131679.2
+   },
+   "expectedBps": 0.6489511954991579,
+   "highBps": 2.6040873480798576,
+   "level": 0.9,
+   "lowBps": -1.3061849570815416,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12151,6 +15877,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 195.4556066643072,
+    "volume": 470749.0899999998
+   },
+   "expectedBps": 0.6961271758905399,
+   "highBps": 2.6512633284712397,
+   "level": 0.9,
+   "lowBps": -1.2590089766901598,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12197,6 +15938,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12243,6 +15996,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 102.19952024674926,
+    "volume": 147898.31999999995
+   },
+   "expectedBps": 0.66418218184598,
+   "highBps": 2.6193183344266795,
+   "level": 0.9,
+   "lowBps": -1.2909539707347197,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12290,6 +16058,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 116.54022126598989,
+    "volume": 192512.67999999973
+   },
+   "expectedBps": 0.6908344380988282,
+   "highBps": 2.6459705906795277,
+   "level": 0.9,
+   "lowBps": -1.2643017144818716,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12336,6 +16119,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12382,6 +16177,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12427,6 +16234,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12473,6 +16292,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 141.45173143333108,
+    "volume": 235169.2900000001
+   },
+   "expectedBps": 0.6928933463642717,
+   "highBps": 2.6480294989449713,
+   "level": 0.9,
+   "lowBps": -1.262242806216428,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12518,6 +16352,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 145.38711553501352,
+    "volume": 243628.06
+   },
+   "expectedBps": 0.6517958442872462,
+   "highBps": 2.606931996867946,
+   "level": 0.9,
+   "lowBps": -1.3033403082934534,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12563,6 +16412,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 89.10379105200722,
+    "volume": 175877.2499999999
+   },
+   "expectedBps": 0.625580223722933,
+   "highBps": 2.5807163763036325,
+   "level": 0.9,
+   "lowBps": -1.3295559288577667,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12609,6 +16473,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 112.66390172382783,
+    "volume": 224946.35
+   },
+   "expectedBps": 0.6371634329317638,
+   "highBps": 2.5922995855124635,
+   "level": 0.9,
+   "lowBps": -1.3179727196489357,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12656,6 +16535,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 117.59273989316499,
+    "volume": 196820.55000000002
+   },
+   "expectedBps": 0.6578720257702437,
+   "highBps": 2.6130081783509436,
+   "level": 0.9,
+   "lowBps": -1.2972641268104559,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12703,6 +16597,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 178.078752889955,
+    "volume": 468442.1699999999
+   },
+   "expectedBps": 0.6388157708522058,
+   "highBps": 2.5939519234329054,
+   "level": 0.9,
+   "lowBps": -1.3163203817284939,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12748,6 +16657,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 124.71854536931863,
+    "volume": 129694.25999999998
+   },
+   "expectedBps": 0.711066936282032,
+   "highBps": 2.6662030888627317,
+   "level": 0.9,
+   "lowBps": -1.2440692162986675,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12796,6 +16720,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 96.3854003445391,
+    "volume": 131296.77000000002
+   },
+   "expectedBps": 0.6560949294775078,
+   "highBps": 2.6112310820582074,
+   "level": 0.9,
+   "lowBps": -1.2990412231031918,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12845,6 +16784,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 187.52170073384409,
+    "volume": 406966.85000000015
+   },
+   "expectedBps": 0.6697825397690579,
+   "highBps": 2.6249186923497576,
+   "level": 0.9,
+   "lowBps": -1.2853536128116416,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12890,6 +16844,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 153.85854046854675,
+    "volume": 209756.63000000006
+   },
+   "expectedBps": 0.7130305151632328,
+   "highBps": 2.6681666677439324,
+   "level": 0.9,
+   "lowBps": -1.2421056374174668,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12943,6 +16912,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 94.68285862011473,
+    "volume": 452202.74000000005
+   },
+   "expectedBps": 0.5921759577675028,
+   "highBps": 2.5473121103482024,
+   "level": 0.9,
+   "lowBps": -1.3629601948131969,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -12988,6 +16972,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 265.42452863468094,
+    "volume": 1107496.1800000006
+   },
+   "expectedBps": 0.6610091853843862,
+   "highBps": 2.6161453379650856,
+   "level": 0.9,
+   "lowBps": -1.2941269671963134,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13035,6 +17034,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 107.47628941139162,
+    "volume": 269026.0299999998
+   },
+   "expectedBps": 0.6345625717008635,
+   "highBps": 2.589698724281563,
+   "level": 0.9,
+   "lowBps": -1.3205735808798362,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13081,6 +17095,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13128,6 +17154,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 98.84372774689018,
+    "volume": 171114.5299999999
+   },
+   "expectedBps": 0.6324112851939039,
+   "highBps": 2.5875474377746035,
+   "level": 0.9,
+   "lowBps": -1.3227248673867957,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13177,6 +17218,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 127.30338608106352,
+    "volume": 241747.4200000001
+   },
+   "expectedBps": 0.6832293907654831,
+   "highBps": 2.6383655433461826,
+   "level": 0.9,
+   "lowBps": -1.2719067618152167,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13223,6 +17279,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13268,6 +17336,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 89.32270049818598,
+    "volume": 171538.64
+   },
+   "expectedBps": 0.6439066302899878,
+   "highBps": 2.5990427828706872,
+   "level": 0.9,
+   "lowBps": -1.3112295222907118,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13314,6 +17397,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13359,6 +17454,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 123.56630145019656,
+    "volume": 161914.99
+   },
+   "expectedBps": 0.679289568813296,
+   "highBps": 2.6344257213939954,
+   "level": 0.9,
+   "lowBps": -1.2758465837674036,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13407,6 +17517,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 82.06400724127244,
+    "volume": 78856.6
+   },
+   "expectedBps": 0.6597955424782008,
+   "highBps": 2.6149316950589006,
+   "level": 0.9,
+   "lowBps": -1.2953406101024987,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13453,6 +17578,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 104.62359676465961,
+    "volume": 138224.81
+   },
+   "expectedBps": 0.7067931271121667,
+   "highBps": 2.6619292796928664,
+   "level": 0.9,
+   "lowBps": -1.2483430254685328,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13500,6 +17640,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 121.21083373128717,
+    "volume": 301193.1900000001
+   },
+   "expectedBps": 0.6656750776833965,
+   "highBps": 2.620811230264096,
+   "level": 0.9,
+   "lowBps": -1.2894610748973032,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13545,6 +17700,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 96.9919050538595,
+    "volume": 181073.13999999996
+   },
+   "expectedBps": 0.6506057480755895,
+   "highBps": 2.605741900656289,
+   "level": 0.9,
+   "lowBps": -1.30453040450511,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13591,6 +17761,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 181.48074893346578,
+    "volume": 367077.0399999998
+   },
+   "expectedBps": 0.7111517349434364,
+   "highBps": 2.666287887524136,
+   "level": 0.9,
+   "lowBps": -1.2439844176372632,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13636,6 +17821,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 69.2309133446005,
+    "volume": 144380.89999999997
+   },
+   "expectedBps": 0.6291106772017213,
+   "highBps": 2.584246829782421,
+   "level": 0.9,
+   "lowBps": -1.3260254753789784,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13682,6 +17882,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 90.55190132034123,
+    "volume": 173413.02999999994
+   },
+   "expectedBps": 0.6574292555615426,
+   "highBps": 2.6125654081422423,
+   "level": 0.9,
+   "lowBps": -1.297706897019157,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13727,6 +17942,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13773,6 +18000,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 120.42409640652119,
+    "volume": 350104.19
+   },
+   "expectedBps": 0.650037535445494,
+   "highBps": 2.6051736880261935,
+   "level": 0.9,
+   "lowBps": -1.3050986171352057,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13818,6 +18060,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 97.21993689002691,
+    "volume": 205309.04999999996
+   },
+   "expectedBps": 0.6393505681985472,
+   "highBps": 2.594486720779247,
+   "level": 0.9,
+   "lowBps": -1.3157855843821524,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13863,6 +18120,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13908,6 +18177,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 65.64599218289057,
+    "volume": 103874.90999999997
+   },
+   "expectedBps": 0.6380327648529706,
+   "highBps": 2.5931689174336703,
+   "level": 0.9,
+   "lowBps": -1.317103387727729,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -13957,6 +18241,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -14002,6 +18298,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 66.96246681168535,
+    "volume": 123932.45000000007
+   },
+   "expectedBps": 0.622596748563536,
+   "highBps": 2.577732901144236,
+   "level": 0.9,
+   "lowBps": -1.3325394040171636,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -14047,6 +18358,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 119.6039888950103,
+    "volume": 267807.3900000001
+   },
+   "expectedBps": 0.6556879262830071,
+   "highBps": 2.6108240788637067,
+   "level": 0.9,
+   "lowBps": -1.2994482262976925,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -14094,6 +18420,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 228.22733357334874,
+    "volume": 888525.8399999999
+   },
+   "expectedBps": 0.6741418843062148,
+   "highBps": 2.629278036886914,
+   "level": 0.9,
+   "lowBps": -1.2809942682744848,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -14156,6 +18497,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 117.99867915702045,
+    "volume": 303265.78
+   },
+   "expectedBps": 0.6461977374404559,
+   "highBps": 2.601333890021156,
+   "level": 0.9,
+   "lowBps": -1.3089384151402437,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -14203,6 +18559,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 90.4430774507607,
+    "volume": 75579.88000000003
+   },
+   "expectedBps": 0.7325064641476304,
+   "highBps": 2.68764261672833,
+   "level": 0.9,
+   "lowBps": -1.2226296884330692,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -14249,6 +18620,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -14294,6 +18677,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 225.6132422741701,
+    "volume": 882890.3300000005
+   },
+   "expectedBps": 0.6254543095366157,
+   "highBps": 2.5805904621173155,
+   "level": 0.9,
+   "lowBps": -1.3296818430440838,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -14339,6 +18737,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -14384,6 +18794,21 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 107.13281778249667,
+    "volume": 215744.86999999997
+   },
+   "expectedBps": 0.6622567502076969,
+   "highBps": 2.6173929027883966,
+   "level": 0.9,
+   "lowBps": -1.2928794023730026,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",
@@ -14429,6 +18854,18 @@
   "endMid": null,
   "endMs": null,
   "exchange": "binance",
+  "expectedCost": {
+   "applies": false,
+   "bucket": null,
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": null,
+   "expectedBps": null,
+   "highBps": null,
+   "level": 0.9,
+   "lowBps": null,
+   "reason": "not a market order: the model is calibrated on taker events, so resting orders are outside it",
+   "version": "ec1.0.0"
+  },
   "marketDataRefs": [
    {
     "dataset": "spot/daily/aggTrades",

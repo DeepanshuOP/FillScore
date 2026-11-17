@@ -241,6 +241,38 @@ def test_open_order_is_measured_again_once_final():
     assert om["endMid"] == pytest.approx(100.10, abs=1e-12)
 
 
+def test_expected_cost_hook_result_is_stored_with_the_order_facts_and_absent_without_a_hook(db):
+    """M3 §2: the job stores whatever the optional `expected_cost` hook returns as `expectedCost` (the offline demo build
+    passes the model; the runtime has no market-context source yet, so it passes none and the field is not written)."""
+    measure_account(db, ACC, Source(), NOW)
+    assert "expectedCost" not in db.order_measurements.find_one({"orderId": "7"})
+    d2 = mongomock.MongoClient().db
+    d2.trades.insert_many([trade(1, 20000, 100.02, 1.0, "7", 0.10), trade(2, 30000, 100.04, 0.5, "7", 0.05)])
+    d2.orders.insert_one(order("7", 10000, 40000, 2.0, 1.5))
+    seen = []
+
+    def hook(info):
+        seen.append(info)
+        return {"applies": False, "expectedBps": None, "reason": "test"}
+    measure_account(d2, ACC, Source(), NOW, expected_cost=hook)
+    om = d2.order_measurements.find_one({"orderId": "7"})
+    assert om["expectedCost"] == {"applies": False, "expectedBps": None, "reason": "test"}
+    assert len(seen) == 1
+    i = seen[0]
+    assert (i["symbol"], i["orderId"], i["arrivalMs"], i["orderType"]) == ("XUSDT", "7", B + 10000, "LIMIT")
+    assert i["orderedQty"] == 2.0 and i["shortfall"]["intendedNotional"] == pytest.approx(200.0)
+    assert_writable("OrderMeasurement", "expectedCost", om["expectedCost"], "ml-service/measure/service.py")
+
+
+def test_a_hook_is_not_asked_about_an_order_that_has_no_shortfall(db):
+    d = mongomock.MongoClient().db
+    d.orders.insert_one(order("9", 10000, 40000, 2.0, 0, status="CANCELED"))
+    asked = []
+    measure_account(d, ACC, Source(), NOW, expected_cost=lambda i: asked.append(i) or {"applies": False})
+    om = d.order_measurements.find_one({"orderId": "9"})
+    assert om["shortfall"] is not None and len(asked) == 1       # an unfilled order has a shortfall (opportunity cost)
+
+
 def test_writes_only_registry_owned_fields(db):
     measure_account(db, ACC, Source(), NOW)
     for t in db.trades.find():

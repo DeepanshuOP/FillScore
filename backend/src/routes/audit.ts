@@ -263,6 +263,7 @@ auditRouter.get('/v2', resolveAccount, async (req: Request, res: Response) => {
             return res.status(200).json({
                 label: 'v2 (measured)', scoringVersion: g.scoringVersion, versionFileSha256: g.versionFileSha256,
                 measureVersion: g.measureVersion, integrityHash: g.integrityHash, computedAt: null, result: g.result,
+                costVsExpected: g.costVsExpected,     // beside the grade (M3 §2); not part of it and not in its hash
                 demo: { dataSource: 'synthetic-demo', basis: 'offline build (ml-service/scripts/build_demo_v2.py): real January 2024 prints, synthetic trading behaviour' },
             });
         }

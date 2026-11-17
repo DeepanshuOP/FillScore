@@ -33,10 +33,23 @@ _DB_MARKERS = ("bad auth", "atlaserror", "serverselectiontimeout", "authenticati
 class CouncilError(Exception):
     """Raised when the council already knows which typed code applies."""
 
-    def __init__(self, code: str, retry_after_s: int | None = None):
+    def __init__(self, code: str, retry_after_s: int | None = None, quick_available: bool | None = None):
         super().__init__(code)
         self.code = code
         self.retry_after_s = retry_after_s
+        # Set when a Deep audit was refused for budget: whether a Quick audit (1 unit instead of 9) is still allowed.
+        self.quick_available = quick_available
+
+
+def refusal_message(code: str, quick_available: bool | None = None) -> str:
+    """The user-facing text of a refusal. For a Deep audit refused for budget it says plainly whether the Quick audit
+    (one model call, 1 unit instead of 9) is still allowed."""
+    base = safe_message(code)
+    if quick_available is True:
+        return base + " A Quick audit (one model call) is still available."
+    if quick_available is False:
+        return base + " A Quick audit is not available either."
+    return base
 
 
 def classify_exception(exc: BaseException) -> str:

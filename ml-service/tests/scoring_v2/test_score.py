@@ -72,6 +72,21 @@ def test_hand_case_components_and_grade():
     assert len(r["integrityHash"]) == 64
 
 
+def test_expected_cost_is_not_an_input_of_the_score_and_stays_out_of_the_integrity_hash():
+    """M3 §2 added `expectedCost` to the order measurement. It is a derived benchmark that the score never reads, so the
+    published integrity hash of a grade must not move when it is present (found 2026-11-17: the three demo hashes changed
+    when the field was first written, with the composites unchanged)."""
+    plain = score_account_v2(make_db(20), ACC, VERSION, "ff" * 32, now_ms=0)
+    db = make_db(20)
+    db.order_measurements.update_many({}, {"$set": {"expectedCost": {"applies": True, "expectedBps": 0.5, "version": "ec1.0.0"}}})
+    withec = score_account_v2(db, ACC, VERSION, "ff" * 32, now_ms=0)
+    assert withec["integrityHash"] == plain["integrityHash"]
+    assert withec["result"] == plain["result"]
+    stored = {**withec, "accountId": ACC}
+    db.scores_v2.insert_one(stored)
+    assert verify_account_v2(db, ACC, VERSION, "ff" * 32)["match"] is True
+
+
 def test_fewer_than_20_gives_band_not_letter():
     r = score_account_v2(make_db(19), ACC, VERSION, "ff" * 32, now_ms=0)
     assert r["result"]["grade"] is None and r["result"]["reason"] == "fewer than 20 measured fills"

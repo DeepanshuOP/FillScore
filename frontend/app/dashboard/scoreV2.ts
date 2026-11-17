@@ -2,7 +2,16 @@
  * View model for the measured score (Scoring v2, GET /api/audit/v2). Pure: every number shown comes from the API,
  * which comes from deterministic ml-service code. No letter is ever shown below the minimum sample.
  */
+import { formatBps } from '../utils/formatBps';
+
 export interface V2Component { score: number | null; measured: number; unmeasured: number; reason: string | null }
+/** What the market orders cost against what taker events of the same size cost in the same hour (ml-service
+ *  expected_cost.aggregate.cost_vs_expected). Beside the result, never inside it: it is not part of the score. */
+export type CostVsExpected =
+  | { insufficient: true; n: number; reason: string; excluded?: Record<string, number> }
+  | { insufficient: false; n: number; level: number; paidBps: number; expectedBps: number; excessBps: number;
+      lowBps: number | null; highBps: number | null; version: string; calibrationSha256: string; excluded?: Record<string, number> };
+
 export interface V2Response {
   label: string;
   scoringVersion: string;
@@ -12,6 +21,7 @@ export interface V2Response {
   computedAt: string | null;
   /** Present only for a rebuilt demo account (M2): its grade comes from the offline build, not a stored score. */
   demo?: { dataSource: 'synthetic-demo'; basis: string };
+  costVsExpected?: CostVsExpected;
   result: {
     components: Record<string, V2Component>;
     composite: number | null;
@@ -40,6 +50,22 @@ export interface V2Scored {
   note: string | null;
   /** v2.3.0 and later: what the audit found about the hour of the day (information, not scored); null before. */
   timingNote: string | null;
+  /** v2.3.0 and later: market-order cost against the expected cost, with its interval, or "insufficient data"; null before. */
+  costVsExpected: string | null;
+}
+
+const signed = (v: number) => (v > 0 ? '+' : '') + formatBps(v);
+
+/** The line beside the letter. Every number comes from the API; the sentence only arranges them, in past tense. */
+export function costVsExpectedLine(c: CostVsExpected | undefined): string {
+  if (!c) return 'Cost vs expected: insufficient data (no market context was stored for these orders).';
+  if (c.insufficient) return `Cost vs expected: insufficient data (${c.reason}).`;
+  // The benchmark is a fitted model evaluated at the order's hour context, not an observed cost; the interval is a bootstrap
+  // over the account's orders and does not contain the model's own error (which is wider): the sentence says both.
+  const interval = c.lowBps !== null && c.highBps !== null
+    ? `${Math.round(c.level * 100)}% interval ${signed(c.lowBps)} to ${signed(c.highBps)}, a bootstrap over orders that leaves out the model's own error` : 'no interval';
+  return `Market orders cost ${formatBps(c.paidBps)} against ${formatBps(c.expectedBps)}, the modelled cost of a taker event of the same size in the hour before the order `
+    + `(fitted on January 2024) (difference ${signed(c.excessBps)}; ${interval}; ${c.n} orders).`;
 }
 
 export const DEMO_NOTE = 'Demo trader: the trading behaviour is synthetic; every fill price comes from real public prints '
@@ -81,6 +107,7 @@ export function describeV2(status: number, body: unknown): V2View {
     hashShort: `${b.integrityHash.slice(0, 8)}…${b.integrityHash.slice(-4)}`, computedAt: b.computedAt,
     note: isDemo ? DEMO_NOTE : null,
     timingNote: r.timing ? `Timing, not scored: ${r.timing.message}` : null,
+    costVsExpected: 'execution' in r.components ? costVsExpectedLine(b.costVsExpected) : null,
   };
   if (r.grade && r.composite !== null) {
     return { kind: 'graded', headline: `${r.grade} · ${Math.round(r.composite)} / 100`, detail: null, ...common };
@@ -89,6 +116,15 @@ export function describeV2(status: number, body: unknown): V2View {
     ? `${r.reason.charAt(0).toUpperCase()}${r.reason.slice(1)} (${r.fills} so far).`
     : 'At least one component had insufficient data, so no overall score was computed.';
   return { kind: 'band', headline: 'No letter grade', detail, ...common };
+}
+
+/** The badge beside the hash. "Verified" is earned only by a verify answer of 200 with match true in this session. */
+export function verifyBadge(status: number | null, body: unknown, verifiable: boolean): { label: string; tone: 'good' | 'bad' | 'neutral' } {
+  if (!verifiable) return { label: 'Offline build, hash recorded', tone: 'neutral' };
+  if (status === 200) {
+    return (body as { match?: boolean } | null)?.match === true ? { label: 'Verified', tone: 'good' } : { label: 'Verification failed', tone: 'bad' };
+  }
+  return { label: 'Not checked', tone: 'neutral' };
 }
 
 export function describeVerify(status: number, body: unknown): string {

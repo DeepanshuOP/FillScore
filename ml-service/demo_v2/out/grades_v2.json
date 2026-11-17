@@ -1,5 +1,25 @@
 {
  "demo-aggressive": {
+  "costVsExpected": {
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "excessBps": -0.39944645309992816,
+   "excluded": {
+    "noExpectedCost": 3,
+    "outsideModel": 69,
+    "partlyFilled": 11
+   },
+   "expectedBps": 0.48969308178881843,
+   "expectedUsd": 2.216055925712293,
+   "highBps": -0.26311743996427445,
+   "insufficient": false,
+   "level": 0.9,
+   "lowBps": -0.539833666359257,
+   "method": "seeded bootstrap over orders (2000 resamples, seed 20240101), notional-weighted mean excess",
+   "n": 228,
+   "paidBps": 0.09024662868889032,
+   "paidUsd": 0.40840188215650414,
+   "version": "ec1.0.0"
+  },
   "integrityHash": "6360049bd174eced7dfd3b308cd0250c681449a6e7ffc08d34c765d0258e0411",
   "measureVersion": "1.0.0",
   "measured": 721,
@@ -48,6 +68,16 @@
   "versionFileSha256": "2a4d6b1ad79a2b7d22aecfe7cae7b0d894db2865a54b4dfae2f8d77cea0f4fa3"
  },
  "demo-disciplined": {
+  "costVsExpected": {
+   "excluded": {
+    "noExpectedCost": 0,
+    "outsideModel": 144,
+    "partlyFilled": 0
+   },
+   "insufficient": true,
+   "n": 0,
+   "reason": "fewer than 20 market orders have an expected cost (found 0)"
+  },
   "integrityHash": "d944f85ae96686e0cc6bcb104fae25d572fec36e0a9f35164b7137730d03f8bf",
   "measureVersion": "1.0.0",
   "measured": 385,
@@ -96,6 +126,26 @@
   "versionFileSha256": "2a4d6b1ad79a2b7d22aecfe7cae7b0d894db2865a54b4dfae2f8d77cea0f4fa3"
  },
  "demo-moderate": {
+  "costVsExpected": {
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "excessBps": -0.2053004272161476,
+   "excluded": {
+    "noExpectedCost": 0,
+    "outsideModel": 161,
+    "partlyFilled": 4
+   },
+   "expectedBps": 0.1104242840781983,
+   "expectedUsd": 0.1562302821535467,
+   "highBps": -0.09227359039792173,
+   "insufficient": false,
+   "level": 0.9,
+   "lowBps": -0.3368533081366843,
+   "method": "seeded bootstrap over orders (2000 resamples, seed 20240101), notional-weighted mean excess",
+   "n": 80,
+   "paidBps": -0.09487614313794934,
+   "paidUsd": -0.13423249003439638,
+   "version": "ec1.0.0"
+  },
   "integrityHash": "ccea8f25dee72be2c1c2462e0a1c8fff56a58418f2055dfcffe36e50f8d96b8d",
   "measureVersion": "1.0.0",
   "measured": 607,

@@ -151,11 +151,17 @@ def check_data_source(account_id: str, data_source: str) -> None:
         raise ValueError("synthetic-demo data belongs to demo-* accounts only")
 
 
+ExpectedCostHook = Callable[[dict], "dict | None"]
+
+
 def measure_account(db, account_id: str, source: MarketSource, now_ms: int, limit: int = 500,
-                    data_source: str = "real-user") -> dict:
+                    data_source: str = "real-user", expected_cost: ExpectedCostHook | None = None) -> dict:
     """Measure up to `limit` pending fills of one account, then the orders they belong to and the account's
     unfilled orders. Returns counts: {measured, orders, skipped{reason: n}, pending, measureVersion}.
-    `data_source="synthetic-demo"` is for the offline demo build only (demo_v2.build); the runtime never passes it."""
+    `data_source="synthetic-demo"` is for the offline demo build only (demo_v2.build); the runtime never passes it.
+    `expected_cost` (M3 §2) is called once per measured order with {symbol, orderId, arrivalMs, orderType, orderedQty,
+    shortfall} and its result is stored as the order measurement's `expectedCost`. The runtime has no source for the
+    hour before an order yet and passes none; then the field is not written."""
     check_data_source(account_id, data_source)
     skipped: dict[str, int] = {}
     report = {"measured": 0, "orders": 0, "skipped": skipped, "measureVersion": MEASURE_VERSION}
@@ -212,7 +218,7 @@ def measure_account(db, account_id: str, source: MarketSource, now_ms: int, limi
         report["measured"] += 1
         touched_orders.add((t["symbol"], str(t["orderId"])))
 
-    report["orders"] = _measure_orders(db, account_id, source, now_ms, touched_orders, skipped)
+    report["orders"] = _measure_orders(db, account_id, source, now_ms, touched_orders, skipped, expected_cost)
     report["pending"] = db.trades.count_documents(pending_q)
     return report
 
@@ -256,7 +262,8 @@ def _fees_quote(symbol: str, fills: list[dict]) -> float | None:
     return total
 
 
-def _measure_orders(db, account_id: str, source: MarketSource, now_ms: int, touched: set, skipped: dict) -> int:
+def _measure_orders(db, account_id: str, source: MarketSource, now_ms: int, touched: set, skipped: dict,
+                    expected_cost: ExpectedCostHook | None = None) -> int:
     keys = set(touched)
     # Orders that never filled have no trade to point at them: pick up the final ones not yet measured.
     for o in db.orders.find({"accountId": account_id, "exchange": "binance", "executedQty": 0, "status": {"$in": sorted(FINAL_UNFILLED)}}):
@@ -311,6 +318,10 @@ def _measure_orders(db, account_id: str, source: MarketSource, now_ms: int, touc
                 doc["shortfall"] = order_is(p["side"], ordered, fill_rows, arrival, end_mid, _fees_quote(p["symbol"], fills), basis)
             except ValueError as e:
                 doc["unmeasuredReason"] = f"inconsistent order data: {e}"
+        if expected_cost is not None and doc["shortfall"] is not None:
+            doc["expectedCost"] = expected_cost({
+                "symbol": p["symbol"], "orderId": p["orderId"], "arrivalMs": p["arrivalMs"],
+                "orderType": (p["order"] or {}).get("type"), "orderedQty": ordered, "shortfall": doc["shortfall"]})
         db.order_measurements.update_one(
             {"accountId": account_id, "exchange": "binance", "symbol": p["symbol"], "orderId": p["orderId"]},
             {"$set": doc}, upsert=True)

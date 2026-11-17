@@ -107,6 +107,15 @@
     "shortfall": {"type": "object", "nullable": true, "owner": "ml-service/measure/service.py"},
     "unmeasuredReason": {"type": "string", "nullable": true, "owner": "ml-service/measure/service.py"},
     "marketDataRefs": {"type": "array", "nullable": false, "owner": "ml-service/measure/service.py"},
+    "expectedCost": {"type": "object", "nullable": true, "owner": "ml-service/measure/service.py"},
     "measuredAt": {"type": "datetime", "nullable": false, "owner": "ml-service/measure/service.py"}
+  },
+  "ExceptionReview": {
+    "accountId": {"type": "string", "nullable": false, "owner": "backend/src/routes/explain.ts"},
+    "exchange": {"type": "string", "nullable": false, "owner": "backend/src/routes/explain.ts"},
+    "symbol": {"type": "string", "nullable": false, "owner": "backend/src/routes/explain.ts"},
+    "orderId": {"type": "string", "nullable": false, "owner": "backend/src/routes/explain.ts"},
+    "state": {"type": "string", "nullable": false, "owner": "backend/src/routes/explain.ts"},
+    "updatedAt": {"type": "datetime", "nullable": false, "owner": "backend/src/routes/explain.ts"}
   }
 }

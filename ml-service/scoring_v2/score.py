@@ -186,7 +186,9 @@ def _collect(db, account_id: str, version: dict, keys: set[str] | None = None, d
         shas.update(r["sha256"] for r in t["measurement"].get("marketDataRefs", []) if r.get("sha256"))
     for (sym, oid), om in oms.items():
         if (sym, oid) in orders:
-            entries.append((f"order:{sym}:{oid}", _plain(om)))
+            # `expectedCost` (M3 §2) is a benchmark the score never reads: it stays out of the hash, so a grade's
+            # published hash does not move when the benchmark is written beside it.
+            entries.append((f"order:{sym}:{oid}", _plain({k: v for k, v in om.items() if k != "expectedCost"})))
             shas.update(r["sha256"] for r in om.get("marketDataRefs", []) if r.get("sha256"))
     for k, snap in sorted(used_snaps.items()):
         entries.append((k, _plain(snap)))

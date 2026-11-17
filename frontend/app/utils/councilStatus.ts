@@ -28,8 +28,27 @@ const COUNCIL_ERROR_MESSAGES: Record<string, string> = {
  * Turns a typed error code from the Council stream into user-facing copy. The server's own
  * message text is never shown, because exception strings can carry connection details.
  */
-export function councilErrorMessage(code: string | undefined): string {
-    return (code && COUNCIL_ERROR_MESSAGES[code]) || GENERIC_COUNCIL_ERROR;
+export function councilErrorMessage(code: string | undefined, quickAvailable?: boolean): string {
+    const base = (code && COUNCIL_ERROR_MESSAGES[code]) || GENERIC_COUNCIL_ERROR;
+    // A refused Deep audit says plainly whether the cheaper Quick audit is still allowed (M3 §4); the text is ours.
+    if (quickAvailable === true) return `${base} A Quick audit (one model call) is still available.`;
+    if (quickAvailable === false) return `${base} A Quick audit is not available either.`;
+    return base;
+}
+
+/** True only when the server said that a Quick audit would still be allowed after a Deep audit was refused. */
+export function quickOffer(payload: { code?: string; quick_available?: boolean } | null | undefined): boolean {
+    return payload?.quick_available === true;
+}
+
+/** "Quick audit · 1 model call" / "Deep audit · 9 model calls": the mode and the calls actually made. */
+export function auditModeLabel(result: { mode?: string; n_calls_ok?: number; cached?: boolean; degraded?: boolean } & Record<string, unknown>): string {
+    const quick = result?.mode === 'quick';
+    const name = quick ? 'Quick audit' : 'Deep audit';
+    if (result?.degraded) return `${name} · incomplete`;
+    if (result?.cached) return `${name} · from an earlier identical audit, no new model call`;
+    const n = Number(result?.n_calls_ok ?? 0);
+    return `${name} · ${n} model call${n === 1 ? '' : 's'}`;
 }
 
 export function councilOfflineMessage(isDevelopment: boolean): string {
@@ -104,6 +123,7 @@ const RESULT_FIELDS: [agent: string, key: string, ratingField: string][] = [
 /** The four specialist cards rebuilt from the final Council result (the `complete` event). */
 export function verdictCardsFromResult(result: Record<string, any>): Record<string, CouncilAgentCard> {
     const cards: Record<string, CouncilAgentCard> = {};
+    if (result?.mode === 'quick') return cards;          // a Quick audit has no specialists: no empty "done" cards
     for (const [agent, key, ratingField] of RESULT_FIELDS) {
         const v = result?.[key] ?? {};
         const flags: string[] = Array.isArray(v.flags) ? v.flags : [];
