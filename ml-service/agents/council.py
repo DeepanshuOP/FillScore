@@ -465,6 +465,41 @@ async def enforce_claims(run: RunCollector, draft, findings, observations, verif
     return headline, narrative, new_findings, kept, entries, cl.to_dict()
 
 
+# (verdict, text field, label, rating field, fallback metric): the same names the specialists use for their own fallback
+_SPECIALIST_TEXT = [("liquidity", "slippageRoot", "Liquidity", "liquidityRating", "liquidity.avg_slippage_bps"),
+                    ("alpha", "bestAlternative", "Alpha", "alphaRating", "alpha.avg_vwap_deviation_bps"),
+                    ("fee", "recommendedAction", "Fee", "feeRating", "fee.fee_drag_bps")]
+_SPECIALIST_AGENT = {"liquidity": "liquidity_scout", "alpha": "alpha_architect", "fee": "fee_optimizer"}
+
+
+def enforce_specialists(verdicts: dict, passed: set[str], ctx: dict, ledger) -> tuple[dict, list[dict]]:
+    """The claim check on the specialists' own text (found 2026-11-17: it covered synthesis and debate only, so a
+    "because" stayed in fee.recommendedAction). Each explanation goes through redact_claims; one left empty gets the
+    code-built fallback sentence, as when grounding empties it; a risk flag that is flagged is dropped. `verdicts` maps
+    liquidity / alpha / risk / fee to the verdict models. Returns (new verdicts, redaction dicts for the claims ledger)."""
+    from agents.grounded_call import fallback_sentence
+    out, reds = dict(verdicts), []
+    for key, field_name, label, rating_field, metric in _SPECIALIST_TEXT:
+        v = verdicts[key]
+        cleaned, flags = claims_mod.redact_claims(getattr(v, field_name), passed, f"{key}.{field_name}")
+        if not flags:
+            continue
+        reds += [f.to_dict() for f in flags]
+        if not cleaned.strip():
+            cleaned = fallback_sentence(label, str(getattr(v, rating_field)), ctx, _SPECIALIST_AGENT[key], field_name, metric)
+            ledger.add_fallback(_SPECIALIST_AGENT[key], field_name)
+        out[key] = v.model_copy(update={field_name: cleaned})
+    kept = []
+    for i, text in enumerate(verdicts["risk"].flags):
+        cleaned, flags = claims_mod.redact_claims(text, passed, f"risk.flags.{i}")
+        reds += [f.to_dict() for f in flags]
+        if not flags:
+            kept.append(text)
+    if len(kept) != len(verdicts["risk"].flags):
+        out["risk"] = verdicts["risk"].model_copy(update={"flags": kept})
+    return out, reds
+
+
 def _model_usage(telemetry: list[dict]) -> dict:
     def used(role: str) -> str:
         labels = []
@@ -564,7 +599,7 @@ async def _run_council_pipeline(
     from; the verifier replays them (None: every effect is rejected as not computable)."""
     from agents import llm_router
     from agents.persistence import save_council_run
-    from config.versions import METRICS_VERSION, PROMPT_VERSION
+    from config.versions import CLAIM_RULES_VERSION, METRICS_VERSION, PROMPT_VERSION
 
     from observability import tracing
     llm = llm or llm_router.get_default_router()
@@ -615,11 +650,15 @@ async def _run_council_pipeline(
         debate_dict, _ = claims_mod.enforce_debate(final_state.get("debate_dict", {}), {f.action_type for f in findings},
                                                    run.ctx, cl)
         final_state["debate_dict"] = debate_dict
+        spec, spec_reds = enforce_specialists({"liquidity": liquidity_v, "alpha": alpha_v, "risk": risk_v, "fee": fee_v},
+                                              {f.action_type for f in findings}, run.ctx, run.ledger)
+        liquidity_v, alpha_v, risk_v, fee_v = spec["liquidity"], spec["alpha"], spec["risk"], spec["fee"]
         claims = {**claims, "debate_flagged": cl.debate_flagged,
-                  "debate_redactions": [r.to_dict() for r in cl.redactions]}
+                  "debate_redactions": [r.to_dict() for r in cl.redactions],
+                  "specialist_redactions": spec_reds}
     else:
         synth, verification = _default_synthesis(), summarise([], None)
-        claims = claims_mod.ClaimsLedger().to_dict()
+        claims = {**claims_mod.ClaimsLedger().to_dict(), "specialist_redactions": []}
     synth = override_synthesis_cost(synth, fee_pkt)
     if degraded:
         synth = synth.model_copy(update={"overallRating": None})
@@ -650,6 +689,7 @@ async def _run_council_pipeline(
         llm_calls=list(run.telemetry),
         prompt_version=PROMPT_VERSION,
         metrics_version=METRICS_VERSION,
+        claim_rules_version=CLAIM_RULES_VERSION,
         route_config_hash=llm.config.hash,
     )
 

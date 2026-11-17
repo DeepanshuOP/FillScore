@@ -58,7 +58,7 @@ async def load_trades(
     own = client is None
     client = client or _get_mongo_client()
     try:
-        cursor = client[db_name][collection_name].find(query, TRADE_PROJECTION).sort("executedAt", 1)
+        cursor = client[db_name][collection_name].find(query, TRADE_PROJECTION).sort([("executedAt", 1), ("_id", 1)])
         return [normalise_trade_doc(doc) async for doc in cursor]
     finally:
         if own:

@@ -26,6 +26,21 @@ def _client_with_trades():
     return client
 
 
+def test_trades_with_the_same_millisecond_load_in_id_order():
+    """Rebuilt demo fills taken from one public event share a millisecond. Sorting by executedAt alone leaves their
+    order to the database; the packet hash covers the id lists, so on 2026-11-17 all twelve golden v3 hashes stopped
+    matching without any data change (reading again from Atlas returned another tie order). _id breaks the tie.
+    Inserted here in the opposite order of their ids."""
+    client = AsyncMongoMockClient()
+    same = datetime(2024, 1, 1, 8, 0, 0, 120000)
+    asyncio.run(client["fillscore"]["trades"].insert_many(
+        [{"_id": i, "userId": "u", "symbol": "BTCUSDT", "exchange": "binance", "isMaker": False, "fee": 1.0,
+          "notional": 100.0, "executedAt": same} for i in ("c3", "a1", "b2")]))
+    with patch.object(loader, "_get_mongo_client", _Counting(client)):
+        trades = asyncio.run(loader.load_trades("u", "BTCUSDT"))
+    assert [t["id"] for t in trades] == ["a1", "b2", "c3"]
+
+
 class _Counting:
     def __init__(self, client):
         self.client, self.n = client, 0

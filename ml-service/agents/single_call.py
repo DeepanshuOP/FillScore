@@ -18,7 +18,7 @@ from agents.render import packet_ctx
 from agents.required_evidence import prompt_line
 from agents.schemas import SynthesisOutput, TradeContext
 from agents.verification import summarise
-from config.versions import SINGLE_PROMPT_VERSION
+from config.versions import CLAIM_RULES_VERSION, SINGLE_PROMPT_VERSION
 from observability import tracing
 
 SINGLE_CALL_SYSTEM_PROMPT = system_prompt("""You write FillScore's single-pass audit of a trader's past executions.
@@ -108,6 +108,7 @@ async def _run_single_call(account_id: str, symbol: str, fee_pkt, risk_pkt, liqu
         "trace_id": trace_id,
         "arm": "single_call",
         "prompt_version": SINGLE_PROMPT_VERSION,
+        "claim_rules_version": CLAIM_RULES_VERSION,
         "route_config_hash": llm.config.hash,
         "modelUsage": _model_usage(run.telemetry),
         "tokenUsage": _token_usage(run.telemetry),

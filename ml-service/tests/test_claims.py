@@ -12,7 +12,7 @@ MAKER = {"maker_instead_of_taker"}
 
 # 2c: the debate-text keys are checked in test_debate_2c.py; these tests are about synthesis text.
 def _core(c):
-    return {k: v for k, v in c.items() if not k.startswith('debate_')}
+    return {k: v for k, v in c.items() if not k.startswith(('debate_', 'specialist_'))}   # specialist_: tests/test_specialist_claims.py
 
 
 def test_unpassed_counterfactual_sentence_is_flagged_and_redacted():

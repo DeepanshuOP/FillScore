@@ -228,4 +228,5 @@ class CouncilResult(BaseModel):
     llm_calls: list[dict] = Field(default_factory=list)
     prompt_version: str = ""
     metrics_version: str = ""
+    claim_rules_version: str = ""   # "" = recorded before claim rules were versioned (1.0.0)
     route_config_hash: str = ""

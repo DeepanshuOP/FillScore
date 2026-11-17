@@ -31,8 +31,16 @@ THEORY_TERMS = ["Cont-Kukanov-Stoikov", "Cont Kukanov Stoikov", "Kukanov", "Almg
                 "Kyle"]
 # 3a G0: causal connectives are flagged in every text (debate, synthesis, findings) unless the sentence
 # describes a PASSED verified finding of the matching action (same excuse as the counterfactual terms).
+#
+# Claim rules are versioned (config.versions.CLAIM_RULES_VERSION). 1.0.0 is the list below; 1.1.0 (2026-11-17) adds a
+# bare "because" and the causal words the demo serving path already refused. A result carries the version it was made
+# under; one with no stamp was made under 1.0.0. The offline evals judge each result by its own version.
+CONNECTIVE_TERMS_1_0_0 = ["due to", "because of", "resulting from", "caused by", "driven by", "led to",
+                          "as a result of"]
+# Keep this literal's first list equal to backend/src/constants/adviceTerms.ts (a test reads it).
 CONNECTIVE_TERMS = ["due to", "because of", "resulting from", "caused by", "driven by", "led to",
-                    "as a result of"]
+                    "as a result of", "because", "therefore", "thereby", "hence", "consequently"]
+CONNECTIVE_BY_RULES = {"1.0.0": CONNECTIVE_TERMS_1_0_0, "1.1.0": CONNECTIVE_TERMS}
 ACTION_CUES: dict[str, list[str]] = {
     "maker_instead_of_taker": ["taker", "maker", "fee", "fees", "fee drag"],
     "exclude_hours": ["hour", "hours", "UTC", "session", "sessions", "off-peak", "time of day"],
@@ -49,7 +57,28 @@ def _rx(terms: list[str]) -> re.Pattern:
 _CAUSAL_RE = _rx(CAUSAL_TERMS + THEORY_TERMS)
 _WHALE_RE = _rx(WHALE_TERMS)
 _WHALE_KEY_RE = re.compile(r"\{\{\s*(?:risk\.whale_adverse_count|whale\.[A-Za-z0-9_.]+)\s*\}\}")
-_COUNTER_RE = _rx(COUNTERFACTUAL_TERMS + CONNECTIVE_TERMS)
+_COUNTER_RES = {v: _rx(COUNTERFACTUAL_TERMS + t) for v, t in CONNECTIVE_BY_RULES.items()}
+
+
+# Rules 1.1.0 match on text with the look-alike dashes (U+2010-U+2015, U+2212) read as "-" and the no-break spaces
+# (U+00A0, U+202F) read as " ": a model wrote "market‑structure" and the named term did not match. The stored text
+# is never changed by this; only the matching sees the folded form.
+_DASHES = set("‐‑‒–—―−")
+_FOLD_RE = re.compile("[‐-―−  ]")
+
+
+def _current_rules() -> str:
+    from config.versions import CLAIM_RULES_VERSION
+    return CLAIM_RULES_VERSION
+
+
+def _counter_re(rules: str | None) -> re.Pattern:
+    v = rules or _current_rules()
+    if v not in _COUNTER_RES:
+        raise ValueError(f"unknown claim rules version {v!r}; known: {sorted(_COUNTER_RES)}")
+    return _COUNTER_RES[v]
+
+
 _ADVICE_RE = _rx(ADVICE_TERMS)
 _CUE_RES = {a: _rx(c) for a, c in ACTION_CUES.items()}
 
@@ -79,9 +108,13 @@ class ClaimFlag:
 
 
 def _flag_sentence(sentence: str, index: int, passed: set[str], field_name: str,
-                   strict: bool = False, whale_ok: bool = False, whale_token: str | None = None) -> ClaimFlag | None:
+                   strict: bool = False, whale_ok: bool = False, whale_token: str | None = None,
+                   rules: str | None = None) -> ClaimFlag | None:
+    counter_re = _counter_re(rules)
+    if (rules or _current_rules()) != "1.0.0":
+        sentence = _FOLD_RE.sub(lambda m: "-" if m.group(0) in _DASHES else " ", sentence)   # 1.1.0: look-alike dashes/spaces
     advice = {_norm(m) for m in _ADVICE_RE.finditer(sentence)}
-    counter = {_norm(m) for m in _COUNTER_RE.finditer(sentence)}
+    counter = {_norm(m) for m in counter_re.finditer(sentence)}
     if strict:
         cause = {_norm(m) for m in _CAUSAL_RE.finditer(sentence)}
         # 2c.2 C0: "whale" is allowed only in a sentence citing a whale placeholder, and only when count > 0
@@ -99,10 +132,11 @@ def _flag_sentence(sentence: str, index: int, passed: set[str], field_name: str,
 
 
 def flag_sentences(text: str, passed: set[str], field: str, strict: bool = False,
-                   whale_ok: bool = False, whale_token: str | None = None) -> list[ClaimFlag]:
+                   whale_ok: bool = False, whale_token: str | None = None,
+                   rules: str | None = None) -> list[ClaimFlag]:
     flags = []
     for i, s in enumerate(split_sentences(text)):
-        f = _flag_sentence(s, i, passed, field, strict, whale_ok, whale_token)
+        f = _flag_sentence(s, i, passed, field, strict, whale_ok, whale_token, rules)
         if f:
             flags.append(f)
     return flags

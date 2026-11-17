@@ -177,11 +177,12 @@ def no_flagged_terms(result: dict, golden: dict) -> Outcome:
     passed = _passed_actions(result)
     risk = (golden.get("packet") or {}).get("risk") or {}
     n_whale = risk.get("whale_adverse_count") or 0
+    rules = result.get("claim_rules_version") or "1.0.0"   # a result is judged by the rules it was made under
     bad = []
     for field, text in _texts(result):
         # strict (causal/mechanism terms) only on debate text, exactly as production enforces it
         for fl in flag_sentences(text, passed, field, strict=field.startswith("debate."), whale_ok=n_whale > 0,
-                                 whale_token=str(n_whale) if n_whale else None):
+                                 whale_token=str(n_whale) if n_whale else None, rules=rules):
             bad.append(f"{field}:{'/'.join(fl.terms)}")
     return Outcome(not bad, "; ".join(bad[:6]))
 

@@ -26,16 +26,17 @@ def _strings(node, path=""):
         yield path, node
 
 
-def test_the_re_recorded_demos_are_served_and_the_one_with_a_cause_is_not():
-    """State of 2026-11-14: demo-disciplined and demo-moderate (prompt 1.7.0) are clean; demo-aggressive's text holds a
-    "because" and waits for its re-record (docs/PROGRESS.md, next concrete action). Update this set when it is re-recorded."""
+def test_the_re_recorded_demos_are_served():
+    """State of 2026-11-17: all three demo runs (prompt 1.7.0) are clean and match the current demo data. On 2026-11-14
+    demo-aggressive held a "because" and was not served; it was re-recorded under claim rules 1.1.0 (which now also
+    checks the specialists' own text). A run that states a cause is still refused: see the last test of this file."""
     from agents.council_service import load_demo_fixture, recorded_hashes
     served = set()
     for f in sorted(glob.glob(os.path.join(DEMO_RUNS, "*.json"))):
         doc = json.load(open(f))
         if load_demo_fixture(doc["account_id"], doc["symbol"], hashes=recorded_hashes(doc["council_result"])) is not None:
             served.add(doc["account_id"])
-    assert served == {"demo-disciplined", "demo-moderate"}
+    assert served == {"demo-aggressive", "demo-disciplined", "demo-moderate"}
 
 
 def test_the_ledgers_that_list_redacted_terms_are_not_copy():

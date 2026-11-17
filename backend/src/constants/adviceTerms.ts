@@ -17,6 +17,7 @@ export const ADVICE_TERMS = [
  *  advice list because they are checked by their own detector (findConnectiveTerms). */
 export const CONNECTIVE_TERMS = [
     'due to', 'because of', 'resulting from', 'caused by', 'driven by', 'led to', 'as a result of',
+    'because', 'therefore', 'thereby', 'hence', 'consequently',   // claim rules 1.1.0 (2026-11-17)
 ];
 /** Extra imperative / routing phrases seen in earlier copy (not in claims.py). */
 export const EXTRA_ADVICE_PHRASES = [
