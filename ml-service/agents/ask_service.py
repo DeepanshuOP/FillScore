@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 
-from agents.ask import ASK_UNITS, ask_flow
+from agents.ask import ASK_UNITS, ask_flow, clean_question
 from agents.errors import (ASK_NOT_AVAILABLE_FOR_DEMO, DAILY_BUDGET_EXHAUSTED, MODEL_UNAVAILABLE, RATE_LIMIT_EXHAUSTED, CouncilError)
 from config.demo_users import VALID_DEMO_USERS
 
@@ -34,11 +34,17 @@ async def load_account_data(account_id: str) -> tuple[dict | None, list[dict]]:
         client.close()
 
 
+async def _no_data() -> tuple[dict | None, list[dict]]:
+    return None, []
+
+
 async def ask_account(account_id: str, question: str, llm=None) -> dict:
     from config.budget import council_budget
 
     if account_id in VALID_DEMO_USERS:
         raise CouncilError(ASK_NOT_AVAILABLE_FOR_DEMO)
+    if not clean_question(question):                # nothing to ask: no model call, so no units
+        return await ask_flow(question, _no_data, llm=None)
     llm = llm or _router()
     problem = await llm.capacity_problem()          # checked before the quota, so a refused question costs nothing
     if problem == "no_provider":

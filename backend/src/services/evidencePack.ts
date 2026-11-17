@@ -70,8 +70,11 @@ export function verifyPack(pack: EvidencePack, files: Record<string, FileBytes>,
     const listed = new Set<string>();
     for (const f of pack.manifest?.files ?? []) {
         listed.add(f.name);
-        if (!(f.name in files)) problems.push(`${f.name}: listed in the manifest but not supplied`);
-        else if (sha256(files[f.name]) !== f.sha256) problems.push(`${f.name}: the file does not match the SHA-256 in the manifest`);
+        // Own properties only: a manifest may name "constructor" or "__proto__", which an `in` test would find on every object.
+        if (!Object.prototype.hasOwnProperty.call(files, f.name)) { problems.push(`${f.name}: listed in the manifest but not supplied`); continue; }
+        const actual = Buffer.byteLength(files[f.name]);
+        if (sha256(files[f.name]) !== f.sha256) problems.push(`${f.name}: the file does not match the SHA-256 in the manifest`);
+        if (actual !== f.bytes) problems.push(`${f.name}: the size in the manifest (${f.bytes} bytes) is not the size of the file (${actual} bytes)`);
     }
     for (const name of Object.keys(files)) if (!listed.has(name)) problems.push(`${name}: supplied but not listed in the manifest`);
     return { valid: problems.length === 0, problems, signedBy };

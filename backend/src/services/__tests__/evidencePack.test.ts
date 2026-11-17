@@ -89,6 +89,22 @@ describe('verifyPack', () => {
         expect(verifyPack({ ...pack, signature: '!!!' }, files).valid).toBe(false);
         expect(verifyPack({ ...pack, publicKeyPem: 'not a key' }, files).valid).toBe(false);
     });
+    it('a manifest that lists names like "constructor" or "toString" does not crash the check (review finding 6)', () => {
+        const hostile = { ...pack, manifest: { ...pack.manifest, files: [...pack.manifest.files, { name: 'constructor', bytes: 1, sha256: 'a'.repeat(64) },
+            { name: 'toString', bytes: 1, sha256: 'b'.repeat(64) }, { name: '__proto__', bytes: 1, sha256: 'c'.repeat(64) }] } };
+        let r: ReturnType<typeof verifyPack> | undefined;
+        expect(() => { r = verifyPack(hostile, files); }).not.toThrow();
+        expect(r!.valid).toBe(false);
+        expect(r!.problems).toContain('constructor: listed in the manifest but not supplied');
+        expect(r!.problems).toContain('toString: listed in the manifest but not supplied');
+        expect(r!.problems).toContain('__proto__: listed in the manifest but not supplied');
+    });
+    it('the size in the manifest must be the size of the file (it is signed, so it must also be true)', () => {
+        const wrong = { ...pack, manifest: { ...pack.manifest, files: pack.manifest.files.map(f => (f.name === 'a.txt' ? { ...f, bytes: 999 } : f)) } };
+        const r = verifyPack(wrong, files);
+        expect(r.valid).toBe(false);
+        expect(r.problems).toContain('a.txt: the size in the manifest (999 bytes) is not the size of the file (3 bytes)');
+    });
     it('uses the same rule for a file given as bytes', () => {
         expect(verifyPack(pack, { 'a.txt': Buffer.from('abc'), 'orders.json': Buffer.from('{"n":1}') }).valid).toBe(true);
     });

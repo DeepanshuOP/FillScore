@@ -25,13 +25,20 @@ export const evidenceRouter = Router();
 // is looked up; and the same pack is served for a minute per account and kind, so repeated clicks cost one build.
 const packLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Too many requests', code: 'RATE_LIMIT' } });
 const verifyLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 30, message: { error: 'Too many requests', code: 'RATE_LIMIT' } });
-const packCache = new TtlCache<{ pack: unknown; files: Record<string, string> }>(60_000, 200);
+const packCache = new TtlCache<{ pack: unknown; files: Record<string, string> }>(60_000, 50);
 
 const BEST_EXECUTION_STATEMENT = 'This summary supports your documentation of execution quality. It lists how the account\'s orders ended, what they cost against the market prices '
     + 'recorded at their arrival, and what could not be measured. It records the past and makes no statement about rules or regulation.';
 
 const signingKey = (): string => (process.env.EVIDENCE_SIGNING_KEY ?? '').replace(/\\n/g, '\n').trim();
-const publicKeyOf = (priv: string): string => crypto.createPublicKey(crypto.createPrivateKey(priv)).export({ type: 'spki', format: 'pem' }) as string;
+/** The public half of the signing key. Only an Ed25519 key is a signing key here: anything else is "not configured" (it would be mislabelled). */
+const publicKeyOf = (priv: string): string => {
+    const k = crypto.createPrivateKey(priv);
+    if (k.asymmetricKeyType !== 'ed25519') throw new Error('not an ed25519 key');
+    return crypto.createPublicKey(k).export({ type: 'spki', format: 'pem' }) as string;
+};
+/** True when EVIDENCE_SIGNING_KEY holds a usable Ed25519 private key. */
+const keyUsable = (priv: string): boolean => { try { publicKeyOf(priv); return true; } catch { return false; } };
 const notConfigured = (res: Response) => res.status(503).json({ error: 'signing_not_configured', message: 'Evidence packs are not available: the signing key is not configured.' });
 
 const packQuerySchema = z.object({ kind: z.enum(['scorecard', 'best-execution']).default('scorecard') });
@@ -59,7 +66,7 @@ evidenceRouter.get('/public-key', (_req: Request, res: Response) => {
 
 evidenceRouter.get('/pack', packLimiter, resolveAccount, async (req: Request, res: Response) => {
     const key = signingKey();
-    if (!key) return notConfigured(res);
+    if (!key || !keyUsable(key)) return notConfigured(res);
     try {
         const q = parseOrReject(packQuerySchema, req.query, res);
         if (!q) return;
@@ -114,7 +121,8 @@ evidenceRouter.get('/pack', packLimiter, resolveAccount, async (req: Request, re
                 scoring: scoring ? { version: scoring.version, integrityHash: scoring.integrityHash, grade: (scoring as any).grade ?? null, composite: (scoring as any).composite ?? null } : null },
             generatedAt: new Date().toISOString(), files,
         }, key);
-        packCache.set(cacheKey, { pack, files });
+        // A very large pack is not kept in memory (the cache holds whole packs).
+        if (Object.values(files).reduce((n, f) => n + f.length, 0) < 2_000_000) packCache.set(cacheKey, { pack, files });
         return res.status(200).json({ pack, files });
     } catch (err) {
         console.error('GET /evidence/pack error:', (err as Error)?.name);
@@ -129,5 +137,10 @@ evidenceRouter.post('/verify', verifyLimiter, (req: Request, res: Response) => {
     let trusted: string | undefined;
     try { trusted = key ? publicKeyOf(key) : undefined; } catch { trusted = undefined; }
     const r = verifyPack(body.pack as any, body.files, trusted);
-    return res.status(200).json({ ...r, trustedKeyChecked: !!trusted, statement: PACK_STATEMENT });
+    // `consistent`: the signature and every file match the manifest (anyone can make such a pack with their own key). `valid` also
+    // needs the pack to be signed by FillScore's key. With no trusted key to compare with, a pack is never reported as valid.
+    return res.status(200).json({
+        ...r, consistent: r.valid, valid: r.valid && !!trusted, trustedKeyChecked: !!trusted, statement: PACK_STATEMENT,
+        note: trusted ? null : 'Consistent, but not compared with a trusted key: it is not shown to come from FillScore.',
+    });
 });

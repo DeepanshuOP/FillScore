@@ -105,6 +105,39 @@ def test_an_empty_question_is_refused_without_any_call():
     assert out["answer"] == ASK_REFUSAL and provider.calls == []
 
 
+def test_secrets_pasted_into_the_question_never_reach_a_model():
+    """Review finding 3: the question is sent to the provider, so identifiers and secrets in it are replaced first (user message too)."""
+    q = ("my token eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiJhYmMifQ.sig-123 and id 6af7616d4c3e61271ff40f6f and mail me@example.com "
+         "and card 4111111111111111 and key sk-live-abcdef123456: which orders cost the most?")
+    out, provider = _ask(q)
+    sent = " ".join(m["content"] for c in provider.calls for m in c["messages"])
+    for secret in ("eyJhbGci", "6af7616d4c3e", "me@example.com", "4111111111111111", "sk-live-abcdef"):
+        assert secret not in sent, secret
+    assert "[removed]" in sent and "which orders cost the most" in sent
+
+
+def test_the_model_never_sees_an_exchange_order_id_but_the_user_does():
+    """Review finding 3: the costliest tool's order ids reach the model as "order 1", "order 2"; code puts the real id into the answer."""
+    ms = [_om("ord-77f3a9", 9, 10000, 4), _om("ord-12b0c4", 3, 10000, 1)]
+
+    async def data():
+        return SCORE, ms
+
+    router, provider = make_router({"ask_planner": {"tools": ["costliest"]},
+                                    "ask_answerer": {"answer": "The order that cost the most was {{costliest.orders.0.order_id}} at {{costliest.orders.0.cost_usd}}."}})
+    out = asyncio.run(ask_flow("Which order cost the most?", data, router))
+    sent = " ".join(m["content"] for c in provider.calls for m in c["messages"])
+    assert "ord-77f3a9" not in sent and "ord-12b0c4" not in sent
+    assert "order 1" in sent
+    assert out["answer"] == "The order that cost the most was ord-77f3a9 at $9.00."          # 9 bps x 10,000 / 10,000
+
+
+def test_a_question_costs_exactly_two_calls_even_when_the_answer_needs_a_regeneration():
+    """Review finding 7: a model number would have triggered a regeneration call (a third call for two units). There is none now."""
+    out, provider = _ask(ask_answerer={"answer": "The orders saved you 500 dollars. The score was {{score.grade}}."})
+    assert out["n_calls"] == 2 and len(provider.calls) == 2
+
+
 def test_the_prompts_name_no_account_or_identifier():
     out, provider = _ask("What was my score? my user id is acct-123 and email me@example.com")
     for call in provider.calls:

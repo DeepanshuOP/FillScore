@@ -21,14 +21,24 @@ describe('scripts/verify_evidence_pack.mjs', () => {
     const files = { 'scorecard.json': '{"grade":"A","note":"é"}', 'orders.json': '[1,2,3]' };
     const pack = buildPack({ meta: { kind: 'scorecard', nested: { b: 2, a: [1, { y: 1, x: 2 }] } }, generatedAt: '2026-11-17T00:00:00.000Z', files }, k.priv);
 
-    it('accepts a pack that services/evidencePack.ts built (exit 0)', () => {
+    it('without --key a consistent pack is "CONSISTENT", not "VALID", and exits 3: it is not shown to come from FillScore (review finding 5)', () => {
         const r = run(write('ok.json', JSON.stringify({ pack, files })));
-        expect(r.status).toBe(0);
-        expect(r.stdout).toMatch(/^VALID\. 2 files match the manifest/);
+        expect(r.status).toBe(3);
+        expect(r.stdout).toMatch(/^CONSISTENT\. 2 files match the manifest/);
+        expect(r.stdout).toMatch(/not compared with a trusted key/);
+        expect(r.stdout).not.toMatch(/^VALID/);
+    });
+    it('a manifest that lists "constructor" or "__proto__" is reported as a problem, with no stack trace (review finding 6)', () => {
+        const hostile = { ...pack, manifest: { ...pack.manifest, files: [...pack.manifest.files, { name: 'constructor', bytes: 1, sha256: 'a'.repeat(64) }] } };
+        const r = run(write('hostile.json', JSON.stringify({ pack: hostile, files })));
+        expect(r.status).toBe(1);
+        expect(r.stdout).toContain('constructor: listed in the manifest but not supplied');
+        expect(r.stderr).toBe('');
     });
     it('with the trusted key it says so; with another key it is not valid', () => {
         const ok = run(write('ok2.json', JSON.stringify({ pack, files })), '--key', write('k.pem', k.pub));
         expect(ok.status).toBe(0);
+        expect(ok.stdout).toMatch(/^VALID\./);
         expect(ok.stdout).toContain('(the trusted key)');
         const bad = run(write('ok3.json', JSON.stringify({ pack, files })), '--key', write('other.pem', gen().pub));
         expect(bad.status).toBe(1);

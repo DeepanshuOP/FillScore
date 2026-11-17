@@ -75,6 +75,16 @@ def test_each_question_costs_two_budget_units(monkeypatch):
     assert res.json()["detail"]["code"] == "RATE_LIMIT_EXHAUSTED" and int(res.headers["Retry-After"]) > 0
 
 
+def test_a_question_that_is_empty_after_cleaning_costs_nothing(monkeypatch):
+    """Review finding 7: no model call, so no units either."""
+    monkeypatch.setenv("COUNCIL_ACCOUNT_RUNS_PER_HOUR", "1")
+    router, provider = make_router()
+    with _patched(router):
+        res = client.post("/ml/agents/ask", json={"question": "   \u0000\u001b[31m  "}, headers=_h())
+    assert res.status_code == 200 and res.json()["tools_used"] == [] and provider.calls == []
+    assert council_budget.status(USER)["account"]["unitsLeft"] == 9
+
+
 def test_a_refused_question_makes_no_model_call(monkeypatch):
     monkeypatch.setenv("COUNCIL_ACCOUNT_RUNS_PER_HOUR", "1")
     council_budget.try_acquire(USER, 9)

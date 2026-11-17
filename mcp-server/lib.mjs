@@ -35,7 +35,7 @@ export function createTools({ apiUrl, token, demoUser, fetchFn = fetch }) {
     if (token) headers.Authorization = `Bearer ${token}`;
     let res;
     try {
-      res = await fetchFn(url, { method: 'GET', headers });
+      res = await fetchFn(url, { method: 'GET', headers, redirect: 'error' });   // a redirect never carries the token to another host
     } catch {
       return { isError: true, content: [{ type: 'text', text: 'Could not reach FillScore. Nothing was read.' }] };
     }

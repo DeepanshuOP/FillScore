@@ -7,7 +7,8 @@
 // The script (1) recomputes the canonical JSON of the manifest and checks the Ed25519 signature, (2) checks that every file
 // matches the SHA-256 in the manifest and that no file is missing or extra, and (3) with --key, checks that the pack was
 // signed by the public key you got from a source you trust (the pack carries its own key, which proves only consistency).
-// Exit code 0: valid. 1: a problem was found (each is printed). 2: the input could not be read.
+// Exit code 0: valid (consistent AND signed by the trusted key you gave with --key). 3: consistent, but no trusted key was given, so the
+// origin is not shown. 1: a problem was found (each is printed). 2: the input could not be read.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 
@@ -49,14 +50,23 @@ try {
 const listed = new Set();
 for (const f of pack.manifest.files ?? []) {
   listed.add(f.name);
-  if (!(f.name in files)) problems.push(`${f.name}: listed in the manifest but not supplied`);
-  else if (sha256(files[f.name]) !== f.sha256) problems.push(`${f.name}: the file does not match the SHA-256 in the manifest`);
+  // own properties only: a manifest may name "constructor" or "__proto__"
+  if (!Object.hasOwn(files, f.name)) { problems.push(`${f.name}: listed in the manifest but not supplied`); continue; }
+  const actual = Buffer.byteLength(files[f.name]);
+  if (sha256(files[f.name]) !== f.sha256) problems.push(`${f.name}: the file does not match the SHA-256 in the manifest`);
+  if (actual !== f.bytes) problems.push(`${f.name}: the size in the manifest (${f.bytes} bytes) is not the size of the file (${actual} bytes)`);
 }
 for (const name of Object.keys(files)) if (!listed.has(name)) problems.push(`${name}: supplied but not listed in the manifest`);
 
 if (problems.length === 0) {
-  console.log(`VALID. ${listed.size} files match the manifest; signed by key ${signedBy}${trustedPath ? ' (the trusted key)' : ' (not compared with a trusted key: use --key)'}.`);
-  process.exit(0);
+  if (trustedPath) {
+    console.log(`VALID. ${listed.size} files match the manifest; signed by key ${signedBy} (the trusted key).`);
+    process.exit(0);
+  }
+  // Anyone can make a pack that is consistent with their own key: without a trusted key this proves nothing about where it came from.
+  console.log(`CONSISTENT. ${listed.size} files match the manifest and the signature fits the key ${signedBy}, but the pack was not compared with a trusted key: `
+    + 'this does not show that it came from FillScore. Run again with --key <the published public key>.');
+  process.exit(3);
 }
 console.log('NOT VALID:');
 for (const p of problems) console.log(`  - ${p}`);

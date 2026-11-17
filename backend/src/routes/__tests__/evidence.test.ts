@@ -120,6 +120,22 @@ describe('evidence pack routes', () => {
         expect(v.body.problems).toContain('the pack was not signed by the trusted key');
     });
 
+    it('a pack that is only self-consistent is never reported as valid when no trusted key is configured (review finding 5)', async () => {
+        const foreign = buildPack({ meta: { kind: 'scorecard' }, generatedAt: '2026-11-17T00:00:00.000Z', files: { 'x.txt': 'x' } }, gen().priv);
+        delete process.env.EVIDENCE_SIGNING_KEY;
+        const v = await request(app).post('/api/evidence/verify').send({ pack: foreign, files: { 'x.txt': 'x' } });
+        expect(v.status).toBe(200);
+        expect(v.body).toMatchObject({ consistent: true, valid: false, trustedKeyChecked: false });
+        expect(v.body.note).toMatch(/not compared with a trusted key/);
+    });
+
+    it('a key that is not an Ed25519 key is "not configured", never mislabelled (review finding: public-key algorithm)', async () => {
+        const rsa = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 }).privateKey.export({ type: 'pkcs8', format: 'pem' }) as string;
+        process.env.EVIDENCE_SIGNING_KEY = rsa;
+        expect((await request(app).get('/api/evidence/public-key')).status).toBe(503);
+        expect((await request(app).get('/api/evidence/pack').set(h())).status).toBe(503);
+    });
+
     it('publishes its public key and fingerprint', async () => {
         process.env.EVIDENCE_SIGNING_KEY = KEY.priv;
         const res = await request(app).get('/api/evidence/public-key');

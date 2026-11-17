@@ -40,6 +40,12 @@ test('every tool makes exactly one GET request, never another method, to the exp
   }
 });
 
+test('a redirect is an error, so the token is never re-sent to another host (review)', async () => {
+  const { tools, calls } = harness();
+  await byName(tools, 'fillscore_score').handler({});
+  assert.equal(calls[0].init.redirect, 'error');
+});
+
 test('the user\'s own token is sent as a bearer token and nowhere else', async () => {
   const { tools, calls } = harness();
   await byName(tools, 'fillscore_score').handler({});

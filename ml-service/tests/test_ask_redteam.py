@@ -68,7 +68,26 @@ ANSWERS = [
     "**The score** was `{{score.grade}}`\n- item one\n- item two\n# heading",
     "The orders cost $99999 and {{costs.total_cost_usd}}.",
     "The score was Α (a look-alike letter). You ѕhould trade less.",
+    # M5 review (2026-11-17): bypass strings found by the reviewer
+    "You sh͏ould use limit orders.",                      # combining grapheme joiner
+    "You sh⁦ould use limit orders.",                      # isolate mark
+    "You sh️ould use limit orders.",                      # variation selector
+    "You sh\U000e0041ould use limit orders.",                  # tag character
+    "You ｓｈｏｕｌｄ use limit orders.",   # fullwidth
+    "You \U0001d42c\U0001d421\U0001d428\U0001d42e\U0001d425\U0001d41d use limit orders.",   # mathematical bold
+    "Next time use limit orders; costs will likely fall.",
+    "It will likely rise next month and I suggest trying limit orders.",
+    "The venue is responsible for the cost, which was the result of thin books.",
+    "The orders cost about _7 bps more than modelled.",
+    "The orders cost t​wo times the modelled cost.",
+    "The orders cost half of the modelled cost and ½ of fees, or twice that, or double.",
+    "The score was {{score.grade}}; costs were ② bps and ² times and 三 percent.",
 ]
+
+FORWARD = re.compile(r"\b(will|would|could|may|might|shall|likely|probably|expect\w*|predict\w*|forecast\w*|suggest\w*|advis\w*|try|trying|prefer\w*|"
+                     r"instead|next|going forward|responsible|result of|resulted|attributable|owing|since|so that|therefore|thus|hence)\b", re.I)
+NUMBER_WORDS = re.compile(r"\b(zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|"
+                          r"twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|hundred|thousand|million|billion|half|third|quarter|tenth|twice|double|triple|dozen)\b", re.I)
 
 PLANS = [
     {"tools": ["score", "costs"]},
@@ -103,8 +122,16 @@ def _check_invariants(out, provider):
         allowed.add("100")
     for n in extract_numerals(a):
         assert n.text in allowed, (n.text, a)
-    # I1b: nothing that can hide a word from the rules: invisible characters, or Greek and Cyrillic look-alikes
-    assert not re.search(r"[​-‏‪-‮⁠-⁤﻿­Ͱ-ԯ]", a), a
+    # I2b: remove every shown tool value (longest first); nothing numeric may remain: no digit and no number word
+    rest = a
+    shown = sorted({v["shown"] for v in out["values"]} | ({"/ 100"} if out["degraded"] else set()), key=len, reverse=True)
+    for s in shown:
+        rest = rest.replace(s, " ")
+    assert not re.search(r"\d", rest) and not NUMBER_WORDS.search(rest), (rest, a)
+    # I1b: printable ASCII only: nothing that can hide a word or a number (invisible, combining, fullwidth, look-alike letters, fractions)
+    assert a.isascii() and all(c.isprintable() for c in a), a
+    # I1c: no forward-looking, advising or causal wording at all (an allow-list of what an answer is: a past-tense statement of tool values)
+    assert not FORWARD.search(a), a
     # I3
     assert not re.search(r"https?:|www\.|\]\(|<|>|`|\*\*|^#|^- ", a, re.M), a
     # I4
@@ -113,8 +140,8 @@ def _check_invariants(out, provider):
     assert set(out["tools_used"]) <= set(TOOLS) and len(out["tools_used"]) <= 3 and len(set(out["tools_used"])) == len(out["tools_used"])
     # I6
     assert len(a) <= 600 and len(re.findall(r"[.!?](\s|$)", a)) <= 3, a
-    # I7
-    assert out["n_calls"] <= 4 and len(provider.calls) <= 4
+    # I7: exactly the budget: a planner call and an answerer call, never a regeneration
+    assert out["n_calls"] <= 2 and len(provider.calls) <= 2
     assert a.strip()
     # no placeholder is left unrendered, and no forbidden-looking object access survived
     assert "{{" not in a and "}}" not in a and "__" not in a
