@@ -5,6 +5,7 @@ import { SyncJob } from '../../models/SyncJob';
 import { ExchangeConnection } from '../../models/ExchangeConnection';
 import { encryptApiKey } from '../../utils/encryption';
 import { loadEnv } from '../../config/env';
+import { waitUntil } from '../../test-utils/waitUntil';
 
 loadEnv();
 const A = 'acct-syncjob-1';
@@ -40,7 +41,8 @@ describe('SyncJobService', () => {
             await gate;
             return { state: 'done', result: { tradesIngested: 40 } };
         });
-        await new Promise(r => setTimeout(r, 100));
+        // the progress write is fire-and-forget: wait for the condition, not for a fixed time
+        await waitUntil(async () => (await getSyncStatus(A)).symbolsDone === 2, 'the progress write');
         const mid = await getSyncStatus(A);
         expect(mid).toMatchObject({ state: 'running', symbolsDone: 2, symbolsTotal: 5, tradesAdded: 40, lookbackDays: 365 });
         release(); await p;
@@ -68,7 +70,9 @@ describe('SyncJobService', () => {
         await runSyncJob(A, l.syncId, () => hung, 50);
         expect(await getSyncStatus(A)).toMatchObject({ state: 'partial', partialReason: 'time_cap', partialMessage: TIME_CAP_MESSAGE });
         late({ state: 'done' });
-        await new Promise(r => setTimeout(r, 50));
+        // setImmediate runs after every microtask the late result unblocks, so any (wrong) overwrite would have happened by now
+        await new Promise(r => setImmediate(r));
+        await new Promise(r => setImmediate(r));
         expect((await getSyncStatus(A)).state).toBe('partial');
     });
 
@@ -95,8 +99,12 @@ describe('SyncJobService', () => {
         const l = (await acquireSyncLock(A, 365))!;
         let finishWork!: () => void;
         const inflight = new Promise<any>(r => { finishWork = () => r({ state: 'done' }); });
-        const job = runSyncJob(A, l.syncId, () => inflight, 20, 1000);
-        await new Promise(r => setTimeout(r, 120)); // past the cap, inside the grace window
+        let deadline = 0;
+        const job = runSyncJob(A, l.syncId, ctl => { deadline = ctl.deadlineMs; return inflight; }, 20, 60_000);
+        // Past the cap, inside the grace window. The cap timer is due at or after `deadline`, and Node runs timers in due order,
+        // so when this poll sees the clock 30 ms past the deadline the cap has already fired. The grace is 60 s, so a slow
+        // machine cannot leave the grace window either.
+        await waitUntil(() => Date.now() > deadline + 30, 'the cap to pass');
         expect((await getSyncStatus(A)).state).toBe('running');
         expect(await acquireSyncLock(A, 365)).toBeNull(); // a second sync cannot start on top of the in-flight one
         finishWork();

@@ -47,10 +47,13 @@ export async function findStaleAccounts(now: number, limit = MAX_PER_TICK): Prom
 }
 
 /** One tick: start a sync for each stale account. A failure to start one account never stops the others; only the error name is logged. */
-export async function runResyncTick(start: StartSync, now = Date.now()): Promise<{ started: string[]; skipped: number }> {
+export async function runResyncTick(
+    start: StartSync, now = Date.now(), isStopped: () => boolean = () => false, find: (now: number) => Promise<string[]> = findStaleAccounts,
+): Promise<{ started: string[]; skipped: number }> {
     const started: string[] = [];
     let skipped = 0;
-    for (const id of await findStaleAccounts(now)) {
+    for (const id of await find(now)) {
+        if (isStopped()) break;          // stop() returned while this tick was searching or starting: start nothing more
         try {
             if (await start(id)) started.push(id); else skipped += 1;     // null: the lock was taken between the search and the start
         } catch (e) {
@@ -65,12 +68,15 @@ export async function runResyncTick(start: StartSync, now = Date.now()): Promise
  * Run a tick shortly after the start (`firstDelayMs`: an instance that woke up for a request may sleep again in 15 minutes) and then
  * every `intervalMs`, never two at once. Returns the function that stops it. The timers do not keep the process alive.
  */
-export function startResyncScheduler(start: StartSync, intervalMs = TICK_MS, firstDelayMs = FIRST_TICK_MS): () => void {
+export function startResyncScheduler(
+    start: StartSync, intervalMs = TICK_MS, firstDelayMs = FIRST_TICK_MS, find: (now: number) => Promise<string[]> = findStaleAccounts,
+): () => void {
     let busy = false;
+    let stopped = false;
     const tick = () => {
-        if (busy) return;
+        if (busy || stopped) return;
         busy = true;
-        runResyncTick(start).then(r => { if (r.started.length) console.log(`[resync] started ${r.started.length} sync(s)`); })
+        runResyncTick(start, Date.now(), () => stopped, find).then(r => { if (r.started.length) console.log(`[resync] started ${r.started.length} sync(s)`); })
             .catch(e => console.error('[resync] tick failed:', (e as Error)?.name))
             .finally(() => { busy = false; });
     };
@@ -78,5 +84,5 @@ export function startResyncScheduler(start: StartSync, intervalMs = TICK_MS, fir
     const timer = setInterval(tick, intervalMs);
     first.unref();
     timer.unref();
-    return () => { clearTimeout(first); clearInterval(timer); };
+    return () => { stopped = true; clearTimeout(first); clearInterval(timer); };
 }

@@ -12,6 +12,7 @@ import { User } from '../../models/User';
 import { SyncJob } from '../../models/SyncJob';
 import { ExchangeConnection } from '../../models/ExchangeConnection';
 import { encryptApiKey } from '../../utils/encryption';
+import { waitUntil } from '../../test-utils/waitUntil';
 
 loadEnv();
 
@@ -49,7 +50,11 @@ describe('POST /onboarding/sync is a background job', () => {
         token = jwt.sign({ userId, typ: 'access' }, process.env.JWT_ACCESS_SECRET || 'test1', { expiresIn: '15m' });
         await ExchangeConnection.create({ accountId: userId, exchange: 'binance', encryptedApiKey: encryptApiKey('k'), encryptedApiSecret: encryptApiKey('s'), lookbackDays: 365 });
     });
-    afterEach(async () => { release?.(); await new Promise(r => setTimeout(r, 100)); await SyncJob.deleteMany({ accountId: userId }); });
+    afterEach(async () => {
+        release?.();
+        await waitUntil(async () => { const j = await SyncJob.findOne({ accountId: userId }).lean(); return !j || j.state !== 'running'; }, 'the job to finish');
+        await SyncJob.deleteMany({ accountId: userId });
+    });
     afterAll(async () => { await User.deleteMany({ email: /^test_syncjob_/ }); await ExchangeConnection.deleteMany({ accountId: userId }); await mongoose.disconnect(); });
 
     const post = () => request(app).post('/api/onboarding/sync').set('Authorization', `Bearer ${token}`);
@@ -65,11 +70,12 @@ describe('POST /onboarding/sync is a background job', () => {
         expect(conflict.body.error).toBe('sync_in_progress');
         expect(conflict.body.status.state).toBe('running');
 
-        await new Promise(r => setTimeout(r, 150));
+        await waitUntil(async () => (await status()).body.symbolsDone === 1, 'the progress write');
         const mid = await status();
         expect(mid.body).toMatchObject({ state: 'running', symbolsDone: 1, symbolsTotal: 4, tradesAdded: 7, lookbackDays: 365, syncId: ok.body.syncId });
 
-        release(); await new Promise(r => setTimeout(r, 200));
+        release();
+        await waitUntil(async () => (await status()).body.state === 'done', 'the job to finish');
         const end = await status();
         expect(end.body.state).toBe('done');
         expect(end.body.result).toMatchObject({ tradesIngested: 7, fillScore: 90, grade: 'A' });

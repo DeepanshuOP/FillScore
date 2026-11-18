@@ -11,7 +11,7 @@
  *   G: T-30h but a sync failed at T-1h -> backed off H: T-26h but a sync is running on a live lease -> left alone
  * Order of the stale ones, oldest first: I (-100h), C (-30h), A (-25h).
  */
-import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterAll } from 'vitest';
 import mongoose from 'mongoose';
 import { ExchangeConnection } from '../../models/ExchangeConnection';
 import { SyncJob } from '../../models/SyncJob';
@@ -88,16 +88,68 @@ describe('scheduled re-sync', () => {
         expect(logged.join('\n')).not.toContain('secret-detail-in-message');
     });
 
-    it('the scheduler runs a tick on its interval, can be stopped, and never overlaps itself', async () => {
-        let running = 0, maxRunning = 0, ticks = 0;
-        const stop = startResyncScheduler(async () => { running++; maxRunning = Math.max(maxRunning, running); ticks++; await new Promise(r => setTimeout(r, 40)); running--; return null; }, 10);
-        await new Promise(r => setTimeout(r, 200));
+    it('stop() returns: an in-flight tick starts no further account (deterministic, no sleeps)', async () => {
+        // Fixture above has 3 stale accounts (I, C, A). The first start() is held open on a deferred promise.
+        // Hand count: 1 start before stop(); after stop() and the release, 0 more. Total 1 (the bug gave 3).
+        const starts: string[] = [];
+        let release!: () => void;
+        const gate = new Promise<void>(r => { release = r; });
+        let firstCalled!: () => void;
+        const called = new Promise<void>(r => { firstCalled = r; });
+        const stop = startResyncScheduler(async (id) => { starts.push(id); firstCalled(); await gate; return null; }, 1e9, 0);
+        await called;                                   // the tick is in flight, inside its first start()
         stop();
-        const seen = ticks;
-        await new Promise(r => setTimeout(r, 100));
-        expect(seen).toBeGreaterThan(0);
-        expect(ticks).toBe(seen);          // stopped
-        expect(maxRunning).toBe(1);        // a slow tick is not started again on top of itself
+        release();
+        await new Promise(r => setImmediate(r));        // drains every microtask the release unblocks
+        await new Promise(r => setImmediate(r));
+        expect(starts).toEqual(['I']);
+    });
+
+    it('the scheduler runs a tick on its interval, can be stopped, and never overlaps itself (fake timers)', async () => {
+        // Interval 10 ms, each start() takes 40 ms of fake time, one stale account per search. A tick still running when the
+        // interval fires again must be skipped (maxRunning stays 1). No wall clock and no database.
+        vi.useFakeTimers();
+        try {
+            let running = 0, maxRunning = 0, ticks = 0;
+            const stop = startResyncScheduler(async () => {
+                running++; maxRunning = Math.max(maxRunning, running); ticks++;
+                await new Promise(r => setTimeout(r, 40));
+                running--; return null;
+            }, 10, 1e9, async () => ['acct']);
+            await vi.advanceTimersByTimeAsync(200);
+            stop();
+            const seen = ticks;
+            await vi.advanceTimersByTimeAsync(1000);
+            expect(seen).toBeGreaterThan(0);
+            expect(seen).toBeLessThan(200 / 10);   // far fewer ticks than interval firings: the busy guard skipped the overlaps
+            expect(ticks).toBe(seen);              // stopped
+            expect(maxRunning).toBe(1);            // a slow tick is not started again on top of itself
+        } finally { vi.useRealTimers(); }
+    });
+
+    it('stop() before the first delay fires: nothing ever starts', async () => {
+        vi.useFakeTimers();
+        try {
+            let ticks = 0;
+            const stop = startResyncScheduler(async () => { ticks++; return null; }, 10, 50, async () => ['acct']);
+            stop();
+            await vi.advanceTimersByTimeAsync(1000);
+            expect(ticks).toBe(0);
+        } finally { vi.useRealTimers(); }
+    });
+
+    it('stop() during the search of a tick: that tick starts nothing', async () => {
+        vi.useFakeTimers();
+        try {
+            let ticks = 0, releaseFind!: () => void;
+            const findGate = new Promise<void>(r => { releaseFind = r; });
+            const stop = startResyncScheduler(async () => { ticks++; return null; }, 1e9, 10, async () => { await findGate; return ['a', 'b']; });
+            await vi.advanceTimersByTimeAsync(10);   // the first tick fires and waits in the search
+            stop();
+            releaseFind();
+            await vi.advanceTimersByTimeAsync(1000);
+            expect(ticks).toBe(0);
+        } finally { vi.useRealTimers(); }
     });
 });
 

@@ -55,6 +55,8 @@ These are real gaps, listed so nobody has to guess.
 - Error tracking exists (Sentry on all three tiers, scrubbed; see `docs/OBSERVABILITY.md`), but there is no audit log of administrative actions.
 - Bybit and OKX key checks follow each exchange's documented permission fields but have not yet been
   exercised against live keys in this repository.
+- Dependabot alert 272 (high, 2026-11-17): `picomatch` up to 4.0.7, regular-expression denial of service through repeated extglobs (GHSA-fc5q-39xc-vjpf). Checked on 2026-11-18: GitHub withdrew the advisory on 2026-11-18 and closed the alert as fixed; it lists no patched version, so none exists to install. The package is in `frontend/package-lock.json` only through build and test tools (`@sentry/nextjs` build plugins, `vite`, `vitest`, `eslint`), and a search of the last local build's `.next/server` found no reference to it, so it is build-time only (not confirmed against the Vercel build itself). No override applied. If GitHub re-opens the advisory, check again.
+- Production deploy gate: Render and Vercel can deploy a commit that failed CI (see `docs/runbooks/DEPLOY.md`). The runbook has the dashboard steps; until the Vercel gate is applied, this is an open gap.
 - The git history contains credentials that were later moved to the environment. They have been
   rotated and no longer work.
 
