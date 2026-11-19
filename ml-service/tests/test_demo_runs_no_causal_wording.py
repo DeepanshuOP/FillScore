@@ -33,14 +33,16 @@ def test_the_demos_served_under_claim_rules_1_2_0():
       demo-aggressive   liquidity.slippageRoot  "..., resulting in a median spread paid of <0.01 bps."
       demo-disciplined  fee.recommendedAction   "All executions were maker orders (100.0% maker), resulting in a total fee cost of $13.50."
     demo-moderate was clean under 1.2.0. Under 1.3.0 (2026-11-20) its alpha flag "Unfilled Opportunity Cost Assessed"
-    fails, so none of the three is served until the re-record of item 26."""
+    fails, so none of the three was served until the re-record of item 26.
+    2026-11-20: all three were re-recorded under the fixed renderer and rules 1.3.0 (3 live runs, each accepted, 9 of 9
+    calls); all three are served."""
     from agents.council_service import load_demo_fixture, recorded_hashes
     served = set()
     for f in sorted(glob.glob(os.path.join(DEMO_RUNS, "*.json"))):
         doc = json.load(open(f))
         if load_demo_fixture(doc["account_id"], doc["symbol"], hashes=recorded_hashes(doc["council_result"])) is not None:
             served.add(doc["account_id"])
-    assert served == set()
+    assert served == {"demo-aggressive", "demo-disciplined", "demo-moderate"}
 
 
 def test_fails_claim_rules_names_the_field_and_ignores_the_ledgers():

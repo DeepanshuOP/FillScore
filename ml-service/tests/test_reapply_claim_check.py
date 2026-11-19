@@ -21,12 +21,24 @@ def test_shipped_fixture_demo_moderate_is_already_clean():
     assert changes == [] and new == doc
 
 
-@pytest.mark.parametrize("name,field", [("demo-aggressive", "liquidity.slippageRoot"),
-                                        ("demo-disciplined", "fee.recommendedAction")])
-def test_shipped_fixtures_that_fail_rules_1_2_0_are_refused_not_edited(name, field):
-    """Recorded LLM output is never edited. Under 1.2.0 these two fixtures have a flagged sentence ("..., resulting in
-    ...") that is the whole text of a required field; the script refuses rather than empty it. They are re-recorded."""
+@pytest.mark.parametrize("name", ["demo-aggressive", "demo-disciplined"])
+def test_shipped_fixtures_are_clean_after_the_rerecord_of_2026_11_20(name):
     doc = json.loads((DEMO / f"{name}.json").read_text(encoding="utf-8"))
+    new, changes = rc.reapply(doc)
+    assert changes == [] and new == doc
+
+
+@pytest.mark.parametrize("field,sentence", [
+    ("liquidity.slippageRoot", "The account executed 159 market fills, resulting in a median spread paid of <0.01 bps."),
+    ("fee.recommendedAction", "All executions were maker orders (100.0% maker), resulting in a total fee cost of $13.50."),
+])
+def test_a_flagged_sentence_that_is_the_whole_field_is_refused_not_edited(field, sentence):
+    """Recorded LLM output is never edited. The two sentences are the ones the 2026-11-19 fixtures of demo-aggressive and
+    demo-disciplined held (re-recorded 2026-11-20); a flagged sentence that is the whole text of a required field makes the
+    script refuse rather than empty the field."""
+    doc = json.loads((DEMO / "demo-moderate.json").read_text(encoding="utf-8"))
+    section, key = field.split(".")
+    doc["council_result"][section][key] = sentence
     with pytest.raises(rc.Refuse, match=field.replace(".", r"\.")):
         rc.reapply(doc)
 

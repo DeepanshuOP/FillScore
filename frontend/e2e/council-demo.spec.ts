@@ -4,12 +4,9 @@ import { storeDemoRunForCurrentData } from './db'
 
 // A demo run is served only if its packet hashes equal those of the current data (live-site review item 5), so the
 // committed fixture is first stored as a run for this database's current demo-moderate data.
-// 2026-11-19: this spec used demo-disciplined. Claim rules 1.2.0 refuse that run ("..., resulting in a total fee cost of
-// $13.50." in fee.recommendedAction), as they refuse demo-aggressive, until both are re-recorded (PROGRESS, item 26).
-// demo-moderate is clean under 1.2.0 and is served.
+// 2026-11-20: all three committed runs were re-recorded under claim rules 1.3.0 (PROGRESS, item 26) and are served.
 test.beforeAll(async () => {
   await storeDemoRunForCurrentData('demo-moderate')
-  await storeDemoRunForCurrentData('demo-disciplined')
 })
 
 // The demo Council is served from the stored fixture (ml-service/demo_runs). The e2e ml-service runs with
@@ -29,23 +26,38 @@ test('sample dashboard Council: assessment without a letter, values cited, no ad
   await expect(page.getByText(/^\d+ values cited$/)).toHaveCount(4)
 
   const text = await page.evaluate(() => document.body.innerText)
-  // KNOWN DEFECT, recorded 2026-11-19 (docs/PROGRESS.md waiting item 27): the recorded demo-moderate run carries the model's
-  // alpha flag `unfilled_opportunity_cost_assessed`, which the Council card shows as "Unfilled Opportunity Cost Assessed".
-  // "opportunity" is on the product's counterfactual-word list. This spec used to run on demo-disciplined, whose run has no such
-  // flag, so the term was never seen. Exactly that one label is left out below; any other advice term still fails the test.
-  const KNOWN_FLAG_LABEL = 'Unfilled Opportunity Cost Assessed'
-  expect(text).toContain(KNOWN_FLAG_LABEL)   // if the run is re-recorded the exemption is deleted, not kept by accident
-  expect(findAdviceTerms(text.replace(KNOWN_FLAG_LABEL, ''))).toEqual([])
+  // The exemption for "Unfilled Opportunity Cost Assessed" (item 27) is gone: the run was re-recorded and the claim
+  // check now reads the specialists' flags, so no advice or counterfactual term is left on the page.
+  expect(text).not.toContain('Opportunity Cost')
+  expect(findAdviceTerms(text)).toEqual([])
   expect(text).not.toMatch(/\b(due to|because of|resulting from|caused by|driven by|led to|as a result of)\b/i)
   // mechanism terms
   expect(text).not.toMatch(/\b(mechanism|underlying cause|root cause|explains why|which explains)\b/i)
 })
 
-// Claim rules 1.2.0 (2026-11-19): a demo run with a causal phrasing or a number-free judgement is not served. The two
-// committed runs that fail the rules read "not yet generated" until they are re-recorded; nothing is shown in their place.
+// The other two committed runs are served too (2026-11-20).
 for (const id of ['demo-disciplined', 'demo-aggressive']) {
-  test(`${id}: a run that fails claim rules 1.2.0 is not shown`, async ({ page }) => {
-    if (id === 'demo-aggressive') await storeDemoRunForCurrentData(id)
+  test(`${id}: the re-recorded run is shown`, async ({ page }) => {
+    await storeDemoRunForCurrentData(id)
+    await page.goto(`/dashboard?userId=${id}`)
+    await page.getByRole('button', { name: 'RUN ANALYSIS' }).click()
+    const heading = page.getByRole('heading', { name: 'Council assessment' })
+    await expect(heading).toBeVisible({ timeout: 45_000 })
+    // the Council panel only: the page around it still carries older copy that the dashboard rebuild replaces
+    const panel = page.locator('div.border-slate-700', { has: heading })
+    expect(findAdviceTerms(await panel.innerText())).toEqual([])
+  })
+}
+
+// Claim rules 1.2.0 and 1.3.0: a stored demo run with a causal phrasing, a number-free judgement or a flag holding a
+// counterfactual word is not served; nothing is shown in its place. The stored copy is changed here on purpose.
+const REFUSED: [string, string, (r: Record<string, unknown>) => Record<string, unknown>][] = [
+  ['a causal phrasing', 'demo-aggressive', (r) => ({ ...r, fee: { ...(r.fee as object), recommendedAction: 'Fees were 4.0 bps, resulting in a drag.' } })],
+  ['a flag with a counterfactual word', 'demo-disciplined', (r) => ({ ...r, alpha: { ...(r.alpha as object), flags: ['unfilled_opportunity_cost_assessed'] } })],
+]
+for (const [why, id, mutate] of REFUSED) {
+  test(`${id}: a run with ${why} is not shown`, async ({ page }) => {
+    await storeDemoRunForCurrentData(id, process.env.MONGODB_URI, mutate)
     await page.goto(`/dashboard?userId=${id}`)
     await page.getByRole('button', { name: 'RUN ANALYSIS' }).click()
     await expect(page.getByText('Demo analysis not yet generated for the current demo data.')).toBeVisible({ timeout: 45_000 })

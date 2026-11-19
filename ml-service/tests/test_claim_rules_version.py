@@ -97,7 +97,8 @@ def test_the_demo_runs_under_the_current_rules():
         res = doc["council_result"]
         golden = {"packet": {"risk": res.get("risk") or {}}}
         outcome[doc["account_id"]] = no_flagged_terms(dict(res, claim_rules_version=CLAIM_RULES_VERSION), golden).ok
-    assert outcome == {"demo-aggressive": False, "demo-disciplined": False, "demo-moderate": False}
+    # 2026-11-20: all three re-recorded under rules 1.3.0 (item 26) and each passes its own rules
+    assert outcome == {"demo-aggressive": True, "demo-disciplined": True, "demo-moderate": True}
 
 
 def test_new_runs_are_stamped_with_the_claim_rules_version():

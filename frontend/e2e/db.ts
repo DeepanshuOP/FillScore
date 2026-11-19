@@ -93,7 +93,11 @@ export async function reshapeDemoAsRebuilt(accountId: string, uri = process.env.
  * computed by the ml-service code from the same database (read only), so the stored run matches the data exactly.
  * Without this, the committed fixture describes Atlas data and is correctly not served (live-site review item 5).
  */
-export async function storeDemoRunForCurrentData(accountId: string, uri = process.env.MONGODB_URI): Promise<void> {
+/** `mutate` (2026-11-20): change the stored copy of the fixture, to test that a run failing the claim rules is refused. */
+export async function storeDemoRunForCurrentData(
+  accountId: string, uri = process.env.MONGODB_URI,
+  mutate?: (result: Record<string, unknown>) => Record<string, unknown>,
+): Promise<void> {
   const safe = assertLocalMongoUri(uri)
   if (!/^demo-(aggressive|moderate|disciplined)$/.test(accountId)) throw new Error('e2e: not a demo id')
   const mlDir = resolve(__dirname, '../../ml-service')
@@ -119,7 +123,8 @@ export async function storeDemoRunForCurrentData(accountId: string, uri = proces
     await db.collection('council_runs').insertOne({
       run_id: 'e2e-current-data', accountId, symbol: 'BTCUSDT', created_at: new Date().toISOString(), degraded: false,
       prompt_version: cur.prompt, metrics_version: cur.metrics, route_config_hash: fixture.council_result.route_config_hash ?? 'e2e',
-      packet_hashes: cur.hashes, council_result: { ...fixture.council_result, run_id: 'e2e-current-data' },
+      packet_hashes: cur.hashes,
+      council_result: (mutate ?? ((r) => r))({ ...fixture.council_result, run_id: 'e2e-current-data' }),
     })
   })
 }
