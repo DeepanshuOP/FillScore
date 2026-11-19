@@ -1,6 +1,6 @@
 import { ExchangeConnection } from '../models/ExchangeConnection';
 import { TradeIngestionService } from './TradeIngestionService';
-import { decryptApiKey } from '../utils/encryption';
+import { readConnectionSecrets } from './keyEnvelope';
 import { INGEST_SYMBOLS } from '../config/ingestion';
 import { BinanceHistorySync } from './BinanceHistorySync';
 import { validateBinanceKey, validateBybitKey, validateOKXKey } from './keyValidation';
@@ -54,17 +54,15 @@ export async function syncAccountTrades(accountId: string, daysBack: number, opt
 
     for (const conn of connections) {
         if (expired()) { markTimeCap(); break; }
-        const apiKey = decryptApiKey(conn.encryptedApiKey);
-        const apiSecret = decryptApiKey(conn.encryptedApiSecret);
-
-        let passphrase = '';
-        if (conn.exchange === 'okx') {
-            if (!conn.encryptedPassphrase) {
-                report.failures.push({ exchange: 'okx', symbol: '*', reason: 'missing_passphrase' });
-                continue;
-            }
-            passphrase = decryptApiKey(conn.encryptedPassphrase);
+        // Credentials are bound to (accountId, exchange, field); a legacy blob is read and stored again as version 2.
+        if (conn.exchange === 'okx' && !conn.encryptedPassphrase) {
+            report.failures.push({ exchange: 'okx', symbol: '*', reason: 'missing_passphrase' });
+            continue;
         }
+        const secrets = await readConnectionSecrets(conn);
+        const apiKey = secrets.apiKey;
+        const apiSecret = secrets.apiSecret;
+        const passphrase = conn.exchange === 'okx' ? (secrets.passphrase ?? '') : '';
 
         // Re-check the key on every sync. A key that gained trade/withdraw rights, or whose permissions
         // cannot be read, is not used (fail closed).

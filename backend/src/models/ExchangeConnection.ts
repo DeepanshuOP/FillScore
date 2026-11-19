@@ -27,6 +27,8 @@ const EncryptedFieldSchema = new Schema(
         iv: { type: String, required: true },
         encrypted: { type: String, required: true },
         authTag: { type: String, required: true },
+        /** Envelope version: 2 = bound to (accountId, exchange, field) as AES-GCM associated data; absent = legacy. */
+        v: { type: Number, required: false },
     },
     { _id: false }
 );

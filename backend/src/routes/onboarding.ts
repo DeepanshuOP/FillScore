@@ -65,12 +65,12 @@ onboardingRouter.post('/connect', requireAuth, accountExists, connectLimiter, as
             accountId,
             exchange,
             status: 'ok',
-            encryptedApiKey: encryptApiKey(apiKey),
-            encryptedApiSecret: encryptApiKey(apiSecret),
+            encryptedApiKey: encryptApiKey(apiKey, { userId: accountId, exchange, field: 'apiKey' }),
+            encryptedApiSecret: encryptApiKey(apiSecret, { userId: accountId, exchange, field: 'apiSecret' }),
         };
         const unset: Record<string, ''> = { statusReason: '' };
         if (exchange === 'okx') {
-            update.encryptedPassphrase = encryptApiKey(apiPassphrase!);
+            update.encryptedPassphrase = encryptApiKey(apiPassphrase!, { userId: accountId, exchange, field: 'passphrase' });
         } else {
             unset.encryptedPassphrase = '';
         }
