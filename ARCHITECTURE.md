@@ -27,9 +27,9 @@ this file changing. Regenerate the backend table with `npm run docs:routes` in `
 | Tier | Stack | Responsibility |
 |---|---|---|
 | Frontend | Next.js 16, React 19, TypeScript, Tailwind 4, Recharts | UI, auth state, SSE client for the Council, browser-side check of evidence packs |
-| Backend | Node 20, Express 4, Mongoose 8, zod, PDFKit | Auth, exchange sync (button and schedule), v1 scoring, audit and explain routes, evidence packs, API keys, exports |
+| Backend | Node 26, Express 4, Mongoose 8, zod, PDFKit | Auth, exchange sync (button and schedule), v1 scoring, audit and explain routes, evidence packs, API keys, exports |
 | ml-service | Python 3.11, FastAPI, numpy, LangGraph, PyMongo | Measurement v2, Scoring v2, expected cost, Agent Council and Ask, broker-file check, evaluation harness |
-| mcp-server | Node 20, MCP SDK | A read-only MCP server and the scorecard MCP App |
+| mcp-server | Node 26, MCP SDK | A read-only MCP server and the scorecard MCP App |
 | packages/fillscore-metrics | Python, no dependencies | The measurement formulas, generated from the service code |
 
 Identity is always taken from the JWT (`resolveAccount`) or a personal API key, never from a request parameter.

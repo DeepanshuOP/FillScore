@@ -75,3 +75,15 @@ scripts/smoke_prod.sh https://<fillscore-api>.onrender.com https://<fillscore-ml
 - The script prints one PASS or FAIL line per check, no secret, and exits 1 on any failure. The first call after a sleep can take about a minute.
 - A deploy is finished only when the script shows all PASS **and** the commit lines equal the commit you meant to ship. If a commit line is old, the deploy did not finish or the wrong button was used (section 1).
 - Also look at the GitHub Actions run of that commit. A green smoke test does not replace green CI.
+
+## 4. Node runtime (moved from 20 to 26 on 2026-11-19)
+
+Why 26: the Node release schedule (https://github.com/nodejs/Release, `schedule.json`, read 2026-11-19) lists Node 26 "Lithium" as LTS from 2026-10-28 and Node 24 as maintenance from 2026-10-20. Node 20 ended on 2026-04-30. The latest 26.x was 26.13.1 (https://nodejs.org/dist/index.json). Vercel lists 26.x as its default version (https://vercel.com/docs/functions/runtimes/node-js/node-js-versions, read 2026-11-19). Fallback if a dependency ever breaks on 26: 24 (Krypton, LTS to 2028-04-30).
+
+Done in the repository: `.nvmrc` (26; CI reads it), `backend/Dockerfile` (`node:26-alpine`), `engines.node` `>=26` in backend, frontend and mcp-server, `@types/node` ^26.
+
+**Your steps (the order matters):**
+1. Push the commit; CI runs on 26 and gates the deploy.
+2. Vercel: Project, Settings, Build and Deployment, **Node.js Version**, choose **26.x**, Save. The `engines` field in `frontend/package.json` already asks for 26; the setting makes it explicit. Redeploy the frontend (a push does it).
+3. Render: `fillscore-api` builds from `backend/Dockerfile`, so the push builds the new image. Use "Save and deploy" for any env change, never "Save, rebuild, and deploy" (section 1). Nothing to set in the dashboard for Node.
+4. Run the smoke test (section 3); the three services must report the same commit.

@@ -1,6 +1,7 @@
 # Stage 1: Build
-# Using node:20-alpine because Node 20 is the current active LTS release and Alpine Linux keeps the image footprint small.
-FROM node:20-alpine AS builder
+# node:26-alpine: Node 26 "Lithium" is the Active LTS release since 2026-10-28 (https://github.com/nodejs/Release,
+# schedule.json; https://nodejs.org/en/about/previous-releases), and Alpine keeps the image small.
+FROM node:26-alpine AS builder
 
 WORKDIR /app
 
@@ -11,7 +12,7 @@ COPY src ./src
 RUN npm run build
 
 # Stage 2: Runtime
-FROM node:20-alpine AS runtime
+FROM node:26-alpine AS runtime
 
 WORKDIR /app
 

@@ -48,7 +48,7 @@ These are real gaps, listed so nobody has to guess.
 - There is no `ENCRYPTION_KEY` rotation tooling yet; rotating the key means re-connecting exchanges. The AES-GCM payloads carry no additional authenticated data, so someone with write access to the database could move one account's encrypted key onto another account (changing that needs a migration).
 - Registration says when an email already exists, and the login path for an unknown email takes a different time from a known one.
 - `POST /api/onboarding/sync` has no cooldown beyond the per-account lock.
-- Access to the API host by its own address, without the Vercel front, is possible; the Node 20 runtime has reached end of life (see `docs/PROGRESS.md`, waiting items 20 and 21).
+- Access to the API host by its own address, without the Vercel front, is possible; the Node runtime moved from 20 (end of life 2026-04-30) to 26, the Active LTS, on 2026-11-19 (nodejs/Release `schedule.json`; `docs/runbooks/DEPLOY.md` §4).
 - Billing code exists behind `BILLING_ENABLED` (off); account deletion does not cancel a Stripe subscription, which must be added before billing is turned on.
 - There is no separate "reader" model that sanitises free text before it reaches a language model.
   Today the Council receives numeric packets only, and trade notes are never sent to it.

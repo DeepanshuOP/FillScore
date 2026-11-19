@@ -4,10 +4,10 @@ paths: ["frontend/**"]
 
 # Frontend (Next.js, port 3000)
 
-Node 20 via nvm. Run all three: build and tsc catch bugs the tests cannot.
+Node 26 via nvm. Run all three: build and tsc catch bugs the tests cannot.
 
 ```bash
-export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH"
+export PATH="$HOME/.nvm/versions/node/v26.13.1/bin:$PATH"
 cd frontend && npx vitest run && npx tsc --noEmit --incremental false && npm run lint && npm run build
 ```
 

@@ -4,10 +4,10 @@ paths: ["backend/**"]
 
 # Backend (Express, port 3001)
 
-Node 20 via nvm. Tests use mongodb-memory-server against a local mongod.
+Node 26 via nvm. Tests use mongodb-memory-server against a local mongod.
 
 ```bash
-export PATH="$HOME/.nvm/versions/node/v20.20.2/bin:$PATH"
+export PATH="$HOME/.nvm/versions/node/v26.13.1/bin:$PATH"
 # MONGOMS_SYSTEM_BINARY= overrides a Windows mongod path in backend/.env.test
 cd backend && MONGOMS_SYSTEM_BINARY= JWT_ACCESS_SECRET=test1 JWT_REFRESH_SECRET=test2 \
   GOOGLE_CLIENT_ID=x GOOGLE_CLIENT_SECRET=x GITHUB_CLIENT_ID=x GITHUB_CLIENT_SECRET=x \

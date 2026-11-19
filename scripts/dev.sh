@@ -14,8 +14,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 LOG_DIR="$ROOT/.work/logs"
 mkdir -p "$LOG_DIR"
 
-# Node 20 (matches .nvmrc / Docker / CI): put nvm's newest v20.x first on PATH when installed.
-WANT_NODE="$(cat "$ROOT/.nvmrc" 2>/dev/null || echo 20)"
+# Node 26 (matches .nvmrc / Docker / CI): put nvm's newest v26.x first on PATH when installed.
+WANT_NODE="$(cat "$ROOT/.nvmrc" 2>/dev/null || echo 26)"
 NODE_DIR="$(ls -d "${NVM_DIR:-$HOME/.nvm}/versions/node/v${WANT_NODE}."* 2>/dev/null | sort -V | tail -1)"
 if [ -n "$NODE_DIR" ]; then
   export PATH="$NODE_DIR/bin:$PATH"

@@ -36,7 +36,7 @@ the next action in PROGRESS. Never rely on memory of an earlier session that is 
 ## Environment (WSL / Linux)
 
 - Work in `~/FillScore` (WSL filesystem).
-- Node 20 (`.nvmrc`, via nvm), Python 3.11 in `ml-service/.venv` (uv). Matches Docker/CI/Render.
+- Node 26 (`.nvmrc`, via nvm), Python 3.11 in `ml-service/.venv` (uv). Matches Docker/CI/Render.
 - Ports: frontend Next.js 3000 · backend Express 3001 · ml-service FastAPI 8000 · MongoDB Atlas `fillscore`.
 - Run everything: `scripts/dev.sh` (logs in `.work/logs/`, Ctrl-C stops all three). Prefix
   `MONGODB_URI=mongodb://127.0.0.1:<port>/x` to point at a local mongod instead of Atlas.
