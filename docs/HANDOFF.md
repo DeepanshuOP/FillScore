@@ -28,6 +28,8 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
+**2026-11-19 update: M8 proposal ready for Deepanshu** (`docs/design/M8_PROPOSAL.md`; the orders of 2026-11-19, items 1-11, are recorded in `docs/PROGRESS.md`; Node is 26 now; stored exchange keys are version 2 envelopes; CI has an audit gate; the ablation runs 4-6 are verified but not flipped, waiting item 23). Older text follows.
+
 **M8: stop for Deepanshu** (design and UI is collaborative; not started). M0 to M7 and M9 are done; the final report is `docs/FINAL_REPORT.md`. Done since the last push (local commits, not pushed): cost vs expected for real accounts, the `/verify` page, personal API keys, the broker-file check, scheduled re-sync and stale-data line, CCXT shadow mode, the metrics package, the MCP App, a DP mechanism, Stripe (off), the security review fixes, launch drafts. Waiting for Deepanshu: item 10 (both ablation days; then `golden/v3` flip and the first `evidence_cited` numbers), 16 (funding costs), 17 (live CCXT run), 19 (EVM DEX audit), 20 to 22 (secret lengths, Node runtime, pre-launch steps), and the push. Do not touch `ml-service/evals/recordings/` or `golden/v3` until he reports both days done.
 
 ## Known issues
