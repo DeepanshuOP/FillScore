@@ -3,7 +3,8 @@ except an in-memory copy.
 
     cd ml-service && .venv/bin/python scripts/validate_real_account.py --account <accountId>
 
-MONGODB_URI is read from the environment (never printed). The account's trades, orders and fee snapshots are copied
+MONGODB_URI is loaded from the service env files by the script itself (or read from the environment); only variable
+names are printed. Never source an env file in a shell. The account's trades, orders and fee snapshots are copied
 into an in-memory database; there the fills are measured against public Binance prints (REST, no key), the account
 is scored under the current ScoringVersion, and the integrity hash is verified. The real database is wrapped so any
 write raises PermissionError. This closes M1's "one real account scored under v2" check once real trades exist.
@@ -135,7 +136,11 @@ def main(argv=None) -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--account", required=True)
     a = p.parse_args(argv)
-    if not os.environ.get("MONGODB_URI"):
+    # Load the service env files here (python-dotenv); never source them in a shell. Names only are printed.
+    import env_report
+
+    res = env_report.load_and_report(["MONGODB_URI"], str(ROOT / ".env"), str(ROOT.parent / "backend" / ".env"))
+    if not res["present"]["MONGODB_URI"]:
         print("MONGODB_URI is not set")
         return 2
     from pymongo import MongoClient

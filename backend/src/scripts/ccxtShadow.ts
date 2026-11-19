@@ -2,8 +2,12 @@
  * CCXT shadow run (M6), local and read-only. It reads the same Binance account through the native connector and through CCXT, then prints
  * how far they agree (services/ccxtShadow.ts). It writes nothing to any database and sends nothing to FillScore.
  *
- *   BINANCE_API_KEY=... BINANCE_API_SECRET=... npx ts-node src/scripts/ccxtShadow.ts BTCUSDT
+ *   read -rsp 'key: ' BINANCE_API_KEY; echo; read -rsp 'secret: ' BINANCE_API_SECRET; echo
+ *   export BINANCE_API_KEY BINANCE_API_SECRET
+ *   npx ts-node src/scripts/ccxtShadow.ts BTCUSDT
+ *   unset BINANCE_API_KEY BINANCE_API_SECRET
  *
+ * Never put a key on a command line (it lands in shell history and process lists) and never source an env file.
  * The two variables are read from the environment by name and are never printed. Use a READ-ONLY key (FillScore refuses any other).
  * Both sides read the most recent 1,000 trades of the symbol; trades older than the newer of the two oldest are left out of the comparison,
  * so the cut-off of the two lists is not reported as a difference. CCXT is a dev dependency (MIT, pinned): the production image does not

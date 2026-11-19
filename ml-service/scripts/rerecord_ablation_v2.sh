@@ -9,7 +9,8 @@
 #
 # Preconditions (checked below, read-only):
 #   1. The rebuilt demos are seeded (backend/src/scripts/seedDemoV2.ts --apply, Deepanshu) and the re-lock is applied.
-#   2. GROQ_API_KEY is set (checked by name only), and MONGODB_URI points at the seeded database (read-only use).
+#   2. GROQ_API_KEY and MONGODB_URI are available: loaded from the env files by Python, or already exported (checked
+#      by name only). MONGODB_URI points at the seeded database (read-only use). Do not source any env file.
 # Budget: 3 users x 3 Council runs (9 calls each = 81 calls) + 3 users x 3 single runs (9 calls). The Groq free tier
 # allows about 8 full Council runs a day, so the script runs the single arm and 4 Council runs on day 1 (--day 1) and
 # the other 5 Council runs on day 2 (--day 2). >= 65 s between runs (evals/live_eval.py GAP_S).
@@ -30,21 +31,16 @@ step() { echo; echo "== $*"; }
 do_or_print() { if [ "$RUN" = 1 ]; then echo "+ $*"; "$@"; else echo "would run: $*"; fi; }
 
 step "0. preconditions (read-only)"
-if [ -z "${GROQ_API_KEY:-}" ]; then echo "GROQ_API_KEY is not set"; [ "$RUN" = 1 ] && exit 1; else echo "GROQ_API_KEY: set"; fi
-# ml-service reads MONGODB_URI (evals/*.py, whale/*.py). Older shells may export MONGO_URI or MONGODB_URL: accept those
-# and map them to MONGODB_URI for the child processes. Only the variable NAME is printed, never its value.
-MONGO_VAR=""
-for v in MONGODB_URI MONGO_URI MONGODB_URL; do
-  if [ -n "${!v:-}" ]; then MONGO_VAR="$v"; break; fi
-done
-if [ -z "$MONGO_VAR" ]; then echo "no Mongo variable is set (looked for MONGODB_URI, MONGO_URI, MONGODB_URL)"; [ "$RUN" = 1 ] && exit 1
-else echo "Mongo connection read from variable: $MONGO_VAR (name only)"; export MONGODB_URI="${!MONGO_VAR}"; fi
-# Read-only check that the rebuilt demos are seeded (demo-moderate has 245 orders after seedDemoV2 --apply).
-if [ -n "${MONGODB_URI:-}" ]; then
-  n=$(.venv/bin/python -c "import os; from pymongo import MongoClient; c = MongoClient(os.environ['MONGODB_URI'], serverSelectionTimeoutMS=8000); print(c.get_database(os.environ.get('MONGO_DB_NAME', 'fillscore')).orders.count_documents({'accountId': 'demo-moderate'}))" 2>/dev/null || echo "?")
-  echo "demo-moderate orders in the database: $n (expected 245)"
-  if [ "$RUN" = 1 ] && [ "$n" != "245" ]; then echo "refusing: the rebuilt demos are not seeded"; exit 1; fi
+# Values come from the service env files, loaded by Python (python-dotenv) inside each process, or from variables already
+# exported in this shell. NEVER source an env file in a shell: an unquoted "&" in a URI splits into background jobs and
+# the job notice prints the line (this leaked the Atlas password twice). The helper prints variable NAMES only.
+if ! .venv/bin/python scripts/env_report.py GROQ_API_KEY MONGODB_URI; then
+  echo "a required variable is missing (see the list above)"; [ "$RUN" = 1 ] && exit 1
 fi
+# Read-only check that the rebuilt demos are seeded (demo-moderate has 245 orders after seedDemoV2 --apply).
+n=$(.venv/bin/python scripts/check_demo_seeded.py 2>/dev/null || echo "?")
+echo "demo-moderate orders in the database: $n (expected 245)"
+if [ "$RUN" = 1 ] && [ "$n" != "245" ]; then echo "refusing: the rebuilt demos are not seeded"; exit 1; fi
 
 step "1. golden set v3 (committed in M3): its demo packets must still reproduce hash-identically from the seeded database"
 # v3 = prompt 1.7.0 / single 1.2.0 / metrics 1.3.0. Its required_evidence is derived from the packets by
@@ -73,7 +69,7 @@ echo "NOTE: evals/ablation.py tabulates every recording; before reporting, tabul
 step "3. verify every run actually executed (the verify-council-run checks)"
 echo "For each new recording: grep for 'failed:', 'Max retries', '_default_', '429', 'rate limit', 'RouterExhausted',"
 echo "'REJECTED', 'fell back'; confirm n_calls == 9 on Council runs; check user_id and created_at; read the text."
-do_or_print bash -c "grep -lE 'failed:|Max retries|_default_|HTTP 429|status 429|rate limit|RouterExhausted|REJECTED|fell back' evals/recordings/*-[456].json || echo 'no failure markers in runs 4-6'"
+do_or_print bash -c "grep -lE 'failed:|Max retries|_default_|HTTP 429|http_429|status 429|rate limit|RouterExhausted|REJECTED|fell back' evals/recordings/*-[456].json || echo 'no failure markers in runs 4-6'"
 
 step "3b. after day 2 only: mark golden v3 as recorded"
 echo "When all 18 recordings 4-6 exist and every one passed step 3, edit evals/golden/v3/MANIFEST.json: \"recorded\": true"
