@@ -91,6 +91,20 @@ def test_format_value_rules():
         format_value(["alpha", "hours", "0"], -1)
 
 
+def test_bps_key_with_a_suffix_is_formatted_as_bps():
+    # Item 25 (2026-11-20): alpha.median_opportunity_bps_unfilled has "_bps_" inside, not at the end.
+    # Hand values, same rule as a key ending in "_bps": 12.34 -> one decimal "12.3"; -4.0 -> "-4.0";
+    # 0.004 is real but under 0.01 -> "<0.01 bps"; 0 -> "0.0".
+    k = ["alpha", "median_opportunity_bps_unfilled"]
+    assert format_value(k, 12.34) == "12.3 bps"
+    assert format_value(k, -4.0) == "-4.0 bps"
+    assert format_value(k, 0.004) == "<0.01 bps"
+    assert format_value(k, 0) == "0.0 bps"
+    # a key that merely contains "bps" without the underscores around it is still unformatted
+    with pytest.raises(RenderError):
+        format_value(["alpha", "xbpsy"], 1.5)
+
+
 def test_catalog_sorted_and_filtered():
     lines = catalog(CTX, ["fee", "liquidity", "risk", "alpha"]).splitlines()
     assert "{{fee.maker_ratio}} = 22.2%" in lines

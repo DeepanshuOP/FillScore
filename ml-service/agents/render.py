@@ -83,7 +83,7 @@ def format_value(path: list[str], value: Any) -> str:
     if k.endswith("_usd"):
         s = f"{abs(x):,.2f}"
         return f"-${s}" if x < 0 and s != "0.00" else f"${s}"
-    if k.endswith("_bps"):
+    if k.endswith("_bps") or "_bps_" in k:   # item 25: alpha.median_opportunity_bps_unfilled
         if x != 0 and abs(x) < 0.05:     # a real small value is not rounded to zero (same rule as the dashboard)
             if abs(x) < 0.01:
                 return "<0.01 bps" if x > 0 else ">-0.01 bps"
