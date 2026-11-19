@@ -37,7 +37,20 @@ const DEPLOY_MARKERS = ['RENDER', 'RENDER_SERVICE_ID', 'FILLSCORE_DEPLOY'];
 /** A JWT secret shorter than this is reported at boot (the key name and its length, never the value). */
 export const JWT_SECRET_MIN_LEN = 32;
 
-export function loadEnv(warn: (message: string) => void = console.warn): Readonly<Env> {
+/**
+ * Item 20 (prepared, NOT enabled). When true, a deployed or production process whose JWT secret is shorter than
+ * JWT_SECRET_MIN_LEN does not boot. This is the one switch to flip, after the Render boot logs show no short-secret
+ * line (docs/PROGRESS.md, waiting item 20). A test process (NODE_ENV=test) is never refused.
+ */
+export const REFUSE_SHORT_JWT_SECRET = false;
+
+export interface LoadEnvOptions {
+    /** Overrides REFUSE_SHORT_JWT_SECRET (tests only). */
+    refuseShortJwtSecret?: boolean;
+}
+
+export function loadEnv(warn: (message: string) => void = console.warn, options: LoadEnvOptions = {}): Readonly<Env> {
+    const refuseShort = options.refuseShortJwtSecret ?? REFUSE_SHORT_JWT_SECRET;
     const requiredVars = [
         'MONGODB_URI',
         'PORT',
@@ -81,6 +94,9 @@ export function loadEnv(warn: (message: string) => void = console.warn): Readonl
     // the secrets of a real deployment should be 32 or more random characters (docs/PROGRESS.md, waiting item 20).
     for (const name of ['JWT_ACCESS_SECRET', 'JWT_REFRESH_SECRET']) {
         const len = (process.env[name] as string).length;
+        if (len < JWT_SECRET_MIN_LEN && refuseShort && (deployMarker || process.env.NODE_ENV === 'production')) {
+            throw new Error(`${name} is only ${len} characters; at least ${JWT_SECRET_MIN_LEN} are required in a deployed environment`);
+        }
         if (len < JWT_SECRET_MIN_LEN) warn(`[config] ${name} is only ${len} characters; use at least ${JWT_SECRET_MIN_LEN} random characters`);
     }
 

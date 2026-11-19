@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { loadEnv, parseAllowedOrigins } from '../env';
+import { loadEnv, parseAllowedOrigins, REFUSE_SHORT_JWT_SECRET } from '../env';
 
 // 64 hex chars: loadEnv validates the key format at boot since F-27 (phase 1a item 1.6); this
 // placeholder used to be 'test_enc_key'.
@@ -64,6 +64,47 @@ describe('Environment Validation', () => {
         baseEnv();
         loadEnv((m: string) => none.push(m));
         expect(none).toEqual([]);
+    });
+
+    // Item 20 (prepared, not enabled): REFUSE_SHORT_JWT_SECRET is false today; with it true a deployed or production
+    // process whose JWT secret is under 32 characters must not boot. Hand values: 'x'.repeat(31) is 31 (refused),
+    // 'x'.repeat(32) is 32 (accepted); a test process (NODE_ENV=test) is never refused, because the suite uses short secrets.
+    it('1d. The refusal is off by default (the constant is false) and a short secret only warns', () => {
+        expect(REFUSE_SHORT_JWT_SECRET).toBe(false);
+        baseEnv();
+        process.env.JWT_ACCESS_SECRET = 'x'.repeat(31);
+        process.env.NODE_ENV = 'production';
+        process.env.BACKEND_URL = 'https://api.example.test';
+        process.env.FRONTEND_URL = 'https://app.example.test';
+        const warnings: string[] = [];
+        expect(() => loadEnv((m: string) => warnings.push(m))).not.toThrow();
+        expect(warnings).toHaveLength(1);
+    });
+
+    it('1e. With the refusal on, a deployed process with a 31-character secret stops, naming the key and length only', () => {
+        baseEnv();
+        process.env.NODE_ENV = 'production';
+        process.env.BACKEND_URL = 'https://api.example.test';
+        process.env.FRONTEND_URL = 'https://app.example.test';
+        process.env.JWT_REFRESH_SECRET = 'y'.repeat(31);
+        let message = '';
+        try { loadEnv(() => {}, { refuseShortJwtSecret: true }); } catch (e) { message = (e as Error).message; }
+        expect(message).toContain('JWT_REFRESH_SECRET');
+        expect(message).toContain('31');
+        expect(message).not.toContain('y'.repeat(31));
+    });
+
+    it('1f. With the refusal on, 32 characters boot and a test process is never refused', () => {
+        baseEnv();
+        process.env.NODE_ENV = 'production';
+        process.env.BACKEND_URL = 'https://api.example.test';
+        process.env.FRONTEND_URL = 'https://app.example.test';
+        process.env.JWT_ACCESS_SECRET = 'x'.repeat(32);
+        process.env.JWT_REFRESH_SECRET = 'y'.repeat(32);
+        expect(() => loadEnv(() => {}, { refuseShortJwtSecret: true })).not.toThrow();
+        process.env.JWT_ACCESS_SECRET = 'x'.repeat(5);
+        process.env.NODE_ENV = 'test';
+        expect(() => loadEnv(() => {}, { refuseShortJwtSecret: true })).not.toThrow();
     });
 
     it('2. Throws synchronously with missing variable name when a required var is entirely missing', () => {
