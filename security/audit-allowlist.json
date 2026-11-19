@@ -1,0 +1,4 @@
+{
+  "_comment": "Advisories with NO fix that SECURITY.md records as build-time only. Each entry: id (GHSA or pip-audit alias), ecosystem (npm or pip), package, reason, expires (ISO date, inclusive, at most about 90 days ahead). An entry stops applying when a fix exists, when it expires, or when SECURITY.md no longer contains the id. Rules: scripts/audit_gate.py. Empty on 2026-11-19: all audits are clean.",
+  "allow": []
+}

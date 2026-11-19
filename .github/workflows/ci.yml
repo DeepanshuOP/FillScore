@@ -28,7 +28,7 @@ jobs:
       GITLEAKS_VERSION: "8.30.1"
       GITLEAKS_SHA256: "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb"
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
       - name: Install gitleaks (pinned, checksum verified)
@@ -54,8 +54,8 @@ jobs:
       BINANCE_API_SECRET: test-secret
       ENCRYPTION_KEY: 6470df2f901f61569c667de386f434a71f51e1f2d44c913698859b16e42054cd
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -64,10 +64,13 @@ jobs:
         working-directory: backend
       # after npm ci: npm ci deletes node_modules, which would wipe a binary restored earlier
       - name: Cache mongodb-memory-server binary
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: backend/node_modules/.cache/mongodb-memory-server
           key: mongoms-${{ runner.os }}-${{ hashFiles('backend/package-lock.json') }}
+      # Dependency audit gate (production dependencies). Rules and the allowance for a build-time advisory with no
+      # fix: scripts/audit_gate.py, security/audit-allowlist.json, SECURITY.md. No job is added by these steps.
+      - run: python3 scripts/audit_gate.py npm backend
       - run: npx tsc --noEmit
         working-directory: backend
       - run: npm test -- --no-file-parallelism
@@ -76,14 +79,15 @@ jobs:
   frontend:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: npm ci
         working-directory: frontend
+      - run: python3 scripts/audit_gate.py npm frontend
       - run: npx tsc --noEmit --incremental false
         working-directory: frontend
       - run: npm run lint
@@ -96,8 +100,8 @@ jobs:
   mcp:   # the read-only MCP server (mcp-server/): tools, and the real server process end to end
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
@@ -106,8 +110,7 @@ jobs:
         working-directory: mcp-server
       - run: npm test
         working-directory: mcp-server
-      - run: npm audit --omit=dev --audit-level=high
-        working-directory: mcp-server
+      - run: python3 scripts/audit_gate.py npm mcp-server
 
   ml-service:
     runs-on: ubuntu-24.04
@@ -117,13 +120,17 @@ jobs:
       OPENROUTER_API_KEY: bogus
       MONGODB_URI: mongodb://127.0.0.1:1/x
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.11"
           cache: pip
           cache-dependency-path: ml-service/requirements.lock
       - run: pip install -r requirements.lock
+        working-directory: ml-service
+      # pip-audit is pinned; --disable-pip and --no-deps audit exactly the versions in the lock file.
+      - run: pip install pip-audit==2.10.1
+      - run: python3 ../scripts/audit_gate.py pip requirements.lock
         working-directory: ml-service
       # pytest.ini addopts already deselects integration (live) tests; stated again so it cannot be lost.
       - run: pytest -p no:cacheprovider -m "not integration"
@@ -134,8 +141,8 @@ jobs:
   eval:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-python@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.11"
           cache: pip
@@ -158,15 +165,15 @@ jobs:
     env:
       E2E_MONGO_PORT: "27017"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
           cache-dependency-path: |
             backend/package-lock.json
             frontend/package-lock.json
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
         with:
           python-version: "3.11"
           cache: pip
@@ -181,7 +188,7 @@ jobs:
         working-directory: frontend
       - run: npm run test:e2e
         working-directory: frontend
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: playwright-report

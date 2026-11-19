@@ -3,8 +3,8 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install curl for HEALTHCHECK, install temporary build deps for native wheels, install Python packages from requirements.txt, then purge build deps in a single layer to keep the image small.
-COPY requirements.txt ./
+# Install curl for HEALTHCHECK, install temporary build deps for native wheels, install Python packages from requirements.lock (the exact versions CI tests and audits; requirements.txt is only its input), then purge build deps in a single layer to keep the image small.
+COPY requirements.lock ./
 RUN apt-get update && apt-get install -y --no-install-recommends \
         curl \
         gcc \
@@ -12,7 +12,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
         libffi-dev \
         libssl-dev \
     && pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt \
+    && pip install --no-cache-dir -r requirements.lock \
     && apt-get purge -y --auto-remove gcc g++ libffi-dev libssl-dev \
     && rm -rf /var/lib/apt/lists/*
 
