@@ -1,0 +1,3 @@
+/* Design lab only (imported by app/design-lab/layout.tsx): the production footer is not part of the lab's pages.
+   !important because the footer sets its display inline. */
+body:has([data-ui-lab]) > footer { display: none !important; }

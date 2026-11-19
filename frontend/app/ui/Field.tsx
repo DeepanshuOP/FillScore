@@ -1,0 +1,33 @@
+'use client'
+
+import { useId, type InputHTMLAttributes, type TextareaHTMLAttributes } from 'react'
+import { cn } from '../../lib/utils'
+
+type Common = { label: string; hint?: string; error?: string; className?: string }
+type InputProps = Common & { multiline?: false } & Omit<InputHTMLAttributes<HTMLInputElement>, 'className'>
+type AreaProps = Common & { multiline: true } & Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'className'>
+
+/**
+ * A labelled control. The label is visible and tied to the control; the hint and the error are tied with
+ * aria-describedby; an error names the problem and the way out, and sets aria-invalid. The border is --ui-edge
+ * (3:1 against both surfaces), because the separator colour is too faint to find a control by.
+ */
+export function Field(props: InputProps | AreaProps) {
+  const id = useId()
+  const { label, hint, error, className, multiline, ...rest } = props as Common & { multiline?: boolean } & Record<string, unknown>
+  const describedBy = [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(' ') || undefined
+  const control = cn(
+    'w-full rounded-ui border bg-ui-raised px-3 py-2 text-ui-ink placeholder:text-ui-graphite disabled:cursor-not-allowed disabled:opacity-60',
+    error ? 'border-ui-danger' : 'border-ui-edge',
+  )
+  return (
+    <div className={cn('flex flex-col gap-1', className)}>
+      <label htmlFor={id} className="text-sm font-medium text-ui-ink">{label}</label>
+      {hint ? <p id={`${id}-hint`} className="text-sm text-ui-graphite">{hint}</p> : null}
+      {multiline
+        ? <textarea id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} className={cn(control, 'min-h-24')} {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)} />
+        : <input id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} className={control} {...(rest as InputHTMLAttributes<HTMLInputElement>)} />}
+      {error ? <p id={`${id}-error`} className="text-sm font-medium text-ui-danger">{error}</p> : null}
+    </div>
+  )
+}

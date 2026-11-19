@@ -1,4 +1,6 @@
 @import "tailwindcss";
+/* M8 phase 2a: design tokens of the two candidate directions. Matches only under [data-ui-theme] (the design lab). */
+@import "./ui/tokens.css";
 
 /* Fonts applied to html in layout.tsx */
 body {
@@ -7,7 +9,10 @@ body {
   font-family: var(--font-inter);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+/* The reset below is unlayered, so it beats every Tailwind spacing utility. It is left as it was for every production
+   element and lifted under [data-ui-theme] (the design lab, M8 phase 2a): Tailwind's own preflight already resets margins
+   and padding there. :where() keeps the specificity at zero, so nothing else changes. Remove it in phase 2b. */
+*:where(:not([data-ui-theme], [data-ui-theme] *)) { box-sizing: border-box; margin: 0; padding: 0; }
 
 ::selection {
   background: rgba(167,139,113,0.25);

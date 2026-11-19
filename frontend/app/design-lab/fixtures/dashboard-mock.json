@@ -1,0 +1,90 @@
+{
+ "account": "demo-moderate",
+ "costVsExpected": {
+  "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+  "excessBps": -0.2053004272161476,
+  "excluded": {
+   "noExpectedCost": 0,
+   "outsideModel": 161,
+   "partlyFilled": 4
+  },
+  "expectedBps": 0.1104242840781983,
+  "expectedUsd": 0.1562302821535467,
+  "highBps": -0.09227359039792173,
+  "insufficient": false,
+  "level": 0.9,
+  "lowBps": -0.3368533081366843,
+  "method": "seeded bootstrap over orders (2000 resamples, seed 20240101), notional-weighted mean excess",
+  "n": 80,
+  "paidBps": -0.09487614313794934,
+  "paidUsd": -0.13423249003439638,
+  "version": "ec1.0.0"
+ },
+ "dataSource": "synthetic-demo",
+ "evidenceKeyFingerprint": "ba11aa53c4961be4",
+ "note": "demo-moderate, rebuilt from real public prints; trader behaviour is synthetic (dataSource synthetic-demo).",
+ "symbols": [
+  {
+   "medianTotalBps": 10.784267545924852,
+   "notionalUsd": 839.323252323134,
+   "orders": 16,
+   "symbol": "BNBUSDT",
+   "totalUsd": 1.110587555401994
+  },
+  {
+   "medianTotalBps": 9.998859284607429,
+   "notionalUsd": 25367.237677872057,
+   "orders": 109,
+   "symbol": "BTCUSDT",
+   "totalUsd": 29.687908192736593
+  },
+  {
+   "medianTotalBps": 9.979865632564985,
+   "notionalUsd": 16935.881004899322,
+   "orders": 94,
+   "symbol": "ETHUSDT",
+   "totalUsd": 20.06905577708326
+  },
+  {
+   "medianTotalBps": 9.498770254412491,
+   "notionalUsd": 1269.3387715123886,
+   "orders": 26,
+   "symbol": "SOLUSDT",
+   "totalUsd": 1.2110089443415815
+  }
+ ],
+ "termsUsd": {
+  "fees": 41.97630206664916,
+  "impactTiming": -0.12273213310091968,
+  "spread": -0.40654547394805385,
+  "unfilled": 10.631536009963167
+ },
+ "totals": {
+  "bps": 11.726294159111706,
+  "notionalUsd": 44411.780706606856,
+  "orders": 245,
+  "usd": 52.0785604695634
+ },
+ "v1": {
+  "grade": "B",
+  "score": 84.80888516669383,
+  "version": "v1"
+ },
+ "v2": {
+  "band": [
+   92.5442687785745,
+   94.10902429587611
+  ],
+  "components": {
+   "execution": 83.67975649398413,
+   "fees": 100.00000000000016,
+   "unfilled": 96.53694971774237
+  },
+  "composite": 93.40556873724222,
+  "fills": 607,
+  "grade": "A",
+  "integrityHash": "ccea8f25dee72be2c1c2462e0a1c8fff56a58418f2055dfcffe36e50f8d96b8d",
+  "orders": 245,
+  "scoringVersion": "v2.3.0"
+ }
+}
