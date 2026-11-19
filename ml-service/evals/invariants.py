@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 from typing import get_args
 
-from agents.claims import KEY_DISPUTE_FALLBACK, flag_sentences
+from agents.claims import KEY_DISPUTE_FALLBACK, flag_sentences, result_texts
 from agents.schemas import AlphaVerdict, FeeVerdict, LiquidityVerdict, RiskVerdict
 from agents.grounding import extract_numerals
 from agents.render import RenderError, _leaves, catalog_entries, format_value, prompt_view
@@ -45,20 +45,7 @@ class Outcome:
     detail: str = ""
 
 
-def _texts(result: dict) -> list[tuple[str, str]]:
-    syn = result.get("synthesis") or {}
-    out = [("headline", syn.get("headline") or ""), ("narrative", syn.get("narrative") or "")]
-    out += [(f"observations.{i}", o.get("text") or "") for i, o in enumerate(syn.get("observations") or [])]
-    out += [(f"findings.{i}", f.get("text") or "") for i, f in enumerate(syn.get("findings") or [])]
-    out += [("liquidity.slippageRoot", (result.get("liquidity") or {}).get("slippageRoot") or ""),
-            ("alpha.bestAlternative", (result.get("alpha") or {}).get("bestAlternative") or ""),
-            ("fee.recommendedAction", (result.get("fee") or {}).get("recommendedAction") or "")]
-    d = result.get("debate_transcript") or {}
-    for k in ("prosecution_summary", "defense_summary", "key_dispute"):
-        out.append((f"debate.{k}", d.get(k) or ""))
-    for i, c in enumerate(d.get("claims") or []):
-        out.append((f"debate.claims.{i}", (c.get("claim_text") if isinstance(c, dict) else str(c)) or ""))
-    return [(f, t) for f, t in out if isinstance(t, str) and t.strip()]
+_texts = result_texts   # the copy fields live in agents/claims.py: the serving path reads the same list
 
 
 def _passed_actions(result: dict) -> set[str]:
@@ -174,16 +161,37 @@ def agent_evidence(result: dict, golden: dict) -> Outcome:
 def no_flagged_terms(result: dict, golden: dict) -> Outcome:
     """No advice, counterfactual, causal or mechanism wording (strict, as for debate text), except
     counterfactual wording about an action area that has a passed finding."""
+    rules = result.get("claim_rules_version") or "1.0.0"   # a result is judged by the rules it was made under
+    bad = _claim_hits(result, golden, rules)
+    return Outcome(not bad, "; ".join(bad[:6]))
+
+
+def _claim_hits(result: dict, golden: dict, rules: str) -> list[str]:
     passed = _passed_actions(result)
     risk = (golden.get("packet") or {}).get("risk") or {}
     n_whale = risk.get("whale_adverse_count") or 0
-    rules = result.get("claim_rules_version") or "1.0.0"   # a result is judged by the rules it was made under
     bad = []
     for field, text in _texts(result):
         # strict (causal/mechanism terms) only on debate text, exactly as production enforces it
         for fl in flag_sentences(text, passed, field, strict=field.startswith("debate."), whale_ok=n_whale > 0,
                                  whale_token=str(n_whale) if n_whale else None, rules=rules):
             bad.append(f"{field}:{'/'.join(fl.terms)}")
+    return bad
+
+
+# Measured, NOT gated (item 2(b), 2026-11-19): the claim rules 1.2.0 applied to every recording, both arms alike,
+# whatever version the recording carries. The version is pinned here on purpose: a later rules version must not
+# silently change what this column means. `no_flagged_terms` above stays the gated check, by the result's own version.
+MEASURED_CLAIM_RULES = "1.2.0"
+
+
+def claim_sentences_1_2_0(result: dict, golden: dict) -> list[str]:
+    """One entry per flagged sentence, "field:terms" (code-owned words only)."""
+    return _claim_hits(result, golden, MEASURED_CLAIM_RULES)
+
+
+def claim_rules_1_2_0(result: dict, golden: dict) -> Outcome:
+    bad = claim_sentences_1_2_0(result, golden)
     return Outcome(not bad, "; ".join(bad[:6]))
 
 

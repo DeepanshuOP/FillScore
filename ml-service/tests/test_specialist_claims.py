@@ -26,7 +26,8 @@ def test_a_causal_specialist_sentence_is_replaced_by_a_code_built_one_and_record
     text = out["fee"]["recommendedAction"]
     assert "because" not in text.lower() and text.startswith("Fee verdict: OPTIMAL")
     reds = out["claims"]["specialist_redactions"]
-    assert [(r["field"], r["terms"]) for r in reds] == [("fee.recommendedAction", ["because"])]
+    # rules 1.2.0 also name "Fees were high" (no number in its sentence) as an unbacked judgement
+    assert [(r["field"], r["terms"]) for r in reds] == [("fee.recommendedAction", ["because", "unbacked: high"])]
     assert {"agent": "fee_optimizer", "field": "recommendedAction", "fallback_text": True} in out["grounding"]["fallbacks"]
 
 

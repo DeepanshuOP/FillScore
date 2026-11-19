@@ -61,9 +61,17 @@ def states_a_cause(doc_result: dict) -> bool:
     return walk(doc_result)
 
 
+def fails_current_claim_rules(doc_result: dict) -> bool:
+    """True when the run's copy holds a causal phrasing or a number-free judgement of claim rules 1.2.0. A demo run
+    recorded before 1.2.0 that does is not served until it is re-recorded (its text is never edited)."""
+    from agents.claims import new_rule_hits
+
+    return bool(new_rule_hits(doc_result))
+
+
 def _as_cached(doc_result: dict, run_id: Optional[str], demo: bool = False) -> Optional[CouncilResult]:
     result = CouncilResult.model_validate(doc_result)
-    if result.degraded or (demo and states_a_cause(doc_result)):
+    if result.degraded or (demo and (states_a_cause(doc_result) or fails_current_claim_rules(doc_result))):
         return None
     return result.model_copy(update={"cached": True, "run_id": run_id or result.run_id})
 

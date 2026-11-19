@@ -1,0 +1,502 @@
+{
+ "arm": "council",
+ "attempts": 11,
+ "council_result": {
+  "alpha": {
+   "agent": "alpha_architect",
+   "alphaRating": "NEUTRAL",
+   "bestAlternative": "Alpha verdict: NEUTRAL.",
+   "cited_evidence": [],
+   "confidence": 0.0,
+   "evidence_coverage_detail": {
+    "available_count": 4,
+    "cited_count": 0,
+    "coverage_score": 0.0
+   },
+   "flags": [
+    "no_vwap_benchmark_available",
+    "limited_unfilled_sample"
+   ],
+   "severity": "LOW"
+  },
+  "cached": false,
+  "claim_rules_version": "1.1.0",
+  "claims": {
+   "debate_flagged": 7,
+   "debate_redactions": [
+    {
+     "action_types": [
+      "maker_instead_of_taker"
+     ],
+     "field": "prosecution_summary",
+     "sentence_index": 0,
+     "terms": [
+      "could have"
+     ]
+    },
+    {
+     "action_types": [],
+     "field": "defense_summary",
+     "sentence_index": 0,
+     "terms": [
+      "exogenous",
+      "market-structure",
+      "unavoidable",
+      "whale"
+     ]
+    },
+    {
+     "action_types": [
+      "maker_instead_of_taker"
+     ],
+     "field": "debate.claims.0",
+     "sentence_index": 0,
+     "terms": [
+      "avoidable"
+     ]
+    },
+    {
+     "action_types": [
+      "maker_instead_of_taker"
+     ],
+     "field": "debate.claims.1",
+     "sentence_index": 0,
+     "terms": [
+      "avoidable",
+      "missed",
+      "opportunities"
+     ]
+    },
+    {
+     "action_types": [
+      "maker_instead_of_taker"
+     ],
+     "field": "debate.claims.4",
+     "sentence_index": 0,
+     "terms": [
+      "avoidable"
+     ]
+    },
+    {
+     "action_types": [
+      "maker_instead_of_taker"
+     ],
+     "field": "debate.claims.5",
+     "sentence_index": 0,
+     "terms": [
+      "market-structure",
+      "unavoidable"
+     ]
+    },
+    {
+     "action_types": [
+      "maker_instead_of_taker"
+     ],
+     "field": "key_dispute",
+     "sentence_index": 0,
+     "terms": [
+      "avoidable"
+     ]
+    }
+   ],
+   "flagged_first_pass": 1,
+   "redactions": [
+    {
+     "action_types": [
+      "maker_instead_of_taker"
+     ],
+     "field": "observations.0",
+     "sentence_index": 0,
+     "terms": [
+      "due to"
+     ]
+    }
+   ],
+   "regenerated": false,
+   "specialist_redactions": []
+  },
+  "debate_transcript": {
+   "claims": [
+    {
+     "claim_id": "D1a",
+     "claim_text": "The trader executed 76 market orders, yet the median impact timing was 0.0 bps, indicating minimal adverse selection.",
+     "evidence_keys": [],
+     "rebuts": "P1a",
+     "side": "defense"
+    },
+    {
+     "claim_id": "D1b",
+     "claim_text": "With a maker ratio of 77.9%, the trader achieved 268 maker trades, showing a strategic preference for lower fees.",
+     "evidence_keys": [],
+     "rebuts": "P1b",
+     "side": "defense"
+    },
+    {
+     "claim_id": "P0",
+     "claim_text": "Taker orders were 76 of 344 trades.",
+     "evidence_keys": [
+      "taker_count",
+      "trade_count"
+     ],
+     "rebuts": null,
+     "side": "prosecution"
+    }
+   ],
+   "debate_latency_ms": 9461.06,
+   "defense_summary": "Maker orders were 268 of 344 trades.",
+   "failed_turns": [],
+   "key_dispute": "Defense counters: The trader executed 76 market orders, yet the median impact timing was 0.0 bps, indicating minimal adverse selection.",
+   "prosecution_summary": "Taker orders were 76 of 344 trades.",
+   "round_count": 2,
+   "turns_expected": 4,
+   "turns_ok": 4
+  },
+  "degraded": false,
+  "degraded_reasons": [],
+  "fee": {
+   "agent": "fee_optimizer",
+   "cited_evidence": [],
+   "confidence": 0.0,
+   "evidence_coverage_detail": {
+    "available_count": 12,
+    "cited_count": 0,
+    "coverage_score": 0.0
+   },
+   "feeRating": "OPTIMAL",
+   "flags": [
+    "high_maker_ratio",
+    "low_fee_drag"
+   ],
+   "recommendedAction": "The trader executed 77.9% of orders as maker, keeping total fee cost at $23.96 with a drag of 10.0 bps.",
+   "severity": "LOW"
+  },
+  "grounding": {
+   "duplicates_stripped": 0,
+   "faithfulness_after": 0.9259,
+   "faithfulness_first_pass": 0.9259,
+   "fallbacks": [
+    {
+     "agent": "alpha_architect",
+     "fallback_text": true,
+     "field": "bestAlternative"
+    }
+   ],
+   "numbers_checked": 27,
+   "per_agent": {
+    "alpha_architect": {
+     "faithfulness_after": 0.0,
+     "fallback_text": true,
+     "regenerated": true,
+     "values_cited": 0,
+     "violations_first_pass": 1
+    },
+    "defense": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": false,
+     "values_cited": 6,
+     "violations_first_pass": 0
+    },
+    "fee_optimizer": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": false,
+     "values_cited": 3,
+     "violations_first_pass": 0
+    },
+    "liquidity_scout": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": false,
+     "values_cited": 3,
+     "violations_first_pass": 0
+    },
+    "prosecution": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": false,
+     "values_cited": 6,
+     "violations_first_pass": 0
+    },
+    "risk_auditor": {
+     "faithfulness_after": 1.0,
+     "fallback_text": false,
+     "regenerated": false,
+     "values_cited": 4,
+     "violations_first_pass": 0
+    },
+    "synthesis": {
+     "faithfulness_after": 0.75,
+     "fallback_text": false,
+     "regenerated": true,
+     "values_cited": 3,
+     "violations_first_pass": 1
+    }
+   },
+   "redactions": [
+    {
+     "agent": "alpha_architect",
+     "field": "bestAlternative",
+     "kinds": [
+      "unrenderable"
+     ],
+     "n_tokens": 1,
+     "sentence_index": 0
+    },
+    {
+     "agent": "synthesis",
+     "field": "narrative",
+     "kinds": [
+      "unrenderable"
+     ],
+     "n_tokens": 1,
+     "sentence_index": 1
+    }
+   ],
+   "regenerations": 2,
+   "violations_first_pass": 2
+  },
+  "liquidity": {
+   "agent": "liquidity_scout",
+   "cited_evidence": [],
+   "confidence": 0.0,
+   "evidence_coverage_detail": {
+    "available_count": 12,
+    "cited_count": 0,
+    "coverage_score": 0.0
+   },
+   "flags": [],
+   "liquidityRating": "GOOD",
+   "severity": "LOW",
+   "slippageRoot": "The account executed 76 market orders and 268 limit orders with a median spread paid of >-0.01 bps."
+  },
+  "llm_calls": [
+   {
+    "attempt": 1,
+    "completion_tokens": 157,
+    "latency_ms": 835.14,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 627,
+    "provider": "groq",
+    "role": "specialist",
+    "tokens": 784
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 159,
+    "latency_ms": 1254.81,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 847,
+    "provider": "groq",
+    "role": "specialist",
+    "tokens": 1006
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 168,
+    "latency_ms": 1258.17,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 692,
+    "provider": "groq",
+    "role": "specialist",
+    "tokens": 860
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 196,
+    "latency_ms": 1361.55,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 727,
+    "provider": "groq",
+    "role": "specialist",
+    "tokens": 923
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 171,
+    "latency_ms": 590.53,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 663,
+    "provider": "groq",
+    "role": "specialist",
+    "tokens": 834
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 219,
+    "latency_ms": 789.78,
+    "model": "openai/gpt-oss-20b",
+    "outcome": "ok",
+    "prompt_tokens": 1398,
+    "provider": "groq",
+    "role": "debate",
+    "tokens": 1617
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 248,
+    "latency_ms": 896.97,
+    "model": "openai/gpt-oss-20b",
+    "outcome": "ok",
+    "prompt_tokens": 1541,
+    "provider": "groq",
+    "role": "debate",
+    "tokens": 1789
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 190,
+    "latency_ms": 805.58,
+    "model": "openai/gpt-oss-20b",
+    "outcome": "ok",
+    "prompt_tokens": 1489,
+    "provider": "groq",
+    "role": "debate",
+    "tokens": 1679
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 217,
+    "latency_ms": 6745.14,
+    "model": "openai/gpt-oss-20b",
+    "outcome": "ok",
+    "prompt_tokens": 1574,
+    "provider": "groq",
+    "role": "debate",
+    "tokens": 1791
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 290,
+    "latency_ms": 16447.54,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 2578,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2868
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 308,
+    "latency_ms": 30305.73,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 2614,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2922
+   }
+  ],
+  "metrics_version": "1.3.0",
+  "modelUsage": {
+   "debate_model": "groq/openai/gpt-oss-20b",
+   "specialists_model": "groq/qwen/qwen3.8-27b",
+   "synthesis_model": "groq/qwen/qwen3.8-27b"
+  },
+  "n_calls_expected": 9,
+  "n_calls_ok": 9,
+  "prompt_version": "1.7.0",
+  "risk": {
+   "agent": "risk_auditor",
+   "cited_evidence": [],
+   "confidence": 0.0,
+   "evidence_coverage_detail": {
+    "available_count": 16,
+    "cited_count": 0,
+    "coverage_score": 0.0
+   },
+   "flags": [
+    "Notional was concentrated, with the top symbol at 100.0% of the total.",
+    "Symbol HHI was 1.00, indicating single-asset concentration.",
+    "Adverse selection rate was 0.0% across 344 trades."
+   ],
+   "riskLevel": "MEDIUM",
+   "severity": "MEDIUM"
+  },
+  "route_config_hash": "9c3af0624a402f81",
+  "run_id": null,
+  "synthesis": {
+   "conflictLedger": [
+    {
+     "between": "fee_optimizer vs risk_auditor",
+     "rule_applied": "Fee > Risk > Liquidity > Alpha",
+     "winner": "fee_optimizer"
+    }
+   ],
+   "estimatedMonthlyCostUSD": 23.963822,
+   "findings": [],
+   "headline": "Single-asset concentration dominated these executions with minimal spread costs and high maker activity.",
+   "narrative": "The trader paid $23.96 in total fees while the median spread paid was >-0.01 bps. Notional exposure was concentrated, with 100.0% of the total allocated to the top symbol.",
+   "observations": [
+    {
+     "action_type": "none",
+     "text": "The risk auditor flagged single-asset concentration, noting that the top symbol represented the entire notional exposure, which is a structural characteristic of this trading profile."
+    }
+   ],
+   "overallRating": "GOOD"
+  },
+  "tokenUsage": {
+   "completion_tokens": 2323,
+   "n_calls": 11,
+   "prompt_tokens": 14750,
+   "total_tokens": 17073
+  },
+  "totalLatencyMs": 59473.88,
+  "tradeContext": {
+   "alpha_packet_hash": "5a5cac4868d34944",
+   "fee_packet_hash": "09db43fe2356bea2",
+   "liquidity_packet_hash": "7dba441a81889fed",
+   "regime": null,
+   "risk_packet_hash": "e3be7d2648f14432",
+   "symbol": "BTCUSDT",
+   "trade_count": 344,
+   "userId": "demo-moderate"
+  },
+  "verification": {
+   "dropped": [],
+   "observations": 2,
+   "passed": 0,
+   "proposed": 2,
+   "re_reasoned": 0,
+   "rejected": []
+  }
+ },
+ "golden_id": "demo-moderate",
+ "meta": {
+  "arm": "council",
+  "prompt_version": "1.7.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "routes": {
+   "debate": [
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "groq-qwen3.8-27b"
+   ],
+   "specialist": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash"
+   ],
+   "synthesis": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-120b",
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite",
+    "groq-gpt-oss-20b"
+   ]
+  },
+  "single_prompt_version": null,
+  "synthesis_prompt_sha256": "10fd1ee8d67f0de3"
+ },
+ "run": 5,
+ "wall_s": 59.5
+}

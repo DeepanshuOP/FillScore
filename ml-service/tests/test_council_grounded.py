@@ -70,7 +70,7 @@ DIRTY_ANSWERS = {
     "defense": {"claims": [{"claim_id": "D1a", "claim_text": dirty("Slippage was small."),
                             "evidence_keys": ["avg_slippage_bps"], "rebuts": "P1a"}],
                 "defense_summary": dirty("Costs reflected the market.")},
-    "synthesis": {"headline": dirty("Execution was mixed."), "narrative": dirty("Fees drove the cost."),
+    "synthesis": {"headline": dirty("Execution was mixed."), "narrative": dirty("Fees tracked the cost."),   # was "drove": a causal phrasing under claim rules 1.2.0 (2026-11-19) would add a regeneration this test does not count
                   "recommendations": [{"action_type": "general", "params": {},
                                        "rationale_text": dirty("The maker share was low.")}],
                   "conflictLedger": [{"between": dirty("fee_optimizer vs risk_auditor."),
@@ -368,7 +368,7 @@ def test_llm_written_ids_and_evidence_keys_are_forced_or_filtered_by_code():
 def test_debate_ids_follow_position_and_unknown_rebuts_are_dropped():
     pros = {"claims": [{"claim_id": "Z", "claim_text": "maker_ratio was low", "evidence_keys": ["maker_ratio"]},
                        {"claim_id": "", "claim_text": "   ", "evidence_keys": []},
-                       {"claim_id": "Q", "claim_text": "slippage was high", "evidence_keys": ["maker_ratio", "maker_ratio"]}],
+                       {"claim_id": "Q", "claim_text": "slippage was recorded", "evidence_keys": ["maker_ratio", "maker_ratio"]}],   # was "was high": a number-free judgement is redacted under rules 1.2.0, which would drop the claim and shift the ids this test checks
             "prosecution_summary": "Fees were avoidable."}
     defense = {"claims": [{"claim_id": "9", "claim_text": "slippage was small", "evidence_keys": ["avg_slippage_bps"],
                            "rebuts": "P1b"},

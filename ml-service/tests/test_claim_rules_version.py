@@ -50,7 +50,7 @@ def test_an_unknown_rules_version_is_an_error_not_a_silent_default():
 
 
 def test_the_current_version_names_the_current_list():
-    assert CLAIM_RULES_VERSION == "1.1.0"
+    assert CLAIM_RULES_VERSION == "1.2.0"   # 1.2.0 (2026-11-19) keeps the 1.1.0 connective list: see test_claim_rules_1_2_0.py
     assert set(CONNECTIVE_TERMS_1_0_0) < set(CONNECTIVE_TERMS)
     assert CONNECTIVE_TERMS_1_0_0 == ["due to", "because of", "resulting from", "caused by", "driven by", "led to",
                                       "as a result of"]
@@ -85,14 +85,17 @@ def test_every_stored_recording_still_passes_under_its_own_rules():
 def test_the_demo_runs_under_the_current_rules():
     """The re-check the architect asked for. Before the re-record of 2026-11-17 disciplined and moderate passed the
     claim check under 1.1.0 and aggressive did not (its fee.recommendedAction held a bare "because"; the sentence is
-    the BECAUSE constant above). Aggressive was re-recorded under 1.1.0, so all three pass now."""
+    the BECAUSE constant above). Aggressive was re-recorded under 1.1.0, so all three passed then.
+    2026-11-19, rules 1.2.0 ("resulting in" is a causal phrasing): demo-aggressive (liquidity.slippageRoot) and
+    demo-disciplined (fee.recommendedAction) fail and are no longer served; demo-moderate passes. They wait for a
+    re-record (docs/PROGRESS.md)."""
     outcome = {}
     for f in sorted(glob.glob(os.path.join(ROOT, "demo_runs", "*.json"))):
         doc = json.load(open(f))
         res = doc["council_result"]
         golden = {"packet": {"risk": res.get("risk") or {}}}
         outcome[doc["account_id"]] = no_flagged_terms(dict(res, claim_rules_version=CLAIM_RULES_VERSION), golden).ok
-    assert outcome == {"demo-aggressive": True, "demo-disciplined": True, "demo-moderate": True}
+    assert outcome == {"demo-aggressive": False, "demo-disciplined": False, "demo-moderate": True}
 
 
 def test_new_runs_are_stamped_with_the_claim_rules_version():

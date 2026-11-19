@@ -23,7 +23,7 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from evals import golden_sets  # noqa: E402
-from evals.invariants import NAMES, agent_evidence, check_all  # noqa: E402
+from evals.invariants import NAMES, agent_evidence, check_all, claim_sentences_1_2_0  # noqa: E402
 from evals.run_offline import load_golden  # noqa: E402
 
 OUT = os.path.join(HERE, "ablation_results.md")
@@ -66,6 +66,7 @@ def run_metrics(run: dict, golden: dict) -> dict:
         "viol1": g.get("violations_first_pass") or 0,   # all agents' text (Council: 7 agents; single: 1 call)
         "viol1_syn": ((g.get("per_agent") or {}).get("synthesis") or {}).get("violations_first_pass") or 0,
         "redact": len(g.get("redactions") or []), "fallback": len(g.get("fallbacks") or []),
+        "claims_1_2": len(claim_sentences_1_2_0(res, golden)),   # sentences flagged by rules 1.2.0, whatever the run's version
         "claims_syn": c.get("flagged_first_pass") or 0, "claims_deb": c.get("debate_flagged") or 0,
         "proposed": v.get("proposed") or 0, "passed": v.get("passed") or 0,
         "calls": len(res.get("llm_calls") or []), "tok_in": tok.get("prompt_tokens") or 0,
@@ -98,6 +99,7 @@ def summarise(runs: list[dict], golden: dict[str, dict]) -> dict:
                 "agent_ev": (sum(m["agent_ev"] for m in ms), n) if arm == "council" else None,
                 **{k: _mean([m[k] for m in ms]) for k in
                    ("viol1", "viol1_syn", "redact", "fallback", "claims_syn", "claims_deb", "calls", "tok_in", "tok_out", "wall_s")},
+                "claims_1_2": (sum(1 for m in ms if m["claims_1_2"]), n, sum(m["claims_1_2"] for m in ms)),
                 "proposed": sum(m["proposed"] for m in ms), "passed": sum(m["passed"] for m in ms),
                 "agree": agree,
             }
@@ -111,15 +113,17 @@ def _ratio(a: int, b: int) -> str:
 def render_table(rows: dict) -> str:
     head = ("| arm | user | runs ok / degraded | invariants (6, both arms) | agent evidence (Council only) | viol 1st pass /run (all agents) "
             "| viol 1st pass /run (synthesis only) | redactions /run | fallbacks /run | claims syn / debate /run | rating agreement "
-            "| findings proposed / passed | LLM calls /run | tokens in / out /run | wall s /run |")
-    lines = [head, "|" + "---|" * 15]
+            "| findings proposed / passed | LLM calls /run | tokens in / out /run | wall s /run "
+            "| runs flagged by claim rules 1.2.0 (measured, every run) / sentences |")
+    lines = [head, "|" + "---|" * 16]
     for (arm, u), s in sorted(rows.items(), key=lambda kv: (ARMS.index(kv[0][0]), kv[0][1] == "ALL", kv[0][1])):
         a, p = s["agree"]
         lines.append(
             f"| {ARM_LABEL[arm]} | {u} | {s['completed']} / {s['degraded']} | {_ratio(*s['inv_all'])} "
             f"| {_ratio(*s['agent_ev']) if s['agent_ev'] else 'n/a'} | {s['viol1']:.2f} | {s['viol1_syn']:.2f} | {s['redact']:.2f} | {s['fallback']:.2f} "
             f"| {s['claims_syn']:.2f} / {s['claims_deb']:.2f} | {_ratio(a, p)} | {s['proposed']} / {s['passed']} "
-            f"| {s['calls']:.1f} | {s['tok_in']:.0f} / {s['tok_out']:.0f} | {s['wall_s']:.1f} |")
+            f"| {s['calls']:.1f} | {s['tok_in']:.0f} / {s['tok_out']:.0f} | {s['wall_s']:.1f} "
+            f"| {_ratio(s['claims_1_2'][0], s['claims_1_2'][1])} / {s['claims_1_2'][2]} |")
     return "\n".join(lines)
 
 

@@ -40,7 +40,28 @@ CONNECTIVE_TERMS_1_0_0 = ["due to", "because of", "resulting from", "caused by",
 # Keep this literal's first list equal to backend/src/constants/adviceTerms.ts (a test reads it).
 CONNECTIVE_TERMS = ["due to", "because of", "resulting from", "caused by", "driven by", "led to",
                     "as a result of", "because", "therefore", "thereby", "hence", "consequently"]
-CONNECTIVE_BY_RULES = {"1.0.0": CONNECTIVE_TERMS_1_0_0, "1.1.0": CONNECTIVE_TERMS}
+CONNECTIVE_BY_RULES = {"1.0.0": CONNECTIVE_TERMS_1_0_0, "1.1.0": CONNECTIVE_TERMS, "1.2.0": CONNECTIVE_TERMS}
+
+# 1.2.0 (2026-11-19), decided from the 18 ablation recordings; hand cases in tests/test_claim_rules_1_2_0.py.
+# (a) causal phrasings, in every text, never excused by a passed finding (no packet value supports a cause).
+CAUSAL_PHRASES_1_2_0 = ["inherent to", "resulting in", "led to", "drove"]
+_RATHER_ERROR_RE = re.compile(r"(?<![A-Za-z])rather\s+than\s+(?:[A-Za-z'-]+\s+){0,4}?errors?(?![A-Za-z])", re.I)
+# (b) unbacked judgements: an evaluative word about the trader's execution or the venue, in a sentence with no
+# numeral and no {{placeholder}} behind it. The number must be in the same sentence (stated limit).
+_EVAL_ADJ = ["efficient", "inefficient", "low", "high", "good", "poor", "strong", "weak", "acceptable", "excellent",
+             "healthy", "optimal", "suboptimal", "reasonable", "favorable", "favourable", "solid", "decent"]
+_EVAL_NOUN = ["routing", "execution", "executions", "fee drag", "fees", "fee", "slippage", "spread", "spreads",
+              "impact", "costs", "cost", "timing", "venue", "venues", "fills", "fill quality", "order flow"]
+_ADJ = "(" + "|".join(sorted(_EVAL_ADJ, key=len, reverse=True)) + ")"
+_NOUN = "(?:" + "|".join(r"\s+".join(w.split()) for w in sorted(_EVAL_NOUN, key=len, reverse=True)) + ")"
+_BE = r"(?:is|are|was|were|remained|remains|stayed|stays|looked|looks|appeared|appears|seemed|seems|became|became)"
+_ADV = r"(?:(?:very|quite|fairly|relatively|generally|consistently|broadly)\s+)?"
+_ADJ_NOUN_RE = re.compile(r"(?<![A-Za-z])" + _ADJ + r"\s+(?:[A-Za-z]+\s+){0,2}?" + _NOUN + r"(?![A-Za-z])", re.I)
+_NOUN_ADJ_RE = re.compile(r"(?<![A-Za-z])" + _NOUN + r"\s+" + _BE + r"\s+" + _ADV + _ADJ + r"(?![A-Za-z])", re.I)
+_WITHIN_RE = re.compile(r"(?<![A-Za-z])within\s+(?:the\s+)?(?:acceptable|normal|reasonable|expected|typical)\s+"
+                        r"(?:range|limits|bounds)(?![A-Za-z])", re.I)
+_HAS_NUMBER_RE = re.compile(r"\d|\{\{")
+_CAUSAL_PHRASE_RE = None   # built after _rx is defined
 ACTION_CUES: dict[str, list[str]] = {
     "maker_instead_of_taker": ["taker", "maker", "fee", "fees", "fee drag"],
     "exclude_hours": ["hour", "hours", "UTC", "session", "sessions", "off-peak", "time of day"],
@@ -81,6 +102,24 @@ def _counter_re(rules: str | None) -> re.Pattern:
 
 _ADVICE_RE = _rx(ADVICE_TERMS)
 _CUE_RES = {a: _rx(c) for a, c in ACTION_CUES.items()}
+_CAUSAL_PHRASE_RE = _rx(CAUSAL_PHRASES_1_2_0)
+
+
+def _at_least(version: str, floor: str) -> bool:
+    return tuple(int(x) for x in version.split(".")) >= tuple(int(x) for x in floor.split("."))
+
+
+def extra_terms_1_2_0(sentence: str) -> set[str]:
+    """Rules 1.2.0 only: causal phrasings and unbacked judgements. Labels are code-owned words, never sentence text."""
+    out = {_norm(m) for m in _CAUSAL_PHRASE_RE.finditer(sentence)}
+    if _RATHER_ERROR_RE.search(sentence):
+        out.add("rather than ... error")
+    if not _HAS_NUMBER_RE.search(sentence):
+        out |= {f"unbacked: {m.group(1).lower()}" for m in _ADJ_NOUN_RE.finditer(sentence)}
+        out |= {f"unbacked: {m.group(1).lower()}" for m in _NOUN_ADJ_RE.finditer(sentence)}
+        if _WITHIN_RE.search(sentence):
+            out.add("unbacked: within range")
+    return out
 
 
 def _cites_whale_count(sentence: str, token: str | None) -> bool:
@@ -89,6 +128,36 @@ def _cites_whale_count(sentence: str, token: str | None) -> bool:
     if _WHALE_KEY_RE.search(sentence):
         return True
     return bool(token) and re.search(r"(?<![\d.,$])" + re.escape(token) + r"(?![\d,%]|\.\d)", sentence) is not None
+
+
+def result_texts(result: dict) -> list[tuple[str, str]]:
+    """The copy of a Council or single-call result, as (field, text): everything a reader is shown. The grounding and
+    claims ledgers, ids, hashes and model names are not copy. One list for the offline evals and the serving path."""
+    syn = result.get("synthesis") or {}
+    out = [("headline", syn.get("headline") or ""), ("narrative", syn.get("narrative") or "")]
+    out += [(f"observations.{i}", o.get("text") or "") for i, o in enumerate(syn.get("observations") or [])]
+    out += [(f"findings.{i}", f.get("text") or "") for i, f in enumerate(syn.get("findings") or [])]
+    out += [("liquidity.slippageRoot", (result.get("liquidity") or {}).get("slippageRoot") or ""),
+            ("alpha.bestAlternative", (result.get("alpha") or {}).get("bestAlternative") or ""),
+            ("fee.recommendedAction", (result.get("fee") or {}).get("recommendedAction") or "")]
+    d = result.get("debate_transcript") or {}
+    for k in ("prosecution_summary", "defense_summary", "key_dispute"):
+        out.append((f"debate.{k}", d.get(k) or ""))
+    for i, c in enumerate(d.get("claims") or []):
+        out.append((f"debate.claims.{i}", (c.get("claim_text") if isinstance(c, dict) else str(c)) or ""))
+    return [(f, t) for f, t in out if isinstance(t, str) and t.strip()]
+
+
+def new_rule_hits(result: dict) -> list[str]:
+    """Rules 1.2.0 only (the part no passed finding excuses), "field:terms" per flagged sentence, over the result's copy.
+    The serving path uses this: the older terms are excused by a passed finding, which needs the verified findings."""
+    hits = []
+    for field, text in result_texts(result):
+        for i, s in enumerate(split_sentences(text)):
+            terms = extra_terms_1_2_0(_FOLD_RE.sub(lambda m: "-" if m.group(0) in _DASHES else " ", s))
+            if terms:
+                hits.append(f"{field}:{'/'.join(sorted(terms))}")
+    return hits
 
 
 def _norm(m: re.Match) -> str:
@@ -122,6 +191,11 @@ def _flag_sentence(sentence: str, index: int, passed: set[str], field_name: str,
             cause |= {_norm(m) for m in _WHALE_RE.finditer(sentence)}
         if cause:   # never excused by a passed action: no packet value supports a cause
             return ClaimFlag(field_name, index, sorted(advice | counter | cause),
+                             sorted(a for a, rx in _CUE_RES.items() if rx.search(sentence)))
+    if _at_least(rules or _current_rules(), "1.2.0"):
+        extra = extra_terms_1_2_0(sentence)
+        if extra:   # never excused by a passed action: no packet value supports a cause or a number-free judgement
+            return ClaimFlag(field_name, index, sorted(advice | counter | extra),
                              sorted(a for a, rx in _CUE_RES.items() if rx.search(sentence)))
     if not advice and not counter:
         return None

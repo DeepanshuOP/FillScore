@@ -1,0 +1,173 @@
+{
+ "arm": "single",
+ "attempts": 3,
+ "council_result": {
+  "arm": "single_call",
+  "claim_rules_version": "1.1.0",
+  "claims": {
+   "flagged_first_pass": 0,
+   "redactions": [],
+   "regenerated": false
+  },
+  "debate_transcript": {},
+  "degraded": false,
+  "degraded_reasons": [],
+  "grounding": {
+   "duplicates_stripped": 0,
+   "faithfulness_after": 0.9,
+   "faithfulness_first_pass": 0.8333,
+   "fallbacks": [],
+   "numbers_checked": 10,
+   "per_agent": {
+    "synthesis": {
+     "faithfulness_after": 0.9,
+     "fallback_text": false,
+     "regenerated": true,
+     "values_cited": 9,
+     "violations_first_pass": 1
+    }
+   },
+   "redactions": [
+    {
+     "agent": "synthesis",
+     "field": "narrative",
+     "kinds": [
+      "unrenderable"
+     ],
+     "n_tokens": 1,
+     "sentence_index": 2
+    }
+   ],
+   "regenerations": 1,
+   "violations_first_pass": 1
+  },
+  "llm_calls": [
+   {
+    "attempt": 1,
+    "completion_tokens": 260,
+    "latency_ms": 1311.06,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 1840,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2100
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 319,
+    "latency_ms": 1071.25,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 1876,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2195
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 7,
+    "latency_ms": 13699.0,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 1951,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 1958
+   }
+  ],
+  "modelUsage": {
+   "debate_model": "none",
+   "specialists_model": "none",
+   "synthesis_model": "groq/qwen/qwen3.8-27b"
+  },
+  "n_attempts": 3,
+  "n_calls_ok": 3,
+  "prompt_version": "1.2.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "synthesis": {
+   "conflictLedger": [],
+   "estimatedMonthlyCostUSD": 21.103282,
+   "findings": [],
+   "headline": "Single-asset executions incurred $21.10 in fees with minimal spread impact.",
+   "narrative": "The trader executed 230 trades exclusively in BTCUSDT, representing 100.0% of notional. Total fees reached $21.10 while the median spread paid was <0.01 bps.",
+   "observations": [],
+   "overallRating": "GOOD"
+  },
+  "tokenUsage": {
+   "completion_tokens": 586,
+   "n_calls": 3,
+   "prompt_tokens": 5667,
+   "total_tokens": 6253
+  },
+  "totalLatencyMs": 16241.36,
+  "trace_id": "fa86a0506809e6c58a2351cf88f2e8ff",
+  "tradeContext": {
+   "alpha_packet_hash": "6fde5abf5983f188",
+   "fee_packet_hash": "d180a3d8ab378523",
+   "liquidity_packet_hash": "7db9c23c307467f6",
+   "regime": null,
+   "risk_packet_hash": "5e7465b43cacbea0",
+   "symbol": "BTCUSDT",
+   "trade_count": 230,
+   "userId": "demo-aggressive"
+  },
+  "verification": {
+   "dropped": [],
+   "observations": 0,
+   "passed": 0,
+   "proposed": 2,
+   "re_reasoned": 0,
+   "rejected": [
+    {
+     "action": "maker_instead_of_taker",
+     "params": {
+      "target_ratio": 0.5
+     },
+     "reason": "immaterial"
+    },
+    {
+     "action": "exclude_hours",
+     "params": {
+      "hours": [
+       0
+      ]
+     },
+     "reason": "immaterial"
+    }
+   ]
+  }
+ },
+ "golden_id": "demo-aggressive",
+ "meta": {
+  "arm": "single",
+  "prompt_version": "1.2.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "routes": {
+   "debate": [
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "groq-qwen3.8-27b"
+   ],
+   "specialist": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash"
+   ],
+   "synthesis": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-120b",
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite",
+    "groq-gpt-oss-20b"
+   ]
+  },
+  "single_prompt_version": "1.2.0",
+  "synthesis_prompt_sha256": "349bf833894c971a"
+ },
+ "run": 4,
+ "wall_s": 16.3
+}

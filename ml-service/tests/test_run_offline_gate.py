@@ -29,7 +29,8 @@ def test_evidence_miss_is_measured_identically_for_both_arms(monkeypatch, capsys
     single["grounding"]["per_agent"] = {"synthesis": {"values_cited": 3}}
     single["synthesis"].update(headline="Execution was solid.", narrative="Fine.")    # same miss, same treatment
     assert run_with(monkeypatch, [("rec:council-t-1", "t", council), ("rec:single-t-1", "t", single)]) == 0
-    assert "evidence_cited misses 2" in capsys.readouterr().out   # one per arm, no arm exempted
+    # one per arm, no arm exempted; the stubbed runs are listed under each recorded set, v1 and (since 2026-11-19) v3: 2 x 2
+    assert "evidence_cited misses 4" in capsys.readouterr().out
 
 
 def test_single_recording_safety_failure_still_gates(monkeypatch):

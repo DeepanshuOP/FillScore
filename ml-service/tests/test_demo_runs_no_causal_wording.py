@@ -26,17 +26,31 @@ def _strings(node, path=""):
         yield path, node
 
 
-def test_the_re_recorded_demos_are_served():
-    """State of 2026-11-17: all three demo runs (prompt 1.7.0) are clean and match the current demo data. On 2026-11-14
-    demo-aggressive held a "because" and was not served; it was re-recorded under claim rules 1.1.0 (which now also
-    checks the specialists' own text). A run that states a cause is still refused: see the last test of this file."""
+def test_the_demos_served_under_claim_rules_1_2_0():
+    """State of 2026-11-19. On 2026-11-17 all three demo runs (prompt 1.7.0) were clean under rules 1.1.0. Rules 1.2.0
+    (causal phrasings and number-free judgements) flag two of them, so the serving path refuses them until they are
+    re-recorded (waiting item in docs/PROGRESS.md; recorded LLM output is never edited):
+      demo-aggressive   liquidity.slippageRoot  "..., resulting in a median spread paid of <0.01 bps."
+      demo-disciplined  fee.recommendedAction   "All executions were maker orders (100.0% maker), resulting in a total fee cost of $13.50."
+    demo-moderate is clean and is served."""
     from agents.council_service import load_demo_fixture, recorded_hashes
     served = set()
     for f in sorted(glob.glob(os.path.join(DEMO_RUNS, "*.json"))):
         doc = json.load(open(f))
         if load_demo_fixture(doc["account_id"], doc["symbol"], hashes=recorded_hashes(doc["council_result"])) is not None:
             served.add(doc["account_id"])
-    assert served == {"demo-aggressive", "demo-disciplined", "demo-moderate"}
+    assert served == {"demo-moderate"}
+
+
+def test_fails_claim_rules_names_the_field_and_ignores_the_ledgers():
+    from agents.council_service import fails_current_claim_rules
+    assert fails_current_claim_rules({"fee": {"recommendedAction": "Fees were 4.0 bps, resulting in a drag."}}) is True
+    assert fails_current_claim_rules({"synthesis": {"headline": "The trader showed efficient routing."}}) is True
+    assert fails_current_claim_rules({"debate_transcript": {"claims": [{"claim_text": "Cost was inherent to the venue."}]}}) is True
+    assert fails_current_claim_rules({"synthesis": {"headline": "Fee drag was low at 0.5 bps."}}) is False
+    # the redaction ledger lists the terms it removed; it is not copy
+    assert fails_current_claim_rules({"claims": {"redactions": [{"terms": ["inherent to"]}]},
+                                      "grounding": {"x": "efficient routing"}}) is False
 
 
 def test_the_ledgers_that_list_redacted_terms_are_not_copy():
@@ -86,3 +100,26 @@ def test_serving_refuses_a_stored_run_that_states_a_cause():
     asyncio.run(db2["council_runs"].insert_one(dict(run, run_id="clean")))
     with patch("agents.council_service.DEMO_RUNS_DIR", __import__("pathlib").Path("/nonexistent")):
         assert _flow(router, db2, account="demo-moderate").cached is True
+
+
+def test_serving_refuses_a_stored_run_that_fails_claim_rules_1_2_0():
+    """A stored demo run with a causal phrasing or a number-free judgement is "not yet generated", as for a cause."""
+    import asyncio
+    from unittest.mock import patch
+    import pathlib
+    import pytest
+    from mongomock_motor import AsyncMongoMockClient
+    from agents.errors import CouncilError
+    from tests.council_fakes import make_router
+    from tests.test_council_cache_demo import _flow, _stored_run
+
+    router, _ = make_router()
+    for i, text in enumerate(["The trader paid $2.00 in fees, resulting in a drag of 4.0 bps.",
+                              "Execution stayed within acceptable range."]):
+        run = _stored_run(router, account="demo-moderate")
+        run["council_result"]["fee"]["recommendedAction"] = text
+        db = AsyncMongoMockClient()["fillscore"]
+        asyncio.run(db["council_runs"].insert_one(dict(run, run_id=f"r{i}")))
+        with patch("agents.council_service.DEMO_RUNS_DIR", pathlib.Path("/nonexistent")), pytest.raises(CouncilError) as info:
+            _flow(router, db, account="demo-moderate")
+        assert info.value.code == "DEMO_NOT_GENERATED", text

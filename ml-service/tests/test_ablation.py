@@ -63,6 +63,28 @@ def test_table_numbers_by_hand(tmp_path):
     assert s["inv_all"] == (12, 12)
 
 
+def test_claim_rules_1_2_0_rate_is_measured_per_arm_from_the_same_rule(tmp_path):
+    """Hand values (2026-11-19): council 1-2 clean; single 1 clean, single 2 has the number-free causal sentence
+    "The cost was inherent to the strategy." in its narrative. The rule is applied to every run whatever version the
+    run carries (single 1 is stamped 1.0.0, single 2 carries no stamp): single = 1 of 2 runs flagged, 1 sentence;
+    council = 0 of 2. A degraded run is left out, as in every column."""
+    write(tmp_path, "council", 1, council("GOOD", 2, 1, 9, 1000, 100, 10000))
+    write(tmp_path, "council", 2, council("GOOD", 0, 0, 11, 3000, 300, 20000))
+    write(tmp_path, "council", 3, council(None, 5, 5, 4, 10, 10, 1, degraded=True))
+    s1 = single("GOOD", 1, 500, 50, 2000)
+    s1["claim_rules_version"] = "1.0.0"
+    s2 = single("FAIR", 1, 500, 50, 4000)
+    s2["synthesis"]["narrative"] += " The cost was inherent to the strategy."
+    write(tmp_path, "single", 1, s1)
+    write(tmp_path, "single", 2, s2)
+    rows = ablation.summarise(ablation.load_recordings(str(tmp_path)), {"t": GOLDEN})
+    assert rows[("council", "t")]["claims_1_2"] == (0, 2, 0)      # (runs flagged, runs, sentences flagged)
+    assert rows[("single", "t")]["claims_1_2"] == (1, 2, 1)
+    assert rows[("single", "ALL")]["claims_1_2"] == (1, 2, 1)
+    md = ablation.render(ablation.load_recordings(str(tmp_path)), {"t": GOLDEN}, "N")
+    assert "claim rules 1.2.0" in md and "1/2 (50.0%)" in md
+
+
 def test_cost_ratio_line(tmp_path):
     rows = ablation.summarise(fixture(tmp_path), {"t": GOLDEN})
     # calls 10.0/1.0, tokens in 2000/500, out 200/50, wall 15.0/3.0

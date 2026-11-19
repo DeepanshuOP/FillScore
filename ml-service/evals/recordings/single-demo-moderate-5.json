@@ -1,0 +1,169 @@
+{
+ "arm": "single",
+ "attempts": 3,
+ "council_result": {
+  "arm": "single_call",
+  "claim_rules_version": "1.1.0",
+  "claims": {
+   "flagged_first_pass": 1,
+   "redactions": [],
+   "regenerated": true
+  },
+  "debate_transcript": {},
+  "degraded": false,
+  "degraded_reasons": [],
+  "grounding": {
+   "duplicates_stripped": 0,
+   "faithfulness_after": 0.9333,
+   "faithfulness_first_pass": 0.9333,
+   "fallbacks": [],
+   "numbers_checked": 15,
+   "per_agent": {
+    "synthesis": {
+     "faithfulness_after": 0.9333,
+     "fallback_text": false,
+     "regenerated": false,
+     "values_cited": 14,
+     "violations_first_pass": 1
+    }
+   },
+   "redactions": [
+    {
+     "agent": "synthesis",
+     "field": "narrative",
+     "kinds": [
+      "unrenderable"
+     ],
+     "n_tokens": 1,
+     "sentence_index": 2
+    }
+   ],
+   "regenerations": 0,
+   "violations_first_pass": 1
+  },
+  "llm_calls": [
+   {
+    "attempt": 1,
+    "completion_tokens": 287,
+    "latency_ms": 1190.82,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 1844,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2131
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 7,
+    "latency_ms": 413.66,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 1931,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 1938
+   },
+   {
+    "attempt": 1,
+    "completion_tokens": 120,
+    "latency_ms": 15603.27,
+    "model": "qwen/qwen3.8-27b",
+    "outcome": "ok",
+    "prompt_tokens": 1992,
+    "provider": "groq",
+    "role": "synthesis",
+    "tokens": 2112
+   }
+  ],
+  "modelUsage": {
+   "debate_model": "none",
+   "specialists_model": "none",
+   "synthesis_model": "groq/qwen/qwen3.8-27b"
+  },
+  "n_attempts": 3,
+  "n_calls_ok": 3,
+  "prompt_version": "1.2.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "synthesis": {
+   "conflictLedger": [],
+   "estimatedMonthlyCostUSD": 23.963822,
+   "findings": [],
+   "headline": "Trades concentrated in BTCUSDT with minimal spread costs and low adverse selection.",
+   "narrative": "The trader executed 344 trades, all in BTCUSDT, representing 100.0% of notional. Total fees paid were $23.96, while the median spread paid was >-0.01 bps.",
+   "observations": [
+    {
+     "action_type": "none",
+     "text": "The median spread paid was >-0.01 bps, indicating efficient execution relative to the market spread. No adverse market conditions were recorded."
+    }
+   ],
+   "overallRating": "GOOD"
+  },
+  "tokenUsage": {
+   "completion_tokens": 414,
+   "n_calls": 3,
+   "prompt_tokens": 5767,
+   "total_tokens": 6181
+  },
+  "totalLatencyMs": 17419.92,
+  "trace_id": "320a072b2aa9911b1fd003ca66ec5a35",
+  "tradeContext": {
+   "alpha_packet_hash": "5a5cac4868d34944",
+   "fee_packet_hash": "09db43fe2356bea2",
+   "liquidity_packet_hash": "7dba441a81889fed",
+   "regime": null,
+   "risk_packet_hash": "e3be7d2648f14432",
+   "symbol": "BTCUSDT",
+   "trade_count": 344,
+   "userId": "demo-moderate"
+  },
+  "verification": {
+   "dropped": [],
+   "observations": 1,
+   "passed": 0,
+   "proposed": 2,
+   "re_reasoned": 0,
+   "rejected": [
+    {
+     "action": "maker_instead_of_taker",
+     "params": {
+      "target_ratio": 0.8
+     },
+     "reason": "immaterial"
+    }
+   ]
+  }
+ },
+ "golden_id": "demo-moderate",
+ "meta": {
+  "arm": "single",
+  "prompt_version": "1.2.0",
+  "route_config_hash": "9c3af0624a402f81",
+  "routes": {
+   "debate": [
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "groq-qwen3.8-27b"
+   ],
+   "specialist": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-20b",
+    "groq-gpt-oss-120b",
+    "gemini-3.5-flash-lite",
+    "gemini-3.8-flash"
+   ],
+   "synthesis": [
+    "groq-qwen3.8-27b",
+    "groq-gpt-oss-120b",
+    "gemini-3.8-flash",
+    "gemini-3.5-flash-lite",
+    "groq-gpt-oss-20b"
+   ]
+  },
+  "single_prompt_version": "1.2.0",
+  "synthesis_prompt_sha256": "349bf833894c971a"
+ },
+ "run": 5,
+ "wall_s": 17.4
+}

@@ -172,7 +172,7 @@ def test_newest_set_packets_deterministic():
             assert ctx[k]["content_hash"] == g[edge]["packet"][k]["content_hash"], (edge, k)
     m = golden_sets.read_manifest(name)
     assert (m["prompt_version"], m["single_prompt_version"], m["metrics_version"], m["recorded"]) == \
-        (PROMPT_VERSION, SINGLE_PROMPT_VERSION, METRICS_VERSION, False)
+        (PROMPT_VERSION, SINGLE_PROMPT_VERSION, METRICS_VERSION, True)   # recorded 2026-11-19 (18 runs, none re-rolled)
     for gid, gg in g.items():   # every packet in the set was built by the current metrics code
         assert all(gg["packet"][k]["metrics_version"] == METRICS_VERSION for k in ("fee", "risk", "liquidity", "alpha")), gid
         assert gg["required_evidence"] == golden_required_evidence(gg["packet"]), gid

@@ -38,7 +38,10 @@ def test_neutral_past_tense_sentences_pass():
 
 def test_advice_is_always_flagged():
     f = flag_sentences("Fees were high; the trader should use limit orders.", MAKER, "narrative")
-    assert f == [ClaimFlag("narrative", 0, ["should"], ["maker_instead_of_taker"])]
+    # 1.2.0 (2026-11-19): "Fees were high" has no number in its sentence, an unbacked judgement; advice stays flagged
+    assert f == [ClaimFlag("narrative", 0, ["should", "unbacked: high"], ["maker_instead_of_taker"])]
+    assert flag_sentences("Fees were high at 8.0 bps; the trader should use limit orders.", MAKER, "narrative") == \
+        [ClaimFlag("narrative", 0, ["should"], ["maker_instead_of_taker"])]
 
 
 def test_counterfactual_without_an_action_cue_is_flagged():
@@ -254,4 +257,6 @@ def test_causal_connective_without_action_cue_is_flagged_even_when_something_pas
 def test_every_connective_is_flagged():
     for t in ["due to", "because of", "resulting from", "caused by", "driven by", "led to", "as a result of"]:
         assert flag_sentences(f"Costs rose {t} the open.", set(), "x"), t
-    assert flag_sentences("Costs rose, resulting in a higher rate.", set(), "x") == []
+    s = "Costs rose, resulting in a higher rate."
+    assert flag_sentences(s, set(), "x", rules="1.1.0") == []                  # "resulting in" is not a 1.1.0 connective
+    assert [f.terms for f in flag_sentences(s, set(), "x")] == [["resulting in"]]   # a causal phrasing from 1.2.0
