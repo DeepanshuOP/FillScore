@@ -49,7 +49,85 @@ class ReadOnlyDB:
         return _ReadOnlyCollection(self._db[name])
 
 
-def validate(src, account_id: str, source, version: dict, version_sha: str, now_ms: int) -> dict:
+FINAL_UNFILLED = ("CANCELED", "EXPIRED", "REJECTED", "EXPIRED_IN_MATCH")
+QTY_TOL = 1e-9
+FEE_REL_TOL = 0.01          # Binance rounds a fee to the asset's precision: a 1% band is not a finding
+
+
+def order_outcomes(orders: list[dict]) -> dict:
+    """Orders by type and outcome. filled: executed >= ordered; partial: some but not all (whatever the status);
+    unfilled: nothing executed and the order is final; open: nothing executed and not final yet."""
+    out: dict = {"total": len(orders)}
+    for o in orders:
+        t = str(o.get("type") or "OTHER")
+        row = out.setdefault(t, {"total": 0, "filled": 0, "partial": 0, "unfilled": 0, "open": 0})
+        row["total"] += 1
+        orig, ex = float(o.get("origQty") or 0), float(o.get("executedQty") or 0)
+        if orig > 0 and ex >= orig * (1 - QTY_TOL):
+            row["filled"] += 1
+        elif ex > 0:
+            row["partial"] += 1
+        elif o.get("status") in FINAL_UNFILLED:
+            row["unfilled"] += 1
+        else:
+            row["open"] += 1
+    return out
+
+
+def unfilled_cost(order_measurements: list[dict], orders_below_full_fill: int) -> dict:
+    """The cost of the part of an order that did not fill: opportunity bps x intended notional / 1e4 (USD), over measured
+    orders with a fill ratio below 1. An order below a full fill that has no measurement is counted as not measured."""
+    usd, bps = [], []
+    for om in order_measurements:
+        s = om.get("shortfall")
+        if not s or not isinstance(s.get("fillRatio"), (int, float)) or s["fillRatio"] >= 1 or s.get("opportunityBps") is None:
+            continue
+        bps.append(float(s["opportunityBps"]))
+        usd.append(float(s["opportunityBps"]) * float(s["intendedNotional"]) / 1e4)
+    measured = len(usd)
+    srt = sorted(bps)
+    median = None if not srt else (srt[len(srt) // 2] if len(srt) % 2 else (srt[len(srt) // 2 - 1] + srt[len(srt) // 2]) / 2)
+    return {"measured": measured, "notMeasured": max(orders_below_full_fill - measured, 0),
+            "totalUsd": sum(usd) if measured else None, "medianBps": median}
+
+
+def fee_check(trades: list[dict], snapshots: list[dict]) -> dict:
+    """Fees paid against the rate the account's commission snapshot states: expected = notional x effective rate
+    (measure.fees; the BNB discount only when the fee was paid in BNB and the snapshot enables it). feeUsd is the paid fee.
+    A fill whose symbol has no snapshot is not compared (never guessed)."""
+    from measure.fees import effective_rate
+    latest: dict = {}
+    for s in snapshots:
+        cur = latest.get(s["symbol"])
+        if cur is None or str(s.get("fetchedAt")) > str(cur.get("fetchedAt")):
+            latest[s["symbol"]] = s
+    paid = expected = 0.0
+    compared = no_snapshot = above = below = bnb = 0
+    for t in trades:
+        snap, fee, notional = latest.get(t["symbol"]), t.get("feeUsd"), t.get("notional")
+        if snap is None:
+            no_snapshot += 1
+            continue
+        if not isinstance(fee, (int, float)) or isinstance(fee, bool) or not notional or notional <= 0:
+            continue
+        in_bnb = t.get("feeAsset") == "BNB"
+        try:
+            exp = notional * effective_rate(snap, t["side"], bool(t.get("isMaker")), in_bnb)
+        except ValueError:
+            continue
+        compared += 1
+        bnb += in_bnb
+        paid, expected = paid + fee, expected + exp
+        if fee > exp * (1 + FEE_REL_TOL) + 1e-12:
+            above += 1
+        elif fee < exp * (1 - FEE_REL_TOL) - 1e-12:
+            below += 1
+    return {"compared": compared, "noSnapshot": no_snapshot, "bnbFees": bnb, "aboveRate": above, "belowRate": below,
+            "paidUsd": paid if compared else None, "expectedUsd": expected if compared else None,
+            "differenceUsd": (paid - expected) if compared else None}
+
+
+def validate(src, account_id: str, source, version: dict, version_sha: str, now_ms: int, expected_cost=None) -> dict:
     import mongomock
 
     from measure.metrics import IDENTITY_TOL
@@ -71,7 +149,7 @@ def validate(src, account_id: str, source, version: dict, version_sha: str, now_
 
     runs = []
     while True:                                         # the job measures 500 fills per call
-        r = measure_account(mem, account_id, source, now_ms)
+        r = measure_account(mem, account_id, source, now_ms, expected_cost=expected_cost)
         runs.append(r)
         if r["measured"] == 0 or r["pending"] == 0:
             break
@@ -99,7 +177,21 @@ def validate(src, account_id: str, source, version: dict, version_sha: str, now_
               if om.get("shortfall") and om["shortfall"].get("totalBps") is not None]
     score = score_account_v2(mem, account_id, version, version_sha, now_ms)
     mem.scores_v2.insert_one(dict(score))
-    return {
+
+    from expected_cost.aggregate import cost_vs_expected
+    om_rows = list(mem.order_measurements.find({"accountId": account_id}))
+    orders = list(mem.orders.find({"accountId": account_id}))
+    outcomes = order_outcomes(orders)
+    below_full = sum(1 for o in orders if o.get("status") in FINAL_UNFILLED
+                     and float(o.get("executedQty") or 0) < float(o.get("origQty") or 0) * (1 - QTY_TOL))
+    extra = {
+        "outcomes": outcomes,
+        "costVsExpected": cost_vs_expected(om_rows),
+        "unfilledCost": unfilled_cost(om_rows, below_full),
+        "feeCheck": fee_check(trades, list(mem.fee_snapshots.find({"accountId": account_id}))),
+        "marketOrders": (outcomes.get("MARKET") or {}).get("total", 0),
+    }
+    return {**extra,
         "account": account_id, "trades": len(trades), "measured": measured, "unmeasured": dict(reasons),
         "dataSource": dict(Counter(t.get("dataSource") for t in trades)),
         "identityFailures": identity_failures, "belowTickFloor": below_floor,
@@ -127,9 +219,56 @@ def format_report(rep: dict) -> str:
         lines.append(f"grade: {s['grade']} ({s['composite']:.2f}), 95% range {s['band']}")
     else:
         lines.append(f"no letter grade: {s['reason']}; 95% range {s['band']}")
+    if "outcomes" in rep:
+        lines += _sections(rep)
     v = rep["verify"]
     lines.append(f"integrity check: {'matched' if v and v['match'] else 'DID NOT MATCH'} ({rep['integrityHash'][:16]}…)")
     return "\n".join(lines)
+
+
+def _usd(x) -> str:
+    return "insufficient data" if x is None else f"${x:,.2f}"
+
+
+def _sections(rep: dict) -> list[str]:
+    """Order outcomes, cost against expectation, unfilled-order cost and fees against the account's rates. Past-tense findings;
+    a value that could not be measured says so."""
+    out = ["", "== Order outcomes (from the exchange's order records)"]
+    oc = rep["outcomes"]
+    out.append(f"orders: {oc['total']}")
+    for t in sorted(k for k in oc if k != "total"):
+        r = oc[t]
+        out.append(f"  {t:7s} {r['total']:3d}: {r['filled']} filled, {r['partial']} partly filled, {r['unfilled']} ended with nothing filled, {r['open']} still open")
+
+    out += ["", "== Cost against expectation (market orders)"]
+    c = rep["costVsExpected"]
+    if c.get("insufficient"):
+        x = c["excluded"]
+        out.append(f"insufficient data: {c['n']} market orders had a usable expected cost; at least 20 are needed (the account has {rep['marketOrders']} market orders).")
+        out.append(f"  not used: {x['noExpectedCost']} without an expected cost, {x['outsideModel']} not priced by the model (limit orders, or beyond its calibrated range), {x['partlyFilled']} partly filled")
+    else:
+        out.append(f"{c['n']} market orders: paid {c['paidBps']:.3f} bps ({_usd(c['paidUsd'])}); the model expected {c['expectedBps']:.3f} bps ({_usd(c['expectedUsd'])}) for orders of this size in the same hours.")
+        out.append(f"  difference {c['excessBps']:+.3f} bps, {int(c['level'] * 100)}% interval {c['lowBps']:+.3f} to {c['highBps']:+.3f} bps; calibration {c['version']}")
+        x = c["excluded"]
+        out.append(f"  not used: {x['noExpectedCost']} without an expected cost, {x['outsideModel']} not priced by the model (limit orders, or beyond its calibrated range), {x['partlyFilled']} partly filled")
+
+    out += ["", "== Cost of orders that did not fill completely"]
+    u = rep["unfilledCost"]
+    if u["measured"] == 0:
+        out.append(f"insufficient data: no order below a full fill has a measured cost ({u['notMeasured']} not measured).")
+    else:
+        out.append(f"{u['measured']} orders ended below a full fill with a measured cost: {_usd(u['totalUsd'])} in total, median {u['medianBps']:.3f} bps of the intended notional"
+                   f" ({u['notMeasured']} more not measured).")
+
+    out += ["", "== Fees against the account's rates"]
+    f = rep["feeCheck"]
+    if f["compared"] == 0:
+        out.append(f"insufficient data: no fill could be compared with a commission snapshot ({f['noSnapshot']} without one).")
+    else:
+        out.append(f"{f['compared']} fills compared: paid {_usd(f['paidUsd'])}; the account's stated rates give {_usd(f['expectedUsd'])}; difference {f['differenceUsd']:+.4f} USD.")
+        out.append(f"  paid above the stated rate (beyond 1%): {f['aboveRate']}; below: {f['belowRate']}; fees paid in BNB: {f['bnbFees']}; fills without a snapshot: {f['noSnapshot']}")
+    out.append("")
+    return out
 
 
 def main(argv=None) -> int:
@@ -152,8 +291,10 @@ def main(argv=None) -> int:
     uri = os.environ["MONGODB_URI"]
     db_name = uri.rsplit("/", 1)[-1].split("?")[0] or "fillscore"
     src = ReadOnlyDB(MongoClient(uri, serverSelectionTimeoutMS=10000)[db_name])
+    from expected_cost.runtime import kline_expected_cost_hook   # Binance public 1-minute klines for the hour before each market order
+
     rep = validate(src, a.account, rest_source, load_version(SCORING_V2_VERSION), version_file_sha256(SCORING_V2_VERSION),
-                   int(time.time() * 1000))
+                   int(time.time() * 1000), expected_cost=kline_expected_cost_hook())
     print(format_report(rep))
     return 0 if rep["identityFailures"] == 0 and rep["verify"] and rep["verify"]["match"] else 1
 
