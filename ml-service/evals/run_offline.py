@@ -19,11 +19,11 @@ if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
 from evals import golden_sets  # noqa: E402
-from evals.invariants import NAMES, agent_evidence, check_all, claim_rules_1_2_0  # noqa: E402
+from evals.invariants import NAMES, agent_evidence, check_all, claim_rules_1_2_0, claim_rules_1_3_0  # noqa: E402
 
-COLUMNS = NAMES + ("agent_evidence", "claim_rules_1_2_0")
+COLUMNS = NAMES + ("agent_evidence", "claim_rules_1_2_0", "claim_rules_1_3_0")
 # scored for both arms the same way, reported not gated; claim_rules_1_2_0 applies rules 1.2.0 to every recording
-MEASURED = ("evidence_cited", "agent_evidence", "claim_rules_1_2_0")
+MEASURED = ("evidence_cited", "agent_evidence", "claim_rules_1_2_0", "claim_rules_1_3_0")
 
 # Allowed overall ratings per golden case. Ratings are advisory bands around the locked grades
 # (A/B/C), wide enough for model variance, tight enough that a wildly wrong verdict fails.
@@ -105,7 +105,7 @@ def run_stats(res: dict) -> str:
 def main(recordings: bool = True, golden_root: str | None = None, recordings_dir: str | None = None,
          demo_runs_dir: str | None = None) -> int:
     failures = 0
-    measured = {"evidence_cited": 0, "agent_evidence": 0, "claim_rules_1_2_0": 0}
+    measured = {"evidence_cited": 0, "agent_evidence": 0, "claim_rules_1_2_0": 0, "claim_rules_1_3_0": 0}
     total_runs = 0
     sets = golden_sets.list_sets(golden_root)
     if not sets:
@@ -130,6 +130,7 @@ def main(recordings: bool = True, golden_root: str | None = None, recordings_dir
         for label, gid, res in runs:
             outs = check_all(res, golden[gid])
             outs["claim_rules_1_2_0"] = claim_rules_1_2_0(res, golden[gid])
+            outs["claim_rules_1_3_0"] = claim_rules_1_3_0(res, golden[gid])
             if "liquidity" in res:   # Council-only extra column; a single call has no specialists
                 outs["agent_evidence"] = agent_evidence(res, golden[gid])
             print(f"{label:<{w}}  " + "  ".join((("pass" if outs[n].ok else "FAIL") if n in outs else "-").ljust(12) for n in COLUMNS)
@@ -155,7 +156,8 @@ def main(recordings: bool = True, golden_root: str | None = None, recordings_dir
     print(f"\n{total_runs} runs x {len(NAMES)} invariants: {failures} violation(s)"
           f" (measured, not gated, same rule for both arms: evidence_cited misses {measured['evidence_cited']},"
           f" agent_evidence misses {measured['agent_evidence']} on Council runs,"
-          f" claim_rules_1_2_0 violations {measured['claim_rules_1_2_0']} runs of {total_runs}, rules 1.2.0 on every run)")
+          f" claim_rules_1_2_0 violations {measured['claim_rules_1_2_0']} runs of {total_runs}, rules 1.2.0 on every run;"
+          f" claim_rules_1_3_0 violations {measured['claim_rules_1_3_0']} runs of {total_runs}, rules 1.3.0 on every run)")
     return 1 if failures or not total_runs else 0
 
 

@@ -32,14 +32,15 @@ def test_the_demos_served_under_claim_rules_1_2_0():
     re-recorded (waiting item in docs/PROGRESS.md; recorded LLM output is never edited):
       demo-aggressive   liquidity.slippageRoot  "..., resulting in a median spread paid of <0.01 bps."
       demo-disciplined  fee.recommendedAction   "All executions were maker orders (100.0% maker), resulting in a total fee cost of $13.50."
-    demo-moderate is clean and is served."""
+    demo-moderate was clean under 1.2.0. Under 1.3.0 (2026-11-20) its alpha flag "Unfilled Opportunity Cost Assessed"
+    fails, so none of the three is served until the re-record of item 26."""
     from agents.council_service import load_demo_fixture, recorded_hashes
     served = set()
     for f in sorted(glob.glob(os.path.join(DEMO_RUNS, "*.json"))):
         doc = json.load(open(f))
         if load_demo_fixture(doc["account_id"], doc["symbol"], hashes=recorded_hashes(doc["council_result"])) is not None:
             served.add(doc["account_id"])
-    assert served == {"demo-moderate"}
+    assert served == set()
 
 
 def test_fails_claim_rules_names_the_field_and_ignores_the_ledgers():

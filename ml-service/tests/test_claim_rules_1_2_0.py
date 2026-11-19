@@ -20,8 +20,8 @@ def terms(text, rules="1.2.0", passed=frozenset()):
     return [t for f in flag_sentences(text, set(passed), "narrative", rules=rules) for t in f.terms]
 
 
-def test_the_version_is_1_2_0():
-    assert CLAIM_RULES_VERSION == "1.2.0"
+def test_the_phrase_list_is_the_1_2_0_list():
+    assert CLAIM_RULES_VERSION in ("1.2.0", "1.3.0")   # 1.3.0 (2026-11-20) keeps every 1.2.0 rule
     assert CAUSAL_PHRASES_1_2_0 == ["inherent to", "resulting in", "led to", "drove"]
 
 

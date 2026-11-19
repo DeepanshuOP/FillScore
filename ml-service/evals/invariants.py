@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 from typing import get_args
 
-from agents.claims import KEY_DISPUTE_FALLBACK, flag_sentences, result_texts
+from agents.claims import KEY_DISPUTE_FALLBACK, flag_hits_1_3_0, flag_sentences, result_texts
 from agents.schemas import AlphaVerdict, FeeVerdict, LiquidityVerdict, RiskVerdict
 from agents.grounding import extract_numerals
 from agents.render import RenderError, _leaves, catalog_entries, format_value, prompt_view
@@ -176,6 +176,8 @@ def _claim_hits(result: dict, golden: dict, rules: str) -> list[str]:
         for fl in flag_sentences(text, passed, field, strict=field.startswith("debate."), whale_ok=n_whale > 0,
                                  whale_token=str(n_whale) if n_whale else None, rules=rules):
             bad.append(f"{field}:{'/'.join(fl.terms)}")
+    if tuple(int(x) for x in rules.split(".")) >= (1, 3, 0):   # 1.3.0: the specialists' flags as displayed
+        bad += flag_hits_1_3_0(result)
     return bad
 
 
@@ -192,6 +194,19 @@ def claim_sentences_1_2_0(result: dict, golden: dict) -> list[str]:
 
 def claim_rules_1_2_0(result: dict, golden: dict) -> Outcome:
     bad = claim_sentences_1_2_0(result, golden)
+    return Outcome(not bad, "; ".join(bad[:6]))
+
+
+# Same idea for rules 1.3.0 (2026-11-20, orders item 27): measured on every recording, pinned, reported beside 1.2.0.
+MEASURED_CLAIM_RULES_1_3 = "1.3.0"
+
+
+def claim_sentences_1_3_0(result: dict, golden: dict) -> list[str]:
+    return _claim_hits(result, golden, MEASURED_CLAIM_RULES_1_3)
+
+
+def claim_rules_1_3_0(result: dict, golden: dict) -> Outcome:
+    bad = claim_sentences_1_3_0(result, golden)
     return Outcome(not bad, "; ".join(bad[:6]))
 
 

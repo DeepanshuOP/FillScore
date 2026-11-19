@@ -69,3 +69,22 @@ def test_a_non_breaking_hyphen_does_not_hide_a_named_term():
     assert flag_sentences(s, set(), "debate.key_dispute", strict=True, rules="1.0.0") == []   # 1.0.0 is unchanged
     s2 = "The costs were within acceptable market–structure costs."      # en dash
     assert [f.terms for f in flag_sentences(s2, set(), "debate.key_dispute", strict=True)] == [["market-structure"]]
+
+
+@pytest.mark.parametrize("agent,base", [("liquidity_scout", LIQUIDITY), ("alpha_architect", ALPHA), ("fee_optimizer", FEE)])
+def test_a_snake_case_tag_with_a_counterfactual_word_is_dropped_by_rules_1_3_0(agent, base):
+    """Item 27 (2026-11-20): the card shows `unfilled_opportunity_cost_assessed` as "Unfilled Opportunity Cost Assessed";
+    "opportunity" is a counterfactual word. The tag form never matched the sentence rules (the underscores)."""
+    key = {"liquidity_scout": "liquidity", "alpha_architect": "alpha", "fee_optimizer": "fee"}[agent]
+    out = _run(**{agent: dict(base, flags=["unfilled_opportunity_cost_assessed", "no_vwap_benchmark_available"])})
+    assert out[key]["flags"] == ["no_vwap_benchmark_available"]
+    assert [r["field"] for r in out["claims"]["specialist_redactions"]] == [f"{key}.flags.0"]
+    assert out["claims"]["specialist_redactions"][0]["terms"] == ["opportunity"]
+
+
+def test_a_multi_word_term_in_a_tag_is_found_in_the_displayed_form():
+    """"needs_to_widen_limits" is shown as "Needs To Widen Limits"; the raw tag has underscores where the term "needs to"
+    has a space, so only the displayed form matches (rules 1.3.0)."""
+    out = _run(fee_optimizer=dict(FEE, flags=["needs_to_widen_limits", "low_fee_drag"]))
+    assert out["fee"]["flags"] == ["low_fee_drag"]
+    assert out["claims"]["specialist_redactions"][0]["terms"] == ["needs to"]

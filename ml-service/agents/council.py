@@ -493,6 +493,10 @@ def enforce_specialists(verdicts: dict, passed: set[str], ctx: dict, ledger) -> 
         v = out[key]
         kept = []
         for i, text in enumerate(v.flags):
+            shown_terms = claims_mod.flag_terms_1_3_0(text)   # rules 1.3.0: the flag as the card shows it; no passed finding excuses it
+            if shown_terms:
+                reds.append(claims_mod.ClaimFlag(f"{key}.flags.{i}", 0, shown_terms, []).to_dict())
+                continue
             _cleaned, flags = claims_mod.redact_claims(text, passed, f"{key}.flags.{i}")
             reds += [f.to_dict() for f in flags]
             if not flags:

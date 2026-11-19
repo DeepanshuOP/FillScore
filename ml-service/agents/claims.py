@@ -40,7 +40,8 @@ CONNECTIVE_TERMS_1_0_0 = ["due to", "because of", "resulting from", "caused by",
 # Keep this literal's first list equal to backend/src/constants/adviceTerms.ts (a test reads it).
 CONNECTIVE_TERMS = ["due to", "because of", "resulting from", "caused by", "driven by", "led to",
                     "as a result of", "because", "therefore", "thereby", "hence", "consequently"]
-CONNECTIVE_BY_RULES = {"1.0.0": CONNECTIVE_TERMS_1_0_0, "1.1.0": CONNECTIVE_TERMS, "1.2.0": CONNECTIVE_TERMS}
+CONNECTIVE_BY_RULES = {"1.0.0": CONNECTIVE_TERMS_1_0_0, "1.1.0": CONNECTIVE_TERMS, "1.2.0": CONNECTIVE_TERMS,
+                      "1.3.0": CONNECTIVE_TERMS}
 
 # 1.2.0 (2026-11-19), decided from the 18 ablation recordings; hand cases in tests/test_claim_rules_1_2_0.py.
 # (a) causal phrasings, in every text, never excused by a passed finding (no packet value supports a cause).
@@ -122,6 +123,39 @@ def extra_terms_1_2_0(sentence: str) -> set[str]:
     return out
 
 
+# 1.3.0 (2026-11-20): the specialists' flags, as the card shows them, go through the counterfactual and advice lists.
+# Same humanising as frontend/app/utils/councilStatus.ts flagLabel (fixed map, else snake_case title-cased, else as is).
+_TAG_LABELS = {"zero_market_orders": "No market orders", "single_symbol_concentration": "Single-symbol concentration",
+               "agent_failed": "Agent unavailable"}
+_TAG_RE = re.compile(r"^[a-z0-9]+(_[a-z0-9]+)*$")
+FLAG_AGENTS = ("liquidity", "alpha", "risk", "fee")
+
+
+def humanise_flag(tag: str) -> str:
+    if tag in _TAG_LABELS:
+        return _TAG_LABELS[tag]
+    if not _TAG_RE.match(tag):
+        return tag
+    return " ".join(w[:1].upper() + w[1:] for w in tag.split("_"))
+
+
+def flag_terms_1_3_0(tag: str) -> list[str]:
+    """Counterfactual and advice words in a flag as displayed. Never excused by a passed finding."""
+    shown = _FOLD_RE.sub(lambda m: "-" if m.group(0) in _DASHES else " ", humanise_flag(tag))
+    return sorted({_norm(m) for m in _ADVICE_RE.finditer(shown)} | {_norm(m) for m in _counter_re("1.3.0").finditer(shown)})
+
+
+def flag_hits_1_3_0(result: dict) -> list[str]:
+    """"agent.flags.i:terms" for every flag of the four specialists that carries such a word."""
+    hits = []
+    for agent in FLAG_AGENTS:
+        flags = (result.get(agent) or {}).get("flags")
+        for i, tag in enumerate(flags if isinstance(flags, list) else []):
+            if isinstance(tag, str) and (terms := flag_terms_1_3_0(tag)):
+                hits.append(f"{agent}.flags.{i}:{'/'.join(terms)}")
+    return hits
+
+
 def _cites_whale_count(sentence: str, token: str | None) -> bool:
     """The sentence cites the whale evidence: its placeholder (pre-render text) or the rendered count token
     (debate text is already rendered when the post-verification check runs)."""
@@ -149,15 +183,16 @@ def result_texts(result: dict) -> list[tuple[str, str]]:
 
 
 def new_rule_hits(result: dict) -> list[str]:
-    """Rules 1.2.0 only (the part no passed finding excuses), "field:terms" per flagged sentence, over the result's copy.
-    The serving path uses this: the older terms are excused by a passed finding, which needs the verified findings."""
+    """Rules 1.2.0 and 1.3.0 (the part no passed finding excuses), "field:terms" per flagged sentence, over the result's
+    copy, then per flagged specialist flag (1.3.0). The serving path uses this: the older terms are excused by a passed
+    finding, which needs the verified findings."""
     hits = []
     for field, text in result_texts(result):
         for i, s in enumerate(split_sentences(text)):
             terms = extra_terms_1_2_0(_FOLD_RE.sub(lambda m: "-" if m.group(0) in _DASHES else " ", s))
             if terms:
                 hits.append(f"{field}:{'/'.join(sorted(terms))}")
-    return hits
+    return hits + flag_hits_1_3_0(result)
 
 
 def _norm(m: re.Match) -> str:
