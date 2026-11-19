@@ -18,6 +18,8 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 - **Item 7: recorded, nothing built.** Items 16 (funding costs) and 19 (EVM DEX audit) are **deferred by Deepanshu, 2026-11-19**. For 16, Binance's official documentation does **not** say whether a key with only "Enable Reading" can read USDⓈ-M futures income: `GET /fapi/v1/income` is "USER_DATA" ("signed endpoint", "An API Key is required"), the General Info page says "USER_DATA | Endpoint requires sending a valid API-Key and signature", and neither page names a permission; the key-creation article (updated 2026-11-06) says only that unrestricted-IP keys "won't have any permission other than reading". Citations with quotes: LOG §X. Result: not confirmed; I3 stays (keys with a futures permission are refused). Items 16 and 19 below are marked deferred.
 
+- **Item 8: done (commit follows).** 120 seeded random symbol-hours of January 2024 (4 symbols, 28 days): max absolute difference of the kline context against the aggTrades context **sigma 7.82e-13 bps, volume 4.19e-9 base units (relative 3.31e-14)**; all 120 compared, no None mismatch. Kept as `tests/measure/test_kline_equivalence.py` (4 tests; the cache-recompute test skips where the caches are absent, i.e. CI) with the committed result `tests/fixtures/market/kline_equivalence_2024-01.json`. Details and limits: LOG §Y. TDD: red = module missing, then 3 passed and the result-file test red until the real run produced the file, then 4 passed.
+
 ## Short task of 2026-11-18 (CI failure, deploy gate): done, local commit, not pushed
 
 - **Next concrete action: Waiting for Deepanshu: push the CI fix; apply the Vercel gate from `docs/runbooks/DEPLOY.md`.** (M8 stays the next stop after that.)
