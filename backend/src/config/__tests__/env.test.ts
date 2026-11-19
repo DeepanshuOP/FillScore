@@ -69,16 +69,15 @@ describe('Environment Validation', () => {
     // Item 20 (prepared, not enabled): REFUSE_SHORT_JWT_SECRET is false today; with it true a deployed or production
     // process whose JWT secret is under 32 characters must not boot. Hand values: 'x'.repeat(31) is 31 (refused),
     // 'x'.repeat(32) is 32 (accepted); a test process (NODE_ENV=test) is never refused, because the suite uses short secrets.
-    it('1d. The refusal is off by default (the constant is false) and a short secret only warns', () => {
-        expect(REFUSE_SHORT_JWT_SECRET).toBe(false);
+    // Enabled 2026-11-19 by Deepanshu's order: both JWT secrets on fillscore-api are 64 characters (checked by export).
+    it('1d. The refusal is on (the constant is true): a deployed process with a 31-character secret does not boot', () => {
+        expect(REFUSE_SHORT_JWT_SECRET).toBe(true);
         baseEnv();
         process.env.JWT_ACCESS_SECRET = 'x'.repeat(31);
         process.env.NODE_ENV = 'production';
         process.env.BACKEND_URL = 'https://api.example.test';
         process.env.FRONTEND_URL = 'https://app.example.test';
-        const warnings: string[] = [];
-        expect(() => loadEnv((m: string) => warnings.push(m))).not.toThrow();
-        expect(warnings).toHaveLength(1);
+        expect(() => loadEnv(() => undefined)).toThrow(/JWT_ACCESS_SECRET/);
     });
 
     it('1e. With the refusal on, a deployed process with a 31-character secret stops, naming the key and length only', () => {
@@ -243,8 +242,8 @@ describe('Environment Validation', () => {
         process.env.BINANCE_API_KEY = 'test_key';
         process.env.BINANCE_API_SECRET = 'test_secret';
         process.env.ENCRYPTION_KEY = TEST_ENC_KEY;
-        process.env.JWT_ACCESS_SECRET = 'test_access';
-        process.env.JWT_REFRESH_SECRET = 'test_refresh';
+        process.env.JWT_ACCESS_SECRET = 'a'.repeat(64);
+        process.env.JWT_REFRESH_SECRET = 'r'.repeat(64);
         process.env.GOOGLE_CLIENT_ID = 'test_google_id';
         process.env.GOOGLE_CLIENT_SECRET = 'test_google_secret';
         process.env.GITHUB_CLIENT_ID = 'test_github_id';

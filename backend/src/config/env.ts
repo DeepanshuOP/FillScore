@@ -38,11 +38,11 @@ const DEPLOY_MARKERS = ['RENDER', 'RENDER_SERVICE_ID', 'FILLSCORE_DEPLOY'];
 export const JWT_SECRET_MIN_LEN = 32;
 
 /**
- * Item 20 (prepared, NOT enabled). When true, a deployed or production process whose JWT secret is shorter than
- * JWT_SECRET_MIN_LEN does not boot. This is the one switch to flip, after the Render boot logs show no short-secret
- * line (docs/PROGRESS.md, waiting item 20). A test process (NODE_ENV=test) is never refused.
+ * Item 20 (enabled 2026-11-19). A deployed or production process whose JWT secret is shorter than
+ * JWT_SECRET_MIN_LEN does not boot. Both secrets on fillscore-api are 64 characters (checked by Deepanshu's export).
+ * A test process (NODE_ENV=test) is never refused.
  */
-export const REFUSE_SHORT_JWT_SECRET = false;
+export const REFUSE_SHORT_JWT_SECRET = true;
 
 export interface LoadEnvOptions {
     /** Overrides REFUSE_SHORT_JWT_SECRET (tests only). */

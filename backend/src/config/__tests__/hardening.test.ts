@@ -17,7 +17,7 @@ function validEnv(extra: Record<string, string | undefined> = {}) {
     Object.assign(process.env, {
         MONGODB_URI: 'mongodb://localhost:27017/test', PORT: '3001',
         BINANCE_API_KEY: 'k', BINANCE_API_SECRET: 's', ENCRYPTION_KEY: HEX64,
-        JWT_ACCESS_SECRET: 'a', JWT_REFRESH_SECRET: 'r',
+        JWT_ACCESS_SECRET: 'a'.repeat(64), JWT_REFRESH_SECRET: 'r'.repeat(64),
         GOOGLE_CLIENT_ID: 'g', GOOGLE_CLIENT_SECRET: 'g', GITHUB_CLIENT_ID: 'h', GITHUB_CLIENT_SECRET: 'h',
         BACKEND_URL: 'https://api.example.com', FRONTEND_URL: 'https://app.example.com',
     });
