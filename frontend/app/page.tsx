@@ -22,7 +22,6 @@ export default function Home() {
       <MarketingNav />
       <main id="main">
         <section aria-labelledby="hero-title" className="relative isolate overflow-hidden">
-          <div aria-hidden="true" className="aurora pointer-events-none absolute inset-0 -z-10" />
           <DotPattern width={22} height={22} cr={0.9} className="-z-10 text-ui-edge/35 [mask-image:radial-gradient(70%_60%_at_60%_30%,black,transparent)]" />
           <div className="mx-auto grid max-w-[1240px] items-center gap-12 px-5 pt-32 pb-20 sm:px-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)] lg:gap-14 lg:pt-40 lg:pb-28">
             <div className="max-w-xl">

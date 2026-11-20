@@ -26,7 +26,7 @@ export default function AuthLayout({ title, intro, children, footer }: {
         </div>
       </main>
       <aside aria-label="About FillScore" className="hidden p-4 lg:block">
-        <div className="panel aurora flex h-full flex-col justify-end p-10">
+        <div className="sheet flex h-full flex-col justify-end p-10">
           <ShieldCheck aria-hidden="true" strokeWidth={1.75} className="mb-4 size-6 text-ui-measured" />
           <p className="max-w-[34ch] text-[1.25rem] font-semibold leading-snug tracking-[-0.02em] text-ui-ink">
             FillScore graded how your past orders executed against the market around them.

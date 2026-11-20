@@ -2,9 +2,26 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-20 (second), design v3 conversion: "Tape & Receipt" chosen (local commits, not pushed)
+
+Deepanshu chose direction 1 with four fixes (hero composition with connected pen notes; the story ends on a giant
+$0.25 in penInk with "10.0 bps; fees were 99.99% of it" double-underlined; Carbon copy a real tested theme; DESIGN.md
+rewritten), then conversion steps 1-8 (one commit each), then QA. Design v2 stays live until he pushes.
+
+- **Next concrete action: conversion step 2, app shell** (top bar as in the overview prototype, section tabs with
+  Trades/Analytics/Methodology in a menu, phone navigation via Vaul).
+- **Step 1, done:** tokens rewritten for paper (default) and carbon (`app/ui/tokens.css`, roles kept, new `pen`,
+  `pen-ink`, `stamp`; next-themes themes `paper`/`carbon`, storage key `fs-theme`); contrast test covers both themes and
+  the pen rules (pen-ink >= 4.5, stamp >= 3, pen on paper < 3 so it only doubles pen-ink text, no blue-black ground);
+  Cabinet Grotesk and Departure Mono via `app/fonts.ts`; printed objects in `app/ui/paper.css` (receipt, torn edges,
+  perforation, sprockets, stamps, slip, pen); buttons as ink pills, DataTable as a ledger, GradeChip as a small stamp
+  (one ink for every grade), ValueState's two empty states printed in mono, Sonner as printed slips, ⌘K as a receipt
+  sheet. Geist and the aurora removed. Checks: vitest 72 files / 668 passed, tsc 0, lint 0 errors (18 warnings,
+  baseline), build ok.
+
 ## Orders of 2026-11-20, design v3 (phases R and P; local commit, not pushed)
 
-- **Next concrete action: Design v3 proposal ready: Deepanshu picks a direction.** Reason: the order stops after phase P
+- **Superseded next action: Design v3 proposal ready: Deepanshu picks a direction** (he picked direction 1). Reason: the order stops after phase P
   for his choice; production screens are not converted until he picks. Read `docs/design/v3-proposal/README.md` (10
   images, the two directions, what each borrows, the recommendation: direction 1 "Tape & Receipt").
 - **Phase R, done:** 13 viewport captures in `.work/refs/` (not committed) from Awwwards SOTD and honors (Sweet Tape,

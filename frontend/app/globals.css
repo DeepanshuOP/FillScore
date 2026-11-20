@@ -1,11 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-/* The design v2 token set (dark and light) and the base body styles: app/ui/tokens.css. Rules: DESIGN.md. */
+/* Design v3 "Tape & Receipt": tokens (paper and carbon) and base body styles in app/ui/tokens.css; the printed objects
+   (receipt, ticker tape, stamp, slip, pen) in app/ui/paper.css. Rules: DESIGN.md. */
 @import "./ui/tokens.css";
+@import "./ui/paper.css";
 
-/* next-themes writes data-theme="light" | "dark" on <html>. */
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+/* next-themes writes data-theme="paper" | "carbon" on <html>. `dark:` is Carbon copy, for the shadcn primitives. */
+@custom-variant dark (&:where([data-theme="carbon"], [data-theme="carbon"] *));
+@custom-variant carbon (&:where([data-theme="carbon"], [data-theme="carbon"] *));
 
 /* shadcn/ui reads these names; they map onto the FillScore roles so a generated component wears the system. */
 :root {
@@ -13,7 +15,7 @@
   --foreground: var(--ui-ink);
   --card: var(--ui-raised);
   --card-foreground: var(--ui-ink);
-  --popover: var(--ui-overlay);
+  --popover: var(--ui-raised);
   --popover-foreground: var(--ui-ink);
   --primary: var(--ui-action);
   --primary-foreground: var(--ui-on-action);
@@ -28,11 +30,11 @@
   --input: var(--ui-edge);
   --ring: var(--ui-focus);
   --chart-1: var(--ui-measured);
-  --chart-2: color-mix(in srgb, var(--ui-measured) 70%, var(--ui-surface));
-  --chart-3: var(--ui-graphite);
-  --chart-4: var(--ui-action);
+  --chart-2: color-mix(in srgb, var(--ui-measured) 82%, var(--ui-surface));
+  --chart-3: color-mix(in srgb, var(--ui-measured) 65%, var(--ui-surface));
+  --chart-4: var(--ui-graphite);
   --chart-5: var(--ui-insufficient);
-  --radius: 0.625rem;
+  --radius: 0.375rem;
 }
 
 @theme inline {
@@ -59,9 +61,9 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
+  --radius-sm: calc(var(--radius) - 2px);
+  --radius-md: var(--radius);
+  --radius-lg: calc(var(--radius) + 2px);
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: var(--ui-font);
   --font-mono: var(--ui-mono);
@@ -73,30 +75,22 @@
   p { text-wrap: pretty; }
 }
 
-/* A panel of the app: raised ground, hairline, a one-pixel top highlight. */
+/* A section of the app: a ledger block on the paper, opened by one ink rule (no card, no radius, no shadow). */
 @utility panel {
+  border-top: 1px solid var(--ui-ink);
+}
+
+/* A sheet laid on the paper: receipt white, a paper lift, square corners. For the few things that are objects. */
+@utility sheet {
   background: var(--ui-raised);
-  border: 1px solid var(--ui-rule);
-  border-radius: var(--ui-radius-lg);
-  box-shadow: inset 0 1px 0 var(--ui-highlight), var(--ui-shadow);
+  box-shadow: var(--ui-shadow);
 }
 
-/* Display type: tight tracking that grows with size (DESIGN.md, "Type"). */
-@utility display-xl { font-size: clamp(2.75rem, 6vw, 5rem); line-height: 1.02; letter-spacing: -0.045em; font-weight: 600; }
-@utility display-lg { font-size: clamp(2.25rem, 4.2vw, 3.5rem); line-height: 1.06; letter-spacing: -0.035em; font-weight: 600; }
-@utility display-md { font-size: clamp(1.75rem, 2.8vw, 2.5rem); line-height: 1.1; letter-spacing: -0.028em; font-weight: 600; }
-@utility title { font-size: 1.25rem; line-height: 1.3; letter-spacing: -0.015em; font-weight: 600; }
+/* Printer type: Departure Mono at its pixel size (13 px and 11 px read cleanly; it never sets paragraphs). */
+@utility mono { font-family: var(--ui-mono); letter-spacing: 0; }
 
-/* The hero tape before its story plays: the story marks wait hidden (opacity only, so nothing shifts). The tape itself
-   is visible from frame 0. With reduced motion the attribute is ignored and removed, and the final frame shows; without
-   script, a <noscript> rule on the landing page shows it too. */
-@media (prefers-reduced-motion: no-preference) {
-  .tape[data-armed] [data-story] { opacity: 0; }
-}
-
-/* The hero's one aurora (DESIGN.md: one soft gradient, hero only). */
-@utility aurora {
-  background:
-    radial-gradient(60% 50% at 70% 10%, color-mix(in srgb, var(--ui-measured) 22%, transparent), transparent 70%),
-    radial-gradient(50% 45% at 20% 0%, color-mix(in srgb, var(--ui-action) 20%, transparent), transparent 70%);
-}
+/* Display type: Cabinet Grotesk, heavy, tight tracking that grows with size (DESIGN.md, "Type"). */
+@utility display-xl { font-size: clamp(3.25rem, 9.4vw, 9.5rem); line-height: 0.86; letter-spacing: -0.045em; font-weight: 900; }
+@utility display-lg { font-size: clamp(2.5rem, 5.4vw, 4.75rem); line-height: 0.92; letter-spacing: -0.04em; font-weight: 900; }
+@utility display-md { font-size: clamp(1.875rem, 3vw, 2.75rem); line-height: 1; letter-spacing: -0.03em; font-weight: 900; }
+@utility title { font-size: 1.375rem; line-height: 1.2; letter-spacing: -0.02em; font-weight: 700; }

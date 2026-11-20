@@ -4,16 +4,9 @@ import localFont from 'next/font/local'
 // Sources: Cabinet Grotesk and Clash Grotesk from Fontshare (Indian Type Foundry), Departure Mono (Helena Zhang, OFL,
 // GitHub release 1.500), Martian Mono, Fragment Mono and Archivo from Google Fonts. Downloaded 2026-11-20.
 
-export const cabinet = localFont({
-  src: [
-    { path: './fonts/cabinet-grotesk-400.woff2', weight: '400' },
-    { path: './fonts/cabinet-grotesk-500.woff2', weight: '500' },
-    { path: './fonts/cabinet-grotesk-700.woff2', weight: '700' },
-    { path: './fonts/cabinet-grotesk-900.woff2', weight: '900' },
-  ],
-  variable: '--f-cabinet',
-  display: 'swap',
-})
+// Cabinet Grotesk and Departure Mono are production fonts now (app/fonts.ts, design v3 chosen 2026-11-20).
+export { cabinet, departure } from '../../fonts'
+import { cabinet, departure } from '../../fonts'
 
 export const clash = localFont({
   src: [
@@ -26,7 +19,6 @@ export const clash = localFont({
   display: 'swap',
 })
 
-export const departure = localFont({ src: './fonts/departure-mono.woff2', variable: '--f-departure', display: 'swap' })
 export const martian = localFont({ src: './fonts/martian-mono-var.woff2', variable: '--f-martian', weight: '100 800', display: 'swap' })
 export const fragment = localFont({ src: './fonts/fragment-mono-400.woff2', variable: '--f-fragment', display: 'swap' })
 export const archivo = localFont({ src: './fonts/archivo-var.woff2', variable: '--f-archivo', weight: '100 900', display: 'swap' })

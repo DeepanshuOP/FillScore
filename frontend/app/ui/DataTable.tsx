@@ -82,11 +82,11 @@ export function DataTable<T>({ caption, columns, rows, rowId, defaultSort, maxHe
         <div className="mb-3 flex items-center gap-2">
           <label htmlFor={filterId} className="text-sm text-ui-graphite">{filterLabel}</label>
           <input id={filterId} value={filter} onChange={(e) => flip(() => setFilter(e.target.value))}
-            className="w-44 rounded-ui border border-ui-edge bg-ui-raised px-2 py-1 text-sm text-ui-ink" />
+            className="h-8 w-44 rounded-[4px] border border-ui-edge bg-ui-raised px-2 text-sm text-ui-ink" />
           <span aria-live="polite" className="text-sm text-ui-graphite tabular-nums">{view.length} of {rows.length} rows</span>
         </div>
       ) : null}
-      <div role="region" aria-label={caption} tabIndex={0} style={{ maxHeight }} className="overflow-auto rounded-ui border border-ui-rule">
+      <div role="region" aria-label={caption} tabIndex={0} style={{ maxHeight }} className="overflow-auto border-t border-ui-ink">
         <table className="w-full border-collapse text-sm">
           <caption className="sr-only">{caption}</caption>
           <thead>
@@ -95,10 +95,10 @@ export function DataTable<T>({ caption, columns, rows, rowId, defaultSort, maxHe
                 const active = sort?.key === c.key
                 return (
                   <th key={c.key} scope="col" aria-sort={active ? (sort!.dir === 'asc' ? 'ascending' : 'descending') : c.sortValue ? 'none' : undefined}
-                    className={cn('sticky top-0 z-10 border-b border-ui-edge bg-ui-surface px-3 py-2 font-medium text-ui-graphite',
+                    className={cn('sticky top-0 z-10 border-b border-ui-ink bg-ui-surface px-3 py-2 font-mono text-[11px] font-normal tracking-[0.06em] text-ui-graphite uppercase',
                       c.numeric ? 'text-right' : 'text-left', c.priority === 'low' && i > 0 && 'hidden md:table-cell')}>
                     {c.sortValue ? (
-                      <button type="button" onClick={() => toggleSort(c.key)} className={cn('inline-flex items-center gap-1 font-medium hover:text-ui-ink', c.numeric && 'flex-row-reverse', active && 'text-ui-ink')}>
+                      <button type="button" onClick={() => toggleSort(c.key)} className={cn('inline-flex items-center gap-1 uppercase hover:text-ui-ink', c.numeric && 'flex-row-reverse', active && 'text-ui-ink')}>
                         {c.header}
                         {active ? (sort!.dir === 'asc' ? <ArrowUp aria-hidden="true" className="size-3.5" /> : <ArrowDown aria-hidden="true" className="size-3.5" />) : <span aria-hidden="true" className="inline-block size-3.5" />}
                       </button>
@@ -106,7 +106,7 @@ export function DataTable<T>({ caption, columns, rows, rowId, defaultSort, maxHe
                   </th>
                 )
               })}
-              {low.length > 0 ? <th scope="col" className="sticky top-0 z-10 w-10 border-b border-ui-edge bg-ui-surface px-2 py-2 md:hidden"><span className="sr-only">Details</span></th> : null}
+              {low.length > 0 ? <th scope="col" className="sticky top-0 z-10 w-10 border-b border-ui-ink bg-ui-surface px-2 py-2 md:hidden"><span className="sr-only">Details</span></th> : null}
             </tr>
           </thead>
           <tbody ref={body}>
@@ -114,9 +114,9 @@ export function DataTable<T>({ caption, columns, rows, rowId, defaultSort, maxHe
               const id = rowId(r)
               const isOpen = open.has(id)
               return [
-                <tr key={id} data-flip data-flip-id={id} className="border-b border-ui-rule align-top last:border-b-0">
+                <tr key={id} data-flip data-flip-id={id} className="border-b border-dashed border-ui-rule align-top last:border-b-0 hover:bg-ui-raised">
                   {columns.map((c, i) => (
-                    <td key={c.key} className={cn('px-3 py-2 text-ui-ink', c.numeric ? 'text-right tabular-nums' : 'text-left', c.priority === 'low' && i > 0 && 'hidden md:table-cell')}>{cell(c, r)}</td>
+                    <td key={c.key} className={cn('px-3 py-2 text-ui-ink', c.numeric ? 'text-right font-mono text-[13px] tabular-nums' : 'text-left', c.priority === 'low' && i > 0 && 'hidden md:table-cell')}>{cell(c, r)}</td>
                   ))}
                   {low.length > 0 ? (
                     <td className="px-2 py-1 md:hidden">
@@ -133,7 +133,7 @@ export function DataTable<T>({ caption, columns, rows, rowId, defaultSort, maxHe
                         {low.map((c) => (
                           <div key={c.key}>
                             <dt className="text-xs text-ui-graphite">{c.header}</dt>
-                            <dd className="tabular-nums text-ui-ink">{cell(c, r)}</dd>
+                            <dd className="font-mono text-[13px] tabular-nums text-ui-ink">{cell(c, r)}</dd>
                           </div>
                         ))}
                       </dl>

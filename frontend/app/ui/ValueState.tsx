@@ -23,17 +23,19 @@ type Props =
   | { state: 'insufficient'; label: string; have?: number; need?: number; what?: string; reason?: string; size?: Size; className?: string }
   | { state: 'not-computed'; label: string; reason?: string; size?: Size; className?: string }
 
+// Design v3: measured figures are printed in ink (Cabinet Grotesk at display sizes, Departure Mono in cells); the two
+// "no value" states are printed in the receipt's mono, so a missing value never looks like a figure.
 const VALUE_SIZE: Record<Size, string> = {
-  xl: 'text-[2.5rem] leading-[1.05] font-semibold tracking-[-0.035em]',
-  lg: 'text-[1.75rem] leading-9 font-semibold tracking-[-0.025em]',
-  md: 'text-[1.25rem] leading-7 font-semibold tracking-[-0.015em]',
-  cell: 'text-sm leading-6',
+  xl: 'text-[3rem] leading-[0.95] font-black tracking-[-0.045em]',
+  lg: 'text-[2rem] leading-9 font-black tracking-[-0.035em]',
+  md: 'text-[1.375rem] leading-7 font-bold tracking-[-0.02em]',
+  cell: 'font-mono text-[13px] leading-6',
   inline: '',
 }
 
 function Marker({ shape }: { shape: 'square' | 'diamond' | 'dash' }) {
   const base = 'inline-block shrink-0 align-middle'
-  if (shape === 'square') return <span aria-hidden="true" data-marker="square" className={cn(base, 'size-[7px] rounded-[1.5px] bg-ui-measured')} />
+  if (shape === 'square') return <span aria-hidden="true" data-marker="square" className={cn(base, 'size-[7px] bg-ui-measured')} />
   if (shape === 'diamond') return <span aria-hidden="true" data-marker="diamond" className={cn(base, 'size-[7px] rotate-45 border-[1.5px] border-ui-insufficient')} />
   return <span aria-hidden="true" data-marker="dash" className={cn(base, 'h-[1.5px] w-2.5 bg-ui-graphite')} />
 }
@@ -50,7 +52,7 @@ export function ValueState(props: Props) {
       <span role="group" aria-label={spoken} data-state="measured" className={cn('inline-flex gap-1', inline ? 'items-baseline' : 'flex-col align-top', props.className)}>
         <span className={cn('inline-flex items-center', big ? 'gap-2.5' : 'gap-2')}>
           <Marker shape="square" />
-          <span data-line="solid" className={cn('border-b border-solid border-[color-mix(in_srgb,var(--ui-measured)_70%,transparent)] tabular-nums text-ui-ink', VALUE_SIZE[size], big ? 'pb-0.5' : 'pb-px')}>
+          <span data-line="solid" className={cn('border-b border-solid border-ui-measured tabular-nums text-ui-ink', VALUE_SIZE[size], big ? 'pb-0.5' : 'pb-px')}>
             {props.children ?? props.value}
             {props.unit ? <span className="ml-1 text-[0.8125rem] font-normal tracking-normal text-ui-graphite">{props.unit}</span> : null}
           </span>
@@ -77,7 +79,7 @@ export function ValueState(props: Props) {
         className={cn('inline-flex flex-col gap-1 align-top', props.className)}>
         <span className="inline-flex items-center gap-2">
           <Marker shape="diamond" />
-          <span data-line="dashed" className={cn('border-b border-dashed border-ui-insufficient pb-px text-ui-insufficient-text', cell ? 'text-sm leading-6' : big ? 'text-lg font-medium' : 'text-[15px] leading-6 font-medium')}>
+          <span data-line="dashed" className={cn('border-b border-dashed border-ui-insufficient pb-px font-mono text-ui-insufficient-text', cell ? 'text-[13px] leading-6' : big ? 'text-base' : 'text-[13px] leading-6')}>
             insufficient data
           </span>
         </span>
@@ -89,7 +91,7 @@ export function ValueState(props: Props) {
   return (
     <span role="group" aria-label={`${props.label}: ${NOT_COMPUTED}${props.reason ? `, ${props.reason}` : ''}`} data-state="not-computed"
       className={cn('inline-flex flex-col gap-1 align-top', props.className)}>
-      <span data-line="dotted" className={cn('inline-flex w-fit items-center gap-2 rounded-[6px] border border-dotted border-ui-edge px-2 py-0.5 text-ui-graphite', cell ? 'text-[13px]' : 'text-sm leading-6')}>
+      <span data-line="dotted" className={cn('inline-flex w-fit items-center gap-2 border border-dotted border-ui-edge px-2 py-0.5 font-mono text-ui-graphite', cell ? 'text-[12px]' : 'text-[13px] leading-6')}>
         <Marker shape="dash" />
         {NOT_COMPUTED}
       </span>

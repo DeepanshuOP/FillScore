@@ -1,15 +1,15 @@
 import { cn } from '../../../lib/utils'
 
-/** The FillScore mark: a quote band with one fill on it (the tape, reduced to a glyph), and the wordmark. */
+/** The FillScore wordmark (design v3): Cabinet Grotesk Black with the fill-orange dot, the pen's one permanent mark. */
 export function Logo({ compact = false, className }: { compact?: boolean; className?: string }) {
   return (
-    <span className={cn('inline-flex items-center gap-2 text-ui-ink', className)}>
-      <svg viewBox="0 0 24 24" width={24} height={24} aria-hidden="true" className="shrink-0">
-        <rect x="1" y="1" width="22" height="22" rx="7" fill="var(--ui-overlay)" stroke="var(--ui-rule)" />
-        <path d="M5 14.5 H9 V11 H13 V12.5 H19" fill="none" stroke="var(--ui-measured)" strokeWidth="1.75" strokeLinejoin="round" strokeLinecap="round" />
-        <rect x="12" y="9.5" width="4" height="4" rx="1" transform="rotate(45 14 11.5)" fill="var(--ui-action)" />
-      </svg>
-      {compact ? <span className="sr-only">FillScore</span> : <span className="text-[15px] font-semibold tracking-[-0.02em]">FillScore</span>}
+    <span className={cn('inline-flex items-baseline gap-px text-ui-ink', className)}>
+      {compact ? (
+        <><span aria-hidden="true" className="text-[22px] font-black leading-none tracking-[-0.04em]">F</span><span className="sr-only">FillScore</span></>
+      ) : (
+        <span className="text-[22px] font-black leading-none tracking-[-0.035em]">FillScore</span>
+      )}
+      <i aria-hidden="true" className="inline-block size-[7px] -translate-y-px rounded-full bg-ui-pen" />
     </span>
   )
 }

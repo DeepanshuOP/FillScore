@@ -1,10 +1,11 @@
 /**
- * Grade colours as hex, for surfaces that cannot read CSS variables (the Open Graph image is a raster drawn on the dark
- * ground). Design v2: the dark-theme chip letters of app/ui/tokens.css (--ui-grade-a ... --ui-grade-f); a test keeps the
- * two equal. In the app, use the CSS variables (GradeChip) so the light theme gets its own set.
+ * Grade colours as hex, for surfaces that cannot read CSS variables (the Open Graph image is a raster printed on the
+ * paper ground). Design v3: every grade is stamped in the paper theme's pen-ink (app/ui/tokens.css, --ui-grade-a ...
+ * --ui-grade-f); a test keeps the two equal. The stamp is the auditor's mark, never a good/bad colour.
  */
-const GRADE: Record<string, string> = { A: '#6BD6A6', B: '#A9D46F', C: '#E3C25B', D: '#E8955A', F: '#EF7A73' }
+const PEN_INK = '#C2380A'
+const GRADE: Record<string, string> = { A: PEN_INK, B: PEN_INK, C: PEN_INK, D: PEN_INK, F: PEN_INK }
 
 export function getGradeColor(grade: string): string {
-  return GRADE[grade] ?? '#8A96A3'   // unknown grade: the secondary text colour
+  return GRADE[grade] ?? '#6B6A66'   // unknown grade: the paper theme's graphite
 }

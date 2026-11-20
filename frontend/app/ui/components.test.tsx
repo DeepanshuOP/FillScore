@@ -90,7 +90,8 @@ describe('ProvenanceChip', () => {
   it('a demo and a real account differ in words and line style', () => {
     const d = renderToStaticMarkup(<ProvenanceChip dataSource="synthetic-demo" />)
     const r = renderToStaticMarkup(<ProvenanceChip dataSource="real-user" />)
-    expect(d).toContain('Synthetic demo account')
+    // design v3 wording (the top bar's "synthetic trader, real prices"); it still names the demo as synthetic
+    expect(d).toContain('Synthetic trader, real prices')
     expect(d).toContain('border-dashed')
     expect(r).toContain('Your exchange data')
     expect(r).toContain('border-solid')

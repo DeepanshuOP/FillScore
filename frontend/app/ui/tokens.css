@@ -1,110 +1,135 @@
 /*
- * FillScore design tokens, design v2 "Instrument" (orders of 2026-11-20). Dark first, with a light theme; next-themes
- * sets data-theme on <html> (app/providers.tsx). DESIGN.md at the repo root is the rulebook; this file is its values.
+ * FillScore design tokens, design v3 "Tape & Receipt" (chosen by Deepanshu 2026-11-20). Printed paper and ink, with one
+ * hot signal, the fill-orange auditor's pen. Two themes: "paper" (default) and "carbon" (Carbon copy: warm charcoal,
+ * the same orange). next-themes sets data-theme on <html> (app/providers.tsx). DESIGN.md is the rulebook.
  *
  * The contrast test (app/ui/contrast.test.ts) parses the two blocks below by their [data-theme="..."] selector, so the
  * file the browser reads is the file under test. Do not move a value into TypeScript.
  *
  * Roles (the same names in both themes):
- *   surface   the page ground                     raised   a panel on the ground       overlay  menus, sheets, hover
- *   ink       text                                graphite secondary text (>= 4.5:1)   rule     separator only (< 3:1)
- *   edge      border of a control (>= 3:1)        measured a measured value and its marks (the data accent, cyan)
- *   action    links, primary actions, focus (electric blue)                            insufficient  "insufficient data" (amber)
+ *   surface   the paper (page ground)            raised   receipt white (a sheet on the paper)   overlay  menus, hover
+ *   ink       text and the ink of every mark      graphite secondary text (>= 4.5:1)            rule     separator only (< 3:1)
+ *   edge      border of a control (>= 3:1)        measured a measured value and its marks: ink (data is printed, not coloured)
+ *   action    primary actions: an ink fill        focus    the pen, in its text-safe shade
+ *   pen       fill orange: strokes, circles, the dot in the wordmark. On paper it is 2.9:1, so it NEVER carries meaning
+ *             alone there: every circled or marked value is also written in pen-ink (>= 4.5:1).
+ *   pen-ink   orange text                         stamp    the grade stamp's large letters (>= 3:1, large text only)
+ *   insufficient  "insufficient data" (ochre; always with its dashed line and the words)
  *   danger    destructive actions and refusals
- * Money is never coloured good or bad: no token means "profit" or "loss". Grades have their own chip set below.
+ * Money is never coloured good or bad. Grades are stamped in pen-ink whatever the letter: the stamp is the auditor's
+ * mark, not a traffic light.
  */
-:root, [data-theme="dark"] {
-  color-scheme: dark;
-  --ui-surface: #0B1015;
-  --ui-raised: #11171E;
-  --ui-overlay: #18202A;
-  --ui-ink: #E8EDF2;
-  --ui-graphite: #8A96A3;
-  --ui-rule: #1F2833;
-  --ui-edge: #66748A;
-  --ui-measured: #5EC8E5;
-  --ui-on-measured: #0B1015;
-  --ui-action: #4C8DFF;
-  --ui-on-action: #0B1015;
-  --ui-insufficient: #E3A73B;
-  --ui-insufficient-text: #E3A73B;
-  --ui-danger: #F2685E;
-  --ui-on-danger: #0B1015;
-  --ui-focus: #4C8DFF;
-  --ui-grade-a: #6BD6A6;
-  --ui-grade-b: #A9D46F;
-  --ui-grade-c: #E3C25B;
-  --ui-grade-d: #E8955A;
-  --ui-grade-f: #EF7A73;
-  --ui-highlight: rgb(255 255 255 / 0.05);
-  --ui-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.5);
-  --ui-shadow-float: 0 2px 4px rgb(0 0 0 / 0.4), 0 24px 48px -12px rgb(0 0 0 / 0.65);
-}
-
-[data-theme="light"] {
+:root, [data-theme="paper"] {
   color-scheme: light;
-  --ui-surface: #F6F7F9;
-  --ui-raised: #FFFFFF;
-  --ui-overlay: #EEF1F4;
-  --ui-ink: #0B1015;
-  --ui-graphite: #566170;
-  --ui-rule: #E1E5EA;
-  --ui-edge: #7C8796;
-  --ui-measured: #06627C;
-  --ui-on-measured: #FFFFFF;
-  --ui-action: #2563EB;
-  --ui-on-action: #FFFFFF;
-  --ui-insufficient: #B7791F;
-  --ui-insufficient-text: #8A5A0B;
-  --ui-danger: #B42318;
-  --ui-on-danger: #FFFFFF;
-  --ui-focus: #2563EB;
-  --ui-grade-a: #12724A;
-  --ui-grade-b: #4A7413;
-  --ui-grade-c: #7F6200;
-  --ui-grade-d: #9C4A0C;
-  --ui-grade-f: #B02A26;
-  --ui-highlight: rgb(255 255 255 / 0.7);
-  --ui-shadow: 0 1px 2px rgb(16 24 40 / 0.06), 0 8px 24px -10px rgb(16 24 40 / 0.12);
-  --ui-shadow-float: 0 2px 4px rgb(16 24 40 / 0.06), 0 24px 48px -12px rgb(16 24 40 / 0.22);
+  --ui-surface: #F3F2EE;
+  --ui-raised: #FBFBF8;
+  --ui-overlay: #EFEDE7;
+  --ui-ink: #121210;
+  --ui-graphite: #6B6A66;
+  --ui-rule: #D8D6CF;
+  --ui-edge: #8A8882;
+  --ui-measured: #121210;
+  --ui-on-measured: #F3F2EE;
+  --ui-action: #121210;
+  --ui-on-action: #F3F2EE;
+  --ui-pen: #FF4F12;
+  --ui-pen-ink: #C2380A;
+  --ui-stamp: #DE3F0B;
+  --ui-insufficient: #8C6510;
+  --ui-insufficient-text: #7A5608;
+  --ui-danger: #A3221A;
+  --ui-on-danger: #FBFBF8;
+  --ui-focus: #C2380A;
+  --ui-grade-a: #C2380A;
+  --ui-grade-b: #C2380A;
+  --ui-grade-c: #C2380A;
+  --ui-grade-d: #C2380A;
+  --ui-grade-f: #C2380A;
+  --ui-shadow: 0 1px 0 rgb(18 18 16 / 0.06), 0 14px 26px -22px rgb(18 18 16 / 0.35);
+  --ui-shadow-float: 0 1px 0 rgb(18 18 16 / 0.08), 0 30px 50px -28px rgb(18 18 16 / 0.45);
+  --ui-grain-blend: multiply;
+  --ui-grain-opacity: 0.32;
 }
 
-/* Type: Geist Sans for text and figures, Geist Mono only for ids, hashes and the key fingerprint (app/layout.tsx). */
+[data-theme="carbon"] {
+  color-scheme: dark;
+  --ui-surface: #1C1B19;
+  --ui-raised: #262522;
+  --ui-overlay: #2F2D2A;
+  --ui-ink: #EEECE6;
+  --ui-graphite: #A6A39B;
+  --ui-rule: #36342F;
+  --ui-edge: #7A776F;
+  --ui-measured: #EEECE6;
+  --ui-on-measured: #1C1B19;
+  --ui-action: #EEECE6;
+  --ui-on-action: #1C1B19;
+  --ui-pen: #FF5A1F;
+  --ui-pen-ink: #FF7E4A;
+  --ui-stamp: #FF6A2E;
+  --ui-insufficient: #D9A441;
+  --ui-insufficient-text: #D9A441;
+  --ui-danger: #F2685E;
+  --ui-on-danger: #1C1B19;
+  --ui-focus: #FF5A1F;
+  --ui-grade-a: #FF7E4A;
+  --ui-grade-b: #FF7E4A;
+  --ui-grade-c: #FF7E4A;
+  --ui-grade-d: #FF7E4A;
+  --ui-grade-f: #FF7E4A;
+  --ui-shadow: 0 1px 0 rgb(0 0 0 / 0.3), 0 14px 26px -20px rgb(0 0 0 / 0.7);
+  --ui-shadow-float: 0 1px 0 rgb(0 0 0 / 0.35), 0 30px 50px -26px rgb(0 0 0 / 0.8);
+  --ui-grain-blend: screen;
+  --ui-grain-opacity: 0.5;
+}
+
+/* Type: Cabinet Grotesk for text and figures, Departure Mono for the tape, receipts, ledger figures, ids and labels. */
 :root {
-  --ui-font: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --ui-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --ui-radius-sm: 6px;
-  --ui-radius: 10px;
-  --ui-radius-lg: 16px;
-  --ui-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ui-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ui-font: var(--f-cabinet), ui-sans-serif, system-ui, sans-serif;
+  --ui-mono: var(--f-departure), ui-monospace, monospace;
+  --ui-radius-sm: 4px;
+  --ui-radius: 6px;
+  --ui-radius-lg: 8px;
+  --ui-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ui-ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ui-ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --ui-gutter: clamp(16px, 2.6vw, 40px);
 }
 
 body {
   background: var(--ui-surface);
   color: var(--ui-ink);
   font-family: var(--ui-font);
-  font-size: 15px;
-  line-height: 1.55;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1, "cv11" 1;
+  font-size: 16px;
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "tnum" 1, "lnum" 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  overflow-x: clip;
 }
 
+/* Printed stock: one fixed, static grain over the page (multiply on paper, screen on carbon). Never animated. */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 60; opacity: var(--ui-grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mix-blend-mode: var(--ui-grain-blend);
+}
+@media print { body::before { display: none; } }
+
 /* The parts the browser draws, themed from the palette. */
-::selection { background: color-mix(in srgb, var(--ui-action) 35%, transparent); color: var(--ui-ink); }
-input, textarea { caret-color: var(--ui-action); }
+::selection { background: var(--ui-pen); color: var(--ui-surface); }
+input, textarea { caret-color: var(--ui-pen); }
 input::placeholder, textarea::placeholder { color: var(--ui-graphite); opacity: 1; }
-:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; border-radius: 4px; }
+:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 3px; border-radius: 2px; }
 * { scrollbar-color: var(--ui-edge) transparent; scrollbar-width: thin; }
 @layer base {
-  a { text-decoration-line: underline; text-underline-offset: 0.22em; text-decoration-thickness: 1px; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+  a { text-decoration-line: underline; text-underline-offset: 0.22em; text-decoration-thickness: 1px; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); }
   a:hover { text-decoration-color: currentColor; }
 }
 
-/* Tailwind theme: utilities `bg-ui-surface`, `text-ui-ink`, `border-ui-rule` ... read the variables above. */
+/* Tailwind theme: utilities `bg-ui-surface`, `text-ui-ink`, `border-ui-rule`, `text-ui-pen-ink` ... read the variables above. */
 @theme inline {
   --color-ui-surface: var(--ui-surface);
   --color-ui-raised: var(--ui-raised);
@@ -117,6 +142,9 @@ input::placeholder, textarea::placeholder { color: var(--ui-graphite); opacity: 
   --color-ui-on-measured: var(--ui-on-measured);
   --color-ui-action: var(--ui-action);
   --color-ui-on-action: var(--ui-on-action);
+  --color-ui-pen: var(--ui-pen);
+  --color-ui-pen-ink: var(--ui-pen-ink);
+  --color-ui-stamp: var(--ui-stamp);
   --color-ui-insufficient: var(--ui-insufficient);
   --color-ui-insufficient-text: var(--ui-insufficient-text);
   --color-ui-danger: var(--ui-danger);
@@ -128,9 +156,9 @@ input::placeholder, textarea::placeholder { color: var(--ui-graphite); opacity: 
   --color-ui-grade-f: var(--ui-grade-f);
   --font-ui: var(--ui-font);
   --font-ui-mono: var(--ui-mono);
-  --radius-ui-sm: 6px;
-  --radius-ui: 10px;
-  --radius-ui-lg: 16px;
+  --radius-ui-sm: 4px;
+  --radius-ui: 6px;
+  --radius-ui-lg: 8px;
   --shadow-ui: var(--ui-shadow);
   --shadow-ui-float: var(--ui-shadow-float);
   --ease-ui-out: var(--ui-ease-out);

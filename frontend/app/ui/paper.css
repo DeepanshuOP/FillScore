@@ -1,0 +1,124 @@
+/*
+ * Design v3 "Tape & Receipt": the printed objects, shared by the landing page and the app. Values come from the tokens
+ * (app/ui/tokens.css), so Carbon copy restyles every object. DESIGN.md, sections "Receipt anatomy", "Stamp", "Tape".
+ * Prefix fs-. Motion here is CSS only and every animation has a reduced-motion rule at the end of the file.
+ */
+
+/* ---------- edges: torn paper, perforation, sprocket holes ---------- */
+.fs-torn-bottom, .fs-torn-top { height: 12px; flex: none; }
+.fs-torn-bottom {
+  margin-top: -1px;
+  background: linear-gradient(135deg, var(--ui-raised) 50%, transparent 50%) 0 0 / 14px 12px repeat-x,
+    linear-gradient(225deg, var(--ui-raised) 50%, transparent 50%) 0 0 / 14px 12px repeat-x;
+  filter: drop-shadow(0 6px 6px rgb(18 18 16 / 0.12));
+}
+.fs-torn-top {
+  margin-bottom: -1px;
+  background: linear-gradient(45deg, var(--ui-raised) 50%, transparent 50%) 0 0 / 14px 12px repeat-x,
+    linear-gradient(-45deg, var(--ui-raised) 50%, transparent 50%) 0 0 / 14px 12px repeat-x;
+}
+.fs-perf { height: 10px; background: radial-gradient(circle, var(--ui-surface) 3px, transparent 3.6px) 6px 50% / 14px 10px repeat-x; }
+.fs-sprockets { position: relative; }
+.fs-sprockets::before, .fs-sprockets::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 8px; pointer-events: none; z-index: 1;
+  background: radial-gradient(circle at 50% 50%, var(--ui-surface) 2.3px, transparent 2.9px) 0 0 / 14px 8px repeat-x;
+}
+.fs-sprockets::before { top: 4px; }
+.fs-sprockets::after { bottom: 4px; }
+
+/* ---------- the thermal receipt ---------- */
+.fs-receipt {
+  position: relative; background: var(--ui-raised); color: var(--ui-ink); font-family: var(--ui-mono);
+  font-size: 12.5px; line-height: 1.42; padding: 28px 26px 18px;
+}
+.fs-receipt .fs-r-title { font-family: var(--ui-font); font-weight: 900; font-size: 30px; letter-spacing: -0.04em; margin: 0; line-height: 1; text-align: center; }
+.fs-receipt .c { text-align: center; }
+.fs-receipt .g { color: var(--ui-graphite); }
+.fs-receipt .p { color: var(--ui-pen-ink); }
+.fs-receipt hr { border: 0; border-top: 1px dashed var(--ui-ink); margin: 9px 0; }
+.fs-receipt .sec { text-align: center; margin: 12px 0 4px; letter-spacing: 0.08em; }
+.fs-receipt .kv { display: grid; grid-template-columns: 9ch minmax(0, 1fr); gap: 0 10px; margin: 0; }
+.fs-receipt .kv dd { margin: 0; overflow-wrap: anywhere; }
+.fs-receipt .fs-perf { margin: 8px -26px; }
+.fs-lines { display: grid; grid-template-columns: 3ch minmax(0, 1fr) auto auto; gap: 2px 10px; align-items: baseline; }
+.fs-lines .lab { position: relative; overflow: hidden; white-space: nowrap; }
+.fs-lines .lab::after { content: ' ........................................................................'; color: var(--ui-rule); }
+.fs-lines .num, .fs-fills .num { text-align: right; white-space: nowrap; }
+.fs-fills { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 10px; }
+.fs-totalline { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: baseline; font-family: var(--ui-font); font-weight: 900; }
+.fs-totalline .k { font-size: 18px; letter-spacing: 0.02em; }
+.fs-totalline .b { font-size: 18px; color: var(--ui-graphite); font-weight: 700; }
+.fs-totalline .u { font-size: 40px; letter-spacing: -0.04em; line-height: 1; }
+.fs-r-chart { display: block; width: 100%; height: 64px; margin: 4px 0 2px; }
+.fs-r-chart .pr { fill: var(--ui-ink); }
+.fs-r-chart .fl { fill: var(--ui-pen); stroke: var(--ui-ink); stroke-width: 1; }
+.fs-r-chart .arr { stroke: var(--ui-ink); stroke-dasharray: 2 3; }
+.fs-bars { display: block; width: 100%; height: 38px; margin-top: 6px; }
+.fs-bars rect { fill: var(--ui-ink); }
+
+/* ---------- stamps ---------- */
+.fs-stamp {
+  --rot: -7deg; color: var(--ui-stamp); border: 4px solid currentColor; outline: 1.5px solid currentColor; outline-offset: 4px;
+  border-radius: 18px; padding: 12px 22px 14px; transform: rotate(var(--rot)); text-align: center; position: relative; display: inline-block;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -3.4 3.05'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.55' numOctaves='3' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -3.4 3.05'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  mask-size: 300px 300px;
+}
+.fs-stamp .top, .fs-stamp .bot { font-family: var(--ui-mono); font-size: 13px; letter-spacing: 0.04em; line-height: 1.3; }
+.fs-stamp .mid { display: flex; align-items: baseline; justify-content: center; gap: 12px; line-height: 0.8; margin: 6px 0 4px; }
+.fs-stamp .g { font-weight: 900; font-size: 132px; letter-spacing: -0.06em; }
+.fs-stamp .s { font-weight: 900; font-size: 64px; letter-spacing: -0.04em; }
+.fs-stamp[data-size='sm'] { border-width: 3px; border-radius: 12px; padding: 8px 14px 10px; outline-offset: 3px; }
+.fs-stamp[data-size='sm'] .g { font-size: 64px; }
+.fs-stamp[data-size='sm'] .s { font-size: 32px; }
+.fs-stamp[data-size='sm'] .top, .fs-stamp[data-size='sm'] .bot { font-size: 10.5px; }
+.fs-stamp[data-in='true'] { animation: fs-stamp-in 420ms var(--ui-ease-out) both; }
+@keyframes fs-stamp-in {
+  0% { opacity: 0; transform: rotate(-2deg) scale(1.45); filter: blur(3px); }
+  55% { opacity: 1; transform: rotate(var(--rot)) scale(0.97); filter: blur(0); }
+  100% { opacity: 1; transform: rotate(var(--rot)) scale(1); }
+}
+/* the small word stamp: SIGNED, VERIFIED, RETURNED, NOT DISTINGUISHABLE */
+.fs-word-stamp {
+  display: inline-block; color: var(--ui-stamp); border: 2.5px solid currentColor; border-radius: 8px; padding: 4px 12px 5px;
+  transform: rotate(-4deg); text-decoration: none; font-family: var(--ui-font); font-weight: 900; font-size: 20px;
+  letter-spacing: 0.06em; line-height: 1.1; text-align: center;
+}
+.fs-word-stamp small { display: block; font-family: var(--ui-mono); font-weight: 400; font-size: 10px; letter-spacing: 0.02em; }
+.fs-word-stamp[data-tone='ink'] { color: var(--ui-ink); }
+.fs-word-stamp[data-in='true'] { animation: fs-word-in 360ms var(--ui-ease-out) both; }
+@keyframes fs-word-in { 0% { opacity: 0; transform: rotate(0deg) scale(1.5); } 60% { opacity: 1; transform: rotate(-4deg) scale(0.96); } 100% { transform: rotate(-4deg) scale(1); } }
+
+/* ---------- the ticker tape (strip) ---------- */
+.fs-strip { position: relative; background: var(--ui-raised); box-shadow: 0 1px 0 var(--ui-rule), 0 18px 30px -22px rgb(18 18 16 / 0.35); }
+
+/* ---------- the pen ---------- */
+.fs-pen { overflow: visible; pointer-events: none; }
+.fs-pen path { fill: none; stroke: var(--ui-pen); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.fs-note { font-family: var(--ui-font); font-weight: 700; color: var(--ui-pen-ink); line-height: 1.15; letter-spacing: -0.01em; }
+.fs-dbl { text-decoration: underline double var(--ui-pen); text-decoration-thickness: 2px; text-underline-offset: 0.28em; }
+
+/* ---------- printed slip (Sonner) ---------- */
+.fs-slip {
+  position: relative; background: var(--ui-raised); color: var(--ui-ink); font-family: var(--ui-mono); font-size: 12.5px; line-height: 1.45;
+  padding: 12px 16px 14px; width: var(--width, 340px); box-shadow: var(--ui-shadow-float);
+}
+.fs-slip::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: -8px; height: 8px;
+  background: linear-gradient(135deg, var(--ui-raised) 50%, transparent 50%) 0 0 / 10px 8px repeat-x,
+    linear-gradient(225deg, var(--ui-raised) 50%, transparent 50%) 0 0 / 10px 8px repeat-x;
+}
+
+/* ---------- keyboard key, as printed ---------- */
+.fs-kbd { font-family: var(--ui-mono); font-size: 11px; border: 1px solid var(--ui-edge); border-radius: 3px; padding: 0 4px; line-height: 16px; color: var(--ui-graphite); }
+
+/* ---------- ticking manifest lines (verify, check it yourself) ---------- */
+.fs-tick { display: inline-block; width: 1.4em; color: var(--ui-graphite); }
+.fs-tick[data-ok='true'] { color: var(--ui-ink); }
+.fs-tick[data-ok='false'] { color: var(--ui-danger); }
+.fs-tick[data-in='true'] { animation: fs-tick-in 220ms var(--ui-ease-out) both; }
+@keyframes fs-tick-in { from { opacity: 0; transform: translateY(-3px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .fs-stamp[data-in='true'], .fs-word-stamp[data-in='true'], .fs-tick[data-in='true'] { animation: none !important; }
+}
