@@ -1,5 +1,8 @@
 "use client";
 import { useState, useCallback, useEffect } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { Droplets, Scale, ShieldCheck, Receipt, type LucideIcon } from "lucide-react";
+import { cn } from "../../lib/utils";
 import { waitForHealthy } from "../utils/serviceWarmup";
 import { track } from "../lib/track";
 import {
@@ -82,6 +85,27 @@ type StreamPayload = {
 const AGENT_ORDER = ["liquidity_scout", "alpha_architect", "risk_auditor", "fee_optimizer"];
 
 const ASSESSMENT_HEADING = "Explanation (language model; every number was checked against the audit)";
+
+const AGENT_ICON: Record<string, LucideIcon> = {
+  liquidity_scout: Droplets,
+  alpha_architect: Scale,
+  risk_auditor: ShieldCheck,
+  fee_optimizer: Receipt,
+};
+
+// Design v2 segmented control (same pattern as the Rankings view), with a disabled state for a running audit.
+function Segmented<T extends string>({ value, options, onChange, label, disabled }: { value: T; options: Array<[T, string]>; onChange: (v: T) => void; label: string; disabled?: boolean }) {
+  return (
+    <div role="group" aria-label={label} className="flex rounded-[8px] bg-ui-overlay p-0.5 text-[12px]">
+      {options.map(([k, text]) => (
+        <button key={k} type="button" aria-pressed={value === k} disabled={disabled} onClick={() => onChange(k)}
+          className={cn("rounded-[6px] px-2.5 py-1 disabled:cursor-not-allowed disabled:opacity-60", value === k ? "bg-ui-raised text-ui-ink shadow-ui" : "text-ui-graphite hover:text-ui-ink")}>{text}</button>
+      ))}
+    </div>
+  );
+}
+
+const FADE = { duration: 0.2, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
 
 // ── Component ────────────────────────────────────────────────────────────────────
 export default function AgentCouncil({
@@ -304,113 +328,114 @@ export default function AgentCouncil({
   );
 
   return (
-    <Panel
-      id="agent-council"
-      title={synthesis ? ASSESSMENT_HEADING : "Agent Council"}
-      description={`Execution audit of past trades, ${symbol}. ${COUNCIL_DISCLAIMER}`}
-      actions={runButton}
-      className="space-y-5"
-    >
-      {!userId && (
-        <div data-testid="audit-mode" className="mb-4 flex flex-wrap items-center gap-3 text-sm text-ui-graphite">
-          <div role="group" aria-label="Audit mode" className="inline-flex gap-2">
-            {(["quick", "deep"] as const).map((m) => (
-              <Button
-                key={m}
-                variant={mode === m ? "primary" : "secondary"}
-                aria-pressed={mode === m}
-                disabled={running}
-                onClick={() => setMode(m)}
-              >
-                {m === "quick" ? "Quick" : "Deep"}
-              </Button>
-            ))}
-          </div>
-          <span className="max-w-[68ch]">
-            {mode === "quick"
-              ? "Usually one model call (a second one only when a replay check needs it). The default."
-              : "The full Council: nine model calls, four specialists and a debate. It uses nine times the budget of a Quick audit."}
-          </span>
-        </div>
-      )}
+    <section id="agent-council" className="flex min-w-0 flex-col gap-5">
+      <Panel
+        title="Council"
+        description={`Execution audit of past trades, ${symbol}. ${COUNCIL_DISCLAIMER}`}
+        actions={<>
+          {!userId && <Segmented label="Audit mode" value={mode} onChange={setMode} disabled={running} options={[["quick", "Quick"], ["deep", "Deep"]]} />}
+          {runButton}
+        </>}
+      >
+        <div className="flex flex-col gap-3">
+          {!userId && (
+            <p data-testid="audit-mode" className="max-w-[68ch] text-[13px] leading-5 text-ui-graphite">
+              {mode === "quick"
+                ? "Usually one model call (a second one only when a replay check needs it). The default."
+                : "The full Council: nine model calls, four specialists and a debate. It uses nine times the budget of a Quick audit."}
+            </p>
+          )}
 
-      {modeLabel && <p data-testid="audit-mode-label" className="mb-4 text-sm text-ui-graphite">{modeLabel}</p>}
+          {modeLabel && <p data-testid="audit-mode-label" className="text-[13px] text-ui-graphite">{modeLabel}</p>}
 
-      {running && !synthesis && !error && (
-        <p role="status" className="mb-4 text-sm text-ui-graphite">
-          {debateRunning ? "Loading the debate between the specialists." : "Loading the analysis of your past trades."}
-        </p>
-      )}
+          {running && !synthesis && !error && (
+            <p role="status" className="text-[13px] text-ui-graphite">
+              {debateRunning ? "Loading the debate between the specialists." : "Loading the analysis of your past trades."}
+            </p>
+          )}
 
-      {waking && (
-        <Banner kind="info" title="The Council service is waking up" className="mb-4">
-          The Council service was asleep and is waking up. This can take up to a minute the first time.
-        </Banner>
-      )}
+          {waking && (
+            <Banner kind="info" title="The Council service is waking up">
+              The Council service was asleep and is waking up. This can take up to a minute the first time.
+            </Banner>
+          )}
 
-      {error && (
-        <Banner
-          kind="refused"
-          title="The Council result is not shown"
-          className="mb-4"
-          action={offerQuick && !running ? (
-            <Button
-              variant="secondary"
-              data-testid="run-quick-instead"
-              onClick={() => { setMode("quick"); runAnalysis("quick"); }}
+          {error && (
+            <Banner
+              kind="refused"
+              title="The Council result is not shown"
+              action={offerQuick && !running ? (
+                <Button
+                  variant="secondary"
+                  data-testid="run-quick-instead"
+                  onClick={() => { setMode("quick"); runAnalysis("quick"); }}
+                >
+                  Run a quick audit instead
+                </Button>
+              ) : undefined}
             >
-              Run a quick audit instead
-            </Button>
-          ) : undefined}
-        >
-          {error}
-        </Banner>
-      )}
+              {error}
+            </Banner>
+          )}
+        </div>
+      </Panel>
 
-      {/* 2×2 specialist grid: a Quick audit has no specialists to show */}
-      <div className={`mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 ${showSpecialists ? "" : "hidden"}`}>
+      {/* 2x2 specialist grid: a Quick audit has no specialists to show */}
+      <div className={cn("grid grid-cols-1 gap-5 sm:grid-cols-2", !showSpecialists && "hidden")}>
         {AGENT_ORDER.map((agent) => {
           const card = cards[agent];
           const isRunning = card?.status === "running" || activeAgent === agent;
+          const Icon = AGENT_ICON[agent] ?? Scale;
           const benchmarkNote = agent === "alpha_architect" && card?.status === "done" && !card.failed
             ? alphaBenchmarkNote(card.flags)
             : "";
+          const status = isRunning ? "Streaming" : card?.status === "done" ? (card.failed ? "Unavailable" : "Done") : "Idle";
 
           return (
-            <div
-              key={agent}
-              className={`rounded-ui border p-4 ${card?.status === "done" ? "border-ui-edge bg-ui-surface" : "border-ui-rule bg-ui-raised"}`}
-            >
-              <p className="text-sm font-semibold text-ui-ink">{agentLabel(agent)}</p>
+            <div key={agent} className="panel flex min-w-0 flex-col gap-3 p-5">
+              <div className="flex items-center gap-3">
+                <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-ui-overlay">
+                  <Icon aria-hidden="true" strokeWidth={1.75} className="size-4 text-ui-ink" />
+                </span>
+                <p className="min-w-0 flex-1 text-[15px] font-semibold text-ui-ink">{agentLabel(agent)}</p>
+                <span className={cn("rounded-full px-2 py-0.5 text-[11px] ring-1 ring-inset", isRunning ? "bg-ui-overlay text-ui-ink ring-ui-edge" : "text-ui-graphite ring-ui-rule")}>{status}</span>
+              </div>
 
-              {isRunning && <p className="mt-2 text-sm text-ui-graphite">Working on its part of the audit.</p>}
-              {!card && !isRunning && <p className="mt-2 text-sm text-ui-graphite">Waiting for the run.</p>}
+              <AnimatePresence mode="wait" initial={false}>
+                {isRunning ? (
+                  <motion.p key="streaming" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={FADE} className="text-[13px] leading-5 text-ui-graphite">
+                    Working on its part of the audit.
+                  </motion.p>
+                ) : !card ? (
+                  <motion.p key="idle" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={FADE} className="text-[13px] leading-5 text-ui-graphite">
+                    Waiting for the run.
+                  </motion.p>
+                ) : card.status === "done" ? (
+                  <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={FADE} className="space-y-2 text-[13px] leading-5 text-ui-graphite">
+                    {card.failed && <p className="text-ui-danger">Unavailable for this run</p>}
+                    {!card.failed && card.rating && (
+                      <p className="text-sm text-ui-ink">
+                        {agent === "alpha_architect" ? alphaRatingPhrase(card.rating) : `Rating: ${ratingWords(card.rating)}`}
+                      </p>
+                    )}
+                    {benchmarkNote && <p>{benchmarkNote}</p>}
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span>{card.valuesCited === null ? "" : `${card.valuesCited} values cited`}</span>
+                      <span>Severity: {ratingWords(card.severity)}</span>
+                    </div>
 
-              {card?.status === "done" && (
-                <div className="mt-2 space-y-2 text-sm text-ui-graphite">
-                  {card.failed && <p className="text-ui-danger">Unavailable for this run</p>}
-                  {!card.failed && card.rating && (
-                    <p className="text-ui-ink">
-                      {agent === "alpha_architect" ? alphaRatingPhrase(card.rating) : `Rating: ${ratingWords(card.rating)}`}
-                    </p>
-                  )}
-                  {benchmarkNote && <p>{benchmarkNote}</p>}
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span>{card.valuesCited === null ? "" : `${card.valuesCited} values cited`}</span>
-                    <span>Severity: {ratingWords(card.severity)}</span>
-                  </div>
-
-                  {card.flags.length > 0 && (
-                    <ul className="flex flex-wrap gap-1">
-                      {card.flags.slice(0, 2).map((f) => (
-                        <li key={f} className="rounded-ui border border-ui-rule px-1.5 py-0.5 text-xs">
-                          {flagText(f)}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
+                    {card.flags.length > 0 && (
+                      <ul className="flex flex-wrap gap-1.5">
+                        {card.flags.slice(0, 2).map((f) => (
+                          <li key={f} className="rounded-[6px] bg-ui-overlay px-2 py-0.5 text-[12px] text-ui-ink">
+                            {flagText(f)}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
           );
         })}
@@ -418,41 +443,35 @@ export default function AgentCouncil({
 
       {/* Debate */}
       {(debate || debateRunning) && (
-        <div className="mb-4 space-y-3 border-t border-ui-rule pt-4">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h3 className="text-base font-semibold text-ui-ink">Debate between the specialists</h3>
-            {debateRunning && <span className="text-sm text-ui-graphite">Loading the debate.</span>}
-            {debate && (
-              <span className="text-sm text-ui-graphite">
-                {debate.round_count} round{debate.round_count !== 1 ? "s" : ""}, {debate.claim_count} claims
-              </span>
-            )}
-          </div>
-
+        <Panel
+          as="h3"
+          title="Debate between the specialists"
+          description={debateRunning ? "Loading the debate." : debate ? `${debate.round_count} round${debate.round_count !== 1 ? "s" : ""}, ${debate.claim_count} claims` : undefined}
+        >
           {debate && (
-            <div className="space-y-3">
+            <div className="flex flex-col gap-3">
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="rounded-ui border border-ui-rule bg-ui-surface p-3">
-                  <p className="mb-1 text-sm font-semibold text-ui-ink">Prosecution</p>
-                  <p className="text-sm text-ui-graphite">{debate.prosecution_summary}</p>
+                <div className="rounded-[12px] bg-ui-overlay/60 p-4">
+                  <p className="mb-1 text-sm font-medium text-ui-ink">Prosecution</p>
+                  <p className="text-[13px] leading-5 text-ui-graphite">{debate.prosecution_summary}</p>
                 </div>
-                <div className="rounded-ui border border-ui-rule bg-ui-surface p-3">
-                  <p className="mb-1 text-sm font-semibold text-ui-ink">Defense</p>
-                  <p className="text-sm text-ui-graphite">{debate.defense_summary}</p>
+                <div className="rounded-[12px] bg-ui-overlay/60 p-4">
+                  <p className="mb-1 text-sm font-medium text-ui-ink">Defense</p>
+                  <p className="text-[13px] leading-5 text-ui-graphite">{debate.defense_summary}</p>
                 </div>
               </div>
-              <div className="rounded-ui border border-ui-rule bg-ui-raised p-3">
-                <p className="mb-1 text-sm font-semibold text-ui-ink">Key dispute</p>
-                <p className="text-sm text-ui-graphite">{debate.key_dispute}</p>
+              <div className="rounded-[12px] bg-ui-overlay/60 p-4">
+                <p className="mb-1 text-sm font-medium text-ui-ink">Key dispute</p>
+                <p className="text-[13px] leading-5 text-ui-graphite">{debate.key_dispute}</p>
               </div>
             </div>
           )}
-        </div>
+        </Panel>
       )}
 
       {/* Assessment */}
       {synthesis && view && (
-        <div className="space-y-4 border-t border-ui-rule pt-4">
+        <Panel title={ASSESSMENT_HEADING} bodyClassName="space-y-4">
           {view.kind === "incomplete" ? (
             <Banner kind="info" title={view.title}>
               <p>Part of the Council could not finish, so this run has no grade.</p>
@@ -466,7 +485,7 @@ export default function AgentCouncil({
             </Banner>
           ) : (
             <>
-              <p className="text-sm text-ui-graphite">Overall: {ratingWords(view.rating)}</p>
+              <p className="text-[13px] text-ui-graphite">Overall: {ratingWords(view.rating)}</p>
               <p className="max-w-[68ch] text-base text-ui-ink">{synthesis.headline}</p>
             </>
           )}
@@ -490,7 +509,7 @@ export default function AgentCouncil({
                       <p className="text-ui-graphite">
                         <span className="font-medium text-ui-ink tabular-nums">{formatUsd(f.effect_usd)}</span>
                         {Number.isFinite(f.effect_bps) && <> ({formatSignedBps(f.effect_bps)})</>}
-                        <span className="ml-2 rounded-ui border border-ui-edge px-1.5 py-0.5 text-xs text-ui-ink">
+                        <span className="ml-2 rounded-full bg-ui-overlay px-2 py-0.5 text-[11px] text-ui-ink ring-1 ring-inset ring-ui-edge">
                           verified
                         </span>
                       </p>
@@ -526,27 +545,31 @@ export default function AgentCouncil({
               />
             </p>
           )}
+        </Panel>
+      )}
+
+      {(verification || totalLatencyMs !== null || grounding) && (
+        <div className="flex flex-col gap-1 px-1 text-[13px] leading-5 text-ui-graphite">
+          {/* Verification line */}
+          {verification && !synthesis?.degraded && verificationLine(verification) && (
+            <p>{verificationLine(verification)}</p>
+          )}
+
+          {/* Latency footer */}
+          {totalLatencyMs !== null && (
+            <p>
+              {cached
+                ? "Stored analysis of the same trades (no new AI calls)"
+                : `Analysis completed in ${(totalLatencyMs / 1000).toFixed(2)}s`}
+            </p>
+          )}
+
+          {/* Grounding stats */}
+          {grounding && !synthesis?.degraded && groundingLine(grounding) && (
+            <p>{groundingLine(grounding)}</p>
+          )}
         </div>
       )}
-
-      {/* Verification line */}
-      {verification && !synthesis?.degraded && verificationLine(verification) && (
-        <p className="mt-4 text-sm text-ui-graphite">{verificationLine(verification)}</p>
-      )}
-
-      {/* Latency footer */}
-      {totalLatencyMs !== null && (
-        <p className="mt-2 text-sm text-ui-graphite">
-          {cached
-            ? "Stored analysis of the same trades (no new AI calls)"
-            : `Analysis completed in ${(totalLatencyMs / 1000).toFixed(2)}s`}
-        </p>
-      )}
-
-      {/* Grounding stats */}
-      {grounding && !synthesis?.degraded && groundingLine(grounding) && (
-        <p className="mt-1 text-sm text-ui-graphite">{groundingLine(grounding)}</p>
-      )}
-    </Panel>
+    </section>
   );
 }

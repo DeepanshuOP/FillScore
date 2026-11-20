@@ -3,10 +3,12 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import Navbar from '../components/Navbar';
-import AgentCouncil from '../components/AgentCouncil';
+import { BookOpen, Download, Link2 } from 'lucide-react';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { AppShell } from '../components/shell/AppShell';
+import { parseView, type View } from '../components/shell/nav';
+import dynamic from 'next/dynamic';
 import ConnectPrompt from '../components/ConnectPrompt';
-import { EvidencePanel } from '../components/EvidencePanel';
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/authFetch';
 import { apiBase } from '../lib/apiBase';
@@ -14,6 +16,7 @@ import { downloadReport } from '../lib/downloads';
 import { track } from '../lib/track';
 import { resolveIdentityState } from '../utils/identityResolver';
 import { buildQuery } from '../utils/queryBuilder';
+import { formatPeriodLabel } from '../utils/periodLabel';
 import { Banner } from '../ui/Banner';
 import { Button } from '../ui/Button';
 import { Disclosure } from '../ui/Disclosure';
@@ -23,16 +26,21 @@ import { useToast } from '../ui/Toast';
 import { buildComponentCards, type ComponentMeans } from './componentCards';
 import { skippedNotice, type SkippedTrades } from './skipped';
 import { type CurrentFigures } from './headerStats';
-import { costInsufficientReason, costSentence, describeHeadline, gradeView, scopeFacts } from './headline';
+import { describeHeadline, gradeView, scopeFacts } from './headline';
 import { DEMO_NOTE, type V2Response } from './scoreV2';
-import Headline from './Headline';
-import { CostAgainstExpected, WhereMoneyWent } from './CostPanels';
-import OrdersPanel from './OrdersPanel';
-import ExplainPanel from './ExplainPanel';
-import AskPanel from './AskPanel';
-import CsvCheckPanel from './CsvCheckPanel';
+import { Overview } from './Overview';
 import SyncFreshness from './SyncFreshness';
-import ScoreRecord from './ScoreRecord';
+
+// Design v2: only the overview ships with the page; each other section (and its table, chart or drawer code) loads when opened.
+const section = () => <div className="panel h-64 opacity-60" aria-hidden="true" />;
+const OrdersView = dynamic(() => import('./OrdersView'), { loading: section });
+const RulesView = dynamic(() => import('./RulesView'), { loading: section });
+const RankingsView = dynamic(() => import('./RankingsView'), { loading: section });
+const AgentCouncil = dynamic(() => import('../components/AgentCouncil'), { loading: section });
+const AskPanel = dynamic(() => import('./AskPanel'));
+const CsvCheckPanel = dynamic(() => import('./CsvCheckPanel'));
+const ScoreRecord = dynamic(() => import('./ScoreRecord'), { loading: section });
+const EvidencePanel = dynamic(() => import('../components/EvidencePanel').then((m) => m.EvidencePanel), { loading: section });
 
 interface AuditSummary {
   userId: string;
@@ -51,14 +59,42 @@ interface AuditSummary {
 }
 
 const ML_URL = process.env.NEXT_PUBLIC_ML_URL ?? 'http://localhost:8000';
+const VENUES: Record<string, string> = { binance: 'Binance', bybit: 'Bybit', okx: 'OKX', multi: 'Several venues' };
 
 function Loading() {
   return (
-    <div role="status" aria-label="Loading the audit" className="flex flex-col gap-6">
-      <p className="text-ui-graphite">Loading the audit.</p>
-      <div aria-hidden="true" className="h-56 rounded-ui border border-ui-rule bg-ui-raised" />
-      <div aria-hidden="true" className="h-40 rounded-ui border border-ui-rule bg-ui-raised" />
+    <div role="status" aria-label="Loading the audit" className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:gap-5">
+      <span className="sr-only">Loading the audit.</span>
+      {['lg:col-span-4 h-80', 'lg:col-span-8 h-80', 'lg:col-span-6 h-64', 'lg:col-span-6 h-64'].map((c) => (
+        <div key={c} aria-hidden="true" className={`panel ${c} opacity-60`} />
+      ))}
     </div>
+  );
+}
+
+/** The "Method" side sheet: the explanations the page keeps out of its way. */
+function MethodSheet({ isDemo }: { isDemo: boolean }) {
+  return (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button variant="quiet" size="sm"><BookOpen aria-hidden="true" /> <span className="hidden md:inline">Method</span></Button>
+      </SheetTrigger>
+      <SheetContent className="w-full overflow-y-auto bg-ui-raised sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle className="text-lg tracking-[-0.015em]">How this audit was measured</SheetTitle>
+          <SheetDescription>Every figure comes from deterministic code over stored measurements.</SheetDescription>
+        </SheetHeader>
+        <div className="flex flex-col gap-4 px-4 pb-8 text-[13px] leading-5 text-ui-graphite">
+          <p><span className="font-medium text-ui-ink">Each fill</span> was compared with the exchange&rsquo;s public prints in the seconds before it: the spread paid, the price impact and timing, the cost of the unfilled part of each order, and the fees against the account&rsquo;s own rates.</p>
+          <p><span className="font-medium text-ui-ink">Measured, insufficient data, not computed.</span> A measured value carries a solid square. &ldquo;Insufficient data&rdquo; (a hollow diamond) means the sample was too small or market data was missing; no estimate is shown. &ldquo;Not computed for this data&rdquo; means the view does not exist for these records.</p>
+          <p><span className="font-medium text-ui-ink">Cost against expected</span> compares market orders with a fitted model of what an order of the same size cost in the hour before. The interval is a bootstrap over the account&rsquo;s orders.</p>
+          <p><span className="font-medium text-ui-ink">Rankings</span> rank a group only with at least 20 orders; groups whose intervals overlap share a rank.</p>
+          {isDemo ? <p><span className="font-medium text-ui-ink">Demo accounts.</span> {DEMO_NOTE}</p> : null}
+          <p>Explanations written by a language model never add a number: every number in them is checked against the audit first.</p>
+          <Link href="/methodology" className="text-ui-ink">The full methodology</Link>
+        </div>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -77,8 +113,9 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const toast = useToast();
+  const view: View = parseView(searchParams.get('view'));
 
-  // One request helper for the explain panel: a signed-in account sends its token, a demo account is read-only and sends none.
+  // One request helper for the explain views: a signed-in account sends its token, a demo account is read-only and sends none.
   const explainRequest = useCallback(async (path: string, init?: { method?: string; body?: unknown }) => {
     const url = `${apiBase()}${path}`;
     const options: RequestInit = init?.body !== undefined
@@ -115,11 +152,12 @@ function DashboardContent() {
     }
   };
 
+  const urlUserId = searchParams.get('userId');
+  const sample = searchParams.get('sample') === '1';
   useEffect(() => {
     if (authLoading) return; // wait for auth resolution
-    const urlUserId = searchParams.get('userId');
     const storageUserId = localStorage.getItem('userId');
-    const identity = resolveIdentityState(urlUserId, storageUserId, accessToken, searchParams.get('sample') === '1');
+    const identity = resolveIdentityState(urlUserId, storageUserId, accessToken, sample);
 
     if (identity.mode === 'redirect') {
       router.replace('/');
@@ -129,6 +167,7 @@ function DashboardContent() {
     if (identity.shouldSetStorage && identity.effectiveUserId) localStorage.setItem('userId', identity.effectiveUserId);
 
     const mode = identity.mode;
+    let live = true;
 
     const load = async () => {
       try {
@@ -138,7 +177,7 @@ function DashboardContent() {
         const query = buildQuery(mode, identity.effectiveUserId);
         const baseUrl = apiBase();
         const res = await fetchFn(`${baseUrl}/audit/score${query}`);
-        // Nothing reads these while the page is loading, so they are set when the first answer is in.
+        if (!live) return;
         setDashboardMode(mode);
         setResolvedUserId(identity.effectiveUserId);
         if (mode === 'real' && !res.ok) {
@@ -146,163 +185,158 @@ function DashboardContent() {
           return;
         }
         if (!res.ok) throw new Error('Failed to fetch audit data');
-        setAudit(await res.json());
-        track('dashboard_view');
+        const a = await res.json();
         // The measured score and the measured order views. A failure in either never blocks the dashboard.
-        try {
-          const v2 = await fetchFn(`${baseUrl}/audit/v2${query}`);
-          setScoreV2({ status: v2.status, body: await v2.json().catch(() => null) });
-        } catch {
-          setScoreV2({ status: 500, body: null });
-        }
-        try {
-          const o = await fetchFn(`${baseUrl}/audit/orders-summary${query}`);
-          setOrdersSummary(o.ok ? await o.json().catch(() => null) : null);
-        } catch {
-          setOrdersSummary(null);
-        }
+        const [v2, o] = await Promise.all([
+          fetchFn(`${baseUrl}/audit/v2${query}`).then(async (r) => ({ status: r.status, body: await r.json().catch(() => null) })).catch(() => ({ status: 500, body: null })),
+          fetchFn(`${baseUrl}/audit/orders-summary${query}`).then(async (r) => (r.ok ? await r.json().catch(() => null) : null)).catch(() => null),
+        ]);
+        if (!live) return;
+        setAudit(a);
+        setScoreV2(v2);
+        setOrdersSummary(o);
+        setError(null);
+        track('dashboard_view');
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Something went wrong');
+        if (live) setError(err instanceof Error ? err.message : 'Something went wrong');
       } finally {
-        setLoading(false);
+        if (live) setLoading(false);
       }
     };
     void load();
-  }, [authLoading, accessToken, refreshAccessToken, searchParams, router]);
+    return () => { live = false; };
+  }, [authLoading, accessToken, refreshAccessToken, urlUserId, sample, router]);
 
   const v2Body = scoreV2.body as (V2Response & { demo?: unknown }) | null;
   const isDemoData = dashboardMode === 'demo' || !!v2Body?.demo;
   const auth = { accessToken, refreshAccessToken };
+  const shellUser = dashboardMode === 'demo' ? resolvedUserId : (urlUserId ?? null);
+  const query = dashboardMode ? buildQuery(dashboardMode, resolvedUserId) : '';
+
+  const actions = audit ? (
+    <>
+      <MethodSheet isDemo={isDemoData} />
+      {dashboardMode === 'demo' ? <Button variant="quiet" size="sm" onClick={handleShare} aria-label="Copy share link"><Link2 aria-hidden="true" /><span className="hidden xl:inline">Copy share link</span></Button> : null}
+      <Button variant="secondary" size="sm" loading={downloading} onClick={handleDownloadReport} aria-label="Download report"><Download aria-hidden="true" /><span className="hidden xl:inline">Download report</span></Button>
+    </>
+  ) : null;
 
   return (
-    <div className="min-h-screen bg-ui-surface pt-12">
-      <Navbar userId={resolvedUserId || undefined} exchange={audit?.exchange} currentPage="dashboard" />
-      <main className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:px-5">
-        <h1 className="sr-only">Execution quality dashboard</h1>
+    <AppShell userId={shellUser} page={view} dataSource={audit ? (isDemoData ? 'synthetic-demo' : 'real-user') : null}
+      period={audit ? formatPeriodLabel(audit.period.start, audit.period.end) : null}
+      venue={audit ? VENUES[audit.exchange?.toLowerCase()] ?? audit.exchange : null} actions={actions}>
+      <h1 className="sr-only">Execution quality dashboard</h1>
 
-        {loading && <Loading />}
+      {loading && <Loading />}
 
-        {error && !loading && (
-          <Banner kind="refused" title="The audit could not be loaded" action={<Button variant="secondary" onClick={() => window.location.reload()}>Try again</Button>}>
-            {error}
-          </Banner>
-        )}
+      {error && !loading && (
+        <Banner kind="refused" title="The audit could not be loaded" action={<Button variant="secondary" onClick={() => window.location.reload()}>Try again</Button>}>
+          {error}
+        </Banner>
+      )}
 
-        {!audit && !loading && !error && dashboardMode === 'demo' && (
-          <EmptyState title="No demo audit found" action={<Link href="/" className="text-ui-ink">Return to the home page and choose a demo account</Link>}>
-            The demo account in the address was not found.
-          </EmptyState>
-        )}
+      {!audit && !loading && !error && dashboardMode === 'demo' && (
+        <EmptyState title="No demo audit found" action={<Link href="/" className="text-ui-ink">Return to the home page and choose a demo account</Link>}>
+          The demo account in the address was not found.
+        </EmptyState>
+      )}
 
-        {!audit && !loading && !error && dashboardMode === 'real' && <ConnectPrompt />}
+      {!audit && !loading && !error && dashboardMode === 'real' && <ConnectPrompt />}
 
-        {audit && !loading && (() => {
-          const v1Computed = audit.v1Computed !== false;
-          const headline = describeHeadline(ordersSummary, isDemoData);
-          const grade = gradeView(scoreV2.status, scoreV2.body);
-          const costVs = v2Body?.costVsExpected;
-          const cards = v1Computed ? buildComponentCards(audit.breakdown) : [];
-          const skipped = skippedNotice(audit.skippedTrades);
-          return (
-            <>
-              {dashboardMode === 'demo' && (
-                <Banner kind="demo" title="Sample data: real prices, synthetic trader"
-                  action={<Link href="/signup" className="text-sm text-ui-ink">Connect your exchange to score your own orders</Link>}>
-                  {DEMO_NOTE}
-                </Banner>
-              )}
+      {audit && !loading && (() => {
+        const v1Computed = audit.v1Computed !== false;
+        const cards = v1Computed ? buildComponentCards(audit.breakdown) : [];
+        const skipped = skippedNotice(audit.skippedTrades);
+        return (
+          <div className="flex flex-col gap-5">
+            {dashboardMode === 'demo' && view === 'overview' && (
+              <Banner kind="demo" title="Sample data: real prices, synthetic trader"
+                action={<Link href="/signup" className="text-[13px] text-ui-ink">Connect your exchange</Link>}>
+                {DEMO_NOTE}
+              </Banner>
+            )}
+            {downloadError && <Banner kind="refused" title="The report was not downloaded">{downloadError}</Banner>}
 
-              <Headline
-                grade={grade}
-                headline={headline}
-                sentence={costSentence(v2Body?.costVsExpected)}
-                insufficientReason={costInsufficientReason(v2Body?.costVsExpected)}
-                dataSource={isDemoData ? 'synthetic-demo' : 'real-user'}
+            {view === 'overview' && (
+              <Overview
+                grade={gradeView(scoreV2.status, scoreV2.body)}
+                headline={describeHeadline(ordersSummary, isDemoData)}
+                costVs={v2Body?.costVsExpected}
+                ordersBody={ordersSummary}
+                isDemo={isDemoData}
                 facts={scopeFacts(audit, audit.current)}
                 v1={{ grade: audit.fillGrade, score: audit.avgFillScore, basis: isDemoData ? undefined : 'rule-based, scoring v1' }}
-                v1Note={v2Body?.demo ? 'Kept unchanged. The measured grade above is the one that describes the orders shown now.' : null}
-                actions={<>
-                  {dashboardMode === 'demo' && <Button variant="secondary" onClick={handleShare}>Copy share link</Button>}
-                  <Button variant="secondary" loading={downloading} onClick={handleDownloadReport}>Download report</Button>
-                </>}
+                v1Note={v2Body?.demo ? 'Kept unchanged. The measured grade is the one that describes the orders shown now.' : null}
+                freshness={dashboardMode === 'real' ? <SyncFreshness accessToken={accessToken} refreshAccessToken={refreshAccessToken} /> : undefined}
               />
-              {downloadError && <Banner kind="refused" title="The report was not downloaded">{downloadError}</Banner>}
+            )}
 
-              <WhereMoneyWent ordersBody={ordersSummary} isDemo={isDemoData} />
-              <CostAgainstExpected c={costVs} />
-              {ordersSummary != null && <OrdersPanel body={ordersSummary} />}
+            {view === 'orders' && dashboardMode !== null && (
+              <OrdersView key={query} query={query} mode={dashboardMode} auth={auth} request={explainRequest} openOrderId={searchParams.get('order')} />
+            )}
+            {view === 'rules' && dashboardMode !== null && (
+              <RulesView key={query} query={query} readOnly={dashboardMode !== 'real'} request={explainRequest} />
+            )}
+            {view === 'rankings' && dashboardMode !== null && (
+              <RankingsView key={query} query={query} request={explainRequest} />
+            )}
 
-              {ordersSummary != null && dashboardMode !== null && (
-                <ExplainPanel
-                  key={`${dashboardMode}:${buildQuery(dashboardMode, resolvedUserId)}`}   // a new account starts with an empty panel
-                  query={buildQuery(dashboardMode, resolvedUserId)}
-                  readOnly={dashboardMode !== 'real'}
-                  request={explainRequest}
-                />
-              )}
+            {view === 'council' && (
+              <div className="flex flex-col gap-5">
+                <AgentCouncil userId={dashboardMode === 'real' ? undefined : audit.userId} accessToken={accessToken} symbol="BTCUSDT" mlBaseUrl={ML_URL} />
+                {dashboardMode === 'real' && <AskPanel mlBaseUrl={ML_URL} accessToken={accessToken} />}
+              </div>
+            )}
 
-              {dashboardMode === 'real' && <AskPanel mlBaseUrl={ML_URL} accessToken={accessToken} />}
-
-              <AgentCouncil
-                userId={dashboardMode === 'real' ? undefined : audit.userId}
-                accessToken={accessToken}
-                symbol="BTCUSDT"
-                mlBaseUrl={ML_URL}
-              />
-
-              {dashboardMode === 'real' && <SyncFreshness accessToken={accessToken} refreshAccessToken={refreshAccessToken} />}
-              {dashboardMode === 'real' && <CsvCheckPanel mlBaseUrl={ML_URL} accessToken={accessToken} refreshAccessToken={refreshAccessToken} />}
-
-              <EvidencePanel mode={dashboardMode} auth={auth} />
-
-              <ScoreRecord
-                key={`${dashboardMode}:${v2Body?.integrityHash ?? 'none'}`}   // a new hash resets "Verified"
-                status={scoreV2.status}
-                body={scoreV2.body}
-                onVerify={dashboardMode === 'real' ? async () => {
-                  const r = await authFetch(`${apiBase()}/audit/verify`, {}, { accessToken, refreshAccessToken });
-                  return { status: r.status, body: await r.json().catch(() => null) };
-                } : undefined}
-              />
-
-              <Panel id="v1-details" title="Rule-based details (scoring v1)" description="The earlier, rule-based grade and its components. The measured grade above is the one the headline uses.">
-                <Disclosure summary="Show the rule-based components">
-                  {v1Computed ? (
-                    <div className="flex flex-col gap-4">
-                      {skipped ? <p data-testid="skipped-trades" className="text-sm text-ui-graphite">{skipped}.</p> : null}
-                      <dl className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
-                        {cards.map((c) => (
-                          <div key={c.key} title={c.tooltip} className="border-b border-ui-rule py-1">
-                            <dt className="text-sm text-ui-graphite">{c.label}, weight {c.weight}</dt>
-                            <dd className="text-ui-ink">{c.score === '—' ? 'No score' : `${c.score} of 100`}, {c.value}<span className="block text-sm text-ui-graphite">{c.description}</span></dd>
-                          </div>
-                        ))}
-                      </dl>
-                      <p className="text-sm text-ui-graphite">Best symbol: {audit.breakdown.bestSymbol}. Worst symbol: {audit.breakdown.worstSymbol}.</p>
-                    </div>
-                  ) : (
-                    <p data-testid="not-computed" className="max-w-[68ch] text-ui-graphite">
-                      Not computed for this data. The rule-based components need per-trade fields that the rebuilt trades do not have. The measured components are in the record behind the grade.
-                    </p>
-                  )}
-                </Disclosure>
-              </Panel>
-            </>
-          );
-        })()}
-      </main>
-    </div>
+            {view === 'evidence' && (
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+                <div className="lg:col-span-7"><EvidencePanel mode={dashboardMode} auth={auth} /></div>
+                <div className="flex flex-col gap-5 lg:col-span-5">
+                  <ScoreRecord
+                    key={`${dashboardMode}:${v2Body?.integrityHash ?? 'none'}`}   // a new hash resets "Verified"
+                    status={scoreV2.status}
+                    body={scoreV2.body}
+                    onVerify={dashboardMode === 'real' ? async () => {
+                      const r = await authFetch(`${apiBase()}/audit/verify`, {}, { accessToken, refreshAccessToken });
+                      return { status: r.status, body: await r.json().catch(() => null) };
+                    } : undefined}
+                  />
+                  <Panel id="v1-details" title="Rule-based details (scoring v1)" description="The earlier, rule-based grade and its components.">
+                    <Disclosure summary="Show the rule-based components">
+                      {v1Computed ? (
+                        <div className="flex flex-col gap-4">
+                          {skipped ? <p data-testid="skipped-trades" className="text-[13px] text-ui-graphite">{skipped}.</p> : null}
+                          <dl className="grid gap-x-8 gap-y-3 sm:grid-cols-2">
+                            {cards.map((c) => (
+                              <div key={c.key} title={c.tooltip} className="border-b border-ui-rule py-1">
+                                <dt className="text-[13px] text-ui-graphite">{c.label}, weight {c.weight}</dt>
+                                <dd className="text-ui-ink">{c.score === '—' ? 'No score' : `${c.score} of 100`}, {c.value}<span className="block text-[13px] text-ui-graphite">{c.description}</span></dd>
+                              </div>
+                            ))}
+                          </dl>
+                          <p className="text-[13px] text-ui-graphite">Best symbol: {audit.breakdown.bestSymbol}. Worst symbol: {audit.breakdown.worstSymbol}.</p>
+                        </div>
+                      ) : (
+                        <p data-testid="not-computed" className="max-w-[68ch] text-ui-graphite">
+                          Not computed for this data. The rule-based components need per-trade fields that the rebuilt trades do not have. The measured components are in the record behind the grade.
+                        </p>
+                      )}
+                    </Disclosure>
+                  </Panel>
+                  {dashboardMode === 'real' && <CsvCheckPanel mlBaseUrl={ML_URL} accessToken={accessToken} refreshAccessToken={refreshAccessToken} />}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+    </AppShell>
   );
 }
 
 export default function Dashboard() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-ui-surface pt-12">
-        <Navbar currentPage="dashboard" />
-        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-5"><Loading /></main>
-      </div>
-    }>
+    <Suspense fallback={<div className="min-h-dvh bg-ui-surface" />}>
       <DashboardContent />
     </Suspense>
   );

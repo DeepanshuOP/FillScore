@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Navbar from '../components/Navbar';
+import { AppShell } from '../components/shell/AppShell';
 import { EvidencePanel } from '../components/EvidencePanel';
 import { useAuth } from '../context/AuthContext';
 import { disconnectExchange, fetchAccountExport, deleteAccount } from '../lib/accountActions';
@@ -112,15 +112,15 @@ export default function SettingsPage() {
   if (isLoading || !user) return null;
 
   return (
-    <div className="min-h-screen bg-ui-surface pt-12">
-      <Navbar currentPage="settings" />
-      {/* the page column is the navbar's (max-w-6xl); the forms keep a readable measure inside it, on its left edge */}
-      <main className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:px-5 [&>*]:max-w-3xl">
-        <h1 className="text-[1.75rem] leading-9 font-semibold text-ui-ink sm:text-[2.5rem] sm:leading-[1.15]">Account settings</h1>
-
+    <AppShell userId={null} page="settings" title="Settings">
+      <div className="flex max-w-3xl flex-col gap-6">
         {status && <Banner kind="info" title={status} />}
 
-        <Panel id="settings-disconnect" title="Disconnect an exchange" description="Deletes the stored read-only key. Trades already imported stay until you delete your account.">
+        <Panel id="settings-account" title="Account" description="The account you are signed in with.">
+          <p className="text-sm text-ui-ink">{user.email ?? 'Signed in with a provider that shared no email address.'}</p>
+        </Panel>
+
+        <Panel id="settings-disconnect" title="Connected exchanges" description="Disconnecting deletes the stored read-only key. Trades already imported stay until you delete your account.">
           <div className="flex flex-wrap gap-3">
             {EXCHANGES.map((ex) => (
               <Button key={ex.id} variant="destructive" disabled={busy} confirm={{ label: `Disconnect ${ex.name} and delete its key` }} onClick={() => onDisconnect(ex.id)}>Disconnect {ex.name}</Button>
@@ -138,9 +138,9 @@ export default function SettingsPage() {
           description="A key lets an AI client that speaks the Model Context Protocol read your stored measurements of past executions through the FillScore MCP server. It can only read, only the six tools of that server, and only your own account. It expires, you can revoke it at any time, and you can have 5 active keys. FillScore keeps a hash of the key, not the key, so a key is shown once.">
           <div className="flex flex-col gap-6">
             {newKey && (
-              <div role="alert" className="rounded-ui border border-ui-edge bg-ui-raised p-4">
+              <div role="alert" className="rounded-[12px] bg-ui-raised p-4 ring-1 ring-inset ring-ui-edge">
                 <p className="text-sm font-semibold text-ui-ink">Copy this key now. It is not shown again.</p>
-                <pre data-testid="new-api-key" className="mt-2 overflow-x-auto whitespace-pre-wrap break-all font-[family-name:var(--ui-mono)] text-[0.8125rem] text-ui-ink">
+                <pre data-testid="new-api-key" className="mt-2 overflow-x-auto whitespace-pre-wrap break-all font-ui-mono text-[0.8125rem] text-ui-ink">
                   {mcpConfigSnippet(newKey, mcpApiUrl(apiBase(), typeof window !== 'undefined' ? window.location.origin : ''))}
                 </pre>
                 <Button className="mt-3" variant="secondary" onClick={() => setNewKey(null)}>I have copied it</Button>
@@ -155,7 +155,7 @@ export default function SettingsPage() {
                     <li key={k.id} className="flex flex-wrap items-center justify-between gap-3 border-t border-ui-rule py-3 text-sm">
                       <span>
                         <span className="font-semibold text-ui-ink">{k.name}</span>{' '}
-                        <code className="font-[family-name:var(--ui-mono)] text-[0.8125rem] text-ui-ink">{k.prefix}…</code>
+                        <code className="font-ui-monotext-[0.8125rem] text-ui-ink">{k.prefix}…</code>
                         <span className="block text-ui-graphite">
                           {st === 'active' ? `Expires ${fmtDate(k.expiresAt)}` : st === 'revoked' ? `Revoked ${fmtDate(k.revokedAt)}` : `Expired ${fmtDate(k.expiresAt)}`}
                           {`. Created ${fmtDate(k.createdAt)}. Last used ${fmtDate(k.lastUsedAt)}.`}
@@ -175,7 +175,7 @@ export default function SettingsPage() {
               <div className="flex flex-col gap-1">
                 <label htmlFor="key-days" className="text-sm font-medium text-ui-ink">Expires after</label>
                 <select id="key-days" value={keyDays} onChange={(e) => setKeyDays(Number(e.target.value))}
-                  className="w-full rounded-ui border border-ui-edge bg-ui-raised px-3 py-2 text-ui-ink">
+                  className="h-10 w-full rounded-[10px] bg-ui-raised px-3 text-sm text-ui-ink outline-none ring-1 ring-inset ring-ui-edge focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]">
                   <option value={30}>30 days</option>
                   <option value={90}>90 days</option>
                   <option value={180}>180 days</option>
@@ -202,7 +202,7 @@ export default function SettingsPage() {
             </div>
           </div>
         </Panel>
-      </main>
-    </div>
+      </div>
+    </AppShell>
   );
 }

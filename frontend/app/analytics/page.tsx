@@ -1,32 +1,34 @@
 "use client";
 
-import { useEffect, useState, Suspense, useMemo } from "react";
+import { useEffect, useState, Suspense, useMemo, type ReactNode } from "react";
+import dynamic from "next/dynamic";
+import { Info } from "lucide-react";
 import { makerRatioNote } from '../utils/makerAdvice';
 import { useRouter, useSearchParams } from "next/navigation";
-import Navbar from "../components/Navbar";
+import { AppShell } from "../components/shell/AppShell";
+import { Banner } from "../ui/Banner";
+import { Button } from "../ui/Button";
+import { EmptyState } from "../ui/EmptyState";
+import { Panel } from "../ui/Panel";
+import { ValueState } from "../ui/ValueState";
+import { formatUsd, formatSignedBps } from "../ui/format";
+import { hueCss, hueShare } from "../ui/hue";
 import WhaleCorrelation from "./WhaleCorrelation";
-import NotComputed from "../components/NotComputed";
 import { isNotComputed, tradeSlippageBps } from "../utils/notComputed";
-import MarkoutCard from "./MarkoutCard";
 import { bestHourLabel, worstHourLabel, weakHourLabel } from "./heatmapCopy";
 import type { MarkoutHorizon } from "../utils/markoutCopy";
 import { useAuth } from "../context/AuthContext";
 import { authFetch } from "../lib/authFetch";
 import { resolveIdentityState } from "../utils/identityResolver";
 import { buildQuery } from "../utils/queryBuilder";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  ReferenceLine,
-  PieChart,
-  Pie,
-} from "recharts";
 import { apiBase } from '../lib/apiBase';
+
+// recharts is heavy: every chart module is loaded on demand, with a plain block in its place.
+const chartPlaceholder = () => <div className="h-full w-full rounded-[10px] bg-ui-overlay/60" />;
+const ScoreDistributionChart = dynamic(() => import("./AnalyticsCharts").then((m) => m.ScoreDistributionChart), { ssr: false, loading: chartPlaceholder });
+const SlippageChart = dynamic(() => import("./AnalyticsCharts").then((m) => m.SlippageChart), { ssr: false, loading: chartPlaceholder });
+const HourlyChart = dynamic(() => import("./AnalyticsCharts").then((m) => m.HourlyChart), { ssr: false, loading: chartPlaceholder });
+const MarkoutCard = dynamic(() => import("./MarkoutCard"), { ssr: false, loading: () => <div className="h-[320px] rounded-[16px] bg-ui-overlay/60" /> });
 
 // TYPES
 interface HeatmapCell {
@@ -88,43 +90,20 @@ interface SymbolTableRow {
   feeDragPercent: number;
 }
 
-// HELPERS
-const getCellColor = (count: number, avgScore: number) => {
-  if (count === 0) return "rgba(255,255,255,0.02)";
-
-  const base =
-    avgScore >= 80
-      ? "74,222,128" // green
-      : avgScore >= 60
-        ? "252,211,77" // amber
-        : avgScore >= 40
-          ? "249,115,22" // orange
-          : "239,68,68"; // red
-
-  // normalize density
-  const density = Math.min(count / 5, 1);
-
-  const opacity = 0.2 + density * 0.6;
-
-  return `rgba(${base},${opacity})`;
-};
-
-const scoreColorHex = (score: number) => {
-  if (score >= 80) return "#4ade80";
-  if (score >= 60) return "#fcd34d";
-  if (score >= 40) return "#f97316";
-  return "#ef4444";
-};
-
-const gradeColorHex = (grade: string) => {
-  if (grade.startsWith("A")) return "#4ade80";
-  if (grade.startsWith("B")) return "#fcd34d";
-  if (grade.startsWith("C")) return "#f97316";
-  return "#ef4444";
-};
-
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
+const VENUE_NAME: Record<string, string> = { binance: 'Binance', bybit: 'Bybit', okx: 'OKX' };
+
+/** A chart's numbers as a table for screen readers (every chart has a text form). */
+function ChartTable({ caption, head, rows }: { caption: string; head: [string, string]; rows: [string | number, string | number][] }) {
+  return (
+    <table className="sr-only">
+      <caption>{caption}</caption>
+      <thead><tr><th scope="col">{head[0]}</th><th scope="col">{head[1]}</th></tr></thead>
+      <tbody>{rows.map(([a, b]) => <tr key={String(a)}><th scope="row">{a}</th><td>{b}</td></tr>)}</tbody>
+    </table>
+  );
+}
 
 function AnalyticsContent() {
   const searchParams = useSearchParams();
@@ -134,31 +113,33 @@ function AnalyticsContent() {
   const [tradeData, setTradeData] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+
   const { accessToken, isLoading: authLoading, refreshAccessToken } = useAuth();
   const [dashboardMode, setDashboardMode] = useState<'demo' | 'real' | null>(null);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
+  const [urlUserId, setUrlUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
-    const urlUserId = searchParams.get("userId");
+    const urlUser = searchParams.get("userId");
     const storageUserId = localStorage.getItem("userId");
-    
-    const identity = resolveIdentityState(urlUserId, storageUserId, accessToken, searchParams.get('sample') === '1');
-    
+
+    const identity = resolveIdentityState(urlUser, storageUserId, accessToken, searchParams.get('sample') === '1');
+
     if (identity.mode === "redirect") {
       router.push("/");
       return;
     }
-    
+
     if (identity.shouldClearStorage) localStorage.removeItem("userId");
     if (identity.shouldSetStorage && identity.effectiveUserId) localStorage.setItem("userId", identity.effectiveUserId);
-    
+
     setDashboardMode(identity.mode);
     setResolvedUserId(identity.effectiveUserId);
+    setUrlUserId(urlUser);
 
     const fetchFn = identity.mode === "real" ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken }) : fetch;
-    
+
     const analyticsQuery = buildQuery(identity.mode, identity.effectiveUserId);
     const tradesQuery = buildQuery(identity.mode, identity.effectiveUserId, { limit: '10000' });
 
@@ -202,7 +183,7 @@ function AnalyticsContent() {
 
   const slippageBuckets = useMemo(() => {
     if (!tradeData || tradeData.length === 0) return [];
-    
+
     const buckets: Record<string, number> = {};
     tradeData.forEach(t => {
       const slip = tradeSlippageBps(t);
@@ -245,35 +226,26 @@ function AnalyticsContent() {
 
   const feeStats = useMemo(() => {
     if (!tradeData || tradeData.length === 0) {
-      return { makerCount: 0, takerCount: 0, makerRatio: 0, feeDragPercent: 0, pieData: [] };
+      return { makerCount: 0, takerCount: 0, makerRatio: 0, feeDragPercent: 0, any: false };
     }
-    
+
     let makerCount = 0;
     let takerCount = 0;
     let totalFees = 0;
     let totalNotional = 0;
-    
+
     tradeData.forEach(t => {
       if (t.isMaker) makerCount++;
       else takerCount++;
-      
+
       totalFees += Number(t.feePaid ?? t.fee ?? 0);
       totalNotional += Number(t.notionalValue ?? t.notional ?? 0);
     });
-    
+
     const makerRatio = (makerCount / tradeData.length) * 100;
     const feeDragPercent = totalNotional > 0 ? (totalFees / totalNotional) * 100 : 0;
-    
-    return {
-      makerCount,
-      takerCount,
-      makerRatio,
-      feeDragPercent,
-      pieData: [
-        { name: 'Maker', value: makerCount, fill: '#4ade80' },
-        { name: 'Taker', value: takerCount, fill: '#f97316' }
-      ]
-    };
+
+    return { makerCount, takerCount, makerRatio, feeDragPercent, any: true };
   }, [tradeData]);
 
   const symbolTableData = useMemo(() => {
@@ -322,392 +294,203 @@ function AnalyticsContent() {
 
   if (!dashboardMode || (dashboardMode === 'demo' && !resolvedUserId)) return null;
 
+  const exchange = tradeData[0]?.exchange;
+  const shell = (children: ReactNode) => (
+    <AppShell userId={dashboardMode === 'demo' ? resolvedUserId : (urlUserId ?? null)} page="analytics"
+      dataSource={dashboardMode === 'demo' ? 'synthetic-demo' : 'real-user'}
+      venue={exchange ? (VENUE_NAME[exchange.toLowerCase()] ?? exchange) : null}>
+      {children}
+    </AppShell>
+  );
+
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-transparent text-[#f0ece4] font-mono text-sm">
-        Loading analytics...
+    return shell(
+      <div role="status" aria-label="Loading analytics" className="flex flex-col gap-5">
+        <div className="h-8 w-56 rounded-[8px] bg-ui-overlay/60" />
+        <div className="h-64 rounded-[16px] bg-ui-overlay/60" />
+        <div className="h-64 rounded-[16px] bg-ui-overlay/60" />
       </div>
     );
   }
 
   if (error || !data) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-transparent text-[#f0ece4] font-mono">
-        <div className="text-red-500 mb-4">{error || "Failed to load analytics"}</div>
-        <button
-          onClick={() => router.push("/")}
-          className="px-4 py-2 border border-[#a78b71]/20 hover:bg-[#a78b71]/10 rounded transition-colors"
-        >
-          Return Home
-        </button>
-      </div>
+    return shell(
+      <Banner kind="refused" title={error || "Failed to load analytics"} action={<Button variant="secondary" size="sm" onClick={() => router.push("/")}>Return home</Button>} />
     );
   }
-  
+
   if (dashboardMode === 'real' && !data) {
-    return (
-      <div className="min-h-screen text-[#f0ece4] px-[24px] pt-[64px] pb-8 font-sans">
-        <Navbar userId={undefined} currentPage="analytics" />
-        <div className="flex flex-col items-center justify-center mt-32">
-          <div className="text-3xl text-[#585450] mb-4">◎</div>
-          <div className="font-playfair italic text-lg text-[#888078] mb-4">No analytics data found</div>
-        </div>
-      </div>
-    );
+    return shell(<EmptyState title="No analytics data found" />);
   }
 
   if (isNotComputed(data)) {
     // A rebuilt demo (decision 11): every chart on this page reads per-trade v1 fields, so none is drawn.
-    return (
-      <div className="min-h-screen text-[#f0ece4] px-[24px] pt-[64px] pb-8 font-sans">
-        <div className="w-full space-y-[32px] mx-auto">
-          <Navbar userId={resolvedUserId || undefined} exchange={tradeData[0]?.exchange || 'binance'} currentPage="analytics" />
-          <NotComputed
-            title="Analytics"
-            detail={`The heatmap, symbol breakdown, score distribution and markouts need per-trade v1 fields, and these ${data.totalTrades} trades do not have them. The measured views are on the dashboard.`}
-          />
-        </div>
-      </div>
+    return shell(
+      <section data-testid="not-computed" aria-label="Analytics: not computed for this data" className="panel p-5 sm:p-6">
+        <h2 className="mb-3 text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">Analytics</h2>
+        <ValueState state="not-computed" label="Analytics"
+          reason={`The heatmap, symbol breakdown, score distribution and markouts need per-trade v1 fields, and these ${data.totalTrades} trades do not have them. The measured views are on the dashboard.`} />
+      </section>
     );
   }
 
   const totalTrades = data.totalTrades;
+  const makerShare = feeStats.makerCount + feeStats.takerCount > 0 ? (feeStats.makerCount / (feeStats.makerCount + feeStats.takerCount)) * 100 : 0;
 
-  return (
-    <div className="min-h-screen text-[#f0ece4] px-[24px] pt-[64px] pb-8 font-sans">
-      <div className="w-full space-y-[32px] mx-auto">
-
-        {/* HEADER */}
-        <Navbar userId={resolvedUserId || undefined} exchange={tradeData[0]?.exchange || 'binance'} currentPage="analytics" />
-
-        <div style={{ marginBottom: '24px' }}>
-          <h1 style={{
-            fontSize: '11px',
-            textTransform: 'uppercase',
-            letterSpacing: '0.15em',
-            color: 'rgba(255,255,255,0.4)',
-            marginBottom: '4px'
-          }}>
-            Execution Analytics
-          </h1>
-          <p style={{
-            fontSize: '13px',
-            color: 'rgba(255,255,255,0.7)'
-          }}>
-            {dashboardMode === 'demo' ? `${resolvedUserId} · ` : ''}{totalTrades} trades analysed
-          </p>
-        </div>
-
-        {/* SECTION 1 — ACTIVITY HEATMAP (full width) */}
-        <section className="w-full bg-[rgba(26,25,23,0.8)] border border-[rgba(255,255,255,0.06)] rounded-[4px] p-[20px] overflow-x-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 mb-6">
-            <h2 className="text-[11px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)]">Activity Heatmap (UTC)</h2>
-            <div className="flex flex-col items-start md:items-end gap-1">
-              {bestCell && (
-                <div className="text-xs text-[#888078]">
-                  <span className="text-[#a78b71]">{bestHourLabel(DAYS, bestCell)}</span>
-                </div>
-              )}
-              {worstCell && (
-                <div className="text-xs text-[#888078]">
-                  <span className="text-[#f97316]">{worstHourLabel(DAYS, worstCell)}</span>
-                </div>
-              )}
-              {weakZone && (
-                <div className="text-xs text-[#ef4444] mt-0.5">
-                  {weakHourLabel(DAYS, weakZone)}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="min-w-[600px]">
-            {/* 25 columns: 1 for day label, 24 for hours */}
-            <div className="grid grid-cols-[30px_repeat(24,_1fr)] md:grid-cols-[40px_repeat(24,_1fr)] gap-1 mb-2 relative">
-              <div /> {/* Empty top-left */}
-              {HOURS.map((h) => (
-                <div key={h} className="text-center text-[9px] md:text-[10px] text-[#585450]">
-                  <span className="hidden md:inline">{h}</span>
-                  <span className="md:hidden">{h % 4 === 0 ? h : ""}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex flex-col gap-1">
-              {DAYS.map((dayName, dayIndex) => (
-                <div key={dayName} className="grid grid-cols-[30px_repeat(24,_1fr)] md:grid-cols-[40px_repeat(24,_1fr)] gap-1 items-center hover:bg-[#ffffff03] rounded pr-1 transition-colors">
-                  <div className="text-[9px] md:text-[10px] text-[#888078] font-medium">{dayName}</div>
-                  {HOURS.map((h) => {
-                    const cell = heatmapMap[`${dayIndex}-${h}`] || {
-                      day: dayIndex, hour: h, count: 0, avgScore: 0
-                    };
-                    return (
-                      <div
-                        key={`${dayIndex}-${h}`}
-                        className="aspect-square rounded-[2px] transition-all duration-200 hover:scale-[1.15] hover:shadow-[0_0_8px_rgba(167,139,113,0.25)] hover:z-10 cursor-crosshair group relative bg-clip-padding"
-                        style={{
-                          backgroundColor: getCellColor(cell.count, cell.avgScore),
-                          border: cell.avgScore < 50 && cell.count >= 2
-                            ? '1px solid rgba(239,68,68,0.6)'
-                            : '1px solid transparent'
-                        }}
-                      >
-                        {/* Tooltip */}
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-20 w-max bg-[#0f0f0f]/90 backdrop-blur-sm text-xs border border-[#a78b71]/20 px-2 py-1 rounded shadow-xl whitespace-nowrap pointer-events-none">
-                          <span className="text-[#a78b71] font-medium">{dayName} {h.toString().padStart(2, '0')}:00</span> — {cell.count} trades, avg score {cell.avgScore}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Legend */}
-          <div className="mt-8 flex flex-wrap items-center gap-6 text-[10px] text-[#888078] uppercase tracking-wider min-w-[600px]">
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-[2px] bg-[#4ade80]"></div>High efficiency</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-[2px] bg-[#fcd34d]"></div>Moderate</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-[2px] bg-[#f97316]"></div>Weak</div>
-            <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded-[2px] bg-[#ef4444]"></div>Poor execution</div>
-            <div className="flex items-center gap-1.5 pl-4 border-l border-[rgba(255,255,255,0.06)]"><div className="w-2.5 h-2.5 rounded-[2px] bg-[rgba(255,255,255,0.02)] border border-[#888078] border-opacity-20"></div>Faint &nbsp;&mdash;&nbsp; Low activity</div>
-          </div>
-        </section>
-
-        <MarkoutCard rows={data.markouts} />
-
-        {/* SECTION 2 — TWO-COLUMN GRID (below heatmap) */}
-        <div className="grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-[24px]">
-
-          {/* SYMBOL BREAKDOWN (TABLE) */}
-          <section
-            className="overflow-x-auto flex flex-col"
-            style={{
-              background: 'rgba(26, 25, 23, 0.8)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '4px',
-              padding: '20px'
-            }}
-          >
-            <h2 className="text-[11px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-6">Symbol Breakdown</h2>
-            <table className="w-full text-left border-collapse min-w-[500px]">
-              <thead>
-                <tr className="border-b border-[rgba(255,255,255,0.06)] text-[10px] uppercase tracking-widest text-[#888078]">
-                  <th className="pb-3 font-medium">Symbol</th>
-                  <th className="pb-3 font-medium text-right">Notional</th>
-                  <th className="pb-3 font-medium text-right">Avg Score</th>
-                  <th className="pb-3 font-medium text-right">Maker %</th>
-                  <th className="pb-3 font-medium text-right">Slippage (bps)</th>
-                  <th className="pb-3 font-medium text-right">Fee Drag %</th>
-                </tr>
-              </thead>
-              <tbody className="text-xs font-mono text-[#f0ece4]">
-                {symbolTableData.map((row: SymbolTableRow) => (
-                  <tr key={row.symbol} className="border-b border-[rgba(255,255,255,0.04)] hover:bg-[#ffffff03] transition-colors">
-                    <td className="py-3 font-bold">{row.symbol}</td>
-                    <td className="py-3 text-right text-[#b8b0a6]">${Math.round(row.notional).toLocaleString()}</td>
-                    <td className="py-3 text-right font-bold" style={{ color: scoreColorHex(row.avgScore) }}>
-                      {row.avgScore}
-                    </td>
-                    <td className="py-3 text-right text-[#b8b0a6]">{row.makerRatio.toFixed(1)}%</td>
-                    <td className={`py-3 text-right font-bold ${row.avgSlippageBps !== null && Math.abs(row.avgSlippageBps) > 5 ? 'text-[#ef4444]' : 'text-[#b8b0a6]'}`}>
-                      {row.avgSlippageBps !== null ? row.avgSlippageBps.toFixed(1) : '—'}
-                    </td>
-                    <td className={`py-3 text-right font-bold ${row.feeDragPercent > 0.05 ? 'text-[#ef4444]' : 'text-[#b8b0a6]'}`}>
-                      {row.feeDragPercent.toFixed(4)}%
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </section>
-
-          {/* SCORE DISTRIBUTION */}
-          <section
-            className="flex flex-col"
-            style={{
-              background: 'rgba(26, 25, 23, 0.8)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: '4px',
-              padding: '20px'
-            }}
-          >
-            <h2 className="text-[11px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-6">Score Distribution</h2>
-            <div style={{ height: '220px', width: '100%' }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.scoreDistribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis
-                    dataKey="grade"
-                    tick={{ fill: "#888078", fontSize: 10 }}
-                    tickLine={false}
-                    axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-                  />
-                  <YAxis
-                    tick={{ fill: "#888078", fontSize: 10 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "rgba(255,255,255,0.03)" }}
-                    contentStyle={{ backgroundColor: "#0f0f0f", borderColor: "rgba(255,255,255,0.06)", color: "#f0ece4", borderRadius: "4px" }}
-                    itemStyle={{ color: "#f0ece4" }}
-                    formatter={(value: unknown) => [`${String(value)} trades`, "Count"]}
-                  />
-                  <Bar dataKey="count" radius={[2, 2, 0, 0]}>
-                    {data.scoreDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={gradeColorHex(entry.grade)} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
-
-        </div>
-
-        {/* SECTION 3 — FULL WIDTH: SLIPPAGE DISTRIBUTION HISTOGRAM */}
-        <section className="w-full bg-[rgba(26,25,23,0.8)] border border-[rgba(255,255,255,0.06)] rounded-[4px] p-[20px] flex flex-col">
-          <h2 className="text-[11px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-6">Slippage Distribution (5bps buckets)</h2>
-          <div className="h-[250px] w-full text-xs">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={slippageBuckets} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <XAxis
-                  dataKey="bucket"
-                  tick={{ fill: "#888078", fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-                />
-                <YAxis
-                  tick={{ fill: "#888078", fontSize: 10 }}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <Tooltip
-                  cursor={{ fill: "rgba(255,255,255,0.03)" }}
-                  contentStyle={{ backgroundColor: "#0f0f0f", borderColor: "rgba(255,255,255,0.06)", color: "#f0ece4", borderRadius: "4px" }}
-                  itemStyle={{ color: "#f0ece4" }}
-                  formatter={(value: unknown) => [`${String(value)} trades`, "Count"]}
-                />
-                <Bar dataKey="count" fill="#a78b71" radius={[2, 2, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
-
-        {/* SECTION 4 — TWO-COLUMN GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[24px]">
-
-          {/* FEE DRAG ANALYSIS (donut + stats) */}
-          <section className="bg-[rgba(26,25,23,0.8)] border border-[rgba(255,255,255,0.06)] rounded-[4px] p-[20px] flex flex-col">
-            <h2 className="text-[11px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-6">Fee Drag Analysis</h2>
-            <div className="flex flex-col md:flex-row items-center gap-8 flex-1">
-              <div className="h-[200px] w-full md:w-1/2 text-xs">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={feeStats.pieData}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                      stroke="none"
-                    >
-                      {feeStats.pieData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={{ backgroundColor: "#0f0f0f", borderColor: "rgba(255,255,255,0.06)", color: "#f0ece4", borderRadius: "4px" }}
-                      itemStyle={{ color: "#f0ece4" }}
-                      formatter={(value: unknown) => [`${String(value)} trades`, "Count"]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              
-              <div className="w-full md:w-1/2 flex flex-col gap-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-[#0f0f0f] border border-[rgba(255,255,255,0.06)] p-4 rounded-sm flex flex-col items-center justify-center">
-                    <div className="text-[#888078] text-[10px] uppercase tracking-widest mb-1">Fee Drag</div>
-                    <div className="text-[#f97316] text-xl font-bold">{feeStats.feeDragPercent.toFixed(4)}%</div>
-                  </div>
-                  <div className="bg-[#0f0f0f] border border-[rgba(255,255,255,0.06)] p-4 rounded-sm flex flex-col items-center justify-center">
-                    <div className="text-[#888078] text-[10px] uppercase tracking-widest mb-1">Maker Ratio</div>
-                    <div className="text-[#4ade80] text-xl font-bold">{feeStats.makerRatio.toFixed(1)}%</div>
-                  </div>
-                </div>
-                <div className="text-xs text-[#a78b71] bg-[rgba(167,139,113,0.05)] border border-[rgba(167,139,113,0.2)] p-3 rounded-sm flex items-start gap-2">
-                  <span className="mt-0.5">◈</span>
-                  <p>{makerRatioNote(feeStats.makerRatio)}</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* HOURLY PERFORMANCE */}
-          <section className="bg-[rgba(26,25,23,0.8)] border border-[rgba(255,255,255,0.06)] rounded-[4px] p-[20px] flex flex-col">
-            <h2 className="text-[11px] uppercase tracking-[0.12em] text-[rgba(255,255,255,0.4)] mb-6">Hourly Performance</h2>
-            <div className="h-[250px] w-full text-xs flex-1">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={sortedHourly} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <XAxis
-                    dataKey="hour"
-                    tick={{ fill: "#888078", fontSize: 10 }}
-                    tickLine={false}
-                    axisLine={{ stroke: "rgba(255,255,255,0.06)" }}
-                  />
-                  <YAxis
-                    domain={[0, 100]}
-                    tick={{ fill: "#888078", fontSize: 10 }}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <Tooltip
-                    cursor={{ fill: "rgba(255,255,255,0.03)" }}
-                    contentStyle={{ backgroundColor: "#0f0f0f", borderColor: "rgba(255,255,255,0.06)", color: "#f0ece4", borderRadius: "4px", padding: "8px 12px" }}
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const item = payload[0].payload as HourlyScore;
-                        return (
-                          <div className="bg-[#0f0f0f] border border-[rgba(255,255,255,0.06)] p-2 md:p-3 rounded shadow-xl text-[#b8b0a6] text-[11px] md:text-xs">
-                            <div className="text-[#f0ece4] mb-1.5 pb-1.5 border-b border-[rgba(255,255,255,0.06)]">{item.hour.toString().padStart(2, '0')}:00 UTC</div>
-                            <div className="mb-0.5">Avg score: <span style={{ color: scoreColorHex(item.avgScore) }} className="font-bold">{item.avgScore}</span></div>
-                            <div>{item.count} trades</div>
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <ReferenceLine y={75} stroke="#a78b71" strokeDasharray="3 3" opacity={0.3} />
-                  <Bar dataKey="avgScore" radius={[2, 2, 0, 0]}>
-                    {sortedHourly.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={scoreColorHex(entry.avgScore)} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
-
-        </div>
-
-        {/* SECTION 5 — WHALE CORRELATION */}
-        <WhaleCorrelation userId={resolvedUserId} dashboardMode={dashboardMode} />
-
+  return shell(
+    <div className="flex flex-col gap-5">
+      <div>
+        <h2 className="text-[1.25rem] leading-7 font-semibold tracking-[-0.015em] text-ui-ink">Execution analytics</h2>
+        <p className="mt-0.5 text-[13px] text-ui-graphite">
+          {dashboardMode === 'demo' ? `${resolvedUserId}, ` : ''}{totalTrades} trades analysed
+        </p>
       </div>
+
+      <Panel title="Activity heatmap (UTC)" description="Average fill score by weekday and hour. A deeper cell is a higher average score." bodyClassName="overflow-x-auto">
+        <div className="min-w-[600px]">
+          <div className="mb-1 grid grid-cols-[30px_repeat(24,_1fr)] gap-1 md:grid-cols-[40px_repeat(24,_1fr)]">
+            <div />
+            {HOURS.map((h) => (
+              <div key={h} className="text-center text-[11px] text-ui-graphite">
+                <span className="hidden md:inline">{h}</span>
+                <span className="md:hidden">{h % 4 === 0 ? h : ""}</span>
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-col gap-1">
+            {DAYS.map((dayName, dayIndex) => (
+              <div key={dayName} className="grid grid-cols-[30px_repeat(24,_1fr)] items-center gap-1 md:grid-cols-[40px_repeat(24,_1fr)]">
+                <div className="text-[11px] text-ui-graphite">{dayName}</div>
+                {HOURS.map((h) => {
+                  const cell = heatmapMap[`${dayIndex}-${h}`];
+                  const when = `${dayName} ${h.toString().padStart(2, '0')}:00 UTC`;
+                  const has = !!cell && cell.count > 0;
+                  const label = has ? `${when}: ${cell.count} trades, average score ${cell.avgScore}` : `${when}: insufficient data, no fills`;
+                  return (
+                    <div key={`${dayIndex}-${h}`} role="img" aria-label={label} title={label}
+                      className={has ? "aspect-square rounded-[3px]" : "aspect-square rounded-[3px] border border-dashed border-ui-edge"}
+                      style={has ? { backgroundColor: hueCss(hueShare(cell.avgScore / 100)) } : undefined} />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13px] text-ui-graphite">
+            <span className="inline-flex items-center gap-2">
+              Lower average score
+              {[0, 0.5, 1].map((t) => <span key={t} aria-hidden="true" className="size-3 rounded-[3px]" style={{ backgroundColor: hueCss(hueShare(t)) }} />)}
+              Higher average score
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span aria-hidden="true" className="size-3 rounded-[3px] border border-dashed border-ui-edge" />
+              insufficient data (no fills in the hour)
+            </span>
+          </div>
+          <div className="mt-3 flex flex-col gap-0.5 text-[13px] text-ui-ink">
+            {bestCell && <p>{bestHourLabel(DAYS, bestCell)}</p>}
+            {worstCell && <p>{worstHourLabel(DAYS, worstCell)}</p>}
+            {weakZone && <p>{weakHourLabel(DAYS, weakZone)}</p>}
+          </div>
+        </div>
+      </Panel>
+
+      <MarkoutCard rows={data.markouts} />
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">
+        <Panel title="Symbol breakdown" description="Notional, average score, maker share, slippage and fee drag per symbol." bodyClassName="overflow-x-auto">
+          <table className="w-full min-w-[500px] border-collapse text-[13px] text-ui-ink">
+            <thead>
+              <tr className="text-ui-graphite shadow-[inset_0_-1px_0_var(--ui-rule)]">
+                <th scope="col" className="px-3 py-2 text-left font-medium">Symbol</th>
+                <th scope="col" className="px-3 py-2 text-right font-medium">Notional</th>
+                <th scope="col" className="px-3 py-2 text-right font-medium">Average score</th>
+                <th scope="col" className="px-3 py-2 text-right font-medium">Maker share</th>
+                <th scope="col" className="px-3 py-2 text-right font-medium">Slippage</th>
+                <th scope="col" className="px-3 py-2 text-right font-medium">Fee drag</th>
+              </tr>
+            </thead>
+            <tbody>
+              {symbolTableData.map((row: SymbolTableRow) => (
+                <tr key={row.symbol} className="border-b border-ui-rule">
+                  <th scope="row" className="px-3 py-2 text-left font-medium">{row.symbol}</th>
+                  <td className="px-3 py-2 text-right tabular-nums">{formatUsd(Math.round(row.notional))}</td>
+                  <td className="px-3 py-2 text-right tabular-nums font-medium">{row.avgScore}</td>
+                  <td className="px-3 py-2 text-right tabular-nums">{row.makerRatio.toFixed(1)}%</td>
+                  <td className="px-3 py-2 text-right tabular-nums">
+                    {row.avgSlippageBps !== null ? formatSignedBps(row.avgSlippageBps) : <ValueState state="not-computed" label="Slippage" size="cell" />}
+                  </td>
+                  <td className="px-3 py-2 text-right tabular-nums">{row.feeDragPercent.toFixed(4)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Panel>
+
+        <Panel title="Score distribution" description="Number of trades per grade.">
+          <div className="h-[220px] w-full"><ScoreDistributionChart data={data.scoreDistribution} /></div>
+          <ChartTable caption="Trades per grade" head={["Grade", "Trades"]} rows={data.scoreDistribution.map((d) => [d.grade, d.count])} />
+        </Panel>
+      </div>
+
+      <Panel title="Slippage distribution (5 bps buckets)" description="Number of trades per slippage bucket. Trades without a computed slippage are not counted.">
+        {slippageBuckets.length === 0 ? (
+          <ValueState state="not-computed" label="Slippage distribution" reason="No trade has a computed slippage." />
+        ) : (
+          <>
+            <div className="h-[250px] w-full"><SlippageChart data={slippageBuckets} /></div>
+            <ChartTable caption="Trades per slippage bucket" head={["Bucket", "Trades"]} rows={slippageBuckets.map((b) => [b.bucket, b.count])} />
+          </>
+        )}
+      </Panel>
+
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Panel title="Fee drag analysis" description="Fees as a share of notional, and the maker and taker split of the fills.">
+          {!feeStats.any ? (
+            <ValueState state="insufficient" label="Fee drag" what="trades loaded" />
+          ) : (
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-[12px] bg-ui-overlay p-4">
+                  <div className="text-[13px] text-ui-graphite">Fee drag</div>
+                  <div className="text-[1.25rem] leading-7 font-semibold tracking-[-0.015em] tabular-nums text-ui-ink">{feeStats.feeDragPercent.toFixed(4)}%</div>
+                </div>
+                <div className="rounded-[12px] bg-ui-overlay p-4">
+                  <div className="text-[13px] text-ui-graphite">Maker ratio</div>
+                  <div className="text-[1.25rem] leading-7 font-semibold tracking-[-0.015em] tabular-nums text-ui-ink">{feeStats.makerRatio.toFixed(1)}%</div>
+                </div>
+              </div>
+              <div>
+                <div role="img" aria-label={`${feeStats.makerCount} maker fills and ${feeStats.takerCount} taker fills`} className="flex h-3 gap-0.5">
+                  <span className="rounded-[4px]" style={{ width: `${makerShare}%`, backgroundColor: hueCss(100), minWidth: feeStats.makerCount > 0 ? 2 : 0 }} />
+                  <span className="rounded-[4px]" style={{ width: `${100 - makerShare}%`, backgroundColor: hueCss(65), minWidth: feeStats.takerCount > 0 ? 2 : 0 }} />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-ui-graphite tabular-nums">
+                  <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="size-2.5 rounded-[3px]" style={{ backgroundColor: hueCss(100) }} />Maker, {feeStats.makerCount} fills</span>
+                  <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="size-2.5 rounded-[3px]" style={{ backgroundColor: hueCss(65) }} />Taker, {feeStats.takerCount} fills</span>
+                </div>
+              </div>
+              <p className="flex items-start gap-2 text-[13px] text-ui-graphite">
+                <Info aria-hidden="true" className="mt-0.5 size-4 shrink-0" />
+                <span>{makerRatioNote(feeStats.makerRatio)}</span>
+              </p>
+            </div>
+          )}
+        </Panel>
+
+        <Panel title="Hourly performance" description="Average fill score by hour of day (UTC). The dashed line marks a score of 75.">
+          <div className="h-[250px] w-full"><HourlyChart data={sortedHourly} /></div>
+          <ChartTable caption="Average score by hour (UTC)" head={["Hour", "Average score"]} rows={sortedHourly.map((h) => [`${h.hour.toString().padStart(2, '0')}:00`, `${h.avgScore} (${h.count} trades)`])} />
+        </Panel>
+      </div>
+
+      <WhaleCorrelation userId={resolvedUserId} dashboardMode={dashboardMode} />
     </div>
   );
 }
 
 export default function AnalyticsPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-[#0f0f0f] text-[#f0ece4] flex items-center justify-center font-mono text-sm">
-        Loading...
-      </div>
-    }>
+    <Suspense fallback={<div className="min-h-dvh bg-ui-surface" />}>
       <AnalyticsContent />
     </Suspense>
   );

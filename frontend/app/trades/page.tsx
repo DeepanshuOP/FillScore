@@ -2,10 +2,21 @@
 
 import { pageWindow } from '../utils/pagination';
 import React, { useState, useEffect, Suspense } from 'react'
+import { ArrowDown, ArrowUp, Check, ChevronLeft, ChevronRight, Download, StickyNote } from 'lucide-react'
+import { Sheet, SheetContent, SheetDescription, SheetTitle } from '@/components/ui/sheet'
+import { cn } from '../../lib/utils'
 import { openAuthenticatedDownload } from '../lib/downloads';
 import { formatUsd } from '../utils/format';
 import { useSearchParams } from 'next/navigation'
-import Navbar from '../components/Navbar'
+import { AppShell } from '../components/shell/AppShell'
+import { Button } from '../ui/Button'
+import { EmptyState } from '../ui/EmptyState'
+import { Field } from '../ui/Field'
+import { GradeChip } from '../ui/GradeChip'
+import { Panel } from '../ui/Panel'
+import { ValueState } from '../ui/ValueState'
+import { formatSignedBps } from '../ui/format'
+import { hueCss, hueShare } from '../ui/hue'
 import { useAuth } from '../context/AuthContext'
 import { authFetch } from '../lib/authFetch'
 import { resolveIdentityState } from '../utils/identityResolver'
@@ -18,7 +29,7 @@ interface Trade {
   _id: string
   tradeId: string
   note?: string
-  exchange: string          // 'binance' | 'bybit' — used for dynamic badge/subtitle
+  exchange: string          // 'binance' | 'bybit' | 'okx'
   symbol: string
   side: 'BUY' | 'SELL'
   quantity: number
@@ -46,6 +57,39 @@ interface TradesResponse {
   pages: number
 }
 
+const VENUE_NAME: Record<string, string> = { binance: 'Binance', bybit: 'Bybit', okx: 'OKX' }
+
+/** Money-free "not computed" cell: the one ValueState, small. */
+const none = (label: string) => <ValueState state="not-computed" label={label} size="cell" />
+
+function SideMark({ side }: { side: string }) {
+  const buy = side === 'BUY'
+  return (
+    <span className="inline-flex items-center gap-1.5 text-ui-ink">
+      <span aria-hidden="true" className={cn('size-2 rounded-full', buy ? 'bg-ui-ink' : 'bg-transparent ring-[1.5px] ring-inset ring-ui-graphite')} />
+      {side}
+    </span>
+  )
+}
+
+function OrderTypeBadge({ isMaker }: { isMaker: boolean }) {
+  return (
+    <span className={cn('inline-flex h-5 items-center rounded-[6px] px-1.5 text-[11px] font-medium ring-1 ring-inset',
+      isMaker ? 'bg-ui-overlay text-ui-ink ring-ui-edge' : 'text-ui-graphite ring-ui-rule')}>
+      {isMaker ? 'MAKER' : 'TAKER'}
+    </span>
+  )
+}
+
+function StatCell({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="panel flex min-w-0 flex-col gap-1 p-4">
+      <span className="text-[13px] text-ui-graphite">{label}</span>
+      <span className="text-[1.25rem] leading-7 font-semibold tracking-[-0.015em] text-ui-ink">{children}</span>
+    </div>
+  )
+}
+
 function TradesContent() {
   const [trades, setTrades] = useState<Trade[]>([])
   const [total, setTotal] = useState(0)
@@ -55,15 +99,14 @@ function TradesContent() {
   const [selectedTrade, setSelectedTrade] = useState<Trade | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [urlUserId, setUrlUserId] = useState<string | null>(null)
   const [dashboardMode, setDashboardMode] = useState<'demo' | 'real' | null>(null)
-  
+
   const { accessToken, isLoading: authLoading, refreshAccessToken } = useAuth()
   const searchParams = useSearchParams()
   const [exporting, setExporting] = useState(false)
-  // Human-readable exchange label derived from trades[0].exchange.
-  // 'binance' → 'Binance Spot' | 'bybit' → 'Bybit Derivatives' | multiple → 'All Exchanges'
-  const [displayExchange, setDisplayExchange] = useState<string>('All Exchanges')
-  // Raw exchange value used for accent colouring (binance/#F0B90B, bybit/#F7A600)
+  // Human-readable exchange label derived from the loaded trades; several exchanges read "All exchanges".
+  const [displayExchange, setDisplayExchange] = useState<string>('All exchanges')
   const [exchangeRaw, setExchangeRaw] = useState<string>('')
 
   const [totalBuys, setTotalBuys] = useState(0)
@@ -91,12 +134,12 @@ function TradesContent() {
       const fetchFn = dashboardMode === 'real' ? (url: string, opts?: any) => authFetch(url, opts, { accessToken, refreshAccessToken }) : fetch;
       const query = buildQuery(dashboardMode, userId);
       const url = `${apiBase()}/audit/trades/${selectedTrade.tradeId}/note${query}`;
-      
+
       const payload: any = { note: noteText, symbol: selectedTrade.symbol };
       if (dashboardMode === 'demo') {
         payload.userId = userId;
       }
-      
+
       const res = await fetchFn(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -104,11 +147,11 @@ function TradesContent() {
       })
       if (!res.ok) throw new Error('Failed to save note')
       const data = await res.json()
-      
+
       const updatedTrades = trades.map(t => t.tradeId === selectedTrade.tradeId && t.symbol === selectedTrade.symbol ?{ ...t, note: data.note } : t)
       setTrades(updatedTrades)
       setSelectedTrade({ ...selectedTrade, note: data.note })
-      
+
       setNoteStatus('saved')
       setTimeout(() => setNoteStatus(''), 2000)
     } catch {
@@ -130,7 +173,7 @@ function TradesContent() {
     try {
       const fetchFn = mode === 'real' ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken }) : fetch;
       const query = buildQuery(mode, uid, { limit: '1000' });
-      
+
       const res = await fetchFn(
         `${apiBase()}/audit/trades${query}`
       )
@@ -144,22 +187,23 @@ function TradesContent() {
 
   useEffect(() => {
     if (authLoading) return;
-    const urlUserId = searchParams.get('userId')
+    const urlUser = searchParams.get('userId')
     const storageUserId = localStorage.getItem('userId')
-    
-    const identity = resolveIdentityState(urlUserId, storageUserId, accessToken, searchParams.get('sample') === '1');
-    
+
+    const identity = resolveIdentityState(urlUser, storageUserId, accessToken, searchParams.get('sample') === '1');
+
     if (identity.mode === 'redirect') {
       window.location.href = '/';
       return;
     }
-    
+
     if (identity.shouldClearStorage) localStorage.removeItem('userId');
     if (identity.shouldSetStorage && identity.effectiveUserId) localStorage.setItem('userId', identity.effectiveUserId);
-    
+
     setDashboardMode(identity.mode);
     setUserId(identity.effectiveUserId);
-    
+    setUrlUserId(urlUser);
+
     fetchStats(identity.effectiveUserId, identity.mode);
   }, [authLoading, accessToken, searchParams])
 
@@ -171,9 +215,9 @@ function TradesContent() {
   const fetchTrades = async () => {
     if (!dashboardMode) return;
     setLoading(true)
-    try { 
+    try {
       const fetchFn = dashboardMode === 'real' ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken }) : fetch;
-      
+
       const paramsObj: Record<string, string> = {
         page: String(page),
         limit: '50'
@@ -181,22 +225,22 @@ function TradesContent() {
       if (symbolFilter) paramsObj.symbol = symbolFilter;
       if (sideFilter) paramsObj.side = sideFilter;
       if (gradeFilter) paramsObj.grade = gradeFilter;
-      
+
       const query = buildQuery(dashboardMode, userId, paramsObj);
       const res = await fetchFn(`${apiBase()}/audit/trades${query}`)
-      
+
       if (dashboardMode === 'real' && res.status === 404) {
         setTrades([])
         setTotal(0)
         setPages(1)
         return;
       }
-      
+
       const data: TradesResponse = await res.json()
       setTrades(data.trades)
       setTotal(data.total)
       setPages(data.pages)
-      // Derive exchange label; map raw value to human-readable form.
+      // Derive the exchange label from the loaded trades.
       if (data.trades.length > 0) {
         const exchangeSet = new Set<string>(data.trades.map((t: Trade) => t.exchange))
         if (exchangeSet.size === 1) {
@@ -209,7 +253,7 @@ function TradesContent() {
           )
         } else {
           setExchangeRaw('')
-          setDisplayExchange('All Exchanges')
+          setDisplayExchange('All exchanges')
         }
       }
     } catch {
@@ -219,17 +263,8 @@ function TradesContent() {
     }
   }
 
-  const gradeColor = (g: string) => ({
-    A: '#4ade80', B: '#86efac',
-    C: '#fcd34d', D: '#f97316', F: '#ef4444'
-  }[g] ?? '#888078')
-
-  const scoreColor = (s: number | null) =>
-    s == null ? '#888078' : s >= 80 ? '#4ade80' : s >= 60 ? '#fcd34d' :
-    s >= 40 ? '#f97316' : '#ef4444'
-
   const formatPrice = (p: number | undefined | null) => {
-    if (p == null || isNaN(p)) return '—'
+    if (p == null || isNaN(p)) return null
     return p >= 1000
       ? p.toLocaleString('en-US', {
           minimumFractionDigits: 2,
@@ -280,63 +315,10 @@ function TradesContent() {
     return sortDir === 'asc' ? av - bv : bv - av
   })
 
-  const symbolColor = (sym: string) => {
-    if (sym === 'BTCUSDT') return '#f7931a'
-    if (sym === 'ETHUSDT') return '#627eea'
-    if (sym === 'BNBUSDT') return '#f3ba2f'
-    if (sym === 'SOLUSDT') return '#9945ff'
-    return '#a09890'
-  }
-
-
   const scoredTrades = trades.filter(t => t.fillScore != null)
   const avgScore = scoredTrades.length
     ? Math.round(scoredTrades.reduce((s, t) => s + (t.fillScore ?? 0), 0) / scoredTrades.length)
     : null                                           // no trade has a score: shown as not computed, never 0
-
-  const FilterPill = ({ label, value, options, onChange }: { label: string, value: string, options: string[], onChange: (v: string) => void }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0', position: 'relative' }}>
-      <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.12em', color: '#888078', marginRight: '6px' }}>{label}</span>
-      <select
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        style={{
-          background: '#1c1c1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '2px',
-          fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.1em',
-          color: value !== 'ALL' ? '#c4a882' : '#7a7870',
-          padding: '4px 24px 4px 8px', cursor: 'pointer', outline: 'none',
-          appearance: 'none', WebkitAppearance: 'none',
-        }}
-      >
-        {options.map(o => (
-          <option key={o} value={o} style={{background:'#1c1c1a', color:'#ede8e0'}}>
-            {o}
-          </option>
-        ))}
-      </select>
-      <svg width="8" height="8" viewBox="0 0 8 8" fill="none" style={{ position: 'absolute', right: '7px', pointerEvents: 'none' }}>
-        <path d="M1 2.5l3 3 3-3" stroke="#585852" strokeWidth="1.2" strokeLinecap="round"/>
-      </svg>
-    </div>
-  )
-
-  const SortableHeader = ({ col, label, align = 'left' }: { col: string, label: string, align?: 'left'|'right'|'center' }) => (
-    <div
-      onClick={() => handleSort(col)}
-      style={{
-        fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em',
-        color: sortBy === col ? '#c4a882' : '#888078', cursor: 'pointer',
-        display: 'flex', alignItems: 'center', gap: '4px',
-        justifyContent: align === 'right' ? 'flex-end' : align === 'center' ? 'center' : 'flex-start',
-        userSelect: 'none', transition: 'color 0.15s'
-      }}
-      onMouseOver={e => { if (sortBy !== col) e.currentTarget.style.color = '#7a7870' }}
-      onMouseOut={e => { if (sortBy !== col) e.currentTarget.style.color = '#888078' }}
-    >
-      {label}
-      {sortBy === col && <span style={{fontSize:'0.5rem', opacity:0.7}}>{sortDir === 'desc' ? '↓' : '↑'}</span>}
-    </div>
-  )
 
   const currentIndex = selectedTrade ? sortedTrades.findIndex(t => t._id === selectedTrade._id) : -1
   const goToPrev = () => { if (currentIndex > 0) setSelectedTrade(sortedTrades[currentIndex - 1]) }
@@ -363,503 +345,265 @@ function TradesContent() {
     }
   };
 
+  const clearFilters = () => { setSymbolFilter('ALL'); setSideFilter('ALL'); setGradeFilter('ALL'); setPage(1); }
+  const filtered = symbolFilter !== 'ALL' || sideFilter !== 'ALL' || gradeFilter !== 'ALL'
+
+  const filterSelect = (label: string, value: string, options: string[], onChange: (v: string) => void) => (
+    <label className="flex items-center gap-2 text-[13px] text-ui-graphite">
+      {label}
+      <select value={value} onChange={e => onChange(e.target.value)}
+        className="h-9 rounded-[10px] bg-ui-raised px-2.5 text-sm text-ui-ink ring-1 ring-inset ring-ui-edge outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]">
+        {options.map(o => <option key={o} value={o}>{o === 'ALL' ? 'All' : o}</option>)}
+      </select>
+    </label>
+  )
+
+  const sortHead = (col: string, label: string, numeric = false) => (
+    <th scope="col" aria-sort={sortBy === col ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
+      className={cn('sticky top-0 z-10 bg-ui-raised px-3 py-2 text-[12px] font-medium whitespace-nowrap text-ui-graphite shadow-[inset_0_-1px_0_var(--ui-rule)]', numeric ? 'text-right' : 'text-left')}>
+      <button type="button" onClick={() => handleSort(col)}
+        className={cn('inline-flex items-center gap-1 rounded-[6px] hover:text-ui-ink focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]', sortBy === col && 'text-ui-ink')}>
+        {label}
+        {sortBy === col ? (sortDir === 'desc' ? <ArrowDown aria-hidden="true" className="size-3" /> : <ArrowUp aria-hidden="true" className="size-3" />) : null}
+      </button>
+    </th>
+  )
+  const plainHead = (label: string, numeric = false) => (
+    <th scope="col" className={cn('sticky top-0 z-10 bg-ui-raised px-3 py-2 text-[12px] font-medium whitespace-nowrap text-ui-graphite shadow-[inset_0_-1px_0_var(--ui-rule)]', numeric ? 'text-right' : 'text-left')}>{label}</th>
+  )
+
+  const actions = showCsvExport(dashboardMode) ? (
+    <Button variant="secondary" size="sm" onClick={handleExport} loading={exporting}>
+      {exporting ? 'Exporting' : <><Download aria-hidden="true" />Export CSV</>}
+    </Button>
+  ) : null
+
+  const shellUser = dashboardMode === 'demo' ? userId : (urlUserId ?? null)
+  const sel = selectedTrade
+  const arrival = sel ? formatPrice(sel.arrivalPriceProxy) : null
+
   return (
-    <div style={{ minHeight: '100vh', background: '#0f0f0f', color: '#ede8e0', fontFamily: 'var(--font-inter)' }}>
-      {/* HEADER */}
-      <Navbar userId={userId || undefined} exchange={exchangeRaw || undefined} currentPage="trades" showLive={true} />
+    <AppShell userId={shellUser} page="trades" dataSource={dashboardMode === 'demo' ? 'synthetic-demo' : dashboardMode === 'real' ? 'real-user' : null}
+      venue={exchangeRaw ? (VENUE_NAME[exchangeRaw.toLowerCase()] ?? displayExchange) : null} actions={actions}>
+      <div className="flex flex-col gap-5">
+        <p className="text-[13px] text-ui-graphite">{total} executions on {displayExchange}</p>
 
-      {/* MAIN CONTENT */}
-      <main style={{ padding: '48px 2rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
-        <h1 className="sr-only">Trade ledger</h1>
-        
-        {/* SECTION A — Title + Stats */}
-        <div style={{ marginBottom: '1.75rem', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-          <div>
-            <div style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.75rem', color: '#ede8e0', letterSpacing: '-0.01em' }}>
-              Trade History
-            </div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#888078', marginTop: '4px' }}>
-              {total} executions  ·  {displayExchange}
-            </div>
-          </div>
-          <div className="hidden md:flex" style={{ gap: '2rem', alignItems: 'flex-end' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.88rem', fontWeight: 600, color: '#ede8e0' }}>{totalBuys}B / {totalSells}S</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.12em', color: '#888078' }}>BUY / SELL</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.88rem', fontWeight: 600, color: scoreColor(avgScore) }} data-testid="trades-avg-score" title={avgScore === null ? NOT_COMPUTED : undefined}>{avgScore ?? '—'}</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.12em', color: '#888078' }}>AVG SCORE</span>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.88rem', fontWeight: 600, color: '#c4a882' }}>{totalMakers}</span>
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.12em', color: '#888078' }}>MAKER FILLS</span>
-            </div>
-            
-            {showCsvExport(dashboardMode) && (
-              <button
-                onClick={handleExport}
-                disabled={exporting}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '6px',
-                  background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
-                  padding: '6px 12px', color: '#c4a882',
-                  fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
-                  cursor: exporting ? 'wait' : 'pointer', transition: 'all 0.2s ease',
-                  opacity: exporting ? 0.6 : 1, marginLeft: '1rem', height: 'fit-content', marginBottom: '2px'
-                }}
-                onMouseOver={e => { if (!exporting) e.currentTarget.style.background = 'rgba(167,139,113,0.1)' }}
-                onMouseOut={e => { if (!exporting) e.currentTarget.style.background = 'transparent' }}
-              >
-                {exporting ? 'EXPORTING...' : '↓ EXPORT CSV'}
-              </button>
-            )}
-          </div>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <StatCell label="Executions">{total}</StatCell>
+          <StatCell label="Buys and sells">{totalBuys} buys, {totalSells} sells</StatCell>
+          <StatCell label="Average score, this page">
+            {avgScore === null
+              ? <span data-testid="trades-avg-score" title={NOT_COMPUTED}>—</span>
+              : <span data-testid="trades-avg-score">{avgScore}</span>}
+            {avgScore === null ? <span className="mt-0.5 block text-[13px] font-normal tracking-normal text-ui-graphite">{NOT_COMPUTED.charAt(0).toUpperCase() + NOT_COMPUTED.slice(1)}</span> : null}
+          </StatCell>
+          <StatCell label="Maker fills">{totalMakers}</StatCell>
         </div>
 
-        {/* SECTION B — Filter Bar */}
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem',
-          padding: '0.875rem 1.25rem', background: '#1a1917', border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '3px', flexWrap: 'wrap'
-        }}>
-          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#585450', marginRight: '0.5rem' }}>FILTER</span>
-          <FilterPill label="SYMBOL" value={symbolFilter} options={['ALL', 'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT']} onChange={setSymbolFilter} />
-          <FilterPill label="SIDE" value={sideFilter} options={['ALL', 'BUY', 'SELL']} onChange={setSideFilter} />
-          <FilterPill label="GRADE" value={gradeFilter} options={['ALL', 'A', 'B', 'C', 'D', 'F']} onChange={setGradeFilter} />
-          
-          {(symbolFilter !== 'ALL' || sideFilter !== 'ALL' || gradeFilter !== 'ALL') && (
-            <button
-              onClick={() => { setSymbolFilter('ALL'); setSideFilter('ALL'); setGradeFilter('ALL'); setPage(1); }}
-              style={{
-                marginLeft: 'auto', fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em',
-                color: '#c4a882', background: 'transparent', border: 'none', cursor: 'pointer', padding: '2px 0'
-              }}
-            >CLEAR FILTERS ×</button>
-          )}
-        </div>
-
-        {/* SECTION C — Trade Table */}
-        <div style={{ background: '#1a1917', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', marginTop: 0 }}>
-          
-          <div className="hidden lg:grid" style={{
-            gridTemplateColumns: '2rem 5.5rem 4rem 3.25rem 3.5rem minmax(5.75rem,1fr) minmax(5.75rem,1fr) 4.75rem 4.25rem 4.25rem 3.5rem 3.5rem',
-            alignItems: 'center', padding: '0 1.25rem', height: '40px', background: '#121210',
-            borderBottom: '1px solid rgba(255,255,255,0.1)', position: 'sticky', top: '64px', zIndex: 10
-          }}>
-            <div className="hidden lg:block"></div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>TIME</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SYMBOL</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>EXCH</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SIDE</div>
-            <SortableHeader col="notionalValue" label="NOTIONAL" />
-            <SortableHeader col="executionPrice" label="PRICE" />
-            <SortableHeader col="feePaid" label="FEE" align="right" />
-            <SortableHeader col="slippageBps" label="SLIP BPS" align="right" />
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#888078', textAlign: 'center' }}>ORDER</div>
-            <SortableHeader col="fillScore" label="SCORE" align="right" />
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#888078', textAlign: 'center' }}>GRADE</div>
+        <Panel title="Trade ledger" description="Every fill, newest first by default. Select a row for its details." bodyClassName="flex flex-col gap-4"
+          actions={filtered ? <Button variant="quiet" size="sm" onClick={clearFilters}>Clear filters</Button> : undefined}>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            {filterSelect('Symbol', symbolFilter, ['ALL', 'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'], setSymbolFilter)}
+            {filterSelect('Side', sideFilter, ['ALL', 'BUY', 'SELL'], setSideFilter)}
+            {filterSelect('Grade', gradeFilter, ['ALL', 'A', 'B', 'C', 'D', 'F'], setGradeFilter)}
           </div>
 
-          <div className="grid lg:hidden" style={{
-            gridTemplateColumns: '4rem minmax(0,1fr) 2.5rem 2.75rem 4.25rem 2.25rem 2rem',
-            alignItems: 'center', padding: '0 1.25rem', height: '40px', background: '#121210',
-            borderBottom: '1px solid rgba(255,255,255,0.1)'
-          }}>
-             <div className="hidden lg:block"></div>
-             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>TIME</div>
-             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SYM</div>
-             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>EXCH</div>
-             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SIDE</div>
-             <SortableHeader col="executionPrice" label="PRICE" />
-             <SortableHeader col="fillScore" label="SCORE" align="right" />
-             <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#888078', textAlign: 'center' }}>GRADE</div>
-          </div>
-
-          {loading ? (
-            <div>
-              {[...Array(8)].map((_, i) => (
-                <div key={i} className="grid grid-cols-[4rem_minmax(0,1fr)_2.5rem_2.75rem_4.25rem_2.25rem_2rem] lg:grid-cols-[2rem_5.5rem_4rem_3.25rem_3.5rem_minmax(5.75rem,1fr)_minmax(5.75rem,1fr)_4.75rem_4.25rem_4.25rem_3.5rem_3.5rem]"
-                  style={{ alignItems:'center', padding:'0 1.25rem', height:'52px', borderBottom:'1px solid rgba(255,255,255,0.1)' }}>
-                  <div className="hidden lg:block" style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div className="hidden lg:block" style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                  <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                </div>
-              ))}
-            </div>
-          ) : sortedTrades.length === 0 ? (
-            <div style={{ padding: '4rem 2rem', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-              <div style={{ fontSize: '2rem', color: '#585450' }}>◎</div>
-              <div style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.1rem', color: '#888078' }}>No trades match your filters</div>
-              <button
-                onClick={() => { setSymbolFilter('ALL'); setSideFilter('ALL'); setGradeFilter('ALL'); setPage(1); }}
-                style={{
-                  fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
-                  color: '#c4a882', background: 'transparent', border: 'none', cursor: 'pointer', padding: '4px 6px'
-                }}
-              >CLEAR FILTERS</button>
-            </div>
-          ) : (
-            <div>
-              {sortedTrades.map((trade, i) => {
-                const { date, time } = formatDate(trade.executedAt)
-                return (
-                  <div key={trade._id}
-                    onClick={() => { setSelectedTrade(trade); setDrawerOpen(true); }}
-                    className="grid grid-cols-[4rem_minmax(0,1fr)_2.5rem_2.75rem_4.25rem_2.25rem_2rem] lg:grid-cols-[2rem_5.5rem_4rem_3.25rem_3.5rem_minmax(5.75rem,1fr)_minmax(5.75rem,1fr)_4.75rem_4.25rem_4.25rem_3.5rem_3.5rem]"
-                    style={{
-                      alignItems: 'center', padding: '0 1.25rem', height: '52px', borderBottom: '1px solid rgba(255,255,255,0.1)',
-                      cursor: 'pointer', transition: 'background 0.15s ease',
-                      background: selectedTrade?._id === trade._id ? 'rgba(167,139,113,0.05)' : 'transparent',
-                      borderLeft: selectedTrade?._id === trade._id ? '2px solid rgba(167,139,113,0.4)' : '2px solid transparent'
-                    }}
-                    onMouseOver={e => { if (selectedTrade?._id !== trade._id) e.currentTarget.style.background = 'rgba(255,255,255,0.03)' }}
-                    onMouseOut={e => { if (selectedTrade?._id !== trade._id) e.currentTarget.style.background = 'transparent' }}
-                  >
-                    <div className="hidden lg:block" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.52rem', color: '#585450' }}>
-                      {String((page-1)*50 + i + 1).padStart(3, '0')}
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#b8b0a6', letterSpacing: '0.04em' }}>{date}</div>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', color: '#888078', letterSpacing: '0.04em' }}>{time}</div>
-                    </div>
-                    <div title={trade.symbol} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', letterSpacing: '0.06em', fontWeight: 600, color: symbolColor(trade.symbol), display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      {trade.symbol.replace('USDT', '')}
-                      {trade.note && <span title="Has note" style={{ fontSize: '0.6rem', opacity: 0.6 }}>📝</span>}
-                    </div>
-                    
-                    <div style={{ display: 'flex', alignItems: 'center' }}>
-                      {(() => {
-                        const ex = trade.exchange?.toLowerCase() || '';
-                        let text = 'UNK';
-                        let color = '#a09890';
-                        if (ex === 'binance') { text = 'BNC'; color = '#F0B90B'; }
-                        else if (ex === 'bybit') { text = 'BYB'; color = '#F7A600'; }
-                        else if (ex === 'okx') { text = 'OKX'; color = '#38bdf8'; }
-                        return (
-                          <span style={{ fontSize: '10px', letterSpacing: '0.1em', fontWeight: 600, textTransform: 'uppercase', color }}>
-                            {text}
-                          </span>
-                        );
-                      })()}
-                    </div>
-
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '2px', width: 'fit-content',
-                      fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.08em', fontWeight: 600,
-                      background: trade.side === 'BUY' ? 'rgba(74,222,128,0.08)' : 'rgba(239,68,68,0.08)',
-                      color: trade.side === 'BUY' ? '#4ade80' : '#ef4444',
-                      border: trade.side === 'BUY' ? '1px solid rgba(74,222,128,0.2)' : '1px solid rgba(239,68,68,0.2)'
-                    }}>
-                      {trade.side}
-                    </div>
-                    
-                    <div className="hidden lg:block" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#f0ece4', letterSpacing: '0.02em' }}>
-                      {formatUsd(trade.notionalValue)}
-                    </div>
-                    <div className="hidden lg:block" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#b8b0a6' }}>
-                      {formatPrice(trade.executionPrice)}
-                    </div>
-                    
-                    {/* Mobile Price */}
-                    <div className="block lg:hidden" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#f0ece4' }}>
-                      {formatPrice(trade.executionPrice)}
-                    </div>
-
-                    <div className="hidden lg:block" style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888078' }}>
-                      {trade.feePaid != null ? `$${trade.feePaid.toFixed(4)}` : '—'}
-                    </div>
-                    <div className="hidden lg:block" style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: trade.slippageBps === null ? '#888078' : trade.slippageBps < 2 ? '#4ade80' : trade.slippageBps < 5 ? '#fcd34d' : '#f97316' }} title={trade.slippageBps === null ? NOT_COMPUTED : undefined}>
-                      {trade.slippageBps?.toFixed(1) ?? '—'}
-                    </div>
-                    <div className="hidden lg:block" style={{ textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: trade.isMaker ? '#c4a882' : '#888078' }}>
-                      {trade.isMaker ? 'MAKER' : 'TAKER'}
-                    </div>
-
-                    {/* SCORE — coloured value or dim dash with tooltip */}
-                    {trade.fillScore != null && trade.fillScore > 0 ? (
-                      <div style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', fontWeight: 600,
-                        color: trade.fillScore >= 80 ? '#4ade80' : trade.fillScore >= 60 ? '#facc15' : trade.fillScore >= 40 ? '#fb923c' : '#f87171' }}>
-                        {Math.round(trade.fillScore)}
-                      </div>
-                    ) : (
-                      <div title={NOT_COMPUTED}
-                        style={{ textAlign: 'right', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#3a3835', cursor: 'help' }}>
-                        —
-                      </div>
-                    )}
-                    {/* GRADE — coloured pill or dim dash */}
-                    <div style={{ display: 'flex', justifyContent: 'center' }}>
-                      {trade.fillGrade ? (
-                        <div style={{
-                          width: '28px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          borderRadius: '2px', border: `1px solid ${gradeColor(trade.fillGrade)}35`, background: `${gradeColor(trade.fillGrade)}0f`,
-                          fontFamily: 'var(--font-mono)', fontSize: '0.65rem', fontWeight: 700, color: gradeColor(trade.fillGrade)
-                        }}>
-                          {trade.fillGrade}
+          <div className="-mx-1 max-h-[70vh] overflow-auto rounded-[10px] ring-1 ring-inset ring-ui-rule">
+            <table className="w-full min-w-[960px] border-collapse text-[13px] text-ui-ink">
+              <thead>
+                <tr>
+                  {plainHead('No.')}
+                  {sortHead('executedAt', 'Time')}
+                  {plainHead('Symbol')}
+                  {plainHead('Venue')}
+                  {plainHead('Side')}
+                  {sortHead('notionalValue', 'Notional', true)}
+                  {sortHead('executionPrice', 'Price', true)}
+                  {sortHead('feePaid', 'Fee', true)}
+                  {sortHead('slippageBps', 'Slippage', true)}
+                  {plainHead('Order')}
+                  {sortHead('fillScore', 'Score', true)}
+                  {plainHead('Grade')}
+                </tr>
+              </thead>
+              <tbody>
+                {loading ? [...Array(8)].map((_, i) => (
+                  <tr key={i} aria-hidden="true">
+                    <td colSpan={12} className="px-3 py-3"><div className="h-4 w-full rounded-[6px] bg-ui-overlay/60" /></td>
+                  </tr>
+                )) : sortedTrades.map((trade, i) => {
+                  const { date, time } = formatDate(trade.executedAt)
+                  const price = formatPrice(trade.executionPrice)
+                  const isSel = selectedTrade?._id === trade._id
+                  const scored = trade.fillScore != null && trade.fillScore > 0
+                  return (
+                    <tr key={trade._id} tabIndex={0} aria-selected={isSel}
+                      onClick={() => { setSelectedTrade(trade); setDrawerOpen(true); }}
+                      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedTrade(trade); setDrawerOpen(true); } }}
+                      className={cn('cursor-pointer border-b border-ui-rule transition-colors hover:bg-ui-overlay/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ui-focus)]', isSel && 'bg-ui-overlay')}>
+                      <td className="px-3 py-2 text-ui-graphite tabular-nums">{String((page-1)*50 + i + 1).padStart(3, '0')}</td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        <span>{date}</span> <span className="text-ui-graphite tabular-nums">{time}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div title={trade.symbol} className="inline-flex items-center gap-1.5 font-medium">
+                          {trade.symbol.replace('USDT', '')}
+                          {trade.note ? <StickyNote aria-hidden="true" className="size-3.5 text-ui-graphite" /> : null}
+                          {trade.note ? <span className="sr-only">Has note</span> : null}
                         </div>
-                      ) : (
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: '#3a3835' }}>–</div>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          )}
+                      </td>
+                      <td className="px-3 py-2 text-ui-graphite">{VENUE_NAME[trade.exchange?.toLowerCase() || ''] ?? (trade.exchange || 'Unknown')}</td>
+                      <td className="px-3 py-2"><SideMark side={trade.side} /></td>
+                      <td className="px-3 py-2 text-right tabular-nums">{formatUsd(trade.notionalValue)}</td>
+                      <td className="px-3 py-2 text-right tabular-nums">{price ?? none('Price')}</td>
+                      <td className="px-3 py-2 text-right tabular-nums text-ui-graphite">{trade.feePaid != null ? `$${trade.feePaid.toFixed(4)}` : none('Fee')}</td>
+                      <td className="px-3 py-2 text-right tabular-nums" title={trade.slippageBps === null ? NOT_COMPUTED : undefined}>
+                        {trade.slippageBps == null ? none('Slippage') : formatSignedBps(trade.slippageBps)}
+                      </td>
+                      <td className="px-3 py-2"><OrderTypeBadge isMaker={trade.isMaker} /></td>
+                      <td className="px-3 py-2 text-right tabular-nums font-medium">
+                        {scored ? Math.round(trade.fillScore as number) : none('Fill score')}
+                      </td>
+                      <td className="px-3 py-2">
+                        {trade.fillGrade ? <GradeChip grade={trade.fillGrade} size="sm" label={`Grade ${trade.fillGrade}`} /> : (
+                          <>
+                            <span aria-hidden="true" className="inline-block h-[1.5px] w-2.5 bg-ui-graphite align-middle" />
+                            <span className="sr-only">{NOT_COMPUTED}</span>
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+            {!loading && sortedTrades.length === 0 ? (
+              <EmptyState title="No trades match these filters" className="m-4"
+                action={<Button variant="secondary" size="sm" onClick={clearFilters}>Clear filters</Button>}>
+                Nothing was recorded for this combination.
+              </EmptyState>
+            ) : null}
+          </div>
 
-          {/* SECTION D — Pagination */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem', padding: '1rem 1.25rem', borderTop: '1px solid rgba(255,255,255,0.05)', background: '#121210' }}>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#888078' }}>
-              Showing {Math.min((page-1)*50 + 1, total)}–{Math.min(page*50, total)} of {total}
-            </div>
-            <nav aria-label="Pagination" style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[13px] text-ui-graphite tabular-nums">
+              Showing {Math.min((page-1)*50 + 1, total)} to {Math.min(page*50, total)} of {total}
+            </p>
+            <nav aria-label="Pagination" className="flex flex-wrap gap-1">
               {pageWindow(page, pages).map((item, idx) => item === 'ellipsis' ? (
-                <span key={`gap-${idx}`} aria-hidden="true" style={{ width: '20px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#585450' }}>…</span>
+                <span key={`gap-${idx}`} aria-hidden="true" className="grid h-8 w-5 place-items-center text-[13px] text-ui-graphite">…</span>
               ) : (
-                <button key={item} onClick={() => setPage(item)}
+                <button key={item} type="button" onClick={() => setPage(item)}
                   aria-label={`Page ${item}`}
                   aria-current={page === item ? 'page' : undefined}
-                  style={{
-                    minWidth: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: page === item ? 'rgba(167,139,113,0.15)' : 'transparent',
-                    border: page === item ? '1px solid rgba(167,139,113,0.4)' : '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.6rem',
-                    color: page === item ? '#c4a882' : '#888078', cursor: 'pointer'
-                  }}
-                >{item}</button>
+                  className={cn('grid h-8 min-w-8 place-items-center rounded-[8px] px-2 text-[13px] tabular-nums ring-1 ring-inset',
+                    page === item ? 'bg-ui-overlay text-ui-ink ring-ui-edge' : 'text-ui-graphite ring-ui-rule hover:text-ui-ink')}>{item}</button>
               ))}
             </nav>
           </div>
-        </div>
-      </main>
-
-      {/* SECTION E — Slide-over Drawer */}
-      {drawerOpen && (
-        <div onClick={() => setDrawerOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 200, transition: 'opacity 0.2s ease' }} />
-      )}
-      
-      <div className="w-[100vw] md:w-[420px]" style={{
-        position: 'fixed', top: 0, right: 0, bottom: 0,
-        background: '#1a1917', borderLeft: '1px solid rgba(255,255,255,0.08)', zIndex: 201,
-        transform: drawerOpen ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform 0.3s cubic-bezier(0.22,1,0.36,1)',
-        display: 'flex', flexDirection: 'column', overflow: 'hidden'
-      }}>
-        {selectedTrade && (
-          <>
-            <div style={{ padding: '1.5rem 1.5rem 1.25rem', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-              <div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.1rem', fontWeight: 700, letterSpacing: '0.08em', color: symbolColor(selectedTrade.symbol) }}>
-                  {selectedTrade.symbol}
-                </div>
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '6px' }}>
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', padding: '2px 8px', borderRadius: '2px',
-                    fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.08em', fontWeight: 600,
-                    background: selectedTrade.side === 'BUY' ? 'rgba(74,222,128,0.08)' : 'rgba(239,68,68,0.08)',
-                    color: selectedTrade.side === 'BUY' ? '#4ade80' : '#ef4444',
-                    border: selectedTrade.side === 'BUY' ? '1px solid rgba(74,222,128,0.2)' : '1px solid rgba(239,68,68,0.2)'
-                  }}>{selectedTrade.side}</div>
-                  <div style={{
-                    fontFamily: 'var(--font-mono)', fontSize: '0.58rem', padding: '2px 7px', borderRadius: '2px',
-                    color: selectedTrade.isMaker ? '#c4a882' : '#888078', border: selectedTrade.isMaker ? '1px solid rgba(167,139,113,0.3)' : '1px solid rgba(255,255,255,0.08)'
-                  }}>{selectedTrade.isMaker ? 'MAKER' : 'TAKER'}</div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', color: '#888078', marginLeft: 'auto' }}>
-                    {formatDate(selectedTrade.executedAt).date} {formatDate(selectedTrade.executedAt).time}
-                  </div>
-                </div>
-              </div>
-              <button onClick={() => setDrawerOpen(false)} style={{
-                width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '2px', cursor: 'pointer', color: '#888078'
-              }}>
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/></svg>
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '2rem', padding: '1.5rem', background: 'rgba(255,255,255,0.07)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-              <div style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '4rem', lineHeight: 1, color: gradeColor(selectedTrade.fillGrade), filter: `drop-shadow(0 0 20px ${gradeColor(selectedTrade.fillGrade)}40)` }}>
-                {selectedTrade.fillScore == null ? '—' : selectedTrade.fillGrade}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '4px' }}>
-                <div data-testid="trade-score-detail" style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: selectedTrade.fillScore == null ? '0.9rem' : '2rem', color: selectedTrade.fillScore == null ? '#888078' : scoreColor(selectedTrade.fillScore) }}>
-                  {selectedTrade.fillScore == null ? NOT_COMPUTED : (<>{Math.round(selectedTrade.fillScore)}<span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#888078', marginLeft: '2px' }}>/100</span></>)}
-                </div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.15em', color: '#888078' }}>FILL SCORE</div>
-              </div>
-            </div>
-
-            <div style={{ flex: 1, overflowY: 'auto', padding: '1.25rem 1.5rem' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.2em', color: '#585450', margin: '0 0 0.875rem 2px' }}>
-                EXECUTION DETAILS
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0px', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                {[
-                  { label: "QUANTITY", value: selectedTrade.quantity?.toFixed(6) ?? '—' },
-                  { label: "EXEC PRICE", value: `$${formatPrice(selectedTrade.executionPrice)}` },
-                  { label: "ARRIVAL PRICE", value: `$${formatPrice(selectedTrade.arrivalPriceProxy)}` },
-                  { label: "NOTIONAL", value: formatUsd(selectedTrade.notionalValue) },
-                  { label: "FEE PAID", value: selectedTrade.feePaid != null ? `$${selectedTrade.feePaid.toFixed(4)}` : '—' },
-                  { label: "SPREAD", value: `${selectedTrade.spreadBps?.toFixed(1) ?? '—'} bps` },
-                  { label: "SLIPPAGE", value: selectedTrade.slippageBps === null
-                    ? <span style={{color: '#888078'}}>{NOT_COMPUTED}</span>
-                    : <span style={{color: selectedTrade.slippageBps < 2 ? '#4ade80' : selectedTrade.slippageBps < 5 ? '#fcd34d' : '#f97316'}}>{selectedTrade.slippageBps?.toFixed(2) ?? '—'} bps</span> },
-                  { label: "ORDER TYPE", value: <span style={{color: selectedTrade.isMaker ? '#c4a882' : '#888078'}}>{selectedTrade.isMaker ? 'MAKER' : 'TAKER'}</span> }
-                ].map((row, i) => (
-                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.625rem 0.875rem', borderBottom: i === 7 ? 'none' : '1px solid rgba(255,255,255,0.07)', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#888078' }}>{row.label}</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.68rem', color: '#f0ece4', textAlign: 'right' }}>{row.value}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.2em', color: '#585450', margin: '1.25rem 0 0.875rem 2px' }}>
-                JOURNAL NOTE
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <textarea
-                  value={noteText}
-                  onChange={e => setNoteText(e.target.value)}
-                  placeholder="Add a note... e.g. 'panic sell', 'breakout entry', 'FOMO'"
-                  maxLength={500}
-                  style={{
-                    width: '100%', height: '80px', background: '#121210', border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '3px', padding: '10px 12px', fontFamily: 'var(--font-inter)', fontSize: '0.75rem',
-                    color: '#ede8e0', resize: 'none', outline: 'none', transition: 'border 0.2s'
-                  }}
-                  onFocus={e => e.currentTarget.style.border = '1px solid rgba(167,139,113,0.4)'}
-                  onBlur={e => e.currentTarget.style.border = '1px solid rgba(255,255,255,0.08)'}
-                />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', color: '#585450' }}>
-                    {noteText.length} / 500
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    {noteStatus === 'saved' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#4ade80' }}>✓ Note stored</span>}
-                    {noteStatus === 'error' && <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#ef4444' }}>Failed to save</span>}
-                    <button
-                      onClick={saveNote}
-                      disabled={savingNote}
-                      style={{
-                        background: 'rgba(167,139,113,0.15)', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
-                        padding: '4px 12px', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em',
-                        color: '#c4a882', cursor: savingNote ? 'wait' : 'pointer', transition: 'all 0.2s',
-                        opacity: savingNote ? 0.7 : 1
-                      }}
-                      onMouseOver={e => { if (!savingNote) e.currentTarget.style.background = 'rgba(167,139,113,0.25)' }}
-                      onMouseOut={e => { if (!savingNote) e.currentTarget.style.background = 'rgba(167,139,113,0.15)' }}
-                    >
-                      {savingNote ? 'SAVING...' : 'SAVE NOTE'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.2em', color: '#585450', margin: '1.25rem 0 0.875rem 2px' }}>
-                SCORE BREAKDOWN
-              </div>
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.625rem' }}>
-                 {[
-                   { label: "SLIPPAGE", score: selectedTrade.slippageScore },
-                   { label: "FEES", score: selectedTrade.feeScore },
-                   { label: "TIMING", score: selectedTrade.timingScore },
-                   { label: "SPREAD", score: selectedTrade.exchangeScore }
-                 ].map(bar => (
-                   <div key={bar.label} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                     <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#888078', width: '80px', flexShrink: 0 }}>{bar.label}</div>
-                     <div style={{ flex: 1, height: '3px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
-                       <div style={{ height: '100%', width: bar.score == null ? '0%' : `${bar.score}%`, background: scoreColor(bar.score), borderRadius: '2px' }} />
-                     </div>
-                     <div title={bar.score == null ? NOT_COMPUTED : undefined} style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', color: bar.score == null ? '#888078' : scoreColor(bar.score), width: '24px', textAlign: 'right', flexShrink: 0 }}>{bar.score == null ? '—' : Math.round(bar.score)}</div>
-                   </div>
-                 ))}
-               </div>
-            </div>
-
-            <div style={{ padding: '1.25rem 1.5rem', borderTop: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.1em', color: '#585450' }}>
-                TRADE ID  ·  {selectedTrade.tradeId.split('-').pop()?.toUpperCase() || selectedTrade.tradeId.slice(-8).toUpperCase()}
-              </div>
-              <div style={{ display: 'flex', gap: '4px' }}>
-                <button onClick={goToPrev} disabled={currentIndex <= 0} style={{
-                  width: '28px', height: '28px', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '2px', cursor: currentIndex <= 0 ? 'default' : 'pointer',
-                  color: '#888078', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: currentIndex <= 0 ? 0.3 : 1
-                }}>←</button>
-                <button onClick={goToNext} disabled={currentIndex >= sortedTrades.length - 1} style={{
-                  width: '28px', height: '28px', background: 'transparent', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '2px', cursor: currentIndex >= sortedTrades.length - 1 ? 'default' : 'pointer',
-                  color: '#888078', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: currentIndex >= sortedTrades.length - 1 ? 0.3 : 1
-                }}>→</button>
-              </div>
-            </div>
-          </>
-        )}
+        </Panel>
       </div>
-    </div>
-  )
-}
 
-function TradesFallback() {
-  return (
-    <div style={{ minHeight: '100vh', background: '#0f0f0f', color: '#ede8e0', fontFamily: 'var(--font-inter)' }}>
-      <Navbar currentPage="trades" showLive={true} />
-      <main style={{ padding: '48px 2rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
-        <div style={{ background: '#1a1917', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', marginTop: 0 }}>
-          <div className="hidden lg:grid" style={{
-            gridTemplateColumns: '2rem 5.5rem 4rem 3.25rem 3.5rem minmax(5.75rem,1fr) minmax(5.75rem,1fr) 4.75rem 4.25rem 4.25rem 3.5rem 3.5rem',
-            alignItems: 'center', padding: '0 1.25rem', height: '40px', background: '#121210',
-            borderBottom: '1px solid rgba(255,255,255,0.1)', position: 'sticky', top: '64px', zIndex: 10
-          }}>
-            <div className="hidden lg:block"></div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>TIME</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SYMBOL</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>EXCH</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>SIDE</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>NOTIONAL</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450' }}>PRICE</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450', textAlign: 'right' }}>FEE</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450', textAlign: 'right' }}>SLIP BPS</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#888078', textAlign: 'center' }}>ORDER</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#585450', textAlign: 'right' }}>SCORE</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.14em', color: '#888078', textAlign: 'center' }}>GRADE</div>
-          </div>
-          <div>
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="grid grid-cols-[4rem_minmax(0,1fr)_2.5rem_2.75rem_4.25rem_2.25rem_2rem] lg:grid-cols-[2rem_5.5rem_4rem_3.25rem_3.5rem_minmax(5.75rem,1fr)_minmax(5.75rem,1fr)_4.75rem_4.25rem_4.25rem_3.5rem_3.5rem]"
-                style={{ alignItems:'center', padding:'0 1.25rem', height:'52px', borderBottom:'1px solid rgba(255,255,255,0.1)' }}>
-                <div className="hidden lg:block" style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div className="hidden lg:block" style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div className="hidden lg:block" style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div style={{height:'12px', width:'60%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div style={{height:'12px', width:'70%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
-                <div style={{height:'12px', width:'80%', borderRadius:'2px', background:'linear-gradient(90deg, #1a1a18 25%, #222220 50%, #1a1a18 75%)', backgroundSize:'200% 100%', animation:'shimmer 1.5s infinite'}}></div>
+      <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <SheetContent side="right" className="w-full overflow-y-auto bg-ui-raised sm:max-w-[440px]">
+          <SheetDescription className="sr-only">Details, journal note and score breakdown of one trade.</SheetDescription>
+          {sel ? (
+            <div className="flex flex-col gap-6 p-5">
+              <header className="flex flex-col gap-2">
+                <SheetTitle className="text-[1.25rem] leading-7 font-semibold tracking-[-0.015em] text-ui-ink">{sel.symbol}</SheetTitle>
+                <div className="flex flex-wrap items-center gap-3 text-[13px]">
+                  <SideMark side={sel.side} />
+                  <OrderTypeBadge isMaker={sel.isMaker} />
+                  <span className="text-ui-graphite tabular-nums">{formatDate(sel.executedAt).date} {formatDate(sel.executedAt).time}</span>
+                </div>
+              </header>
+
+              <div className="flex items-center gap-5 rounded-[12px] bg-ui-overlay p-4">
+                {sel.fillScore == null || !sel.fillGrade
+                  ? null
+                  : <GradeChip grade={sel.fillGrade} size="xl" label={`Grade ${sel.fillGrade}`} />}
+                <div className="flex flex-col gap-1">
+                  <div data-testid="trade-score-detail" className="text-[1.75rem] leading-9 font-semibold tracking-[-0.025em] text-ui-ink">
+                    {sel.fillScore == null
+                      ? <ValueState state="not-computed" label="Fill score" size="cell" />
+                      : <>{Math.round(sel.fillScore)}<span className="ml-0.5 text-[13px] font-normal tracking-normal text-ui-graphite">/100</span></>}
+                  </div>
+                  <span className="text-[13px] text-ui-graphite">Fill score</span>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </main>
-    </div>
+
+              <section aria-labelledby="trade-details">
+                <h3 id="trade-details" className="mb-2 text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">Execution details</h3>
+                <dl className="divide-y divide-ui-rule rounded-[10px] ring-1 ring-inset ring-ui-rule">
+                  {([
+                    ['Quantity', sel.quantity != null ? sel.quantity.toFixed(6) : none('Quantity')],
+                    ['Execution price', formatPrice(sel.executionPrice) ? `$${formatPrice(sel.executionPrice)}` : none('Execution price')],
+                    ['Arrival price', arrival ? `$${arrival}` : none('Arrival price')],
+                    ['Notional', formatUsd(sel.notionalValue)],
+                    ['Fee paid', sel.feePaid != null ? `$${sel.feePaid.toFixed(4)}` : none('Fee paid')],
+                    ['Spread', sel.spreadBps != null ? formatSignedBps(sel.spreadBps) : none('Spread')],
+                    ['Slippage', sel.slippageBps == null ? none('Slippage') : formatSignedBps(sel.slippageBps)],
+                    ['Order type', <OrderTypeBadge key="t" isMaker={sel.isMaker} />],
+                  ] as [string, React.ReactNode][]).map(([label, value]) => (
+                    <div key={label} className="flex items-center justify-between gap-4 px-3 py-2 text-[13px]">
+                      <dt className="text-ui-graphite">{label}</dt>
+                      <dd className="text-right tabular-nums text-ui-ink">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
+
+              <section aria-labelledby="trade-note" className="flex flex-col gap-2">
+                <h3 id="trade-note" className="text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">Journal note</h3>
+                <Field multiline label="Note" value={noteText} onChange={e => setNoteText(e.target.value)} maxLength={500} placeholder="Add a note to this trade" />
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[13px] text-ui-graphite tabular-nums">{noteText.length} / 500</span>
+                  <div className="flex items-center gap-3">
+                    {noteStatus === 'saved' && <span className="inline-flex items-center gap-1 text-[13px] text-ui-ink"><Check aria-hidden="true" className="size-3.5" />Note stored</span>}
+                    {noteStatus === 'error' && <span className="text-[13px] text-ui-danger">Storing the note failed</span>}
+                    <Button variant="secondary" size="sm" onClick={saveNote} loading={savingNote}>Save note</Button>
+                  </div>
+                </div>
+              </section>
+
+              <section aria-labelledby="trade-breakdown">
+                <h3 id="trade-breakdown" className="mb-2 text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">Score breakdown</h3>
+                <ul className="flex flex-col gap-2.5">
+                  {[
+                    { label: 'Slippage', score: sel.slippageScore },
+                    { label: 'Fees', score: sel.feeScore },
+                    { label: 'Timing', score: sel.timingScore },
+                    { label: 'Spread', score: sel.exchangeScore },
+                  ].map(bar => (
+                    <li key={bar.label} className="grid grid-cols-[5rem_1fr_auto] items-center gap-3 text-[13px]">
+                      <span className="text-ui-graphite">{bar.label}</span>
+                      <span className="h-1.5 overflow-hidden rounded-full bg-ui-overlay">
+                        {bar.score == null ? null : <span className="block h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, bar.score))}%`, background: hueCss(hueShare(bar.score / 100)) }} />}
+                      </span>
+                      <span className="min-w-6 text-right tabular-nums text-ui-ink">{bar.score == null ? none(bar.label) : Math.round(bar.score)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <footer className="flex items-center justify-between gap-3 border-t border-ui-rule pt-4">
+                <span className="text-[13px] text-ui-graphite">Trade id <span className="font-ui-mono text-ui-ink">{sel.tradeId.split('-').pop()?.toUpperCase() || sel.tradeId.slice(-8).toUpperCase()}</span></span>
+                <div className="flex gap-1">
+                  <Button variant="secondary" size="sm" onClick={goToPrev} disabled={currentIndex <= 0} aria-label="Previous trade"><ChevronLeft aria-hidden="true" /></Button>
+                  <Button variant="secondary" size="sm" onClick={goToNext} disabled={currentIndex >= sortedTrades.length - 1} aria-label="Next trade"><ChevronRight aria-hidden="true" /></Button>
+                </div>
+              </footer>
+            </div>
+          ) : null}
+        </SheetContent>
+      </Sheet>
+    </AppShell>
   )
 }
 
 export default function Trades() {
   return (
-    <Suspense fallback={<TradesFallback />}>
+    <Suspense fallback={<div className="min-h-dvh bg-ui-surface" />}>
       <TradesContent />
     </Suspense>
   )

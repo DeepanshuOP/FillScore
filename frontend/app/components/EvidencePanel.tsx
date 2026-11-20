@@ -2,14 +2,16 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import * as m from 'motion/react-m'
+import { FileCheck2, Scale } from 'lucide-react'
 import { Banner } from '../ui/Banner'
 import { Button } from '../ui/Button'
 import { Panel } from '../ui/Panel'
 import { useToast } from '../ui/Toast'
 import { browserPackDeps, downloadEvidencePack, type PackKind, type PackPhase, type PackResult } from '../lib/evidencePack'
 
-/** Fingerprint of the key that signs every pack (recorded 2026-11-18 in docs/research/LOG.md §T). /verify compares a pack with the live key. */
-export const EVIDENCE_KEY_FINGERPRINT = 'ba11aa53c4961be4'
+import { EVIDENCE_KEY_FINGERPRINT } from '../lib/evidenceKey'
+export { EVIDENCE_KEY_FINGERPRINT }
 
 type Auth = { accessToken: string | null; refreshAccessToken: () => Promise<string | null> }
 type State = { kind: PackKind; phase: PackPhase } | null
@@ -49,10 +51,10 @@ export function EvidencePanel({ mode, auth }: { mode: 'demo' | 'real' | null; au
   }
 
   const verify = (
-    <p className="text-sm text-ui-graphite">
+    <p className="text-[13px] leading-6 text-ui-graphite">
       Every pack is signed with Ed25519, key fingerprint{' '}
-      <code className="rounded-ui border border-ui-rule px-1.5 py-0.5 font-[family-name:var(--ui-mono)] text-[0.8125rem] text-ui-ink">{EVIDENCE_KEY_FINGERPRINT}</code>.{' '}
-      <Link href="/verify" className="text-ui-ink">Verify a pack in your browser</Link>; the file never leaves it.
+      <code className="rounded-[6px] bg-ui-overlay px-1.5 py-0.5 font-ui-mono text-[12px] text-ui-ink">{EVIDENCE_KEY_FINGERPRINT}</code>.{' '}
+      <Link href="/verify" className="text-ui-action underline-offset-4 hover:underline">Verify a pack in your browser</Link>; the file never leaves it.
     </p>
   )
 
@@ -67,14 +69,26 @@ export function EvidencePanel({ mode, auth }: { mode: 'demo' | 'real' | null; au
         </div>
       ) : mode === 'real' ? (
         <div className="flex flex-col gap-4">
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             {PACKS.map((p) => {
               const mine = busy?.kind === p.kind
+              const Icon = p.kind === 'scorecard' ? FileCheck2 : Scale
               return (
-                <div key={p.kind} className="flex flex-col items-start gap-2">
+                <div key={p.kind} className="flex flex-col items-start gap-3 rounded-[12px] bg-ui-overlay/40 p-4 ring-1 ring-inset ring-ui-rule">
+                  <div className="flex items-center gap-3">
+                    <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-ui-overlay">
+                      <Icon aria-hidden="true" strokeWidth={1.75} className="size-4 text-ui-ink" />
+                    </span>
+                    <p className="text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">{p.kind === 'scorecard' ? 'Scorecard pack' : 'Best-execution pack'}</p>
+                  </div>
+                  <p className="max-w-[40ch] text-[13px] leading-5 text-ui-graphite">{p.text}</p>
                   <Button variant={p.variant} loading={mine} disabled={!!busy && !mine} onClick={() => get(p.kind)}>{p.label}</Button>
-                  <p className="max-w-[40ch] text-sm text-ui-graphite">{p.text}</p>
-                  <p role="status" className="min-h-5 text-sm text-ui-ink">
+                  <div aria-hidden="true" className="h-1 w-full overflow-hidden rounded-full bg-ui-overlay">
+                    <m.div className="h-full rounded-full bg-ui-measured" initial={false}
+                      animate={{ width: mine ? (busy!.phase === 'preparing' ? '35%' : '85%') : done[p.kind] ? '100%' : '0%' }}
+                      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }} />
+                  </div>
+                  <p role="status" className="min-h-5 text-[13px] text-ui-ink">
                     {mine ? (busy!.phase === 'preparing' ? 'Preparing the pack.' : 'Writing the file.') : done[p.kind] ?? ''}
                   </p>
                 </div>

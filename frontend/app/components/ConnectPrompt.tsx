@@ -2,6 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { EmptyState } from '../ui/EmptyState';
+import { buttonClass } from '../ui/buttonClass';
 
 /** The dashboard of a signed-in account with nothing scored yet: what is missing, and the next step. */
 export default function ConnectPrompt() {
@@ -11,9 +12,9 @@ export default function ConnectPrompt() {
         title="No trades yet"
         action={
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Link href="/onboarding" className="no-underline"><span className="inline-flex min-h-10 items-center rounded-ui border border-ui-ink bg-ui-ink px-4 py-2 text-sm font-medium text-ui-surface">Sync again</span></Link>
-            <Link href="/check" className="text-sm text-ui-ink">Trades in a broker app? Check a trade-history file</Link>
-            <Link href="/dashboard?userId=demo-disciplined&sample=1" className="text-sm text-ui-ink">View the sample dashboard</Link>
+            <Link href="/onboarding" className={buttonClass('primary')}>Sync again</Link>
+            <Link href="/check" className="text-sm text-ui-action underline-offset-4 hover:underline">Trades in a broker app? Check a trade-history file</Link>
+            <Link href="/dashboard?userId=demo-disciplined&sample=1" className="text-sm text-ui-action underline-offset-4 hover:underline">View the sample dashboard</Link>
           </div>
         }
       >

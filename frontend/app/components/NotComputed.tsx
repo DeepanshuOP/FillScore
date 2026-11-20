@@ -1,5 +1,6 @@
 import React from 'react';
 import { NOT_COMPUTED } from '../utils/notComputed';
+import { ValueState } from '../ui/ValueState';
 
 /** Placeholder for a v1-only view of a rebuilt demo (decision 11). Never a zero, never an empty panel. */
 export default function NotComputed({ title, detail }: { title: string; detail?: string }) {
@@ -7,14 +8,12 @@ export default function NotComputed({ title, detail }: { title: string; detail?:
     <section
       data-testid="not-computed"
       aria-label={`${title}: ${NOT_COMPUTED}`}
-      style={{ padding: '1.25rem 1.5rem', background: '#161614', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '3px' }}
+      className="panel flex flex-col gap-2 p-5"
     >
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890', textTransform: 'uppercase', marginBottom: '0.6rem' }}>
-        {title}
+      <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">{title}</h3>
+      <div className="text-[13px] leading-5 text-ui-graphite">
+        <ValueState state="not-computed" size="inline" label={title} reason={detail} />
       </div>
-      <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', lineHeight: 1.6, color: '#888078', margin: 0 }}>
-        {NOT_COMPUTED.charAt(0).toUpperCase() + NOT_COMPUTED.slice(1)}.{detail ? ` ${detail}` : ''}
-      </p>
     </section>
   );
 }
