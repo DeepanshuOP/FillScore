@@ -96,10 +96,10 @@ const AGENT_ICON: Record<string, LucideIcon> = {
 // Design v2 segmented control (same pattern as the Rankings view), with a disabled state for a running audit.
 function Segmented<T extends string>({ value, options, onChange, label, disabled }: { value: T; options: Array<[T, string]>; onChange: (v: T) => void; label: string; disabled?: boolean }) {
   return (
-    <div role="group" aria-label={label} className="flex rounded-[8px] bg-ui-overlay p-0.5 text-[12px]">
+    <div role="group" aria-label={label} className="flex gap-0.5 rounded-full border border-ui-edge p-[3px] text-[13px]">
       {options.map(([k, text]) => (
         <button key={k} type="button" aria-pressed={value === k} disabled={disabled} onClick={() => onChange(k)}
-          className={cn("rounded-[6px] px-2.5 py-1 disabled:cursor-not-allowed disabled:opacity-60", value === k ? "bg-ui-raised text-ui-ink shadow-ui" : "text-ui-graphite hover:text-ui-ink")}>{text}</button>
+          className={cn("h-7 rounded-full px-3 font-medium disabled:cursor-not-allowed disabled:opacity-60", value === k ? "bg-ui-ink text-ui-surface" : "text-ui-graphite hover:text-ui-ink")}>{text}</button>
       ))}
     </div>
   );
@@ -338,6 +338,11 @@ export default function AgentCouncil({
         </>}
       >
         <div className="flex flex-col gap-3">
+          <dl className="grid max-w-[68ch] grid-cols-[6ch_minmax(0,1fr)] gap-x-3 border-y border-dashed border-ui-edge py-2.5 font-mono text-[12px]">
+            <dt className="text-ui-graphite">TO</dt><dd className="text-ui-ink">The account holder</dd>
+            <dt className="text-ui-graphite">FROM</dt><dd className="text-ui-ink">The Council: four language-model specialists and a debate</dd>
+            <dt className="text-ui-graphite">RE</dt><dd className="text-ui-ink">Execution of past trades, {symbol}. Every number is the audit&apos;s, checked after the text was written.</dd>
+          </dl>
           {!userId && (
             <p data-testid="audit-mode" className="max-w-[68ch] text-[13px] leading-5 text-ui-graphite">
               {mode === "quick"
@@ -381,8 +386,8 @@ export default function AgentCouncil({
       </Panel>
 
       {/* 2x2 specialist grid: a Quick audit has no specialists to show */}
-      <div className={cn("grid grid-cols-1 gap-5 sm:grid-cols-2", !showSpecialists && "hidden")}>
-        {AGENT_ORDER.map((agent) => {
+      <div className={cn("grid grid-cols-1 gap-6 sm:grid-cols-2", !showSpecialists && "hidden")}>
+        {AGENT_ORDER.map((agent, idx) => {
           const card = cards[agent];
           const isRunning = card?.status === "running" || activeAgent === agent;
           const Icon = AGENT_ICON[agent] ?? Scale;
@@ -392,13 +397,14 @@ export default function AgentCouncil({
           const status = isRunning ? "Streaming" : card?.status === "done" ? (card.failed ? "Unavailable" : "Done") : "Idle";
 
           return (
-            <div key={agent} className="panel flex min-w-0 flex-col gap-3 p-5">
-              <div className="flex items-center gap-3">
-                <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-ui-overlay">
-                  <Icon aria-hidden="true" strokeWidth={1.75} className="size-4 text-ui-ink" />
-                </span>
-                <p className="min-w-0 flex-1 text-[15px] font-semibold text-ui-ink">{agentLabel(agent)}</p>
-                <span className={cn("rounded-full px-2 py-0.5 text-[11px] ring-1 ring-inset", isRunning ? "bg-ui-overlay text-ui-ink ring-ui-edge" : "text-ui-graphite ring-ui-rule")}>{status}</span>
+            <div key={agent} className={cn("sheet flex min-w-0 flex-col gap-3 p-5 font-mono text-[12.5px]", idx % 2 ? "sm:rotate-[0.5deg]" : "sm:-rotate-[0.4deg]")}>
+              <p className="flex items-center justify-between gap-3 border-b border-dashed border-ui-edge pb-2 text-[11px] text-ui-graphite">
+                <span>NOTE {idx + 1} OF 4</span>
+                <span className={isRunning ? "text-ui-ink" : undefined}>{status.toUpperCase()}</span>
+              </p>
+              <div className="flex items-center gap-2.5">
+                <Icon aria-hidden="true" strokeWidth={1.75} className="size-4 shrink-0 text-ui-ink" />
+                <p className="min-w-0 flex-1 font-ui text-[17px] font-bold text-ui-ink">{agentLabel(agent)}</p>
               </div>
 
               <AnimatePresence mode="wait" initial={false}>
@@ -427,7 +433,7 @@ export default function AgentCouncil({
                     {card.flags.length > 0 && (
                       <ul className="flex flex-wrap gap-1.5">
                         {card.flags.slice(0, 2).map((f) => (
-                          <li key={f} className="rounded-[6px] bg-ui-overlay px-2 py-0.5 text-[12px] text-ui-ink">
+                          <li key={f} className="border border-dashed border-ui-edge px-2 py-0.5 text-[12px] text-ui-ink">
                             {flagText(f)}
                           </li>
                         ))}
@@ -449,22 +455,15 @@ export default function AgentCouncil({
           description={debateRunning ? "Loading the debate." : debate ? `${debate.round_count} round${debate.round_count !== 1 ? "s" : ""}, ${debate.claim_count} claims` : undefined}
         >
           {debate && (
-            <div className="flex flex-col gap-3">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div className="rounded-[12px] bg-ui-overlay/60 p-4">
-                  <p className="mb-1 text-sm font-medium text-ui-ink">Prosecution</p>
-                  <p className="text-[13px] leading-5 text-ui-graphite">{debate.prosecution_summary}</p>
+            // the debate as a transcript: speaker in the printer's type, the recorded words verbatim
+            <dl className="grid max-w-[80ch] grid-cols-1 gap-x-6 gap-y-1 border-t border-ui-ink pt-3 sm:grid-cols-[9rem_minmax(0,1fr)]">
+              {([["PROSECUTION", debate.prosecution_summary], ["DEFENSE", debate.defense_summary], ["KEY DISPUTE", debate.key_dispute]] as const).map(([who, said]) => (
+                <div key={who} className="contents">
+                  <dt className="pt-2 font-mono text-[12px] text-ui-graphite">{who}</dt>
+                  <dd className="border-b border-dashed border-ui-rule pt-1.5 pb-3 text-[15px] leading-6 text-ui-ink">{said}</dd>
                 </div>
-                <div className="rounded-[12px] bg-ui-overlay/60 p-4">
-                  <p className="mb-1 text-sm font-medium text-ui-ink">Defense</p>
-                  <p className="text-[13px] leading-5 text-ui-graphite">{debate.defense_summary}</p>
-                </div>
-              </div>
-              <div className="rounded-[12px] bg-ui-overlay/60 p-4">
-                <p className="mb-1 text-sm font-medium text-ui-ink">Key dispute</p>
-                <p className="text-[13px] leading-5 text-ui-graphite">{debate.key_dispute}</p>
-              </div>
-            </div>
+              ))}
+            </dl>
           )}
         </Panel>
       )}
@@ -509,7 +508,7 @@ export default function AgentCouncil({
                       <p className="text-ui-graphite">
                         <span className="font-medium text-ui-ink tabular-nums">{formatUsd(f.effect_usd)}</span>
                         {Number.isFinite(f.effect_bps) && <> ({formatSignedBps(f.effect_bps)})</>}
-                        <span className="ml-2 rounded-full bg-ui-overlay px-2 py-0.5 text-[11px] text-ui-ink ring-1 ring-inset ring-ui-edge">
+                        <span className="ml-3 inline-block -rotate-3 rounded-[4px] border-[1.5px] border-ui-ink px-1.5 font-mono text-[11px] text-ui-ink">
                           verified
                         </span>
                       </p>

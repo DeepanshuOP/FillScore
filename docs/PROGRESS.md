@@ -8,9 +8,17 @@ Deepanshu chose direction 1 with four fixes (hero composition with connected pen
 $0.25 in penInk with "10.0 bps; fees were 99.99% of it" double-underlined; Carbon copy a real tested theme; DESIGN.md
 rewritten), then conversion steps 1-8 (one commit each), then QA. Design v2 stays live until he pushes.
 
-- **Next concrete action: conversion step 6, Council and Evidence** (auditors' memo: four typed notes, transcript,
-  labelled explanation, verbatim recorded output, Quick/Deep; Evidence as two stamped envelopes with progress and the
-  fingerprint).
+- **Next concrete action: conversion step 7, landing page** (fixed hero and scroll story ending on the giant $0.25, demo
+  receipts, "check it yourself" envelope, what it never does, closing call to action).
+- **Step 6, done:** Council as an auditors' memo: a TO/FROM/RE header in mono, Quick/Deep pill switch, the four
+  specialists as typed notes ("NOTE n OF 4", slight tilt on wide screens), the debate as a transcript (speaker in mono,
+  recorded words verbatim), the explanation block under its unchanged heading "Explanation (language model; every
+  number was checked against the audit)", findings with a small "verified" stamp. Evidence as two stamped envelopes
+  (drawn flap, "SIGNED Ed25519" stamp, contents, key fingerprint, an ink progress line and printed status); demo
+  accounts show "NOT ISSUED" with the existing explanation. Found and fixed while doing it: the receipt's SIGNED stamp
+  linked to evidence for demo accounts too, which have no signed pack; now only real accounts show SIGNED, and a demo
+  receipt prints "NOT SIGNED, demo: nothing of yours to sign". Checks: vitest 678, tsc 0, lint 0 errors; looks:
+  Council 1440/390 and Evidence 1440, no overflow, axe 0.
 - **Step 5, done:** Rules as ledger rows: order id and symbol in mono, the finding, the cost circled by the pen
   (`PenCircle`, seeded) with the rule written beside it in pen-ink ("Met: High total cost"), the review state as a
   printed mark, review buttons only for signed-in accounts; a row prints the order's receipt. Rankings as a tape on a

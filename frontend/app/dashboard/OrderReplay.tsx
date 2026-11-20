@@ -184,7 +184,9 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
               <p className="g text-[10.5px] leading-[1.35] [overflow-wrap:anywhere]">{hex ?? (o ? 'HASHING' : 'NO ORDER RECORD')}<br />SHA-256 OF THE ORDER RECORD; THE BARS DRAW IT, THEY ARE NOT A SCANNABLE CODE</p>
             </div>
             <div className="c">
-              {evidenceHref ? <a className="fs-word-stamp" href={evidenceHref}>SIGNED<small>in the evidence pack</small></a> : null}
+              {/* only a real account has signed evidence packs; a demo receipt says why there is no signature */}
+              {evidenceHref ? <a className="fs-word-stamp" href={evidenceHref}>SIGNED<small>in the evidence pack</small></a>
+                : demo ? <span className="fs-word-stamp" data-tone="ink">NOT SIGNED<small>demo: nothing of yours to sign</small></span> : null}
               <div className="fs-r-actions"><button type="button" onClick={copy}>Copy order id</button></div>
             </div>
           </div>

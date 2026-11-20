@@ -205,7 +205,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
 
       {selected && (
         <OrderReplay open={open} onOpenChange={setOpen} onCloseAutoFocus={restoreFocus} orderId={selected.orderId} symbol={selected.symbol} query={query} request={request} row={selected.row}
-          demo={mode === 'demo'} evidenceHref={withParams('/dashboard', query, { view: 'evidence' })} />
+          demo={mode === 'demo'} evidenceHref={mode === 'real' ? withParams('/dashboard', query, { view: 'evidence' }) : undefined} />
       )}
     </div>
   );

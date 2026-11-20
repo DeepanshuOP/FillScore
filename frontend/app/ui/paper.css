@@ -132,6 +132,16 @@
 .fs-note { font-family: var(--ui-font); font-weight: 700; color: var(--ui-pen-ink); line-height: 1.15; letter-spacing: -0.01em; }
 .fs-dbl { text-decoration: underline double var(--ui-pen); text-decoration-thickness: 2px; text-underline-offset: 0.28em; }
 
+/* ---------- the envelope (evidence packs, "check it yourself") ---------- */
+.fs-envelope { position: relative; background: var(--ui-raised); box-shadow: var(--ui-shadow); padding: 56px 22px 20px; }
+/* the flap: two hairlines meeting under the top edge, drawn, not a picture */
+.fs-envelope::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 44px; pointer-events: none;
+  background: linear-gradient(to bottom right, transparent calc(50% - 0.6px), var(--ui-rule) 50%, transparent calc(50% + 0.6px)) left / 50% 100% no-repeat,
+    linear-gradient(to bottom left, transparent calc(50% - 0.6px), var(--ui-rule) 50%, transparent calc(50% + 0.6px)) right / 50% 100% no-repeat;
+}
+.fs-envelope .fs-env-stamp { position: absolute; top: 14px; right: 16px; }
+
 /* ---------- printed slip (Sonner) ---------- */
 .fs-slip {
   position: relative; background: var(--ui-raised); color: var(--ui-ink); font-family: var(--ui-mono); font-size: 12.5px; line-height: 1.45;
