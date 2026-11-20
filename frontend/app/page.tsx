@@ -1,5 +1,4 @@
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
 import { DotPattern } from '@/components/ui/dot-pattern'
 import { buttonClass } from './ui/buttonClass'
 import { HeroTape } from './ui/tape/HeroTape'
@@ -33,7 +32,7 @@ export default function Home() {
               </p>
               <div className="mt-9 flex flex-wrap items-center gap-3">
                 <Link href="/dashboard?userId=demo-moderate" className={buttonClass('primary', 'lg', 'no-underline')}>
-                  Open the demo audit <ArrowRight aria-hidden="true" />
+                  Open the demo audit
                 </Link>
                 <Link href="/signup" className={buttonClass('secondary', 'lg', 'no-underline')}>Connect a read-only key</Link>
               </div>

@@ -81,7 +81,7 @@ export function EvidencePanel({ mode, auth }: { mode: 'demo' | 'real' | null; au
                     </span>
                     <p className="text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">{p.kind === 'scorecard' ? 'Scorecard pack' : 'Best-execution pack'}</p>
                   </div>
-                  <p className="max-w-[40ch] text-[13px] leading-5 text-ui-graphite">{p.text}</p>
+                  <p className="max-w-[40ch] flex-1 text-[13px] leading-5 text-ui-graphite">{p.text}</p>
                   <Button variant={p.variant} loading={mine} disabled={!!busy && !mine} onClick={() => get(p.kind)}>{p.label}</Button>
                   <div aria-hidden="true" className="h-1 w-full overflow-hidden rounded-full bg-ui-overlay">
                     <m.div className="h-full rounded-full bg-ui-measured" initial={false}

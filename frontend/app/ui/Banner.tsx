@@ -22,7 +22,7 @@ export function Banner({ kind, title, children, action, className }: { kind: key
       <span className="grid size-8 shrink-0 place-items-center rounded-[8px] bg-ui-overlay">
         <Icon aria-hidden="true" strokeWidth={1.75} className={cn('size-4', tone)} />
       </span>
-      <div className="min-w-0 flex-1 pt-1">
+      <div className="min-w-[min(100%,15rem)] flex-1 pt-1">
         <p className="text-sm font-medium text-ui-ink">{title}</p>
         {children ? <div className="mt-0.5 max-w-[68ch] text-[13px] leading-5 text-ui-graphite">{children}</div> : null}
       </div>

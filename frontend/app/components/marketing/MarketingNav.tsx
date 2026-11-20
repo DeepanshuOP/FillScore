@@ -2,7 +2,11 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import { Menu } from 'lucide-react'
 import { cn } from '../../../lib/utils'
+import dynamic from 'next/dynamic'
+
+const MarketingMenu = dynamic(() => import('./MarketingMenu'), { ssr: false })
 import { useAuth } from '../../context/AuthContext'
 import { buttonClass } from '../../ui/Button'
 import { Logo } from '../shell/Logo'
@@ -12,6 +16,8 @@ import { ThemeToggle } from '../shell/ThemeToggle'
 export function MarketingNav() {
   const { accessToken } = useAuth()
   const [scrolled, setScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [menuEver, setMenuEver] = useState(false)
   useEffect(() => {
     const on = () => setScrolled(window.scrollY > 8)
     on()
@@ -29,6 +35,9 @@ export function MarketingNav() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
+          <button type="button" onClick={() => { setMenuEver(true); setMenuOpen(true) }} aria-label="Open menu" className="grid size-9 place-items-center rounded-[9px] text-ui-graphite hover:bg-ui-overlay md:hidden">
+            <Menu aria-hidden="true" className="size-4" />
+          </button>
           <ThemeToggle />
           {accessToken ? (
             <Link href="/dashboard" className={buttonClass('primary', 'sm', 'no-underline')}>Your audit</Link>
@@ -40,6 +49,7 @@ export function MarketingNav() {
           )}
         </div>
       </div>
+      {menuEver ? <MarketingMenu open={menuOpen} onOpenChange={setMenuOpen} signedIn={!!accessToken} /> : null}
     </header>
   )
 }

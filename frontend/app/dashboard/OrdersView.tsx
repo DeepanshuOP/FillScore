@@ -71,6 +71,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
   const [shown, setShown] = useState(PAGE);
   const [selected, setSelected] = useState<{ orderId: string; symbol: string; row?: OrderRow } | null>(null);
   const [open, setOpen] = useState(false);
+  const returnFocus = useRef<HTMLElement | null>(null);
   const opened = useRef(false);
 
   // State is set only in the answer of the request. The order named in the address opens once, when the rows arrive.
@@ -111,9 +112,12 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
 
   const pick = (r: OrderRow) => {
     if (!r.orderId) return;   // a trade without an order id has no replay
+    returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setSelected({ orderId: r.orderId, symbol: r.symbol, row: r });
     setOpen(true);
   };
+  /** The sheet has no trigger, so hand focus back to the row that opened it (keyboard users keep their place). */
+  const restoreFocus = (e: Event) => { const el = returnFocus.current; if (el?.isConnected) { e.preventDefault(); el.focus(); } };
 
   const loaded = load && load !== 'error' ? load : null;
   return (
@@ -200,7 +204,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
       </Panel>
 
       {selected && (
-        <OrderReplay open={open} onOpenChange={setOpen} orderId={selected.orderId} symbol={selected.symbol} query={query} request={request} row={selected.row} />
+        <OrderReplay open={open} onOpenChange={setOpen} onCloseAutoFocus={restoreFocus}orderId={selected.orderId} symbol={selected.symbol} query={query} request={request} row={selected.row} />
       )}
     </div>
   );

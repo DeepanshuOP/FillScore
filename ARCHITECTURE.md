@@ -217,15 +217,26 @@ analytics card.
 
 | Route | Purpose |
 |---|---|
-| `/` | Landing page, demo account cards |
+Design system v2 "Instrument" (2026-11-20; rules in `DESIGN.md`, tokens in `app/ui/tokens.css`, dark default and a light
+theme through next-themes). App screens render inside `app/components/shell/AppShell.tsx` (sidebar with account switcher,
+top bar with the title, a period-and-venue subtitle, provenance badge, theme toggle and ⌘K `CommandMenu`; action labels show from 2xl and are icons below; Vaul bottom sheet on phones). Reading and
+marketing pages use `components/marketing/MarketingNav` and `SiteFooter`. Primitives in `app/ui/` (ValueState, GradeChip,
+Figure with NumberFlow, Button, Panel, charts in `app/ui/charts/`, the market tape in `app/ui/tape/`); shadcn/ui components
+in `components/ui/`. GSAP (ScrollTrigger, SplitText) and Lenis load on the landing page only, by dynamic import. Motion's
+features (`app/motionFeatures.ts`, through `LazyMotion`) and the Sonner toaster (`app/ThemedToaster.tsx`, `next/dynamic`) load
+after first paint, so they are not in any route's First Load JS. Visual QA: `e2e-shots/qa.ts` (states, axe, landing CLS) and
+`e2e-shots/break.ts` (worst-case data, empty, one order, keyboard-only drawer).
+
+| `/` | Landing page: hero with the market tape of one real demo order, scroll story, live demo cards, evidence, close |
 | `/signup`, `/login`, `/forgot-password`, `/reset-password`, `/verify-email` | Account flows |
 | `/onboarding` | Connect Binance, Bybit or OKX with a read-only key, then sync |
-| `/dashboard` | Both scores, cost vs expected, measured order views, the explain panel, Ask, Quick/Deep Council, data freshness, the broker-file check |
+| `/dashboard` | Sections by `?view=`: overview (bento: grade gauge, total cost, cost vs expected, outcomes, where the money went, provenance), orders (table and the replay drawer), rules (exception queue with review states), rankings (noise-aware dot-and-interval chart), council (Quick/Deep Council, Ask), evidence (packs, record behind the grade, v1 details, broker-file check) |
 | `/analytics`, `/trades` | Deep dive, trade blotter, CSV export, trade notes |
 | `/verify` | Check a signed evidence pack in the browser (WebCrypto Ed25519, `@noble/ed25519` fallback); nothing is uploaded |
 | `/check` | The broker-file check for people whose trades are in a broker app |
 | `/methodology` | The method and the scoring version, generated from the code |
-| `/settings` | Disconnect an exchange, download or delete your data, personal API keys |
+| `/settings` | Account, connected exchanges, download or delete your data, evidence packs, personal API keys |
+| `/design-lab` | Development only (404 in production): the chosen hero and overview compositions of the design v2 prototype round |
 | `/share/[userId]` | Public score card for demo accounts, with Open Graph image |
 | `/terms`, `/privacy` | Legal pages |
 | `/api/preflight` | Server route that probes Binance, Bybit and OKX reachability from the frontend host |

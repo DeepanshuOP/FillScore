@@ -2,7 +2,6 @@
 
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
-import { ArrowRight } from 'lucide-react'
 import { apiBase } from '../../lib/apiBase'
 import { GradeChip } from '../../ui/GradeChip'
 import { ValueState } from '../../ui/ValueState'
@@ -75,7 +74,7 @@ export function DemoCards() {
                 <div className="mt-auto">
                   {v && v !== 'error' && v.parts.length ? <StackBar parts={v.parts} height={8} legend={false} /> : <div className="h-2 rounded-full bg-ui-overlay" />}
                   <span className="mt-5 inline-flex items-center gap-1.5 text-[13px] text-ui-graphite transition-colors group-hover:text-ui-ink">
-                    Open the audit <ArrowRight aria-hidden="true" className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                    Open the audit
                   </span>
                 </div>
               </Link>

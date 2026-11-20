@@ -420,7 +420,7 @@ export default function AgentCouncil({
                     )}
                     {benchmarkNote && <p>{benchmarkNote}</p>}
                     <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span>{card.valuesCited === null ? "" : `${card.valuesCited} values cited`}</span>
+                      <span>{card.valuesCited === null ? "" : `${card.valuesCited} ${card.valuesCited === 1 ? "value" : "values"} cited`}</span>
                       <span>Severity: {ratingWords(card.severity)}</span>
                     </div>
 

@@ -108,7 +108,7 @@ function Ledger() {
           const v = fig[r.key].bps ?? 0
           const w = total > 0 ? (v / total) * 100 : 0
           return (
-            <li key={r.key} data-story="ledger" className="grid grid-cols-[7.5rem_1fr_4.5rem_3.75rem] items-center gap-3 text-[13px] sm:grid-cols-[9rem_1fr_5rem_4rem]">
+            <li key={r.key} data-story="ledger" className="grid grid-cols-[6.5rem_1fr_4.5rem_3.75rem] items-center gap-2 sm:gap-3 text-[13px] sm:grid-cols-[9rem_1fr_5rem_4rem]">
               <span className="text-ui-graphite">{r.label}</span>
               <span className="relative h-2 rounded-full bg-ui-overlay">
                 {w >= 0.5
@@ -120,9 +120,9 @@ function Ledger() {
             </li>
           )
         })}
-        <li data-story="total" className="grid grid-cols-[7.5rem_1fr_4.5rem_3.75rem] items-center gap-3 border-t border-ui-rule pt-2.5 text-[13px] sm:grid-cols-[9rem_1fr_5rem_4rem]">
-          <span className="font-medium text-ui-ink">All in</span>
-          <span className="text-ui-graphite">fees were {((fig.fees.bps as number) / total * 100).toFixed(2)}% of the cost</span>
+        <li data-story="total" className="grid grid-cols-[1fr_4.5rem_3.75rem] items-center gap-3 border-t border-ui-rule pt-2.5 text-[13px] sm:grid-cols-[9rem_1fr_5rem_4rem]">
+          <span className="font-medium text-ui-ink">All in<span className="block text-xs font-normal text-ui-graphite sm:hidden">fees were {((fig.fees.bps as number) / total * 100).toFixed(2)}% of the cost</span></span>
+          <span className="hidden text-ui-graphite sm:block">fees were {((fig.fees.bps as number) / total * 100).toFixed(2)}% of the cost</span>
           <span className="text-right font-medium tabular-nums text-ui-ink">{formatSignedBps(total)}</span>
           <span className="text-right font-medium tabular-nums text-ui-ink">{formatUsd(fig.total.usd)}</span>
         </li>

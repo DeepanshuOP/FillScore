@@ -77,7 +77,7 @@ function MethodSheet({ isDemo }: { isDemo: boolean }) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="quiet" size="sm"><BookOpen aria-hidden="true" /> <span className="hidden md:inline">Method</span></Button>
+        <Button variant="quiet" size="sm" aria-label="Method"><BookOpen aria-hidden="true" /> <span className="hidden 2xl:inline">Method</span></Button>
       </SheetTrigger>
       <SheetContent className="w-full overflow-y-auto bg-ui-raised sm:max-w-md">
         <SheetHeader>
@@ -216,8 +216,8 @@ function DashboardContent() {
   const actions = audit ? (
     <>
       <MethodSheet isDemo={isDemoData} />
-      {dashboardMode === 'demo' ? <Button variant="quiet" size="sm" onClick={handleShare} aria-label="Copy share link"><Link2 aria-hidden="true" /><span className="hidden xl:inline">Copy share link</span></Button> : null}
-      <Button variant="secondary" size="sm" loading={downloading} onClick={handleDownloadReport} aria-label="Download report"><Download aria-hidden="true" /><span className="hidden xl:inline">Download report</span></Button>
+      {dashboardMode === 'demo' ? <Button variant="quiet" size="sm" onClick={handleShare} aria-label="Copy share link"><Link2 aria-hidden="true" /><span className="hidden 2xl:inline">Copy share link</span></Button> : null}
+      <Button variant="secondary" size="sm" loading={downloading} onClick={handleDownloadReport} aria-label="Download report"><Download aria-hidden="true" /><span className="hidden 2xl:inline">Download report</span></Button>
     </>
   ) : null;
 

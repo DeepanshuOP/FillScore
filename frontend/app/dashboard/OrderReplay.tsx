@@ -23,6 +23,7 @@ interface Props {
   query: string;
   request: (path: string, init?: { method?: string; body?: unknown }) => Promise<Json>;
   row?: OrderRow;
+  onCloseAutoFocus?: (e: Event) => void;
 }
 
 /** True when the viewport is at least `minWidth` px wide. The server and the first client render assume a desktop. */
@@ -91,8 +92,8 @@ function Ledger({ items }: { items: ReplayApi['decomposition'] }) {
         return (
           <li key={`${i.label}:${i.source.field}`} className={cn('grid grid-cols-[7.5rem_1fr_4.5rem_4rem] items-center gap-3 text-[13px] sm:grid-cols-[9rem_1fr_5rem_4.5rem]', i.partOf && 'pl-4')}>
             <span className="min-w-0">
-              <span className="block text-ui-graphite">{i.label}</span>
-              <span className="block truncate font-ui-mono text-[11px] text-ui-graphite">{String(i.source.field)}</span>
+              <span className="block text-ui-graphite" title={`Source field: ${String(i.source.field)}`}>{i.label}</span>
+              <span className="sr-only">Source field: {String(i.source.field)}</span>
             </span>
             {i.bps === null ? (
               <>
@@ -145,7 +146,7 @@ function Heading({ symbol, orderId, row, body }: { symbol: string; orderId: stri
   );
 }
 
-function ReplayContent({ orderId, symbol, query, request, row }: Omit<Props, 'open' | 'onOpenChange'>) {
+function ReplayContent({ orderId, symbol, query, request, row }: Omit<Props, 'open' | 'onOpenChange' | 'onCloseAutoFocus'>) {
   const key = `${symbol}:${orderId}`;
   const [replay, setReplay] = useState<{ key: string; res: Json } | null>(null);
 
@@ -219,14 +220,14 @@ function ReplayContent({ orderId, symbol, query, request, row }: Omit<Props, 'op
 }
 
 /** The order replay: a side sheet on a desktop, a bottom drawer on a phone. Every figure comes from the replay API. */
-export function OrderReplay({ open, onOpenChange, orderId, symbol, query, request, row }: Props) {
+export function OrderReplay({ open, onOpenChange, onCloseAutoFocus, orderId, symbol, query, request, row }: Props) {
   const desktop = useMediaQuery(768);
   const content = open ? <ReplayContent orderId={orderId} symbol={symbol} query={query} request={request} row={row} /> : null;
   const description = 'The fills, the cost terms and the sources of one order.';
   if (desktop) {
     return (
       <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-full bg-ui-raised overflow-y-auto sm:max-w-[560px]">
+        <SheetContent side="right" onCloseAutoFocus={onCloseAutoFocus} className="w-full bg-ui-raised overflow-y-auto sm:max-w-[560px]">
           <SheetTitle className="sr-only">Order replay</SheetTitle>
           <SheetDescription className="sr-only">{description}</SheetDescription>
           {content}
@@ -236,7 +237,7 @@ export function OrderReplay({ open, onOpenChange, orderId, symbol, query, reques
   }
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="max-h-[88dvh] bg-ui-raised">
+      <DrawerContent onCloseAutoFocus={onCloseAutoFocus} className="max-h-[88dvh] bg-ui-raised">
         <DrawerTitle className="sr-only">Order replay</DrawerTitle>
         <DrawerDescription className="sr-only">{description}</DrawerDescription>
         <div className="overflow-y-auto">{content}</div>

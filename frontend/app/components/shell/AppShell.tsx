@@ -48,7 +48,7 @@ function AccountSwitcher({ userId, signedIn, collapsed }: { userId: string | nul
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={cn('flex w-full items-center gap-2.5 rounded-[10px] p-2 text-left ring-1 ring-inset ring-ui-rule transition-colors hover:bg-ui-overlay', collapsed && 'justify-center p-1.5')}
-        aria-label={`Account: ${accountLabel(userId)}`}>
+        aria-label={collapsed ? `Account: ${accountLabel(userId)}` : undefined}>
         <span aria-hidden="true" className="grid size-7 shrink-0 place-items-center rounded-[7px] bg-ui-overlay text-[12px] font-semibold text-ui-ink">
           {accountLabel(userId).charAt(0)}
         </span>
@@ -162,24 +162,28 @@ export function AppShell({ userId, page, dataSource, period, venue, title, actio
           <button type="button" onClick={() => setSheetOpen(true)} aria-label="Open navigation" className="grid size-9 place-items-center rounded-[9px] text-ui-graphite hover:bg-ui-overlay lg:hidden">
             <Menu aria-hidden="true" className="size-4" />
           </button>
-          <Link href="/" className="no-underline lg:hidden" aria-label="FillScore home"><Logo compact /></Link>
-          <h1 className="ml-1 truncate text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">{heading}</h1>
-          <div className="ml-3 hidden items-center gap-2 md:flex">
-            {period ? <span className="inline-flex h-6 items-center rounded-full bg-ui-overlay px-2.5 text-xs tabular-nums text-ui-graphite"><span className="sr-only">Period: </span>{period}</span> : null}
-            {venue ? <span className="inline-flex h-6 items-center rounded-full bg-ui-overlay px-2.5 text-xs text-ui-graphite">Venue: {venue}</span> : null}
+          <Link href="/" className="no-underline max-sm:hidden lg:hidden" aria-label="FillScore home"><Logo compact /></Link>
+          <div className="ml-1 min-w-0 shrink">
+            <h1 className="truncate text-[15px] leading-5 font-semibold tracking-[-0.01em] text-ui-ink">{heading}</h1>
+            {period || venue ? (
+              <p className="hidden truncate text-[11.5px] leading-4 tabular-nums text-ui-graphite md:block">
+                {period ? <><span className="sr-only">Period: </span>{period}</> : null}
+                {venue ? <span className="ml-3"><span className="sr-only">Venue: </span>{venue}</span> : null}
+              </p>
+            ) : null}
           </div>
           <div className="ml-auto flex items-center gap-1.5">
-            {dataSource ? <ProvenanceChip dataSource={dataSource} className="hidden sm:inline-flex" /> : null}
+            {dataSource ? <ProvenanceChip dataSource={dataSource} className="hidden whitespace-nowrap sm:inline-flex" /> : null}
             {actions}
             <button type="button" onClick={() => setCmdOpen(true)} className="hidden h-9 items-center gap-2 rounded-[9px] px-2.5 text-[13px] text-ui-graphite ring-1 ring-inset ring-ui-rule hover:text-ui-ink sm:inline-flex">
-              <Command aria-hidden="true" className="size-3.5" /> <span>Jump to</span><kbd className="font-ui text-[11px] text-ui-graphite">⌘K</kbd>
+              <Command aria-hidden="true" className="size-3.5" /> <span className="sr-only whitespace-nowrap 2xl:not-sr-only">Jump to</span><kbd className="font-ui text-[11px] text-ui-graphite">⌘K</kbd>
             </button>
             <button type="button" onClick={() => setCmdOpen(true)} aria-label="Jump to" className="grid size-9 place-items-center rounded-[9px] text-ui-graphite hover:bg-ui-overlay sm:hidden">
               <Command aria-hidden="true" className="size-4" />
             </button>
             <ThemeToggle />
             {!signedIn ? (
-              <Link href="/login" className="hidden h-9 items-center gap-1.5 rounded-[9px] px-2.5 text-[13px] text-ui-graphite no-underline hover:bg-ui-overlay hover:text-ui-ink md:inline-flex">
+              <Link href="/login" className="hidden h-9 items-center gap-1.5 whitespace-nowrap rounded-[9px] px-2.5 text-[13px] text-ui-graphite no-underline hover:bg-ui-overlay hover:text-ui-ink md:inline-flex">
                 <LogIn aria-hidden="true" className="size-3.5" /> Log in
               </Link>
             ) : null}

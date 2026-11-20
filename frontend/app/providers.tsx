@@ -1,26 +1,15 @@
 'use client'
 
 import type { ReactNode } from 'react'
-import { ThemeProvider, useTheme } from 'next-themes'
-import { LazyMotion, MotionConfig, domAnimation } from 'motion/react'
-import { Toaster } from 'sonner'
+import { ThemeProvider } from 'next-themes'
+import dynamic from 'next/dynamic'
+import { LazyMotion, MotionConfig } from 'motion/react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
-function ThemedToaster() {
-  const { resolvedTheme } = useTheme()
-  return (
-    <Toaster
-      theme={resolvedTheme === 'light' ? 'light' : 'dark'}
-      position="bottom-right"
-      toastOptions={{
-        classNames: {
-          toast: '!bg-ui-overlay !text-ui-ink !border-ui-rule !rounded-[12px] !shadow-ui-float !font-ui',
-          description: '!text-ui-graphite',
-        },
-      }}
-    />
-  )
-}
+// Sonner and Motion's features load after first paint (neither is needed to render a page); a toast fired before the
+// Toaster mounts is kept by Sonner and shown on mount.
+const ThemedToaster = dynamic(() => import('./ThemedToaster'), { ssr: false })
+const loadFeatures = () => import('./motionFeatures').then((m) => m.default)
 
 /**
  * App-wide providers (design v2). Dark is the default theme; the choice is kept by next-themes in localStorage.
@@ -30,7 +19,7 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <ThemeProvider attribute="data-theme" defaultTheme="dark" enableSystem={false} disableTransitionOnChange themes={['dark', 'light']}>
       {/* LazyMotion + the `m` components keep Motion's share of every page small (domAnimation: animate, exit, in-view). */}
-      <LazyMotion features={domAnimation}>
+      <LazyMotion features={loadFeatures}>
         <MotionConfig reducedMotion="user">
           <TooltipProvider delayDuration={200}>
             {children}

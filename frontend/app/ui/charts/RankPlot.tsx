@@ -35,7 +35,7 @@ export function RankPlot({ view }: { view: RankPlotView }) {
               </span>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <span className="relative block h-7 cursor-default" aria-label={`${r.key}: median ${formatSignedBps(r.median)}, ${Math.round(view.level * 100)}% interval ${formatSignedBps(r.low)} to ${formatSignedBps(r.high)}, rank ${r.rank}`}>
+                  <span role="img" className="relative block h-7 cursor-default" aria-label={`${r.key}: median ${formatSignedBps(r.median)}, ${Math.round(view.level * 100)}% interval ${formatSignedBps(r.low)} to ${formatSignedBps(r.high)}, rank ${r.rank}`}>
                     {zeroIn ? <span aria-hidden="true" className="absolute inset-y-0 w-px bg-ui-edge/60" style={{ left: `${pct(0)}%` }} /> : null}
                     <span aria-hidden="true" className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-[color-mix(in_srgb,var(--ui-measured)_28%,transparent)] ring-1 ring-inset ring-[color-mix(in_srgb,var(--ui-measured)_50%,transparent)]"
                       style={{ left: `${pct(r.low)}%`, width: `max(4px, ${pct(r.high) - pct(r.low)}%)` }} />

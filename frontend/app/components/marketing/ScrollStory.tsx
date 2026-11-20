@@ -70,13 +70,14 @@ function MeasureScene() {
   const rows = [['spread', 'Spread paid'], ['impactTiming', 'Impact and timing'], ['unfilled', 'Unfilled part'], ['fees', 'Fees']] as const
   return (
     <div className="flex h-full flex-col justify-center gap-3 p-6">
-      <p className="text-[13px] text-ui-graphite">One market sell of {inputs.tape.symbol}, two fills at the bid</p>
+      <p className="text-[13px] text-ui-graphite">One market sell of {inputs.tape.symbol}, two fills at the bid. Synthetic trader, real prices.</p>
       <dl className="grid grid-cols-2 gap-3">
         {rows.map(([k, label]) => (
-          <div key={k} className="rounded-[12px] bg-ui-overlay/60 p-4 ring-1 ring-inset ring-ui-rule">
+          <div key={k} className={cn('rounded-[12px] bg-ui-overlay/60 p-4', k === 'fees' ? 'border border-dashed border-ui-edge' : 'ring-1 ring-inset ring-ui-rule')}>
             <dt className="text-[12px] text-ui-graphite">{label}</dt>
             <dd className="mt-1 text-lg font-semibold tracking-[-0.015em] tabular-nums text-ui-ink">{formatSignedBps(fig[k].bps)}</dd>
             <dd className="text-[12px] tabular-nums text-ui-graphite">{formatUsd(fig[k].usd)}</dd>
+            {k === 'fees' ? <dd className="mt-1 text-[11px] leading-4 text-ui-graphite">At the published rate, not measured</dd> : null}
           </div>
         ))}
       </dl>
@@ -89,7 +90,7 @@ function LedgerScene() {
     <div className="flex h-full flex-col justify-center gap-2 p-6">
       {replay.decomposition.map((f) => (
         <div key={f.key} className={cn('grid grid-cols-[1fr_auto_auto] items-baseline gap-4 border-t border-ui-rule py-2 text-[13px]', f.key === 'total' && 'font-medium')}>
-          <span className={cn('text-ui-ink', f.partOf && 'pl-4 text-ui-graphite')}>{f.label}<code className="ml-2 font-ui-mono text-[10.5px] text-ui-graphite">{f.source.field}</code></span>
+          <span className={cn('text-ui-ink', f.partOf && 'pl-4 text-ui-graphite')}><span title={`Source field: ${f.source.field}`}>{f.label}</span><span className="sr-only">Source field: {f.source.field}</span></span>
           <span className="tabular-nums text-ui-ink">{formatSignedBps(f.bps)}</span>
           <span className="w-16 text-right tabular-nums text-ui-graphite">{formatUsd(f.usd)}</span>
         </div>
@@ -134,7 +135,7 @@ export function ScrollStory() {
         <h2 id="story-title" data-split className="display-lg text-ui-ink">From a read-only key to a written-down cost.</h2>
         <p className="mt-4 max-w-[58ch] text-[17px] leading-7 text-ui-graphite">Four steps run for every order. Nothing is estimated where it can be measured, and nothing is invented where it cannot.</p>
       </div>
-      <div className="mt-16 grid gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-16">
+      <div className="mt-16 grid grid-cols-[minmax(0,1fr)] gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-16">
         <ol className="relative flex flex-col">
           <span aria-hidden="true" className="absolute top-2 bottom-2 left-[11px] hidden w-px bg-ui-rule lg:block" />
           <span aria-hidden="true" data-rail className="absolute top-2 bottom-2 left-[11px] hidden w-px origin-top bg-ui-measured lg:block" />

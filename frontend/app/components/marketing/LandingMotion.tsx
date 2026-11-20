@@ -26,7 +26,7 @@ export function LandingMotion({ children }: { children: ReactNode }) {
         const ctx = gsap.context(() => {
           document.querySelectorAll<HTMLElement>('[data-split]').forEach((el) => {
             SplitText.create(el, {
-              type: 'lines', mask: 'lines', autoSplit: true,
+              type: 'lines', mask: 'lines', autoSplit: true, aria: 'none',
               onSplit: (self) => gsap.from(self.lines, {
                 yPercent: 105, duration: 0.9, ease: 'expo.out', stagger: 0.08,
                 scrollTrigger: { trigger: el, start: 'top 85%', once: true },

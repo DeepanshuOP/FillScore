@@ -50,8 +50,13 @@ for (const id of Object.keys(V1)) {
   }
   const top = [...rows].sort((a, b) => b.usd - a.usd).slice(0, 5)
   const median = (v: number[]) => { const s = [...v].sort((a, b) => a - b); const h = Math.floor(s.length / 2); return s.length % 2 ? s[h] : (s[h - 1] + s[h]) / 2 }
+  // The rankings rank execution cost (shortfall.executionBps), as GET /audit/rankings does (routes/explain.ts), not the
+  // total with fees: an earlier cut ranked totalBps, so the plot showed about 10 bps under an "Execution cost" title.
   const bySymbol = new Map<string, number[]>()
-  for (const r of rows) bySymbol.set(r.symbol, [...(bySymbol.get(r.symbol) ?? []), r.bps])
+  for (const m of measurements) {
+    const e = m.shortfall?.executionBps
+    if (typeof e === 'number' && Number.isFinite(e)) bySymbol.set(m.symbol ?? '', [...(bySymbol.get(m.symbol ?? '') ?? []), e])
+  }
   const groups = rankWithNoise([...bySymbol.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([key, values]) => ({ key, values })))
   // Fills as GET /api/audit/trades returns them, and one replay per order (keyed symbol:orderId).
   type Fill = { orderId: string; symbol: string; side: string; orderType?: string; isMaker?: boolean; executedAt: string; executionPrice: number; quantity: number; notional?: number; feeUsd?: number | null; tradeId: string }

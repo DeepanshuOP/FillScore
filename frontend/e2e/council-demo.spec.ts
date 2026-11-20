@@ -23,7 +23,7 @@ test('sample dashboard Council: assessment without a letter, values cited, no ad
   await expect(panel.locator('span', { hasText: /^[A-F][+-]?$/ })).toHaveCount(0)
 
   // each of the four specialist cards states how many values it cited
-  await expect(page.getByText(/^\d+ values cited$/)).toHaveCount(4)
+  await expect(page.getByText(/^\d+ values? cited$/)).toHaveCount(4)
 
   const text = await page.evaluate(() => document.body.innerText)
   // The exemption for "Unfilled Opportunity Cost Assessed" (item 27) is gone: the run was re-recorded and the claim
