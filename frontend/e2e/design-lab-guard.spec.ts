@@ -6,7 +6,8 @@ import { expect, test } from '@playwright/test'
  */
 // design v2: the lab now holds the chosen hero and overview of the prototype round; /design-lab/fonts was removed
 // (it stays in the list: a removed path must also not be served).
-for (const path of ['/design-lab', '/design-lab/dashboard', '/design-lab/hero', '/design-lab/fonts']) {
+// design v3: the v2 round (/design-lab/dashboard, /design-lab/hero) was deleted; they stay in the list, and the v3 pages join it.
+for (const path of ['/design-lab', '/design-lab/dashboard', '/design-lab/hero', '/design-lab/fonts', '/design-lab/v3', '/design-lab/v3/tape/overview']) {
   test(`${path} is not found in production`, async ({ request }) => {
     const res = await request.get(path)
     expect(res.status()).toBe(404)

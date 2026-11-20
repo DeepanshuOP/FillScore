@@ -6,7 +6,9 @@ export const REBUILT_FILES = [
   'app/components/marketing/DemoCards.tsx', 'app/components/marketing/CheckIt.tsx', 'app/ui/tape/HeroTape.tsx', 'app/ui/charts/ScoreGauge.tsx',
   'app/ui/charts/StackBar.tsx', 'app/ui/charts/IntervalPlot.tsx', 'app/ui/charts/RankPlot.tsx', 'app/ui/GradeChip.tsx', 'app/ui/GradeBadge.tsx',
   'app/ui/ValueState.tsx', 'app/ui/Panel.tsx', 'app/ui/Banner.tsx', 'app/ui/EmptyState.tsx', 'app/ui/Disclosure.tsx', 'app/ui/ProvenanceChip.tsx',
-  'app/design-lab/page.tsx', 'app/design-lab/hero/page.tsx', 'app/design-lab/dashboard/page.tsx',
+  'app/design-lab/page.tsx',
+  // design v3 (2026-11-20): the new production pieces
+  'app/ui/GradeStamp.tsx', 'app/ui/charts/CostRuler.tsx', 'app/dashboard/MonthTape.tsx', 'app/dashboard/monthTape.ts',
   'app/dashboard/page.tsx', 'app/dashboard/ScoreRecord.tsx',
   'app/dashboard/OrdersView.tsx', 'app/dashboard/OrderReplay.tsx', 'app/dashboard/RulesView.tsx', 'app/dashboard/RankingsView.tsx', 'app/dashboard/Overview.tsx',
   'app/dashboard/ordersTable.ts', 'app/dashboard/rankingsView.ts', 'app/dashboard/AskPanel.tsx', 'app/dashboard/CsvCheckPanel.tsx', 'app/dashboard/SyncFreshness.tsx',

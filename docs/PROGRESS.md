@@ -8,9 +8,21 @@ Deepanshu chose direction 1 with four fixes (hero composition with connected pen
 $0.25 in penInk with "10.0 bps; fees were 99.99% of it" double-underlined; Carbon copy a real tested theme; DESIGN.md
 rewritten), then conversion steps 1-8 (one commit each), then QA. Design v2 stays live until he pushes.
 
-- **Next concrete action: conversion step 3, overview** (prototype top: giant total, stamp, month tape with receipt
-  preview, cost terms as receipt lines; then cost against expected as a bracket on a ruler, outcomes as a tally,
-  freshness and provenance footer line).
+- **Next concrete action: conversion step 4, orders** (ledger table; a row prints the thermal receipt wired to the real
+  replay API; "fills only; the public prints are in the source file" where the payload has no prints).
+- **Step 3, done:** `Overview` rewritten: the total as the image (`SplitFigure`: ink dollars, graphite cents, NumberFlow
+  only after a change), the headline sentence, measured and published-rate fee figures; the grade as a rubber stamp
+  (`GradeStamp`, served v2 letter and score, band, the frozen v1 line beneath); the month tape (`MonthTape`, model
+  `monthTape.ts` with hand-computed tests; one tick per order from `/audit/trades`, height = the order's value because the
+  overview has no per-order cost without fetching every replay; hover/arrow-key receipt preview; Enter opens the order in
+  Orders); "Where the $X went" as receipt lines (a real table, test ids kept) beside the medians; cost against expected
+  as a pen bracket on a ruler (`CostRuler`, one axis: paid minus expected) or "insufficient data"; outcomes as a printed
+  tally (one stroke per order, unfilled in pen with the count in pen-ink); scope facts and freshness as a footer line.
+  Not done: the prototype's "All orders / Market / Limit" switch, because the served orders summary has no per-type
+  totals (no number is made up in the browser). v2 lab pages `/design-lab/dashboard` and `/design-lab/hero` deleted
+  (they no longer compiled); `monthLabel` added to `periodLabel.ts` with tests. e2e: `rebuilt-demo.spec.ts` drops the
+  click on the removed "Table" toggle (the table is always shown); `design-lab-guard.spec.ts` adds the v3 paths. Checks:
+  vitest 678 passed, tsc 0, lint 0 errors; looks at 1440/390 and Carbon copy: no overflow, no overlap, axe 0 serious.
 - **Step 2, done:** `AppShell` rewritten: one top bar (wordmark with the orange dot, account switcher, synthetic badge,
   period in mono, actions, "Jump to ⌘K", Carbon copy toggle, log in/out), section tabs (six views, then "More": Trades,
   Analytics, Methodology, Settings when signed in), phone navigation in a Vaul drawer behind "Menu"; no sidebar (the

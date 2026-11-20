@@ -51,6 +51,40 @@ export function Figure({ value, text, format, locales = 'en-US', className }: {
   )
 }
 
+/**
+ * Design v3's display figure: the same number rule as `Figure`, set at display scale with the cents stepped down to
+ * graphite (`$52` in ink, `.08` in graphite). At rest the text is exactly `text`, split at its last decimal point into
+ * two spans; while it rolls, NumberFlow's own `fraction` and `decimal` parts carry the graphite (a tone step, because
+ * NumberFlow cannot change digit size mid-roll). Never counts up on first load.
+ */
+export function SplitFigure({ value, text, format, className }: { value: number | null | undefined; text: string; format?: Format; className?: string }) {
+  const prev = useRef<{ value: number | null | undefined; text: string }>({ value, text })
+  const [shown, setShown] = useState<number | null>(null)
+  useEffect(() => {
+    const old = prev.current
+    prev.current = { value, text }
+    if (old.value === value) return
+    const ok = (v: unknown, t: string): v is number => typeof v === 'number' && Number.isFinite(v) && sameText(v, t, format, 'en-US')
+    if (!ok(old.value, old.text) || !ok(value, text)) return
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const from = old.value, to = value
+    let raf = requestAnimationFrame(() => { setShown(from); raf = requestAnimationFrame(() => setShown(to)) })
+    const done = window.setTimeout(() => setShown(null), DURATION_MS + 150)
+    return () => { cancelAnimationFrame(raf); window.clearTimeout(done) }
+  }, [value, text, format])
+  if (shown === null) {
+    const i = text.lastIndexOf('.')
+    return <span className={className}>{i > 0 ? (<><span>{text.slice(0, i)}</span><span className="text-ui-graphite">{text.slice(i)}</span></>) : text}</span>
+  }
+  return (
+    <span className={className}>
+      <span className="sr-only">{text}</span>
+      <NumberFlow aria-hidden="true" value={shown} format={format} locales="en-US" className="fs-split-roll" trend={0}
+        transformTiming={{ duration: DURATION_MS, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' }} spinTiming={{ duration: DURATION_MS, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' }} />
+    </span>
+  )
+}
+
 /** True when Intl formats `value` exactly as `text` (ASCII hyphen and true minus treated as different on purpose). */
 export function sameText(value: number, text: string, format: Format | undefined, locales: string): boolean {
   try {

@@ -29,6 +29,11 @@ async function main() {
     await page.waitForTimeout(900)
     await page.screenshot({ path: resolve(OUT, `${name}-${width}.jpg`), type: 'jpeg', quality: 60 })
     console.log(JSON.stringify({ width, ...(await checks(page, name)) }))
+    if (flag('wide') !== undefined) console.log(await page.evaluate(() => {
+      const vw = document.documentElement.clientWidth, out: string[] = [String(document.documentElement.scrollWidth)]
+      for (const el of document.querySelectorAll<HTMLElement>('*')) { const r = el.getBoundingClientRect(); if (r.right > vw + 1 && r.width > 0) out.push(`${el.tagName}.${String(el.className).slice(0, 50)} ${Math.round(r.left)}-${Math.round(r.right)} ${getComputedStyle(el).position}`) }
+      return out.slice(0, 12).join('\n')
+    }))
     await ctx.close()
   }
   await b.close()

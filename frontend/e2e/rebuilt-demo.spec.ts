@@ -66,8 +66,7 @@ test('no negative zero; totals per term in USD and bps; grammar of the unfilled 
   await expect(page.getByTestId('orders-shortfall')).toContainText(/Impact and timing\s*>−0\.01 bps/)   // true minus sign
   // hand values (see reshapeDemoAsRebuilt): execution $2 + $8 + $0 = $10 over $35,000 = 2.9 bps; fees $30 = 8.6 bps;
   // unfilled orders 7 bps x $5,000 = $3.50 over $35,000 = 1.0 bps; total $2.50 + $9 + $3.50 = $15 = 4.3 bps
-  // design v2: the totals table is the "Table" view of the where-the-money-went card
-  await page.getByRole('button', { name: 'Table' }).click()
+  // design v3: the totals table is the always-visible receipt "Where the $X went" (the v2 Chart/Table toggle is gone)
   const totals = page.getByTestId('orders-totals')
   const row = (term: string) => totals.getByRole('row', { name: new RegExp(`^${term}\\b`) })
   await expect(row('Execution cost')).toContainText('$10.00')

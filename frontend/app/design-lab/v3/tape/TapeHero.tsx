@@ -4,7 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { startPinnedStory } from '../../../components/marketing/v3/pinnedStory'
 import { formatPct, formatPrice, formatQty, formatSignedBps, formatUsd, heroCosts, heroEntries, heroTape, utcTime } from '../data'
-import { bracketPath, circlePath, underlinePath } from '../lib/pen'
+import { bracketPath, circlePath, underlinePath } from '../../../ui/pen'
 import { ThemeToggle } from '../ThemeScope'
 
 interface Geo {

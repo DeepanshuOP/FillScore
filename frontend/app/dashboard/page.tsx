@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { BookOpen, Download, Link2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AppShell } from '../components/shell/AppShell';
-import { parseView, type View } from '../components/shell/nav';
+import { parseView, viewHref, type View } from '../components/shell/nav';
 import dynamic from 'next/dynamic';
 import ConnectPrompt from '../components/ConnectPrompt';
 import { useAuth } from '../context/AuthContext';
@@ -16,7 +16,7 @@ import { downloadReport } from '../lib/downloads';
 import { track } from '../lib/track';
 import { resolveIdentityState } from '../utils/identityResolver';
 import { buildQuery } from '../utils/queryBuilder';
-import { formatPeriodLabel } from '../utils/periodLabel';
+import { formatPeriodLabel, monthLabel } from '../utils/periodLabel';
 import { Banner } from '../ui/Banner';
 import { Button } from '../ui/Button';
 import { Disclosure } from '../ui/Disclosure';
@@ -268,6 +268,12 @@ function DashboardContent() {
                 v1={{ grade: audit.fillGrade, score: audit.avgFillScore, basis: isDemoData ? undefined : 'rule-based, scoring v1' }}
                 v1Note={v2Body?.demo ? 'Kept unchanged. The measured grade is the one that describes the orders shown now.' : null}
                 freshness={dashboardMode === 'real' ? <SyncFreshness accessToken={accessToken} refreshAccessToken={refreshAccessToken} /> : undefined}
+                band={(v2Body as { result?: { band?: [number, number] | null } } | null)?.result?.band ?? null}
+                period={audit.period}
+                periodLabel={monthLabel(audit.period.start, audit.period.end)}
+                query={query}
+                request={explainRequest}
+                onOpenOrder={(row) => router.push(viewHref('orders', shellUser, !!accessToken, { order: row.orderId }))}
               />
             )}
 
