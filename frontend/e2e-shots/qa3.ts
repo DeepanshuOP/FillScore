@@ -25,7 +25,7 @@ const STATES: State[] = [
   { name: 'landing-hero-end', path: '/', prepare: async (p) => {
     // the pin lasts 1500 px on a desktop and 1100 px on a phone: stop just before it releases
     const w = p.viewportSize()?.width ?? 1440
-    await scrollTo(p, w < 600 ? 520 : 720); await scrollTo(p, w < 600 ? 520 : 720)
+    await scrollTo(p, w < 600 ? 520 : 740); await scrollTo(p, w < 600 ? 520 : 740)
   } },
   { name: 'landing-story-end', path: '/', prepare: async (p) => {
     await scrollTo(p, 1200); await scrollTo(p, 900)
@@ -43,7 +43,7 @@ const STATES: State[] = [
   } },
   { name: 'verify-checked', path: '/verify', prepare: async (p) => {
     await p.locator('#pack').setInputFiles(PACK); await p.locator('#trusted').fill('993a80b17c57a4ad')
-    await p.getByText('Verification receipt').waitFor({ timeout: 15000 }); await p.waitForTimeout(1500)
+    await p.getByText('Verification receipt').waitFor({ timeout: 15000 }); await p.locator('#trusted').blur(); await p.waitForTimeout(1500)
     await p.getByText('Verification receipt').scrollIntoViewIfNeeded(); await p.waitForTimeout(600)
   } },
   { name: 'onboarding-refusal', path: '/onboarding', signedIn: true, prepare: async (p) => {

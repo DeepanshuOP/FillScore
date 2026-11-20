@@ -336,3 +336,19 @@ Facts gathered by the docs-researcher subagent from official pages only; pages t
   `frontend/app/design-lab/v3/tokens.test.ts`.
 - **NumberFlow** cannot change digit size while it rolls (its docs, "Styling parts"), so a stepped-decimal figure steps by
   tone (`::part(fraction)`), not by size.
+
+## AD. Design v3 built into production (orders of 2026-11-20, second)
+
+- **Pen contrast in production:** the paper theme's pen is still 2.9:1, so every pen mark doubles pen-ink text; the
+  contrast test now covers both production themes (`app/ui/contrast.test.ts`), including pen-ink >= 4.5, the stamp
+  >= 3 and "no blue-black ground".
+- **A server-rendered finished frame:** the hero tape's entries have fixed widths, so its rest point and every pen mark,
+  leader and note can be computed without measuring the DOM (`heroGeometry.ts`). No script and reduced motion get the
+  complete annotated frame; script arms the first frame through `html.fs-js` before paint. Landing CLS measured 0.
+- **Visually hidden text can widen a page:** an `sr-only` caption inside a scrolled table, with no positioned ancestor,
+  is placed against the page, not the scroller, and adds to the document's scroll width even though the scroller clips
+  it (found at 390 px on /trades; scroll containers are now `relative`).
+- **Per-order cost on the overview is not served:** the month tape sizes ticks by order value, and the All/Market/Limit
+  switch of the prototype is left out, rather than computing costs in the browser.
+- **Bundle (gzip, `scripts/first-load-js.mjs`):** `/` 332.7 to 323.2 kB, `/dashboard` 380.9 to 383.2, `/login` 309.7 to
+  313.2 against design v2.

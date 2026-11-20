@@ -1,7 +1,6 @@
 "use client";
 import { useState, useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { Droplets, Scale, ShieldCheck, Receipt, type LucideIcon } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { waitForHealthy } from "../utils/serviceWarmup";
 import { track } from "../lib/track";
@@ -86,12 +85,6 @@ const AGENT_ORDER = ["liquidity_scout", "alpha_architect", "risk_auditor", "fee_
 
 const ASSESSMENT_HEADING = "Explanation (language model; every number was checked against the audit)";
 
-const AGENT_ICON: Record<string, LucideIcon> = {
-  liquidity_scout: Droplets,
-  alpha_architect: Scale,
-  risk_auditor: ShieldCheck,
-  fee_optimizer: Receipt,
-};
 
 // Design v2 segmented control (same pattern as the Rankings view), with a disabled state for a running audit.
 function Segmented<T extends string>({ value, options, onChange, label, disabled }: { value: T; options: Array<[T, string]>; onChange: (v: T) => void; label: string; disabled?: boolean }) {
@@ -390,20 +383,18 @@ export default function AgentCouncil({
         {AGENT_ORDER.map((agent, idx) => {
           const card = cards[agent];
           const isRunning = card?.status === "running" || activeAgent === agent;
-          const Icon = AGENT_ICON[agent] ?? Scale;
           const benchmarkNote = agent === "alpha_architect" && card?.status === "done" && !card.failed
             ? alphaBenchmarkNote(card.flags)
             : "";
           const status = isRunning ? "Streaming" : card?.status === "done" ? (card.failed ? "Unavailable" : "Done") : "Idle";
 
           return (
-            <div key={agent} className={cn("sheet flex min-w-0 flex-col gap-3 p-5 font-mono text-[12.5px]", idx % 2 ? "sm:rotate-[0.5deg]" : "sm:-rotate-[0.4deg]")}>
+            <div key={agent} className="sheet flex min-w-0 flex-col gap-3 p-5 font-mono text-[12.5px]">
               <p className="flex items-center justify-between gap-3 border-b border-dashed border-ui-edge pb-2 text-[11px] text-ui-graphite">
                 <span>NOTE {idx + 1} OF 4</span>
                 <span className={isRunning ? "text-ui-ink" : undefined}>{status.toUpperCase()}</span>
               </p>
               <div className="flex items-center gap-2.5">
-                <Icon aria-hidden="true" strokeWidth={1.75} className="size-4 shrink-0 text-ui-ink" />
                 <p className="min-w-0 flex-1 font-ui text-[17px] font-bold text-ui-ink">{agentLabel(agent)}</p>
               </div>
 

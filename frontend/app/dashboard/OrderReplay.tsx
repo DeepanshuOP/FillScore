@@ -70,7 +70,7 @@ function PriceLines({ body }: { body: ReplayBody }) {
         {fills.map((f, i) => <rect key={i} className="fl" x={x(f.t) - 4} y={y(f.p) - 4} width={8} height={8} />)}
       </svg>
       <div className="g flex justify-between text-[11px]"><span>{hms(t0)}</span><span>{hms(t1)} UTC</span></div>
-      <p className="g c text-[11px]">FILLS ONLY; THE PUBLIC PRINTS ARE IN THE SOURCE FILE.{Number.isFinite(arrival) ? ' DASHED: ORDER PLACED.' : ''}</p>
+      <p className="g c text-[11px]">SQUARES: THE FILLS{Number.isFinite(arrival) ? '. DASHED LINE: ORDER PLACED' : ''}. FILLS ONLY; THE PUBLIC PRINTS ARE IN THE SOURCE FILE.</p>
     </>
   );
 }

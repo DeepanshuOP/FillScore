@@ -63,9 +63,15 @@ export function TapeHero() {
         const draw = (sel: string, at: number, d = 0.08) => tl.fromTo(g(sel), { opacity: 1, drawSVG: '0%' }, { opacity: 1, drawSVG: '100%', duration: d, stagger: 0.02 }, at)
         const write = (sel: string, at: number) => tl.fromTo(g(sel), { opacity: 1, clipPath: 'inset(-20% 100% -20% -5%)' }, { opacity: 1, clipPath: 'inset(-20% -5% -20% -5%)', duration: 0.07 }, at)
         tl.fromTo(g('[data-kind="print"]'), { opacity: 1 }, { opacity: 0.38, duration: 0.08 }, 0.42)
-        draw('[data-pen="spread"]', 0.5); draw('[data-leader="spread"]', 0.57, 0.04); write('[data-note="spread"]', 0.6)
-        draw('[data-pen="impact"]', 0.66, 0.1); draw('[data-leader="impact"]', 0.75, 0.04); write('[data-note="impact"]', 0.78)
-        draw('[data-pen="fee"]', 0.84); draw('[data-leader="fee"]', 0.93, 0.03); write('[data-note="fee"]', 0.95)
+        if (phone()) {
+          // a phone shows only the fee circles and their note: they draw right after the tape stops, no dead stretch
+          draw('[data-pen="fee"]', 0.5, 0.14); draw('[data-leader="fee"]', 0.66, 0.06); write('[data-note="fee"]', 0.72)
+        } else {
+          // every mark, leader and note is written by 0.86 of the pin, so the last stretch holds the finished frame
+          draw('[data-pen="spread"]', 0.47); draw('[data-leader="spread"]', 0.53, 0.03); write('[data-note="spread"]', 0.55)
+          draw('[data-pen="impact"]', 0.6, 0.08); draw('[data-leader="impact"]', 0.67, 0.03); write('[data-note="impact"]', 0.69)
+          draw('[data-pen="fee"]', 0.74); draw('[data-leader="fee"]', 0.81, 0.03); write('[data-note="fee"]', 0.83)
+        }
         tl.to({}, { duration: 0.03 }, 0.99)
       },
       // The tape's free feed: it reads right to left at a ticker's pace and eases to rest on the order by itself; the scroll
@@ -87,7 +93,7 @@ export function TapeHero() {
       <div className="fs-hero-stage">
         <div className="fs-hero-viewport">
           <div ref={strip} className="fs-hero-strip fs-strip fs-sprockets" role="img" style={vars}
-            aria-label={`Ticker tape: ${PRINTS} public ${heroTape.symbol} prints from Binance, 28 January 2024, with the order's arrival quote and its two fills. Spread ${formatUsd(heroCosts.spread.usd)}, impact and timing ${formatUsd(heroCosts.impactTiming.usd)}, fees ${formatUsd(heroCosts.fees.usd)}.`}>
+            aria-label={`Ticker tape: ${PRINTS} public ${heroTape.symbol} prints from Binance, 28 January 2024, with the order's arrival quote and its two fills. Spread ${formatUsd(heroCosts.spread.usd)}, impact and timing ${formatUsd(heroCosts.impactTiming.usd)}, fees ${formatUsd(heroCosts.fees.usd)}. The order is a synthetic trader's; the prices are real.`}>
             {ENTRIES.map((e, i) => (
               <div key={i} className="fs-e" data-kind={e.kind} data-dim={e.kind === 'print'} aria-hidden="true">
                 {e.kind === 'print' && (<><div className="p">{formatPrice(e.price)}</div><div className="q">{formatQty(e.qty)} {e.buyerInitiated ? 'B' : 'S'}</div><div className="t">{utcTime(e.ts)}</div></>)}
@@ -103,6 +109,7 @@ export function TapeHero() {
           <dt>SPREAD</dt><dd>{formatUsd(heroCosts.spread.usd)}</dd>
           <dt>IMPACT AND TIMING</dt><dd>{formatUsd(heroCosts.impactTiming.usd)}</dd>
           <dt>FEES</dt><dd>{formatUsd(heroCosts.fees.usd)}</dd>
+          <dt className="col-span-2 mt-1">SYNTHETIC TRADER, REAL PRICES</dt>
         </dl>
         <p className="fs-hero-proof">
           {heroTape.symbol} on Binance, 28 January 2024, {utcTime(ENTRIES[0].ts).slice(0, 8)} to {utcTime(ENTRIES[ENTRIES.length - 1].ts).slice(0, 8)} UTC.

@@ -29,6 +29,10 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
+**2026-11-20 (latest): Design v3 ready for Deepanshu's review (`docs/design/v3/`).** Direction 1 "Tape & Receipt" is
+built into every production screen with the four fixes (local commits, not pushed; design v2 stays live until the push).
+Rules: `DESIGN.md`; report: `docs/milestones/M8.md` (design v3 section); status: `docs/PROGRESS.md`. Older text follows.
+
 **2026-11-20 (latest): Design v3 proposal ready: Deepanshu picks a direction.** Two working prototypes in the dev-only lab (`/design-lab/v3`): direction 1 "Tape & Receipt" (paper, ink, fill-orange pen; recommended) and direction 2 "Grid & Highlighter" (twelve-column sheet on warm black, lime highlighter). Images and the case: `docs/design/v3-proposal/README.md`; research: `docs/design/REFERENCES.md`. Production screens unchanged; design v2 stays live. After the choice: convert production screens and rewrite DESIGN.md from the built direction.
 
 **Older: 2026-11-20: M8 2b part 1 ready for Deepanshu's review (screenshots in `docs/design/2b-1/`); part 2 next: landing with hero, trades, analytics, methodology, verify, check, share** (PROGRESS, "Orders of 2026-11-20"; direction A and IBM Plex Sans are chosen and in production; the dashboard, settings, shell and account pages are rebuilt; the three demo Council runs were re-recorded under rules 1.3.0). The older line that follows is superseded: ~~M8 lab ready: Deepanshu picks A or B and the fonts~~ (`docs/design/lab/README.md`; PROGRESS "Orders of 2026-11-19, second batch"). Also waiting: items 25 to 28 (renderer fix for `evidence_cited`, demo re-record, the recorded demo-moderate flag label, the GSAP licence read) and the push. Older text follows.

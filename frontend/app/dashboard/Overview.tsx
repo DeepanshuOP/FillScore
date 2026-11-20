@@ -258,7 +258,7 @@ function FooterLine({ facts, isDemo, freshness }: { facts: Array<[string, string
     <section aria-label="What this audit covers" className="border-t border-ui-ink pt-3">
       <dl data-testid="scope-facts" className="flex flex-wrap gap-x-8 gap-y-2 font-mono text-[12px]">
         {facts.map(([label, value]) => (
-          <div key={label} className="flex gap-2"><dt className="text-ui-graphite">{label.toUpperCase()}</dt><dd className="text-ui-ink">{value}</dd></div>
+          <div key={label} className="flex gap-2"><dt className="font-mono text-ui-graphite uppercase">{label}</dt><dd className="text-ui-ink">{value}</dd></div>
         ))}
         <div className="flex gap-2"><dt className="text-ui-graphite">DATA</dt><dd className="text-ui-ink">{isDemo ? 'Synthetic trader, real prices' : 'Read with a read-only key'}</dd></div>
       </dl>

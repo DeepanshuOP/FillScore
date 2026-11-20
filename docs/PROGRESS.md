@@ -8,8 +8,20 @@ Deepanshu chose direction 1 with four fixes (hero composition with connected pen
 $0.25 in penInk with "10.0 bps; fees were 99.99% of it" double-underlined; Carbon copy a real tested theme; DESIGN.md
 rewritten), then conversion steps 1-8 (one commit each), then QA. Design v2 stays live until he pushes.
 
-- **Next concrete action: QA pass 2** (`npx tsx e2e-shots/qa3.ts 2` on a fresh build), then the independent reviewer on
-  the images against DESIGN.md, the full checks (e2e needs the local stack), curated images, M8.md, ARCHITECTURE.md §4.
+- **Next concrete action: Design v3 ready for Deepanshu's review (docs/design/v3/).** Reason: the order stops here; the
+  fixes, conversion steps 1-8 and the QA are done and committed locally; pushing (which replaces live design v2) is his.
+  Read `docs/design/v3/README.md` and the design v3 section of `docs/milestones/M8.md`.
+- **Status of every ordered item:** fixes 1-4 done (hero, giant total, Carbon copy tested, DESIGN.md); conversion steps
+  1-8 done (one commit each, details below); QA done: three passes of `qa3.ts`, the emil-design-eng and impeccable
+  checklists, break-ui and the keyboard pass, one independent reviewer (findings fixed or kept with a reason in M8.md),
+  14 images in `docs/design/v3/`, M8.md and ARCHITECTURE.md §4 updated. Final checks: frontend vitest 664 passed, tsc 0,
+  lint 0 errors (17 warnings), build ok, e2e 39 passed, backend 122 files / 1023 passed and tsc 0 (unchanged), guard
+  table 214 passed, roadmap ids OK, First Load JS `/` 323.2, `/dashboard` 383.2, `/login` 313.2 kB gzip. Not run:
+  ml-service pytest and the evals (no ml-service code changed; one comment in `scripts/cut_hero_fixture.py`).
+- **QA pass 2 and 3, and the reviewer:** pass 2 clean except the phone hero end frame captured before its fee marks;
+  reviewer's 12 findings handled (M8.md lists each); pass 3 clean on all 22 states, CLS 0. Found while running the
+  backend suite: `backend/src/__tests__/heroFixture.test.ts` reads the v2 hero fixture, which step 7 had deleted; it is
+  restored at its path (`frontend/app/design-lab/fixtures/hero-order.*`), and the backend suite is green again.
 - **QA so far:** fix 4 done: DESIGN.md rewritten for Tape & Receipt (tokens, type with the measured tabular figures,
   paper/ink/pen rules, receipt anatomy, stamp, tape, pen, motion, data, copy, invariants, anti-generic list; v2 rules
   deleted). QA script `e2e-shots/qa3.ts` (22 states: landing hero start and end, story end, overview, orders with the

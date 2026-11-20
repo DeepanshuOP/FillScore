@@ -45,10 +45,15 @@ export function RankPlot({ view }: { view: RankPlotView }) {
                   <span aria-hidden="true" className="relative block h-5">
                     {zeroIn ? <span className="absolute inset-y-0 w-px bg-ui-edge" style={{ left: `${at(0) * 100}%` }} /> : null}
                     <span className="absolute inset-x-0 top-[6px] h-px bg-ui-rule" />
-                    <span className="absolute inset-0"><PenBracket from={at(r.low)} to={at(r.high)} seed={i + 11} /></span>
+                    {/* an interval narrower than the dot cannot be drawn as a bracket: the pen rings the dot instead, and the words say so */}
+                    {at(r.high) - at(r.low) >= 0.015
+                      ? <span className="absolute inset-0"><PenBracket from={at(r.low)} to={at(r.high)} seed={i + 11} /></span>
+                      : <span className="absolute top-[6px] size-[18px] -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-ui-pen" style={{ left: `${at(r.median) * 100}%` }} />}
                     <span className="absolute top-[6px] size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-ui-ink" style={{ left: `${at(r.median) * 100}%` }} />
                   </span>
-                  <span aria-hidden="true" className="mt-0.5 block font-mono text-[11px] text-ui-pen-ink">median {formatSignedBps(r.median)}, {level}% {formatSignedBps(r.low)} to {formatSignedBps(r.high)}</span>
+                  <span aria-hidden="true" className="mt-0.5 block font-mono text-[11px] text-ui-pen-ink">
+                    median {formatSignedBps(r.median)}, {level}% {formatSignedBps(r.low)} to {formatSignedBps(r.high)}{at(r.high) - at(r.low) < 0.015 ? ', narrower than the mark' : ''}
+                  </span>
                 </span>
                 <span className="text-right font-mono text-[13px] text-ui-graphite max-sm:hidden">{r.n}</span>
               </li>

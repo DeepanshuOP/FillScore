@@ -97,7 +97,7 @@ function RefusalBanner({ refusal, exchange, message }: { refusal: Refusal; excha
           {steps.map((s, i) => (
             <li key={s} className="grid grid-cols-[3ch_minmax(0,1fr)] gap-x-2">
               <span className="g">{String(i + 1).padStart(2, '0')}</span>
-              <span className={network ? 'text-ui-ink' : 'font-ui text-[15px] font-bold leading-snug text-ui-pen-ink'}>{s}</span>
+              <span className={network ? 'text-ui-ink' : 'font-ui text-[15px] font-bold leading-snug text-ui-ink'}>{s}</span>
             </li>
           ))}
         </ol>

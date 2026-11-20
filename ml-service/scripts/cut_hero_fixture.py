@@ -38,7 +38,9 @@ def iso_ms(ms: int) -> str:
 def main() -> None:
     # Optional (M8 design v2, 2026-11-20): `--order <id> --out <file name in fixtures/>` cuts another order the same way.
     # The landing hero uses `--order ord-moderate-BTCUSDT-968874 --out landing-order.inputs.json` (selection rule in
-    # frontend/app/lib/landing/heroOrder.ts). Without arguments the script writes the lab's hero fixture as before.
+    # frontend/app/lib/landing/heroOrder.ts). Since design v3 (2026-11-20) the landing fixtures live in
+    # frontend/app/lib/landing/fixtures/: move a freshly cut landing-order.* file there. Without arguments the script
+    # writes the lab's hero fixture as before (backend/src/__tests__/heroFixture.test.ts reads it).
     order_id, out = ORDER_ID, OUT
     args = sys.argv[1:]
     if "--order" in args:

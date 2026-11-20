@@ -7,7 +7,7 @@
  */
 .fs-hero { position: relative; height: 100svh; min-height: 640px; overflow: hidden; display: grid; grid-template-rows: 64px 1fr auto; }
 .fs-hero-stage { position: relative; }
-.fs-hero-viewport { position: absolute; left: 0; right: 0; top: clamp(70px, 13vh, 130px); height: 260px; }
+.fs-hero-viewport { position: absolute; left: 0; right: 0; top: clamp(96px, 17vh, 170px); height: 260px; }
 /* at rest on the order: --stop-d / --stop-p are the order's centre in tape px, computed on the server (heroGeometry.ts) */
 .fs-hero-strip { position: relative; display: flex; width: max-content; height: 134px; will-change: transform; transform: translate3d(calc(44vw - var(--stop-d)), 0, 0); }
 @media (max-width: 767px) { .fs-hero-strip { transform: translate3d(calc(50vw - var(--stop-p)), 0, 0); } }
@@ -31,7 +31,7 @@
 .fs-hero-copy { position: relative; z-index: 2; padding: 0 var(--ui-gutter) clamp(28px, 5vh, 56px);
   display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 400px); gap: 48px; align-items: end; }
 .fs-hero-h1 { font-weight: 900; font-size: clamp(52px, 9.6vw, 156px); line-height: 0.86; letter-spacing: -0.045em; margin: 0; text-wrap: balance; }
-.fs-hero-proof { position: absolute; right: var(--ui-gutter); top: calc(clamp(70px, 13vh, 130px) + 150px); max-width: 44ch; text-align: right;
+.fs-hero-proof { position: absolute; right: var(--ui-gutter); top: calc(clamp(96px, 17vh, 170px) + 150px); max-width: 44ch; text-align: right;
   font-family: var(--ui-mono); font-size: 11.5px; line-height: 1.5; color: var(--ui-graphite); z-index: 2; }
 .fs-hero-list { display: none; }
 
