@@ -8,9 +8,16 @@ Deepanshu chose direction 1 with four fixes (hero composition with connected pen
 $0.25 in penInk with "10.0 bps; fees were 99.99% of it" double-underlined; Carbon copy a real tested theme; DESIGN.md
 rewritten), then conversion steps 1-8 (one commit each), then QA. Design v2 stays live until he pushes.
 
-- **Next concrete action: conversion step 5, rules and rankings** (rules as ledger rows with the pen circling what met a
-  rule, review actions for signed-in accounts; rankings as a tape with interval brackets, ties "not distinguishable",
-  under 20 orders "too few to tell").
+- **Next concrete action: conversion step 6, Council and Evidence** (auditors' memo: four typed notes, transcript,
+  labelled explanation, verbatim recorded output, Quick/Deep; Evidence as two stamped envelopes with progress and the
+  fingerprint).
+- **Step 5, done:** Rules as ledger rows: order id and symbol in mono, the finding, the cost circled by the pen
+  (`PenCircle`, seeded) with the rule written beside it in pen-ink ("Met: High total cost"), the review state as a
+  printed mark, review buttons only for signed-in accounts; a row prints the order's receipt. Rankings as a tape on a
+  receipt strip: rank 1 first in Cabinet Black, a shared bps ruler with zero, the pen bracket (`PenBracket`) for each
+  90% interval and an ink median dot, the interval also printed in pen-ink words, shared ranks in graphite with "not
+  distinguishable from ...", groups under 20 orders listed after as "too few to tell"; `RankTable` kept as the table
+  form; `rankingsView` tests unchanged. Checks: vitest 678, tsc 0, lint 0 errors; looks 1440/390: no overflow, axe 0.
 - **Step 4, done:** Orders as a ledger (Departure Mono figures, ink header rule, dashed row rules, sortable, filter and
   side switch kept); `OrderReplay` rewritten as the thermal receipt (Radix Dialog printing down from a slot on a desktop,
   Vaul drawer with a torn top on a phone), wired to `GET /audit/orders/:id/replay` for every order: order record, fills,

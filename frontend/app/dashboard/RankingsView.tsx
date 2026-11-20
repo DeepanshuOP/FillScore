@@ -20,10 +20,10 @@ const withParams = (path: string, query: string, extra: Record<string, string> =
 
 function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: Array<[T, string]>; onChange: (v: T) => void; label: string }) {
   return (
-    <div role="group" aria-label={label} className="flex rounded-[8px] bg-ui-overlay p-0.5 text-[12px]">
+    <div role="group" aria-label={label} className="flex gap-0.5 rounded-full border border-ui-edge p-[3px] text-[13px]">
       {options.map(([k, text]) => (
         <button key={k} type="button" aria-pressed={value === k} onClick={() => onChange(k)}
-          className={cn('rounded-[6px] px-2.5 py-1 transition-colors', value === k ? 'bg-ui-raised text-ui-ink shadow-ui' : 'text-ui-graphite hover:text-ui-ink')}>{text}</button>
+          className={cn('h-7 rounded-full px-3 font-medium transition-colors', value === k ? 'bg-ui-ink text-ui-surface' : 'text-ui-graphite hover:text-ui-ink')}>{text}</button>
       ))}
     </div>
   );
