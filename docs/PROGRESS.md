@@ -2,9 +2,29 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-20, design v3 (phases R and P; local commit, not pushed)
+
+- **Next concrete action: Design v3 proposal ready: Deepanshu picks a direction.** Reason: the order stops after phase P
+  for his choice; production screens are not converted until he picks. Read `docs/design/v3-proposal/README.md` (10
+  images, the two directions, what each borrows, the recommendation: direction 1 "Tape & Receipt").
+- **Phase R, done:** 13 viewport captures in `.work/refs/` (not committed) from Awwwards SOTD and honors (Sweet Tape,
+  Santal, Deepbook, Grids by Obys, project://cult), aqryl, Synthesis Capital, Hark Capital, Equator, Stripe Press
+  (SiteInspire), UGLYCASH (One Page Love). EverSwap (preloader stuck at 0%) and Tenity (black WebGL canvas) did not render
+  under automation and were skipped; SiteInspire has no finance category any more. Write-up: `docs/design/REFERENCES.md`.
+- **Phase P, done:** lab under `frontend/app/design-lab/v3/` (tokens, specimen, hero, overview, receipt per direction);
+  scroll story in `frontend/app/components/marketing/v3/pinnedStory.ts` (the motion test allows pin and scrub only in
+  components/marketing); month fixture cut from the offline demo build through the production `buildOrderReplay`
+  (`cut-month.ts`); new tests `data.test.ts` (fixture adds up to the served totals), `tokens.test.ts` (contrast),
+  `lib/hash.test.ts`. No new dependency.
+- **Checks before the commit:** frontend vitest 72 files, 662 passed (625 before plus 37 new); tsc 0; lint 0 errors,
+  18 warnings (baseline); build ok; `impeccable detect` no findings.
+- **Still waiting for Deepanshu from design v2** (unchanged): the Council "Key dispute" re-record, the replay payload's
+  public prints (the v3 receipt chart needs them too for orders other than the hero), the push. (The stray root
+  `package.json` / `node_modules/` are no longer present.)
+
 ## Orders of 2026-11-20, design v2 "Instrument" (replaces the M8 2b part 2 order; local commits, not pushed)
 
-- **Next concrete action: Design v2 ready for Deepanshu's review (docs/design/v2/).** Reason: the order stops here for his review. Report and the reviewer disposition: `docs/milestones/M8.md`. Local commits, not pushed.
+- **Done (superseded as next action by design v3 above): Design v2 ready for Deepanshu's review (docs/design/v2/).** Reason: the order stops here for his review. Report and the reviewer disposition: `docs/milestones/M8.md`. Local commits, not pushed.
 - **Steps 1 to 6 of the order of 2026-11-20 (resume after the usage limit), all done:** (1) pytest 1779 passed, `run_offline.py` exit 0, `ablation.py --check` exit 0; committed in five logical commits; `.mcp.json` (shadcn MCP config, no secrets) added to `.gitignore`; `.work/` not committed. (2) QA crash did not recur; passes 1 to 3 fixed what was seen (axe, 390 px overflow, top bar); passes 4 to 6 added curated states (the ordered maximum of three applies to the fix loop). Final pass 6: 16 states, **axe 0 serious or critical, landing CLS 0.00002**, no overflow. (3) `review-animations` is not an installed skill, so the motion review used `emil-design-eng` guidance by hand (sheet easing fixed); `break-ui` ran as `e2e-shots/break.ts` (focus return after the drawer, "1 values cited" fixed). (4) First Load JS before to after: `/` 359.9 to 332.7, `/dashboard` 400.8 to 380.9, `/login` 337.1 to 309.7 (Motion features and Sonner now load after first paint). (5) reviewer subagent, 12 findings: fixed, kept or refuted one by one in M8.md (one was a fixture bug, one was wrong). (6) 12 images in `docs/design/v2/`, `docs/milestones/M8.md`, ARCHITECTURE §4 updated. **Checks at the end:** frontend vitest 625 passed, tsc 0, lint 0 errors; backend 1023 passed; e2e 37 passed; roadmap IDs OK; build ok.
 - **Waiting for Deepanshu (design v2):** review of `docs/design/v2/`; the recorded Council "Key dispute" sentence states a cause and "Fee Optimizer" reads forward-looking (re-record needed, rule 6); the drawer needs public prints in the replay payload to draw the full tape (backend); untracked stray `package.json`, `package-lock.json`, `node_modules/` at the repo root from running the shadcn CLI there (safe to delete); the push.
 - **Phase 3 status: built, not yet committed.** Shell (`components/shell/`: sidebar, account switcher, top bar, ⌘K, theme toggle, Vaul nav, log out), Overview bento, Orders (tanstack table + replay Sheet/Drawer with the fill tape and ledger), Rules, Rankings (RankPlot + table), Council, Evidence, landing (HeroTape with GSAP story, Lenis + SplitText, sticky scroll story with ScrollTrigger scrub, live demo cards, Check it yourself, close), trades, analytics, settings, auth pages, onboarding (designed refusal states), methodology (TOC), verify (receipt), check, share (v2 grade first via public `/audit/v2`, frontend only), legal, `not-found.tsx`, `error.tsx`. Bridge block, old palettes, Plex, Navbar, AuthNav, ExplainPanel, Headline, CostPanels, OrdersPanel, StatBlock, old lab removed.

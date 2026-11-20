@@ -319,3 +319,20 @@ Facts gathered by the docs-researcher subagent from official pages only; pages t
   | 3 | demo-disciplined | 15 | 1 (recovered) | same | GOOD, accepted |
 
   `http_429` appears as an outcome in `llm_calls` of runs 2 and 3, with `n_calls_ok` still 9: a recovered rate limit, not a failed call. The 1.3.0 live check did its work in every run: the alpha flag `unfilled_opportunity_cost_assessed` was dropped (runs 1, 2), and `because` / `resulting in` sentences were redacted from specialist text (runs 1, 3). Specialist text of several fields fell back to the code-built sentence ("Alpha verdict: NEGATIVE.", "Fee verdict: OPTIMAL; fee drag 10.0 bps."); this is thin but is how a redacted field is filled. **Read, and left as recorded:** run 1 key dispute "reflecting efficient cost management" (number in the same sentence, so within the stated limit of rule 1.2.0 (b)); run 2 claim D2b "showing a strategic preference for liquidity provision" (an attribution of intent no rule lists); run 3 debate claims P2b and D2b state opposite readings of the same value (">-0.01 bps shows no negative slippage" against "shows negative slippage"). Recorded output was not edited. Offline after the re-record (`run_offline.py`, 39 runs; the three demo fixtures are among them): `claim_rules_1_2_0` flags 18 of 39 (was 20 before the re-record), `claim_rules_1_3_0` 18 of 39 (was 21); the ablation tables are unchanged (they read the recordings only).
+
+## AC. Design v3 research and prototypes (orders of 2026-11-20, phases R and P)
+- **Reference research** in headless Chromium, 13 viewport captures (`.work/refs/`, not committed); findings and the five
+  patterns that separate award-level work from design v2 in `docs/design/REFERENCES.md`. Two named sites did not render
+  under automation (EverSwap: WebGL preloader stuck at 0%; Tenity: black WebGL canvas); SiteInspire no longer has a finance
+  category.
+- **Tabular figures, measured in the browser** (each digit in its own span at 100 px, tabular-nums on): Cabinet Grotesk
+  66.00 px for all ten digits; Departure Mono 63.64; Martian Mono 70.00; Archivo 57.31 at width 100 and 81.50 at width 125;
+  Fragment Mono 61.81; **Clash Grotesk 37.11 to 66.20, not tabular**, so it cannot set tables.
+- **A fixture error caught by its test:** the first month-tape fixture divided by filled notional (41,976.30) and missed
+  the served 44,411.78; the summary's denominator is the intended notional (`orderSummary.termTotals`), filled or not.
+  The cut now carries `intendedNotional` from the stored measurement and adds up to the served totals exactly.
+- **Contrast:** fill orange `#FF4F12` on paper `#F3F2EE` is 2.9:1, under the 3:1 needed for a meaningful mark, so in the
+  paper theme orange marks only double text that is written in `#C2380A` (4.5:1 or more). Tested in
+  `frontend/app/design-lab/v3/tokens.test.ts`.
+- **NumberFlow** cannot change digit size while it rolls (its docs, "Styling parts"), so a stepped-decimal figure steps by
+  tone (`::part(fraction)`), not by size.
