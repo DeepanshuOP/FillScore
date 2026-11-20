@@ -3,19 +3,109 @@
 import { lookbackLabel } from '../utils/navLinks';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { Check, ChevronLeft, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/authFetch';
 import { mapOnboardingError } from '../utils/errorMapping';
-import { getGradeColor } from '../utils/gradeColor';
 import { EXCHANGES, getExchange, ExchangeId } from '../utils/exchanges';
 import { apiBase } from '../lib/apiBase';
 import { skippedNotice } from '../dashboard/skipped';
 import { pollSyncStatus, progressText, SyncStatus } from '../utils/syncPolling';
+import { cn } from '../../lib/utils';
+import { Banner } from '../ui/Banner';
+import { Button } from '../ui/Button';
+import { Disclosure } from '../ui/Disclosure';
+import { Field } from '../ui/Field';
+import { GradeChip } from '../ui/GradeChip';
+import { Logo } from '../components/shell/Logo';
+import Link from 'next/link';
+
+const STEPS = ['Connect exchange', 'Paste read-only key', 'Sync'] as const;
+
+type RefusalCode = 'key_not_read_only' | 'invalid_key' | 'network_error';
+interface Refusal { code: RefusalCode; disable?: string[]; enable?: string[] }
+const REFUSAL_CODES: readonly string[] = ['key_not_read_only', 'invalid_key', 'network_error'];
+
+function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
+  return (
+    <ol aria-label="Steps" className="mb-8 flex items-center gap-3">
+      {STEPS.map((label, i) => {
+        const n = i + 1;
+        const active = n === current;
+        const done = n < current;
+        return (
+          <li key={label} aria-current={active ? 'step' : undefined} className="flex items-center gap-2">
+            <span className={cn('grid size-6 shrink-0 place-items-center rounded-full text-[12px] font-medium ring-1 ring-inset',
+              active ? 'text-ui-ink ring-2 ring-ui-action' : done ? 'bg-ui-overlay text-ui-ink ring-ui-edge' : 'text-ui-graphite ring-ui-rule')}>
+              {done ? <Check aria-hidden="true" className="size-3.5" /> : n}
+            </span>
+            <span className={cn('text-[13px]', active ? 'text-ui-ink' : 'text-ui-graphite', !active && 'hidden sm:inline')}>{label}</span>
+            {n < STEPS.length ? <span aria-hidden="true" className="hidden h-px w-6 bg-ui-rule sm:block" /> : null}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** A refusal says exactly what to change on the exchange (or, for a network error, that nothing was stored). */
+function RefusalBanner({ refusal, exchange, message }: { refusal: Refusal; exchange: string; message: string }) {
+  const isBinance = exchange === 'Binance';
+  let steps: string[];
+  let title: string;
+  if (refusal.code === 'key_not_read_only') {
+    title = 'The key was refused: it can do more than read';
+    steps = [
+      `Open API management on ${exchange}.`,
+      'Edit the key you pasted.',
+      refusal.disable?.length
+        ? `Turn off ${refusal.disable.map((d) => `"${d}"`).join(', ')}, and any futures or transfer permission.`
+        : isBinance
+          ? 'Turn off "Enable Spot & Margin Trading", "Enable Withdrawals" and any futures or transfer permission.'
+          : 'Turn off every trading, withdrawal, futures and transfer permission.',
+      refusal.enable?.length
+        ? `Keep ${refusal.enable.map((d) => `"${d}"`).join(', ')} only.`
+        : isBinance ? 'Keep "Enable Reading" only.' : 'Keep read-only permission only.',
+      'Save the key.',
+      'Paste the key again here.',
+    ];
+  } else if (refusal.code === 'invalid_key') {
+    title = `${exchange} did not accept the key`;
+    steps = [
+      'Check that the key and the secret were copied whole, without spaces before or after.',
+      'Check that the key is not deleted or expired.',
+      'Check that the IP restriction on the key, if there is one, allows FillScore.',
+    ];
+  } else {
+    title = `${exchange} did not answer`;
+    steps = ['Nothing was stored.', 'Try again in a moment.'];
+  }
+  return (
+    <Banner kind={refusal.code === 'network_error' ? 'stale' : 'refused'} title={title} className="mb-6">
+      <p>{message}</p>
+      <ol className="mt-2 list-decimal space-y-0.5 pl-5">
+        {steps.map((s) => <li key={s}>{s}</li>)}
+      </ol>
+    </Banner>
+  );
+}
+
+function SecretField({ id, label, placeholder, value, onChange, shown, onToggle }: {
+  id: string; label: string; placeholder: string; value: string; onChange: (v: string) => void; shown: boolean; onToggle: () => void;
+}) {
+  return (
+    <div className="flex items-end gap-2">
+      <Field id={id} className="min-w-0 flex-1" label={label} type={shown ? 'text' : 'password'} placeholder={placeholder}
+        autoComplete="off" value={value} onChange={(e) => onChange(e.target.value)} />
+      <Button variant="quiet" aria-pressed={shown} aria-label={`${shown ? 'Hide' : 'Show'} ${label.toLowerCase()}`} onClick={onToggle}>{shown ? 'Hide' : 'Show'}</Button>
+    </div>
+  );
+}
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { user, isLoading, accessToken, refreshAccessToken } = useAuth();
-  
+
   const [selectedExchange, setSelectedExchange] = useState<ExchangeId | null>(null);
   const [apiKey, setApiKey] = useState('');
   const [apiSecret, setApiSecret] = useState('');
@@ -24,12 +114,12 @@ export default function OnboardingPage() {
   const [showApiKey, setShowApiKey] = useState(false);
   const [showApiSecret, setShowApiSecret] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
-  
+
   const [submitting, setSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [refusal, setRefusal] = useState<Refusal | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
-  
+
   // Sync state
   const [syncing, setSyncing] = useState(false);
   const [syncStatusText, setSyncStatusText] = useState('');
@@ -47,6 +137,13 @@ export default function OnboardingPage() {
 
   const pollAbort = useRef<AbortController | null>(null);
   useEffect(() => () => pollAbort.current?.abort(), []);   // 3a G5 #9: stop polling on unmount (above the early return)
+
+  /** Records an API error: the mapped sentence, and for the three refusal codes the designed refusal state. */
+  const fail = (code: string, status?: number, exchange?: string, permissions?: { disable?: string[]; enable?: string[] }) => {
+    setErrorMsg(mapOnboardingError(code, status, exchange, permissions));
+    setRefusal(status !== 429 && REFUSAL_CODES.includes(code) ? { code: code as RefusalCode, disable: permissions?.disable, enable: permissions?.enable } : null);
+  };
+  const clearError = () => { setErrorMsg(null); setRefusal(null); };
 
   // Stored lookback (closes "no endpoint exposes it") and resume of a job already running.
   useEffect(() => {
@@ -73,10 +170,8 @@ export default function OnboardingPage() {
 
   if (isLoading || !user) {
     return (
-      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center pt-16">
-        <div style={{ fontFamily: 'var(--font-mono)', color: '#a78b71', letterSpacing: '0.2em' }}>
-          LOADING...
-        </div>
+      <div className="flex min-h-screen items-center justify-center bg-ui-surface">
+        <p className="text-sm text-ui-graphite">Loading</p>
       </div>
     );
   }
@@ -87,10 +182,10 @@ export default function OnboardingPage() {
 
   const handleSubmit = async () => {
     if (isFormDisabled || submitting) return;
-    
+
     setSubmitting(true);
-    setErrorMsg(null);
-    
+    clearError();
+
     try {
       const baseUrl = apiBase();
       const res = await authFetch(`${baseUrl}/onboarding/connect`, {
@@ -103,21 +198,21 @@ export default function OnboardingPage() {
           ...(selected?.needsPassphrase ? { apiPassphrase: apiPassphrase.trim() } : {})
         })
       }, { accessToken, refreshAccessToken });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) {
-        setErrorMsg(mapOnboardingError(data.error || 'unknown', res.status, selected?.name, { disable: data.disable, enable: data.enable }));
+        fail(data.error || 'unknown', res.status, selected?.name, { disable: data.disable, enable: data.enable });
       } else {
         setIsSuccess(true);
         // Clear secrets from state immediately
         setApiKey('');
         setApiSecret('');
         setApiPassphrase('');
-        setErrorMsg(null);
+        clearError();
       }
     } catch {
-      setErrorMsg(mapOnboardingError('network_error', undefined, selected?.name));
+      fail('network_error', undefined, selected?.name);
     } finally {
       setSubmitting(false);
     }
@@ -130,9 +225,9 @@ export default function OnboardingPage() {
     if (r.invalidSymbols?.length) bits.push(`Not found on the exchange: ${r.invalidSymbols.join(', ')}.`);
     setSyncNote(bits.length ? bits.join(' ') : null);
     if (s.lookbackDays) setUsedLookback(s.lookbackDays);
-    if (s.state === 'failed') { setErrorMsg(mapOnboardingError('unknown', 500)); return; }
-    if (s.state === 'needs_attention') { setErrorMsg(mapOnboardingError(r.error || 'key_not_read_only', undefined, undefined, { disable: r.disable, enable: r.enable })); return; }
-    if (r.noScorableTrades) { setErrorMsg(`None of your trades could be scored: ${skippedNotice(r.skippedTrades) ?? 'no reasons recorded'}.`); return; }
+    if (s.state === 'failed') { fail('unknown', 500); return; }
+    if (s.state === 'needs_attention') { fail(r.error || 'key_not_read_only', undefined, undefined, { disable: r.disable, enable: r.enable }); return; }
+    if (r.noScorableTrades) { setRefusal(null); setErrorMsg(`None of your trades could be scored: ${skippedNotice(r.skippedTrades) ?? 'no reasons recorded'}.`); return; }
     if (r.noTrades) { setNoTrades(true); return; }
     setSyncResult({ fillScore: r.fillScore ?? 0, grade: r.grade ?? '-', tradesIngested: r.tradesIngested ?? 0, tradesScored: r.tradesScored ?? 0 });
     // A complete sync goes straight to the dashboard; a partial one stays so the note is read first.
@@ -158,7 +253,7 @@ export default function OnboardingPage() {
       applyTerminal(final);
     } catch {
       if (ctl.signal.aborted) return;   // unmounted or superseded: write nothing
-      setErrorMsg(mapOnboardingError('network_error'));
+      fail('network_error');
     } finally {
       if (!ctl.signal.aborted) setSyncing(false);
     }
@@ -167,7 +262,7 @@ export default function OnboardingPage() {
   const handleSync = async () => {
     if (syncing) return;
     setSyncing(true);
-    setErrorMsg(null);
+    clearError();
     setNoTrades(false);
     setSyncStatusText(`Fetching your trades from ${selected?.name ?? 'your exchange'}...`);
     try {
@@ -186,469 +281,152 @@ export default function OnboardingPage() {
       const data = await res.json().catch(() => ({}));
       if (data.error === 'No exchange connections found' || data.error === 'no_exchange_connections_found') {
         setIsSuccess(false);
-        setErrorMsg(mapOnboardingError('no_exchange_connections_found'));
+        fail('no_exchange_connections_found');
       } else {
-        setErrorMsg(mapOnboardingError(data.error || 'unknown', res.status));
+        fail(data.error || 'unknown', res.status);
       }
     } catch {
-      setErrorMsg(mapOnboardingError('network_error'));
+      fail('network_error');
     } finally {
       setSyncing(false);
     }
   };
 
+  const step: 1 | 2 | 3 = isSuccess ? 3 : selectedExchange ? 2 : 1;
+  const exchangeName = selected?.name ?? 'Binance';
+
   return (
-    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center pt-16 px-4" style={{ paddingBottom: '10rem' }}>
-      <div className="w-full max-w-[520px] relative overflow-hidden rounded-[2px]"
-           style={{
-             background: '#141412',
-             border: '1px solid rgba(167,139,113,0.2)',
-             padding: '0',
-             boxShadow: '0 0 0 1px rgba(255,255,255,0.03) inset, 0 0 120px rgba(167,139,113,0.06), 0 60px 100px rgba(0,0,0,0.6)'
-           }}>
-        
-        {/* Card ambient glow */}
-        <div style={{
-          position: 'absolute',
-          bottom: '-80px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '300px',
-          height: '150px',
-          background: 'radial-gradient(ellipse, rgba(167,139,113,0.06) 0%, transparent 70%)',
-          pointerEvents: 'none',
-          zIndex: 0
-        }} />
+    <div className="min-h-screen bg-ui-surface px-5 py-8 sm:px-8">
+      <Link href="/" aria-label="FillScore home" className="inline-flex no-underline"><Logo /></Link>
+      <main className="mx-auto w-full max-w-[520px] py-10">
+        <StepIndicator current={step} />
 
-        {/* Card top accent bar */}
-        <div style={{
-          height: '1px',
-          width: '100%',
-          background: 'linear-gradient(to right, transparent 0%, rgba(167,139,113,0.3) 15%, rgba(232,213,183,0.85) 50%, rgba(167,139,113,0.3) 85%, transparent 100%)',
-          position: 'relative',
-          zIndex: 1
-        }} />
+        {errorMsg && refusal ? <RefusalBanner refusal={refusal} exchange={exchangeName} message={errorMsg} /> : null}
+        {errorMsg && !refusal ? <Banner kind="refused" title="Something did not work" className="mb-6">{errorMsg}</Banner> : null}
 
-        {/* Card content wrapper */}
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          
-          {/* HEADER ROW */}
-          <div className="flex justify-between items-center border-b border-[rgba(255,255,255,0.04)] px-5 py-5 sm:px-8 sm:pt-6 sm:pb-5">
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.3em', color: '#a78b71' }}>
-              {isSuccess ? '02  /  SYNC' : '01  /  CONNECT'}
-            </span>
-            {!isSuccess && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.2em', color: '#8a7560' }}>
-                  READY
-                </span>
-                <div style={{
-                  width: '6px',
-                  height: '6px',
-                  borderRadius: '50%',
-                  background: '#a78b71',
-                  boxShadow: '0 0 10px rgba(167,139,113,0.8), 0 0 20px rgba(167,139,113,0.3)'
-                }} />
+        {noTrades ? (
+          <section className="panel flex flex-col gap-4 p-5 sm:p-6">
+            <h1 className="display-md">No trades yet</h1>
+            <p className="text-[13px] leading-5 text-ui-graphite">
+              We connected successfully, but found no spot trades in {lookbackLabel(usedLookback)}. Assets you hold are searched automatically; an asset you fully sold is only found if you list it. Use “Sync a longer period” or add symbols below.
+            </p>
+            {syncNote && <p className="text-[13px] leading-5 text-ui-graphite">{syncNote}</p>}
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button variant="secondary" onClick={() => { setNoTrades(false); setSyncNote(null); if (lookbackDays < 3650) setLookbackDays(lookbackDays < 90 ? 90 : lookbackDays < 365 ? 365 : 3650); }}>
+                Sync a longer period
+              </Button>
+              <Button onClick={() => router.push('/dashboard')}>Go to dashboard</Button>
+            </div>
+          </section>
+        ) : syncResult ? (
+          <section className="panel flex flex-col gap-6 p-5 text-center sm:p-6">
+            <div className="flex flex-col items-center gap-3">
+              <p className="text-[13px] text-ui-graphite">Your FillScore</p>
+              <p className="text-[4rem] font-semibold leading-none tracking-[-0.02em] text-ui-ink">{syncResult.fillScore.toFixed(1)}</p>
+              <GradeChip grade={syncResult.grade} size="lg" label={`Grade ${syncResult.grade}`} />
+            </div>
+            <dl className="grid grid-cols-2 gap-4 border-t border-ui-rule pt-4 text-left">
+              <div>
+                <dt className="text-[13px] text-ui-graphite">Trades ingested</dt>
+                <dd className="mt-1 text-lg font-semibold text-ui-ink">{syncResult.tradesIngested}</dd>
               </div>
-            )}
-          </div>
-
-          <div className="px-5 py-5 sm:px-8 sm:pt-7 sm:pb-8">
-            
-            {errorMsg && (
-              <div style={{
-                padding: '0.875rem 1rem', background: 'rgba(255, 68, 68, 0.05)',
-                borderLeft: '2px solid rgba(255, 68, 68, 0.6)', borderRadius: '0 2px 2px 0',
-                marginBottom: '1.5rem'
-              }}>
-                <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.8rem', color: '#ff8888', lineHeight: 1.5 }}>
-                  {errorMsg}
-                </p>
+              <div className="text-right">
+                <dt className="text-[13px] text-ui-graphite">Trades scored</dt>
+                <dd className="mt-1 text-lg font-semibold text-ui-ink">{syncResult.tradesScored}</dd>
               </div>
-            )}
-
-            {noTrades ? (
-              // NO TRADES FOUND STATE
-              <div className="text-center py-6">
-                <h1 style={{
-                  fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.4rem',
-                  color: '#ede8e0', fontWeight: 400, marginBottom: '1rem'
-                }}>
-                  No Trades Yet
-                </h1>
-                <div style={{
-                  padding: '1.25rem', background: 'rgba(167,139,113,0.05)',
-                  border: '1px solid rgba(167,139,113,0.2)', borderRadius: '2px',
-                  marginBottom: '2rem', textAlign: 'left'
-                }}>
-                  <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#8a7d6a', lineHeight: 1.6 }}>
-                    We connected successfully, but found no spot trades in {lookbackLabel(usedLookback)}. Assets you hold are searched automatically; an asset you fully sold is only found if you list it. Use “Sync a longer period” or add symbols below.
-                  </p>
-                </div>
-                {syncNote && <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.8rem', color: '#c8b898', marginBottom: '1rem', textAlign: 'left' }}>{syncNote}</p>}
-                <button
-                  onClick={() => { setNoTrades(false); setSyncNote(null); if (lookbackDays < 3650) setLookbackDays(lookbackDays < 90 ? 90 : lookbackDays < 365 ? 365 : 3650); }}
-                  className="w-full flex justify-center items-center rounded-[2px]"
-                  style={{ padding: '1rem', marginBottom: '0.75rem', border: '1px solid rgba(167,139,113,0.4)', color: '#c8b898', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em', cursor: 'pointer' }}
-                >
-                  SYNC A LONGER PERIOD
-                </button>
-                <button
-                  onClick={() => router.push('/dashboard')}
-                  className="w-full relative overflow-hidden flex justify-center items-center rounded-[2px]"
-                  style={{
-                    padding: '1rem', background: '#a78b71', color: '#0f0f0f',
-                    fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 600,
-                    cursor: 'pointer', transition: 'all 0.2s ease'
-                  }}
-                >
-                  GO TO DASHBOARD
-                </button>
+            </dl>
+            {syncNote && <p className="text-left text-[13px] leading-5 text-ui-graphite">{syncNote}</p>}
+            <Button onClick={() => router.push('/dashboard')}>View my dashboard</Button>
+          </section>
+        ) : isSuccess ? (
+          <section className="panel flex flex-col gap-5 p-5 sm:p-6">
+            <div>
+              <h1 className="display-md">Connected</h1>
+              <p className="mt-2 text-[13px] leading-5 text-ui-graphite">Your read-only key has been verified and securely stored.</p>
+            </div>
+            {syncing ? (
+              <div role="status" className="flex flex-col items-center gap-3 py-6 text-center">
+                <Loader2 aria-hidden="true" className="size-6 animate-spin text-ui-graphite motion-reduce:animate-none" />
+                <p className="text-sm text-ui-ink">{syncStatusText}</p>
+                <p className="text-[13px] text-ui-graphite">This may take up to 60 seconds</p>
               </div>
-            ) : syncResult ? (
-              // SYNC SUCCESS STATE
-              <div className="text-center py-4">
-                <div style={{ marginBottom: '2rem' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', letterSpacing: '0.2em', color: '#6a6560', textTransform: 'uppercase' }}>
-                    Your FillScore
-                  </span>
-                  <div style={{
-                    fontFamily: 'var(--font-mono)', fontSize: '4rem', fontWeight: 300, color: '#ede8e0',
-                    lineHeight: 1, marginTop: '1rem', marginBottom: '0.5rem'
-                  }}>
-                    {syncResult.fillScore.toFixed(1)}
-                  </div>
-                  <div style={{
-                    display: 'inline-block', padding: '0.25rem 1rem', borderRadius: '100px',
-                    background: `${getGradeColor(syncResult.grade)}15`,
-                    color: getGradeColor(syncResult.grade),
-                    fontFamily: 'var(--font-mono)', fontSize: '1.25rem', fontWeight: 600
-                  }}>
-                    Grade {syncResult.grade}
-                  </div>
-                </div>
-
-                <div className="flex justify-between items-center px-4 py-3 mb-8" style={{ background: '#1a1917', borderRadius: '2px', border: '1px solid #2a2926' }}>
-                  <div className="text-left">
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#6a6560', letterSpacing: '0.1em' }}>TRADES INGESTED</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', color: '#c8b898', marginTop: '0.25rem' }}>{syncResult.tradesIngested}</div>
-                  </div>
-                  <div className="w-[1px] h-[30px] bg-[#2a2926]" />
-                  <div className="text-right">
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#6a6560', letterSpacing: '0.1em' }}>TRADES SCORED</div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1rem', color: '#c8b898', marginTop: '0.25rem' }}>{syncResult.tradesScored}</div>
-                  </div>
-                </div>
-
-                {syncNote && <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.8rem', color: '#c8b898', marginBottom: '1rem', textAlign: 'left' }}>{syncNote}</p>}
-                <button
-                  onClick={() => router.push('/dashboard')}
-                  className="w-full relative overflow-hidden flex justify-center items-center rounded-[2px]"
-                  style={{
-                    padding: '1rem', background: '#a78b71', color: '#0f0f0f',
-                    fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 600,
-                    cursor: 'pointer', transition: 'all 0.2s ease'
-                  }}
-                >
-                  VIEW MY DASHBOARD
-                </button>
-              </div>
-            ) : isSuccess ? (
-              // CONNECTED, READY TO SYNC
-              <div className="text-center py-6">
-                <h1 style={{
-                  fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.4rem',
-                  color: '#ede8e0', fontWeight: 400, marginBottom: '1rem'
-                }}>
-                  Connected Successfully
-                </h1>
-                <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: '#8a7d6a', marginBottom: '2rem' }}>
-                  Your read-only key has been verified and securely stored.
-                </p>
-                
-                {syncing ? (
-                  <div style={{ padding: '2rem 0' }}>
-                    <div style={{
-                      width: '24px', height: '24px', borderRadius: '50%', border: '2px solid rgba(167,139,113,0.2)',
-                      borderTopColor: '#a78b71', margin: '0 auto 1.5rem',
-                      animation: 'spin 1s linear infinite'
-                    }} />
-                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#c8b898', letterSpacing: '0.05em' }}>
-                      {syncStatusText}
-                    </p>
-                    <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', color: '#6a6560', marginTop: '0.75rem' }}>
-                      This may take up to 60 seconds
-                    </p>
-                    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                  </div>
-                ) : (
-                  <>
-                  <div style={{ textAlign: 'left', marginBottom: '1.25rem', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#8a7d6a' }}>
-                    <label htmlFor="lookback" style={{ display: 'block', marginBottom: '0.4rem', letterSpacing: '0.1em' }}>HISTORY TO ANALYSE</label>
-                    <select id="lookback" value={lookbackDays} onChange={e => setLookbackDays(Number(e.target.value))}
-                      style={{ width: '100%', padding: '0.6rem', background: '#161614', color: '#ede8e0', border: '1px solid rgba(167,139,113,0.3)' }}>
-                      <option value={30}>Last 30 days</option>
-                      <option value={90}>Last 90 days</option>
-                      <option value={365}>Last 365 days (default)</option>
-                      <option value={3650}>All available history</option>
-                    </select>
-                    <label htmlFor="extra" style={{ display: 'block', margin: '1rem 0 0.4rem', letterSpacing: '0.1em' }}>I ALSO TRADED (OPTIONAL, BINANCE)</label>
-                    <input id="extra" value={extraSymbols} onChange={e => setExtraSymbols(e.target.value)} placeholder="SOLUSDT, DOGEUSDT"
-                      style={{ width: '100%', padding: '0.6rem', background: '#161614', color: '#ede8e0', border: '1px solid rgba(167,139,113,0.3)' }} />
-                    <p style={{ marginTop: '0.5rem', lineHeight: 1.5 }}>
-                      Assets you currently hold are found automatically. Assets you have fully sold are only found if you list them here.
-                    </p>
-                  </div>
-                  <button
-                    onClick={handleSync}
-                    className="w-full relative overflow-hidden flex justify-center items-center rounded-[2px]"
-                    style={{
-                      padding: '1rem', background: '#a78b71', color: '#0f0f0f',
-                      fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 600,
-                      cursor: 'pointer', transition: 'all 0.2s ease'
-                    }}
-                  >
-                    {errorMsg ? 'TRY AGAIN' : 'ANALYSE MY TRADES'}
-                  </button>
-                  </>
-                )}
-              </div>
-            ) : !selectedExchange ? (
-              // EXCHANGE SELECTION
-              <>
-                <h1 style={{
-                  fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.4rem',
-                  color: '#ede8e0', fontWeight: 400, marginBottom: '1.5rem'
-                }}>
-                  Select Your Exchange
-                </h1>
-                <div className="flex flex-col gap-3">
-                  {EXCHANGES.map((ex) => (
-                    <button 
-                      key={ex.id}
-                      onClick={() => {
-                        if (ex.enabled) setSelectedExchange(ex.id);
-                      }}
-                      disabled={!ex.enabled}
-                      className="group flex flex-col relative overflow-hidden w-full text-left rounded-[2px] outline-none border p-5 bg-[#1a1917] border-[rgba(255,255,255,0.08)] transition-all duration-[220ms] ease"
-                      style={{
-                        cursor: ex.enabled ? 'pointer' : 'not-allowed',
-                        opacity: ex.enabled ? 1 : 0.6
-                      }}
-                    >
-                      <div className="flex justify-between items-center w-full">
-                        <span style={{
-                          fontFamily: 'var(--font-mono)', fontSize: '0.85rem', letterSpacing: '0.1em',
-                          color: '#ede8e0'
-                        }}>
-                          {ex.name}
-                        </span>
-                        {!ex.enabled && (
-                          <span style={{
-                            fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em',
-                            color: '#a78b71', padding: '2px 6px', background: 'rgba(167,139,113,0.1)',
-                            borderRadius: '2px'
-                          }}>
-                            COMING SOON
-                          </span>
-                        )}
-                      </div>
-                      <span style={{
-                        marginTop: '0.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.65rem',
-                        color: '#6a6560'
-                      }}>
-                        {ex.desc}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </>
             ) : (
-              // KEY FORM
               <>
-                <button 
-                  onClick={() => setSelectedExchange(null)}
-                  style={{
-                    background: 'none', border: 'none', color: '#6a6560',
-                    fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
-                    cursor: 'pointer', padding: 0, marginBottom: '1.5rem',
-                    display: 'flex', alignItems: 'center', gap: '4px'
-                  }}
-                >
-                  ← BACK
-                </button>
-                
-                <h1 style={{
-                  fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.4rem',
-                  color: '#ede8e0', fontWeight: 400, marginBottom: '1.5rem'
-                }}>
-                  Connect {selected?.name}
-                </h1>
-
-                {/* API KEY INPUT */}
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label htmlFor="onb-api-key" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', color: '#6a6560' }}>
-                    API KEY
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      id="onb-api-key"
-                      type={showApiKey ? 'text' : 'password'}
-                      placeholder="Paste your API key"
-                      value={apiKey}
-                      onChange={(e) => setApiKey(e.target.value)}
-                      style={{
-                        width: '100%', padding: '0.85rem 2.8rem 0.85rem 0.9rem',
-                        background: '#0f0f0f', border: '1px solid #2a2926',
-                        borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
-                        color: '#c8b898', outline: 'none'
-                      }}
-                    />
-                    <button type="button" onClick={() => setShowApiKey(!showApiKey)}
-                            style={{
-                              position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)',
-                              background: 'none', border: 'none', cursor: 'pointer', color: '#3d3b38', padding: '2px'
-                            }}>
-                      {showApiKey ? 'HIDE' : 'SHOW'}
-                    </button>
-                  </div>
+                <div className="flex flex-col gap-1">
+                  <label htmlFor="lookback" className="text-sm font-medium text-ui-ink">History to analyse</label>
+                  <select id="lookback" value={lookbackDays} onChange={e => setLookbackDays(Number(e.target.value))}
+                    className="h-10 w-full rounded-[10px] bg-ui-raised px-3 text-sm text-ui-ink outline-none ring-1 ring-inset ring-ui-edge focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]">
+                    <option value={30}>Last 30 days</option>
+                    <option value={90}>Last 90 days</option>
+                    <option value={365}>Last 365 days (default)</option>
+                    <option value={3650}>All available history</option>
+                  </select>
                 </div>
-
-                {/* API SECRET INPUT */}
-                <div style={{ marginBottom: '1.25rem' }}>
-                  <label htmlFor="onb-api-secret" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', color: '#6a6560' }}>
-                    API SECRET
-                  </label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      id="onb-api-secret"
-                      type={showApiSecret ? 'text' : 'password'}
-                      placeholder="Paste your API secret"
-                      value={apiSecret}
-                      onChange={(e) => setApiSecret(e.target.value)}
-                      style={{
-                        width: '100%', padding: '0.85rem 2.8rem 0.85rem 0.9rem',
-                        background: '#0f0f0f', border: '1px solid #2a2926',
-                        borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
-                        color: '#c8b898', outline: 'none'
-                      }}
-                    />
-                    <button type="button" onClick={() => setShowApiSecret(!showApiSecret)}
-                            style={{
-                              position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)',
-                              background: 'none', border: 'none', cursor: 'pointer', color: '#3d3b38', padding: '2px'
-                            }}>
-                      {showApiSecret ? 'HIDE' : 'SHOW'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* PASSPHRASE INPUT (OKX only) */}
-                {selected?.needsPassphrase && (
-                  <div style={{ marginBottom: '1.25rem' }}>
-                    <label htmlFor="onb-api-passphrase" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', color: '#6a6560' }}>
-                      API PASSPHRASE
-                    </label>
-                    <div style={{ position: 'relative' }}>
-                      <input
-                        id="onb-api-passphrase"
-                        type={showPassphrase ? 'text' : 'password'}
-                        placeholder="The passphrase you chose for this key"
-                        value={apiPassphrase}
-                        onChange={(e) => setApiPassphrase(e.target.value)}
-                        style={{
-                          width: '100%', padding: '0.85rem 2.8rem 0.85rem 0.9rem',
-                          background: '#0f0f0f', border: '1px solid #2a2926',
-                          borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
-                          color: '#c8b898', outline: 'none'
-                        }}
-                      />
-                      <button type="button" onClick={() => setShowPassphrase(!showPassphrase)}
-                              style={{
-                                position: 'absolute', right: '0.8rem', top: '50%', transform: 'translateY(-50%)',
-                                background: 'none', border: 'none', cursor: 'pointer', color: '#3d3b38', padding: '2px'
-                              }}>
-                        {showPassphrase ? 'HIDE' : 'SHOW'}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* WARNING BOX */}
-                <div style={{
-                  display: 'flex', gap: '0.625rem', alignItems: 'flex-start',
-                  padding: '0.875rem 1rem', background: 'rgba(167,139,113,0.05)',
-                  borderLeft: '2px solid rgba(167,139,113,0.6)', borderRadius: '0 2px 2px 0',
-                  margin: '1.5rem 0'
-                }}>
-                  <span style={{ color: '#a78b71', fontSize: '0.82rem', marginTop: '1px', flexShrink: 0 }}>⚠</span>
-                  <span style={{ fontFamily: 'var(--font-inter)', fontSize: '0.78rem', lineHeight: 1.6, color: '#8a7d6a' }}>
-                    Only connect READ-ONLY API keys. FillScore never places orders or accesses withdrawal functions.
-                  </span>
-                </div>
-
-                {/* COLLAPSIBLE GUIDE */}
-                <button type="button" onClick={() => setGuideOpen(!guideOpen)}
-                  style={{
-                    width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    background: 'none', border: 'none', borderTop: '1px solid #201f1d',
-                    borderBottom: '1px solid #201f1d', padding: '0.75rem 0',
-                    cursor: 'pointer', margin: '1rem 0'
-                  }}>
-                  <span style={{ fontFamily: 'var(--font-inter)', fontSize: '0.78rem', color: '#6a6560' }}>
-                    How to create a read-only key on {selected?.name}
-                  </span>
-                  <span style={{ fontFamily: 'var(--font-mono)', color: '#a78b71', fontSize: '1rem', lineHeight: 1 }}>
-                    {guideOpen ? '−' : '+'}
-                  </span>
-                </button>
-                <div style={{
-                  overflow: 'hidden', maxHeight: guideOpen ? '400px' : '0px', transition: 'max-height 0.3s ease'
-                }}>
-                  <div style={{ padding: '0.75rem 0 0.5rem' }}>
-                    <ol style={{ paddingLeft: '1.1rem', fontFamily: 'var(--font-inter)', fontSize: '0.78rem', color: '#6a6560', lineHeight: 1.9, listStyleType: 'decimal' }}>
-                      {selected?.guideSteps.map((step) => <li key={step}>{step}</li>)}
-                    </ol>
-                  </div>
-                </div>
-
-                {/* CHECKBOX */}
-                <label style={{
-                  display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer', margin: '1.5rem 0'
-                }}>
-                  <input
-                    type="checkbox"
-                    checked={confirmed}
-                    onChange={(e) => setConfirmed(e.target.checked)}
-                    style={{ accentColor: '#a78b71', width: '16px', height: '16px', cursor: 'pointer' }}
-                  />
-                  <span style={{ fontFamily: 'var(--font-inter)', fontSize: '0.8rem', color: '#8a7d6a' }}>
-                    I confirm this API key has read-only permissions with no trading or withdrawal access.
-                  </span>
-                </label>
-
-                {/* SUBMIT BUTTON */}
-                <button
-                  onClick={handleSubmit}
-                  disabled={isFormDisabled || submitting}
-                  className="w-full relative overflow-hidden flex justify-center items-center rounded-[2px]"
-                  style={{
-                    padding: '1rem',
-                    background: (isFormDisabled || submitting) ? '#2a2825' : '#a78b71',
-                    color: (isFormDisabled || submitting) ? '#6a6560' : '#0f0f0f',
-                    fontFamily: 'var(--font-mono)', fontSize: '0.75rem', letterSpacing: '0.15em', fontWeight: 600,
-                    border: 'none', cursor: (isFormDisabled || submitting) ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  {submitting ? 'CONNECTING...' : 'CONNECT ACCOUNT'}
-                </button>
+                <Field id="extra" label="I also traded (optional, Binance)" value={extraSymbols} onChange={e => setExtraSymbols(e.target.value)}
+                  placeholder="SOLUSDT, DOGEUSDT"
+                  hint="Assets you currently hold are found automatically. Assets you have fully sold are only found if you list them here." />
+                <Button onClick={handleSync}>{errorMsg ? 'Try again' : 'Analyse my trades'}</Button>
               </>
             )}
-            
-          </div>
-        </div>
-      </div>
+          </section>
+        ) : !selectedExchange ? (
+          <section className="flex flex-col gap-5">
+            <h1 className="display-md">Select your exchange</h1>
+            <div className="flex flex-col gap-3">
+              {EXCHANGES.map((ex) => (
+                <button key={ex.id} type="button" onClick={() => { if (ex.enabled) setSelectedExchange(ex.id); }} disabled={!ex.enabled}
+                  className="panel flex w-full flex-col gap-1 p-4 text-left transition-shadow duration-150 hover:ring-1 hover:ring-ui-edge focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-60">
+                  <span className="flex items-center justify-between">
+                    <span className="text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">{ex.name}</span>
+                    {!ex.enabled && <span className="rounded-[6px] bg-ui-overlay px-2 py-0.5 text-[12px] text-ui-graphite">Coming soon</span>}
+                  </span>
+                  <span className="text-[13px] text-ui-graphite">{ex.desc}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : (
+          <section className="flex flex-col gap-5">
+            <div>
+              <Button variant="quiet" size="sm" className="-ml-3" onClick={() => { setSelectedExchange(null); clearError(); }}>
+                <ChevronLeft aria-hidden="true" />Back
+              </Button>
+              <h1 className="display-md mt-2">Connect {selected?.name}</h1>
+            </div>
+
+            <SecretField id="onb-api-key" label="API key" placeholder="Paste your API key" value={apiKey} onChange={setApiKey}
+              shown={showApiKey} onToggle={() => setShowApiKey(!showApiKey)} />
+            <SecretField id="onb-api-secret" label="API secret" placeholder="Paste your API secret" value={apiSecret} onChange={setApiSecret}
+              shown={showApiSecret} onToggle={() => setShowApiSecret(!showApiSecret)} />
+            {selected?.needsPassphrase && (
+              <SecretField id="onb-api-passphrase" label="API passphrase" placeholder="The passphrase you chose for this key" value={apiPassphrase}
+                onChange={setApiPassphrase} shown={showPassphrase} onToggle={() => setShowPassphrase(!showPassphrase)} />
+            )}
+
+            <Banner kind="info" title="Read-only keys only">
+              Only connect read-only API keys. FillScore never places orders or accesses withdrawal functions.
+            </Banner>
+
+            <Disclosure summary={`How to create a read-only key on ${selected?.name}`}>
+              <ol className="list-decimal space-y-1 pb-3 pl-5 text-[13px] leading-5 text-ui-graphite">
+                {selected?.guideSteps.map((s) => <li key={s}>{s}</li>)}
+              </ol>
+            </Disclosure>
+
+            <label className="flex cursor-pointer items-start gap-3">
+              <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)}
+                className="mt-0.5 size-4 cursor-pointer accent-[var(--ui-action)]" />
+              <span className="text-[13px] leading-5 text-ui-graphite">
+                I confirm this API key has read-only permissions with no trading or withdrawal access.
+              </span>
+            </label>
+
+            <Button onClick={handleSubmit} loading={submitting} disabled={isFormDisabled}>
+              {submitting ? 'Connecting' : 'Connect account'}
+            </Button>
+          </section>
+        )}
+      </main>
     </div>
   );
 }

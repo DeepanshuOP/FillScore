@@ -1,6 +1,8 @@
 import { serverApiBase } from '../../lib/serverApiBase';
 import { ImageResponse } from 'next/og';
 import { siteHost } from '../../lib/siteHost';
+import { getGradeColor } from '../../utils/gradeColor';
+import { fetchMeasured } from './measured';
 
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -9,143 +11,71 @@ type Props = {
   params: Promise<{ userId: string }>;
 };
 
+// A raster on the dark ground, so hex values are used here and only here. Sans-serif system fallback (Geist is not loaded).
+const GROUND = '#0B1015';
+const INK = '#E8EDF2';
+const MUTED = '#8A96A3';
+const FONT = 'Geist, Inter, system-ui, sans-serif';
+
+function Generic({ note }: { note?: string }) {
+  return (
+    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', backgroundColor: GROUND, color: INK, fontFamily: FONT }}>
+      <div style={{ display: 'flex', fontSize: 72, fontWeight: 700 }}>FillScore</div>
+      <div style={{ display: 'flex', fontSize: 32, marginTop: 24, color: MUTED }}>Measured against public market prints</div>
+      {note ? <div style={{ display: 'flex', fontSize: 24, marginTop: 20, color: MUTED }}>{note}</div> : null}
+    </div>
+  );
+}
+
 export default async function Image({ params }: Props) {
   const { userId } = await params;
-  
+
   try {
     const res = await fetch(`${serverApiBase()}/audit/share/${encodeURIComponent(userId)}`, { next: { revalidate: 3600 } });
-    
+
     if (!res.ok) {
-      // Return default generic card if no data
-      return new ImageResponse(
-        (
-          <div style={{
-            width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            backgroundColor: '#0d0d0b', color: '#ede8e0', fontFamily: 'monospace'
-          }}>
-            <div style={{ fontSize: 64, color: '#c9b99a', letterSpacing: '0.2em' }}>FILLSCORE</div>
-            <div style={{ fontSize: 32, marginTop: 40, color: '#888078' }}>How well do you actually execute?</div>
-            <div style={{ fontSize: 24, marginTop: 20, color: '#4ade80' }}>{siteHost()}</div>
-          </div>
-        ),
-        { ...size }
-      );
+      return new ImageResponse(<Generic note={siteHost() || undefined} />, { ...size });
     }
-    
+
     const data = await res.json();
-    
-    const getScoreColor = (score: number) => {
-      if (score >= 80) return '#4ade80';
-      if (score >= 60) return '#fcd34d';
-      if (score >= 40) return '#f97316';
-      return '#ef4444';
-    };
-    
-    const getScoreLabel = (score: number) => {
-      if (score >= 90) return 'EXCELLENT';
-      if (score >= 75) return 'GOOD';
-      if (score >= 60) return 'AVERAGE';
-      if (score >= 40) return 'POOR';
-      return 'CRITICAL';
-    };
-
-    const getExchangeColor = (ex: string) => {
-      const e = (ex || '').toLowerCase();
-      if (e === 'binance') return '#F0B90B';
-      if (e === 'bybit') return '#F7A600';
-      if (e === 'okx') return '#2dd4bf'; // Cyan
-      return '#ede8e0';
-    };
-
-    const gradeColor = data.grade === 'A' ? '#4ade80' : data.grade === 'B' ? '#86efac' : data.grade === 'C' ? '#fcd34d' : data.grade === 'D' ? '#f97316' : '#ef4444';
+    // The share endpoint returns the v1 grade; a measured (v2) grade leads when the response carries one.
+    const v1 = { grade: String(data.grade), score: data.score };
+    const measured = data.measured && typeof data.measured.grade === 'string' && typeof data.measured.score === 'number' ? data.measured as { grade: string; score: number } : await fetchMeasured(userId);
+    const lead = measured ?? v1;
+    const colour = getGradeColor(lead.grade);
 
     return new ImageResponse(
       (
-        <div style={{
-          width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-          backgroundColor: '#0d0d0b', color: '#ede8e0', padding: '60px',
-          position: 'relative', fontFamily: 'sans-serif'
-        }}>
-          {/* Top Header */}
+        <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', backgroundColor: GROUND, color: INK, padding: '60px', fontFamily: FONT }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-            <div style={{ fontSize: 36, color: '#c9b99a', letterSpacing: '0.2em', fontWeight: 'bold' }}>FILLSCORE</div>
-            <div style={{ 
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              padding: '8px 16px', border: `2px solid ${getExchangeColor(data.exchange)}40`,
-              borderRadius: '4px', fontSize: 24, color: getExchangeColor(data.exchange),
-              letterSpacing: '0.1em', backgroundColor: `${getExchangeColor(data.exchange)}10`
-            }}>
-              {data.exchange}
-            </div>
+            <div style={{ display: 'flex', fontSize: 40, fontWeight: 700 }}>FillScore</div>
+            <div style={{ display: 'flex', fontSize: 24, color: MUTED }}>{data.period}</div>
           </div>
 
-          {/* Main Content Area */}
-          <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-            {/* Left: Grade */}
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '40%' }}>
-              <div style={{ display: 'flex', fontSize: 280, fontWeight: 900, color: gradeColor, lineHeight: 1 }}>{data.grade}</div>
-            </div>
-            
-            {/* Right: Score and details */}
+          <div style={{ display: 'flex', flex: 1, alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', width: '40%', justifyContent: 'center', fontSize: 300, fontWeight: 700, color: colour, lineHeight: 1 }}>{lead.grade}</div>
             <div style={{ display: 'flex', flexDirection: 'column', width: '60%', paddingLeft: '40px' }}>
               <div style={{ display: 'flex', alignItems: 'baseline' }}>
-                <div style={{ display: 'flex', fontSize: 100, fontWeight: 800, color: '#ede8e0' }}>{data.score}</div>
-                <div style={{ display: 'flex', fontSize: 48, color: '#888078', marginLeft: '16px' }}>/ 100</div>
+                <div style={{ display: 'flex', fontSize: 110, fontWeight: 700 }}>{lead.score}</div>
+                <div style={{ display: 'flex', fontSize: 44, color: MUTED, marginLeft: '16px' }}>out of 100</div>
               </div>
-              <div style={{ display: 'flex', fontSize: 36, color: getScoreColor(data.score), letterSpacing: '0.15em', marginTop: '10px' }}>
-                {getScoreLabel(data.score)}
-              </div>
-              <div style={{ display: 'flex', fontSize: 24, color: '#888078', marginTop: '20px', letterSpacing: '0.1em' }}>
-                {data.period}
-              </div>
+              <div style={{ display: 'flex', fontSize: 32, marginTop: '12px' }}>{measured ? 'Measured score (v2)' : 'Rule-based score (v1)'}</div>
+              <div style={{ display: 'flex', fontSize: 28, color: MUTED, marginTop: '12px' }}>Measured against public market prints</div>
+              {measured ? (
+                <div style={{ display: 'flex', fontSize: 24, color: MUTED, marginTop: '24px' }}>Rule-based score (v1): grade {v1.grade}, {v1.score} out of 100</div>
+              ) : null}
             </div>
           </div>
 
-          {/* Stats Row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderTop: '2px solid rgba(255,255,255,0.1)', paddingTop: '30px', marginTop: '20px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', fontSize: 16, color: '#888078', letterSpacing: '0.1em' }}>TRADES</div>
-              <div style={{ display: 'flex', fontSize: 32, fontWeight: 600, color: '#ede8e0', marginTop: '8px' }}>{data.topStats.tradesAnalysed}</div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', fontSize: 16, color: '#888078', letterSpacing: '0.1em' }}>MAKER RATIO</div>
-              <div style={{ display: 'flex', fontSize: 32, fontWeight: 600, color: '#ede8e0', marginTop: '8px' }}>{data.topStats.makerRatio}</div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', fontSize: 16, color: '#888078', letterSpacing: '0.1em' }}>AVG SLIPPAGE</div>
-              <div style={{ display: 'flex', fontSize: 32, fontWeight: 600, color: '#ede8e0', marginTop: '8px' }}>{data.topStats.avgSlippageBps} bps</div>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <div style={{ display: 'flex', fontSize: 16, color: '#888078', letterSpacing: '0.1em' }}>BEST SYMBOL</div>
-              <div style={{ display: 'flex', fontSize: 32, fontWeight: 600, color: '#4ade80', marginTop: '8px' }}>{data.topStats.bestSymbol}</div>
-            </div>
-          </div>
-
-          {/* Footer Tagline */}
-          <div style={{ position: 'absolute', bottom: '30px', left: 0, width: '100%', display: 'flex', justifyContent: 'center' }}>
-            <div style={{ display: 'flex', fontSize: 24, color: '#a78b71', fontStyle: 'italic' }}>
-              How well do you actually execute? {siteHost() && <span style={{ margin: '0 10px', color: '#888078' }}>·</span>}{siteHost()}
-            </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', borderTop: '2px solid #243040', paddingTop: '24px', fontSize: 24, color: MUTED }}>
+            <div style={{ display: 'flex' }}>{data.topStats.tradesAnalysed} trades analysed</div>
+            <div style={{ display: 'flex' }}>{siteHost()}</div>
           </div>
         </div>
       ),
       { ...size }
     );
   } catch {
-    // Fallback on error
-    return new ImageResponse(
-      (
-        <div style={{
-          width: '100%', height: '100%', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-          backgroundColor: '#0d0d0b', color: '#ede8e0'
-        }}>
-          <div style={{ display: 'flex', fontSize: 64, color: '#c9b99a', letterSpacing: '0.2em' }}>FILLSCORE</div>
-          <div style={{ display: 'flex', fontSize: 24, marginTop: 20, color: '#4ade80' }}>{siteHost()}</div>
-        </div>
-      ),
-      { ...size }
-    );
+    return new ImageResponse(<Generic note={siteHost() || undefined} />, { ...size });
   }
 }

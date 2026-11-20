@@ -3,6 +3,12 @@ import { siteHost } from '../../lib/siteHost';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import ShareButtons from './ShareButtons';
+import { fetchMeasured } from './measured';
+import { MarketingNav } from '../../components/marketing/MarketingNav';
+import SiteFooter from '../../components/SiteFooter';
+import { GradeChip } from '../../ui/GradeChip';
+import { ProvenanceChip } from '../../ui/ProvenanceChip';
+import { buttonClass } from '../../ui/buttonClass';
 
 type Props = {
   params: Promise<{ userId: string }>;
@@ -12,11 +18,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { userId } = await params;
   const res = await fetch(`${serverApiBase()}/audit/share/${encodeURIComponent(userId)}`, { next: { revalidate: 3600 } });   // encoded: a decoded "../" must not reach another route (security review M9)
   if (!res.ok) return { title: 'FillScore' };
-  
+
   const data = await res.json();
   const title = `FillScore: Grade ${data.grade} (${data.score}/100)`;
   const description = `I scored ${data.score}/100 on execution quality across ${data.topStats.tradesAnalysed} trades. How well do you execute?${siteHost() ? ` — ${siteHost()}` : ''}`;
-  
+
   return {
     title,
     description,
@@ -33,140 +39,71 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+/** The share endpoint returns the v1 grade and score. A measured (v2) grade is shown first when the response carries one. */
+type Grade = { grade: string; score: number };
+
 export default async function SharePage({ params }: Props) {
   const { userId } = await params;
   const res = await fetch(`${serverApiBase()}/audit/share/${encodeURIComponent(userId)}`, { next: { revalidate: 60 } });
-  
+
   if (!res.ok) {
     return (
-      <div style={{ minHeight: '100vh', background: '#0f0f0f', color: '#ede8e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <p style={{ fontFamily: 'var(--font-mono)' }}>This score card is no longer available.</p>
-      </div>
+      <>
+        <MarketingNav />
+        <main className="min-h-screen bg-ui-surface">
+          <div className="mx-auto flex max-w-[1240px] flex-col items-center px-5 pt-40 text-center sm:px-8">
+            <h1 className="display-md text-ui-ink">This score card is no longer available.</h1>
+            <Link href="/" className={buttonClass('secondary', 'md', 'mt-8 no-underline')}>Go to the home page</Link>
+          </div>
+        </main>
+        <SiteFooter />
+      </>
     );
   }
 
   const data = await res.json();
-
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return '#4ade80';
-    if (score >= 60) return '#fcd34d';
-    if (score >= 40) return '#f97316';
-    return '#ef4444';
-  };
-  
-  const getScoreLabel = (score: number) => {
-    if (score >= 90) return 'EXCELLENT';
-    if (score >= 75) return 'GOOD';
-    if (score >= 60) return 'AVERAGE';
-    if (score >= 40) return 'POOR';
-    return 'CRITICAL';
-  };
-
-  const getExchangeColor = (ex: string) => {
-    const e = (ex || '').toLowerCase();
-    if (e === 'binance') return '#F0B90B';
-    if (e === 'bybit') return '#F7A600';
-    if (e === 'okx') return '#2dd4bf'; // Cyan for MULTI or OKX
-    return '#ede8e0';
-  };
-
-  const gradeColor = data.grade === 'A' ? '#4ade80' : data.grade === 'B' ? '#86efac' : data.grade === 'C' ? '#fcd34d' : data.grade === 'D' ? '#f97316' : '#ef4444';
+  const v1: Grade = { grade: data.grade, score: data.score };
+  const measured: Grade | null = data.measured && typeof data.measured.grade === 'string' && typeof data.measured.score === 'number' ? data.measured : await fetchMeasured(userId);
+  const lead = measured ?? v1;
+  const source = userId.startsWith('demo-') ? 'synthetic-demo' : 'real-user';
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#0f0f0f',
-      color: '#ede8e0',
-      fontFamily: 'var(--font-inter)',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '2rem'
-    }}>
-      <div style={{
-        width: '100%', maxWidth: '600px',
-        background: '#161614', border: '1px solid rgba(255,255,255,0.1)',
-        borderRadius: '8px', padding: '3rem 2rem',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        textAlign: 'center', position: 'relative', overflow: 'hidden'
-      }}>
-        {/* Glow */}
-        <div style={{
-          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: '300px', height: '300px', background: gradeColor,
-          opacity: 0.05, filter: 'blur(100px)', borderRadius: '50%', pointerEvents: 'none'
-        }} />
+    <>
+      <MarketingNav />
+      <main className="min-h-screen bg-ui-surface pb-24">
+        <div className="mx-auto max-w-[1240px] px-5 pt-28 sm:px-8">
+          <section className="panel mx-auto flex max-w-[560px] flex-col items-center p-8 text-center sm:p-10" aria-label="Score card">
+            <p className="text-[13px] font-medium text-ui-graphite">FillScore</p>
+            <h1 className="display-md mt-1 text-ui-ink">{lead.score} <span className="text-lg font-normal text-ui-graphite">out of 100</span></h1>
+            <GradeChip grade={lead.grade} size="xl" label={`Grade ${lead.grade}`} className="mt-6" />
+            <p className="mt-3 text-sm text-ui-ink">{measured ? 'Measured score (v2)' : 'Rule-based score (v1)'}</p>
+            <p className="mt-1 text-[13px] text-ui-graphite">Measured against public market prints</p>
+            {measured && (
+              <p className="mt-4 text-[13px] text-ui-graphite">Rule-based score (v1): grade {v1.grade}, {v1.score} out of 100</p>
+            )}
 
-        <h1 style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', letterSpacing: '0.2em', color: '#c9b99a', marginBottom: '0.5rem', fontWeight: 400 }}>
-          FILLSCORE
-        </h1>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#888078', letterSpacing: '0.1em', marginBottom: '2rem' }}>
-          {data.period}
-        </div>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+              <ProvenanceChip dataSource={source} />
+              <span className="inline-flex h-6 items-center rounded-full border border-ui-rule px-2.5 text-xs text-ui-graphite">{data.exchange}</span>
+            </div>
+            <p className="mt-3 text-[13px] text-ui-graphite">{data.period}</p>
 
-        <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '6rem', lineHeight: 1, color: gradeColor, textShadow: `0 0 40px ${gradeColor}40` }}>
-          {data.grade}
-        </div>
-        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1.5rem', fontWeight: 600, color: '#ede8e0', marginTop: '1rem' }}>
-          {data.score} <span style={{ color: '#888078', fontSize: '1rem' }}>/ 100</span>
-        </div>
-        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', letterSpacing: '0.15em', color: getScoreColor(data.score), marginTop: '0.5rem' }}>
-          {getScoreLabel(data.score)}
-        </div>
+            <dl className="mt-8 grid w-full grid-cols-2 gap-x-6 gap-y-5 border-t border-ui-rule pt-6 text-left">
+              <div><dt className="text-[13px] text-ui-graphite">Trades analysed</dt><dd className="mt-1 text-lg font-semibold text-ui-ink">{data.topStats.tradesAnalysed}</dd></div>
+              <div><dt className="text-[13px] text-ui-graphite">Maker share of fills</dt><dd className="mt-1 text-lg font-semibold text-ui-ink">{data.topStats.makerRatio}</dd></div>
+              <div><dt className="text-[13px] text-ui-graphite">Average slippage</dt><dd className="mt-1 text-lg font-semibold text-ui-ink">{data.topStats.avgSlippageBps} bps</dd></div>
+              <div><dt className="text-[13px] text-ui-graphite">Best symbol</dt><dd className="mt-1 text-lg font-semibold text-ui-ink">{data.topStats.bestSymbol}</dd></div>
+            </dl>
+          </section>
 
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1.5rem', marginBottom: '1rem' }}>
-          <div style={{
-            padding: '4px 10px', border: `1px solid ${getExchangeColor(data.exchange)}40`,
-            borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.65rem',
-            color: getExchangeColor(data.exchange), letterSpacing: '0.1em', background: `${getExchangeColor(data.exchange)}10`
-          }}>
-            {data.exchange}
+          <div className="mt-8 flex flex-col items-center gap-5 text-center">
+            <p className="text-[15px] text-ui-graphite">How well did your own orders execute?</p>
+            <Link href="/" className={buttonClass('primary', 'md', 'no-underline')}>Get your FillScore</Link>
+            <ShareButtons shareUrl={`${process.env.NEXT_PUBLIC_SITE_URL || ''}/share/${userId}`} grade={lead.grade} score={lead.score} />
           </div>
         </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1.5rem', width: '100%', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '1.25rem' }}>
-          <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#888078', letterSpacing: '0.1em' }}>TRADES</div>
-            <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1.25rem', fontWeight: 600, color: '#ede8e0', marginTop: '0.25rem' }}>{data.topStats.tradesAnalysed}</div>
-          </div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#888078', letterSpacing: '0.1em' }}>MAKER RATIO</div>
-            <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1.25rem', fontWeight: 600, color: '#ede8e0', marginTop: '0.25rem' }}>{data.topStats.makerRatio}</div>
-          </div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#888078', letterSpacing: '0.1em' }}>AVG SLIPPAGE</div>
-            <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1.25rem', fontWeight: 600, color: '#ede8e0', marginTop: '0.25rem' }}>{data.topStats.avgSlippageBps} bps</div>
-          </div>
-          <div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#888078', letterSpacing: '0.1em' }}>BEST SYMBOL</div>
-            <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1.25rem', fontWeight: 600, color: '#4ade80', marginTop: '0.25rem' }}>{data.topStats.bestSymbol}</div>
-          </div>
-        </div>
-      </div>
-
-      <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-        <p style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.1rem', color: '#a78b71', marginBottom: '1rem' }}>
-          How well do you actually execute?
-        </p>
-        <Link href="/" style={{
-          display: 'inline-block',
-          padding: '0.75rem 1.5rem',
-          background: 'transparent',
-          border: '1px solid rgba(167,139,113,0.3)',
-          borderRadius: '2px',
-          color: '#c4a882',
-          fontFamily: 'var(--font-mono)',
-          fontSize: '0.75rem',
-          letterSpacing: '0.15em',
-          textDecoration: 'none',
-          transition: 'all 0.2s ease'
-        }}>
-          GET YOUR FILLSCORE →
-        </Link>
-        <ShareButtons shareUrl={`${process.env.NEXT_PUBLIC_SITE_URL || ''}/share/${userId}`} grade={data.grade} score={data.score} />
-      </div>
-    </div>
+      </main>
+      <SiteFooter />
+    </>
   );
 }

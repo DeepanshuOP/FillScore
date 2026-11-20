@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Check, Link as LinkIcon, Share2 } from 'lucide-react';
+import { buttonClass } from '../../ui/buttonClass';
 
 type ShareButtonsProps = {
   shareUrl: string;
@@ -22,7 +24,7 @@ export default function ShareButtons({ shareUrl, grade, score }: ShareButtonsPro
     }
   }, []);
 
-  const shareText = `I scored ${score}/100 (Grade ${grade}) on crypto execution quality. How well do you execute? 📊`;
+  const shareText = `I scored ${score}/100 (Grade ${grade}) on crypto execution quality. How well do you execute?`;
   const encodedText = encodeURIComponent(shareText);
   const encodedUrl = encodeURIComponent(currentUrl);
 
@@ -40,101 +42,31 @@ export default function ShareButtons({ shareUrl, grade, score }: ShareButtonsPro
         url: currentUrl,
       });
     } catch {
-      console.log('Share canceled or failed');
+      // The share sheet was closed or failed; nothing to report.
     }
   };
 
-  const buttonStyle = {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '0.5rem 1rem',
-    background: 'transparent',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: '4px',
-    color: '#ede8e0',
-    fontFamily: 'var(--font-mono)',
-    fontSize: '0.65rem',
-    letterSpacing: '0.05em',
-    textDecoration: 'none',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  };
+  const cls = buttonClass('secondary', 'sm', 'no-underline');
+  const links: Array<[string, string]> = [
+    ['X', `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`],
+    ['LinkedIn', `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`],
+    ['WhatsApp', `https://wa.me/?text=${encodedText}%20${encodedUrl}`],
+    ['Telegram', `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`],
+    ['Reddit', `https://www.reddit.com/submit?url=${encodedUrl}&title=${encodedText}`],
+  ];
 
   return (
-    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center', marginTop: '2rem' }}>
-      <a
-        href={`https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={buttonStyle}
-        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-      >
-        X / TWITTER
-      </a>
-
-      <a
-        href={`https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={buttonStyle}
-        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-      >
-        LINKEDIN
-      </a>
-
-      <a
-        href={`https://wa.me/?text=${encodedText}%20${encodedUrl}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={buttonStyle}
-        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-      >
-        WHATSAPP
-      </a>
-
-      <a
-        href={`https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={buttonStyle}
-        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-      >
-        TELEGRAM
-      </a>
-
-      <a
-        href={`https://www.reddit.com/submit?url=${encodedUrl}&title=${encodedText}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        style={buttonStyle}
-        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-      >
-        REDDIT
-      </a>
-
-      <button
-        onClick={handleCopy}
-        style={buttonStyle}
-        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-        onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-      >
-        {copied ? '✓ COPIED!' : 'COPY LINK'}
+    <div className="flex flex-wrap justify-center gap-2">
+      <button type="button" onClick={handleCopy} className={buttonClass('primary', 'sm')}>
+        {copied ? <Check aria-hidden="true" /> : <LinkIcon aria-hidden="true" />}
+        {copied ? 'Link copied' : 'Copy link'}
       </button>
-
+      {links.map(([label, href]) => (
+        <a key={label} href={href} target="_blank" rel="noopener noreferrer" className={cls}>{label}</a>
+      ))}
       {canNativeShare && (
-        <button
-          onClick={handleNativeShare}
-          style={buttonStyle}
-          onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
-          onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-        >
-          SHARE...
+        <button type="button" onClick={handleNativeShare} className={buttonClass('secondary', 'sm')}>
+          <Share2 aria-hidden="true" /> Share
         </button>
       )}
     </div>
