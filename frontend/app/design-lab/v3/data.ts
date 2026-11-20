@@ -7,8 +7,8 @@
  *  - the month: ./fixtures/month-orders.json (every order through the production buildOrderReplay; cut-month.ts).
  * Nothing here invents a value; the helpers only filter, sum and format.
  */
-import heroInputs from '../fixtures/landing-order.inputs.json'
-import heroReplay from '../fixtures/landing-order.replay.json'
+import heroInputs from '../../lib/landing/fixtures/landing-order.inputs.json'
+import heroReplay from '../../lib/landing/fixtures/landing-order.replay.json'
 import dash from '../fixtures/dashboard-mock.json'
 import month from './fixtures/month-orders.json'
 import { formatSignedBps, formatUsd } from '../../ui/format'

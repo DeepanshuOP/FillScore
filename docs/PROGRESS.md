@@ -8,8 +8,26 @@ Deepanshu chose direction 1 with four fixes (hero composition with connected pen
 $0.25 in penInk with "10.0 bps; fees were 99.99% of it" double-underlined; Carbon copy a real tested theme; DESIGN.md
 rewritten), then conversion steps 1-8 (one commit each), then QA. Design v2 stays live until he pushes.
 
-- **Next concrete action: conversion step 7, landing page** (fixed hero and scroll story ending on the giant $0.25, demo
-  receipts, "check it yourself" envelope, what it never does, closing call to action).
+- **Next concrete action: conversion step 8, remaining screens** (verify, onboarding, settings, auth, trades, analytics,
+  methodology, check, share card and Open Graph image, legal, 404 and error).
+- **Step 7, done (with fixes 1 and 2):** landing page rebuilt. Hero (`TapeHero`): headline bottom-left at editorial
+  scale, lede and the call to action bottom-right, the tape of the 38 real prints full-bleed and feeding right to left
+  from frame 0 (starts at -40 px, never an empty left side); pinned and scrubbed, it stops on the order and the pen draws
+  the spread bracket, the impact bracket and the two fee circles, each with its amount in pen-ink tied to the mark by a
+  hand-drawn leader (`leaderPath`); on a phone the two fee circles are centred with their note and leader, and spread,
+  impact and fees are printed as receipt lines under the tape. The geometry (stop point, marks, leaders, notes) is
+  computed on the server from the fixed entry widths (`heroGeometry.ts`, tested), so without script or with reduced
+  motion the complete annotated frame shows; `html.fs-js` (inline script before paint) arms the first frame. The story
+  ends (`StoryEnd`) on the order's $0.25 in pen-ink at display scale with "10.0 bps; fees were 99.99% of it" and a pen
+  double underline, written left to right as it scrolls in. All figures from `lib/landing/heroData.ts` (tested against
+  the replay fixture); the landing fixtures moved from the lab to `app/lib/landing/fixtures/`. Demo accounts as three
+  receipts pinned with tape (grade stamp, total, orders, link); "Check it yourself" as an envelope whose manifest rises,
+  lines tick "OK" and the signature stamps (CSS, once on view), with links to /verify, the method and fillscore-metrics;
+  the "never" statement; the closing call to action. `pinnedStory.ts` no longer creates its own Lenis (LandingMotion owns
+  it). Deleted: the v2 `HeroTape`, `tapeModel`/`geometry` and their tests (drawing tests of the deleted v2 tape; the
+  order-choice invariant stays in `heroOrder.test.ts`), `ScrollStory`, `dot-pattern`, unused v2 hero fixtures. Checks:
+  vitest 671 passed, tsc 0, lint 0 errors; looks: start, mid-story and end frames at 1440, start and finished at 390,
+  demos and check-it: no overflow, axe 0.
 - **Step 6, done:** Council as an auditors' memo: a TO/FROM/RE header in mono, Quick/Deep pill switch, the four
   specialists as typed notes ("NOTE n OF 4", slight tilt on wide screens), the debate as a transcript (speaker in mono,
   recorded words verbatim), the explanation block under its unchanged heading "Explanation (language model; every

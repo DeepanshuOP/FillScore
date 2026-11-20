@@ -57,6 +57,17 @@ export function underlinePath(x0: number, x1: number, y: number, seed = 3): stri
   return `${smooth(a)} ${smooth(b)}`
 }
 
+/**
+ * A leader: the short hand-drawn stroke that ties a margin note to the mark it describes (design v3: a pen note never
+ * floats). A gentle curve from (x0, y0) to (x1, y1) with a little wobble, ending in a small tick at the note.
+ */
+export function leaderPath(x0: number, y0: number, x1: number, y1: number, seed = 4): string {
+  const r = rng(seed)
+  const mx = (x0 + x1) / 2 + (r() - 0.5) * 10, my = (y0 + y1) / 2 + (r() - 0.5) * 6
+  const bend = (x1 - x0) * 0.18
+  return smooth([[x0, y0], [mx - bend, my], [x1, y1]])
+}
+
 function line(pts: Array<[number, number]>): string {
   return pts.map(([x, y], i) => `${i ? 'L' : 'M'}${x.toFixed(1)} ${y.toFixed(1)}`).join(' ')
 }

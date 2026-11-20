@@ -94,6 +94,9 @@
 }
 /* the stamp's small lines are body-size text: pen-ink (>= 4.5:1); only the large letter and score wear the stamp ink */
 .fs-stamp .top, .fs-stamp .bot { font-family: var(--ui-mono); font-size: 13px; letter-spacing: 0.04em; line-height: 1.3; color: var(--ui-pen-ink); }
+/* the stamp keeps its own type and ink inside a receipt (whose .g class means graphite) */
+.fs-stamp { font-family: var(--ui-font); }
+.fs-stamp .mid .g, .fs-stamp .mid .s { color: var(--ui-stamp); }
 .fs-stamp .mid { display: flex; align-items: baseline; justify-content: center; gap: 12px; line-height: 0.8; margin: 6px 0 4px; }
 .fs-stamp .g { font-weight: 900; font-size: 132px; letter-spacing: -0.06em; }
 .fs-stamp .s { font-weight: 900; font-size: 64px; letter-spacing: -0.04em; }

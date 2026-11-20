@@ -27,18 +27,18 @@ export function MarketingNav() {
   return (
     <header className={cn('fixed inset-x-0 top-0 z-40 transition-[background-color,border-color] duration-300',
       scrolled ? 'border-b border-ui-rule bg-ui-surface/75 backdrop-blur-md' : 'border-b border-transparent')}>
-      <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-6 px-5 sm:px-8">
+      <div className="flex h-16 items-center gap-6 px-[var(--ui-gutter)] max-sm:h-14 max-sm:gap-3">
         <Link href="/" className="no-underline" aria-label="FillScore home"><Logo /></Link>
         <nav aria-label="Site" className="hidden items-center gap-1 md:flex">
           {[['/methodology', 'Methodology'], ['/verify', 'Verify a pack'], ['/check', 'Check a broker file']].map(([href, label]) => (
-            <Link key={href} href={href} className="rounded-md px-3 py-1.5 text-[13.5px] text-ui-graphite no-underline transition-colors hover:text-ui-ink">{label}</Link>
+            <Link key={href} href={href} className="px-3 py-1.5 text-[15px] font-medium text-ui-graphite no-underline transition-colors hover:text-ui-ink">{label}</Link>
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <button type="button" onClick={() => { setMenuEver(true); setMenuOpen(true) }} aria-label="Open menu" className="grid size-9 place-items-center rounded-[9px] text-ui-graphite hover:bg-ui-overlay md:hidden">
             <Menu aria-hidden="true" className="size-4" />
           </button>
-          <ThemeToggle />
+          <ThemeToggle className="max-sm:hidden" />
           {accessToken ? (
             <Link href="/dashboard" className={buttonClass('primary', 'sm', 'no-underline')}>Your audit</Link>
           ) : (

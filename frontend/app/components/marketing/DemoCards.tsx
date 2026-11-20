@@ -3,21 +3,23 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { apiBase } from '../../lib/apiBase'
-import { GradeChip } from '../../ui/GradeChip'
+import { GradeStamp } from '../../ui/GradeStamp'
 import { ValueState } from '../../ui/ValueState'
-import { formatScore, formatUsd } from '../../ui/format'
-import { StackBar, type StackPart } from '../../ui/charts/StackBar'
+import { formatSignedBps, formatUsd } from '../../ui/format'
 import { describeHeadline, gradeView, type GradeView, type Headline } from '../../dashboard/headline'
 
 const DEMOS = [
-  { id: 'demo-disciplined', name: 'The Disciplined Trader' },
-  { id: 'demo-moderate', name: 'The Moderate Trader' },
-  { id: 'demo-aggressive', name: 'The Aggressive Trader' },
+  { id: 'demo-disciplined', name: 'The Disciplined Trader', tilt: '-rotate-[1.4deg]' },
+  { id: 'demo-moderate', name: 'The Moderate Trader', tilt: 'rotate-[0.8deg] md:translate-y-6' },
+  { id: 'demo-aggressive', name: 'The Aggressive Trader', tilt: '-rotate-[0.6deg]' },
 ] as const
 
-type Loaded = { grade: GradeView | null; headline: Headline | null; parts: StackPart[] } | 'error' | null
+type Loaded = { grade: GradeView | null; headline: Headline | null } | 'error' | null
 
-/** Three demo accounts with their measured grade, total cost and the cost split, read live from the API. */
+/**
+ * The three demo accounts as receipts pinned to the page (design v3): a strip of tape holds each one, with the grade
+ * stamp, the period's total and a link to the audit. Read live from the API; synthetic traders, real prices.
+ */
 export function DemoCards() {
   const [data, setData] = useState<Record<string, Loaded>>({})
   useEffect(() => {
@@ -28,55 +30,50 @@ export function DemoCards() {
         fetch(`${apiBase()}/audit/v2${q}`).then(async (r) => ({ status: r.status, body: await r.json().catch(() => null) })),
         fetch(`${apiBase()}/audit/orders-summary${q}`).then(async (r) => (r.ok ? r.json() : null)),
       ]).then(([v2, orders]) => {
-        const t = (orders as { shortfall?: { totals?: Record<string, { usd: number } | null> } } | null)?.shortfall?.totals
-        const parts: StackPart[] = []
-        if (t?.execution) parts.push({ key: 'execution', label: 'Execution cost', value: t.execution.usd, valueLabel: formatUsd(t.execution.usd) })
-        if (t?.opportunity) parts.push({ key: 'opportunity', label: 'Unfilled orders', value: t.opportunity.usd, valueLabel: formatUsd(t.opportunity.usd) })
-        if (t?.fees) parts.push({ key: 'fees', label: 'Fees at the published rate', value: t.fees.usd, valueLabel: formatUsd(t.fees.usd), stated: true, note: 'not independently measured' })
-        if (live) setData((s) => ({ ...s, [d.id]: { grade: gradeView(v2.status, v2.body), headline: describeHeadline(orders, true), parts } }))
+        if (live) setData((s) => ({ ...s, [d.id]: { grade: gradeView(v2.status, v2.body), headline: describeHeadline(orders, true) } }))
       }).catch(() => { if (live) setData((s) => ({ ...s, [d.id]: 'error' })) })
     }
     return () => { live = false }
   }, [])
 
   return (
-    <section aria-labelledby="demos-title" className="mx-auto max-w-[1240px] px-5 py-24 sm:px-8 lg:py-32">
-      <div className="flex flex-wrap items-end justify-between gap-6">
-        <div className="max-w-2xl">
-          <h2 id="demos-title" data-split className="display-lg text-ui-ink">Open a finished audit.</h2>
-          <p className="mt-4 text-[17px] leading-7 text-ui-graphite">Or explore with synthetic demo data: three traders who never existed, filled against real public prints of January 2024.</p>
-        </div>
+    <section aria-labelledby="demos-title" className="px-[var(--ui-gutter)] py-24 lg:py-36">
+      <div className="max-w-3xl">
+        <h2 id="demos-title" data-split className="display-lg text-ui-ink">Open a finished audit.</h2>
+        <p className="mt-4 text-[17px] leading-7 text-ui-graphite">Three traders who never existed, filled against the real public prints of January 2024. Synthetic traders, real prices.</p>
       </div>
-      <ul className="mt-12 grid gap-4 md:grid-cols-3">
+      <ul className="mt-16 grid gap-12 md:grid-cols-3 md:gap-8 lg:gap-14">
         {DEMOS.map((d) => {
           const v = data[d.id]
           return (
-            <li key={d.id}>
-              <Link href={`/dashboard?userId=${d.id}`} className="group panel flex h-full flex-col gap-6 p-6 no-underline transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-ui-float">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">{d.name}</p>
-                    <p className="mt-0.5 text-[12px] text-ui-graphite">Synthetic trader, real prices</p>
+            <li key={d.id} className={`relative ${d.tilt}`}>
+              {/* a strip of tape pins the receipt to the page */}
+              <span aria-hidden="true" className="absolute -top-3 left-1/2 z-10 h-6 w-24 -translate-x-1/2 rotate-[-3deg] bg-[color-mix(in_srgb,var(--ui-edge)_28%,transparent)]" />
+              <Link href={`/dashboard?userId=${d.id}`} className="group block no-underline">
+                <div className="fs-receipt shadow-ui transition-transform duration-200 ease-out group-hover:-translate-y-1">
+                  <p className="fs-r-title !text-[1.375rem]">{d.name}</p>
+                  <p className="c g mt-1">SYNTHETIC TRADER, REAL PRICES</p>
+                  <hr />
+                  <div className="flex min-h-[8.5rem] items-center justify-center py-2">
+                    {v && v !== 'error' && v.grade?.kind === 'graded'
+                      ? <GradeStamp grade={v.grade.letter} score={v.grade.score} period="January 2024" version={v.grade.scoringVersion} size="sm" />
+                      : v && v !== 'error' && v.grade ? <ValueState state="insufficient" label="Measured grade" reason={v.grade.kind === 'none' ? v.grade.text : ''} size="cell" />
+                        : <span className="g">{v === 'error' ? 'NOT LOADED' : 'PRINTING'}</span>}
                   </div>
-                  {v && v !== 'error' && v.grade?.kind === 'graded' ? <GradeChip grade={v.grade.letter} size="md" label={`Measured grade ${v.grade.letter}`} /> : <span className="size-10 rounded-[9px] bg-ui-overlay" aria-hidden="true" />}
-                </div>
-                <div className="min-h-[4.5rem]">
+                  <div className="fs-perf" aria-hidden="true" />
                   {v === 'error' ? <ValueState state="not-computed" label="Total cost" reason="The demo audit could not be loaded." size="cell" />
                     : v?.headline ? (
-                      <>
-                        <p className="text-[12px] text-ui-graphite">The {v.headline.orders} orders paid</p>
-                        <p className="text-[1.75rem] leading-9 font-semibold tracking-[-0.025em] tabular-nums text-ui-ink">{formatUsd(v.headline.totalUsd)}</p>
-                        {v.grade?.kind === 'graded' ? <p className="text-[12px] tabular-nums text-ui-graphite">Measured score {formatScore(v.grade.score)} of 100</p> : null}
-                      </>
+                      <div className="fs-totalline">
+                        <span className="k">TOTAL</span>
+                        <span className="b">{formatSignedBps(v.headline.totalBps)}</span>
+                        <span className="u">{formatUsd(v.headline.totalUsd)}</span>
+                      </div>
                     ) : v ? <ValueState state="not-computed" label="Total cost" reason="The orders were not measured." size="cell" />
-                      : <div className="h-[4.5rem] rounded-md bg-ui-overlay/50" aria-label="Loading" />}
+                      : <p className="g">PRINTING</p>}
+                  {v && v !== 'error' && v.headline ? <p className="g mt-3">{v.headline.orders} ORDERS</p> : null}
+                  <p className="c mt-4 underline underline-offset-[3px] group-hover:text-ui-ink">Open the audit</p>
                 </div>
-                <div className="mt-auto">
-                  {v && v !== 'error' && v.parts.length ? <StackBar parts={v.parts} height={8} legend={false} /> : <div className="h-2 rounded-full bg-ui-overlay" />}
-                  <span className="mt-5 inline-flex items-center gap-1.5 text-[13px] text-ui-graphite transition-colors group-hover:text-ui-ink">
-                    Open the audit
-                  </span>
-                </div>
+                <div aria-hidden="true" className="fs-torn-bottom" />
               </Link>
             </li>
           )

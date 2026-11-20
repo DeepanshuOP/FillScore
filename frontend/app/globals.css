@@ -4,6 +4,7 @@
    (receipt, ticker tape, stamp, slip, pen) in app/ui/paper.css. Rules: DESIGN.md. */
 @import "./ui/tokens.css";
 @import "./ui/paper.css";
+@import "./ui/landing.css";
 
 /* next-themes writes data-theme="paper" | "carbon" on <html>. `dark:` is Carbon copy, for the shadcn primitives. */
 @custom-variant dark (&:where([data-theme="carbon"], [data-theme="carbon"] *));

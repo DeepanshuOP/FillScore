@@ -2,7 +2,7 @@
  * The rule that chose the landing hero's order (stated on the page in "Figures and sources"): among the demo-moderate
  * MARKET orders with a measured execution cost, the one whose cost is nearest the median of those costs; ties go to the
  * earliest order. The median of an even count is the lower middle value, so it is always one order's own value.
- * The landing fixture (app/design-lab/fixtures/landing-order.*) was cut for the order this rule picks; a test checks it.
+ * The landing fixture (app/lib/landing/fixtures/landing-order.*) was cut for the order this rule picks; a test checks it.
  */
 export interface Candidate { orderId: string; createdAt: string; type: string; executionBps: number | null }
 

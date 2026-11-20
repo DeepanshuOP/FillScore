@@ -12,8 +12,8 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { chooseHeroOrder, lowerMedian } from './heroOrder'
-import inputs from '../../design-lab/fixtures/landing-order.inputs.json'
-import replay from '../../design-lab/fixtures/landing-order.replay.json'
+import inputs from './fixtures/landing-order.inputs.json'
+import replay from './fixtures/landing-order.replay.json'
 
 const o = (orderId: string, createdAt: string, executionBps: number | null, type = 'MARKET') => ({ orderId, createdAt, type, executionBps })
 
