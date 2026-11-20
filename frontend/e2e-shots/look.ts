@@ -6,7 +6,7 @@
 import { chromium } from 'playwright'
 import { mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { checks, mock } from './mock'
+import { checks, fx, mock } from './mock'
 
 const BASE = process.env.QA_BASE ?? 'http://localhost:3101'
 const [name, path, widthsArg = '1440,390', ...flags] = process.argv.slice(2)
@@ -20,7 +20,26 @@ async function main() {
     const ctx = await b.newContext({ viewport: { width, height: width < 600 ? 844 : 900 }, reducedMotion: flag('reduce') !== undefined ? 'reduce' : 'no-preference' })
     const page = await ctx.newPage()
     if (flag('carbon') !== undefined) await page.addInitScript(() => localStorage.setItem('fs-theme', 'carbon'))
-    await mock(page, flag('signed') !== undefined)
+    // break-ui fixtures: long values, a single order, or no orders at all (overrides of the demo-moderate answers)
+    const breakCase = flag('case')
+    const base = fx['demo-moderate'] as unknown as { ordersBody: { orders: Record<string, number>; shortfall: { n: number; totals: Record<string, { usd: number; bps: number; n: number }> } }; trades: { trades: Array<Record<string, unknown>> } }
+    const over = (p: string): unknown => {
+      if (!breakCase) return undefined
+      if (p === '/audit/orders-summary') {
+        if (breakCase === 'empty') return { available: false }
+        const b = JSON.parse(JSON.stringify(base.ordersBody))
+        if (breakCase === 'long') { for (const t of Object.values(b.shortfall.totals) as Array<{ usd: number; n: number }>) { t.usd *= 237_041.3; t.n = 1_234_567 } b.orders = { total: 1_234_567, filled: 1_200_000, partial: 4_567, unfilled: 30_000, open: 0 }; b.shortfall.n = 1_234_567 }
+        if (breakCase === 'one') { for (const t of Object.values(b.shortfall.totals) as Array<{ n: number }>) t.n = 1; b.orders = { total: 1, filled: 1, partial: 0, unfilled: 0, open: 0 }; b.shortfall.n = 1 }
+        return b
+      }
+      if (p === '/audit/trades') {
+        if (breakCase === 'empty') return { trades: [] }
+        if (breakCase === 'one') return { trades: base.trades.trades.slice(0, 1) }
+        if (breakCase === 'long') return { trades: base.trades.trades.map((t) => ({ ...t, symbol: '1000SATSFDUSDPERPETUALUSDT', orderId: `${String(t.orderId)}-${'9'.repeat(30)}` })) }
+      }
+      return undefined
+    }
+    await mock(page, flag('signed') !== undefined, over)
     await page.goto(BASE + path, { waitUntil: 'networkidle', timeout: 60000 })
     await page.evaluate(() => document.fonts.ready)
     const wait = flag('wait'); if (wait) await page.getByText(wait).first().waitFor({ timeout: 30000 })

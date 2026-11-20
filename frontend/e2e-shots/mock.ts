@@ -69,7 +69,10 @@ export async function checks(page: Page, name: string) {
         if (!clipped) wide.push(`${el.tagName.toLowerCase()}.${String(el.className).slice(0, 40)}`)
       }
       // leaf text boxes inside the first two screens, for the overlap check
-      if (r.top < window.innerHeight * 2 && el.children.length === 0 && (el.textContent ?? '').trim().length > 1 && !el.closest('[aria-hidden="true"],svg,.sr-only,[data-overlap-ok]')) texts.push({ r, t: (el.textContent ?? '').trim().slice(0, 24) })
+      // (text inside a fixed or sticky layer, such as the top bar, is drawn over the page on purpose and is left out)
+      let layered = false
+      for (let a: HTMLElement | null = el; a; a = a.parentElement) { const pos = getComputedStyle(a).position; if (pos === 'fixed' || pos === 'sticky') { layered = true; break } }
+      if (!layered && r.top < window.innerHeight * 2 && el.children.length === 0 && (el.textContent ?? '').trim().length > 1 && !el.closest('[aria-hidden="true"],svg,.sr-only,[data-overlap-ok]')) texts.push({ r, t: (el.textContent ?? '').trim().slice(0, 24) })
     }
     const overlaps: string[] = []
     for (let i = 0; i < texts.length; i++) for (let j = i + 1; j < texts.length; j++) {

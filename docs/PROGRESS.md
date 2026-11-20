@@ -8,9 +8,24 @@ Deepanshu chose direction 1 with four fixes (hero composition with connected pen
 $0.25 in penInk with "10.0 bps; fees were 99.99% of it" double-underlined; Carbon copy a real tested theme; DESIGN.md
 rewritten), then conversion steps 1-8 (one commit each), then QA. Design v2 stays live until he pushes.
 
-- **Next concrete action: QA** (one QA script run, at most three fix passes; review checklists and break-ui on overview,
-  receipt and verify; independent reviewer on the images; full checks; curated images; DESIGN.md rewrite (fix 4);
-  M8.md and ARCHITECTURE.md §4).
+- **Next concrete action: QA pass 2** (`npx tsx e2e-shots/qa3.ts 2` on a fresh build), then the independent reviewer on
+  the images against DESIGN.md, the full checks (e2e needs the local stack), curated images, M8.md, ARCHITECTURE.md §4.
+- **QA so far:** fix 4 done: DESIGN.md rewritten for Tape & Receipt (tokens, type with the measured tabular figures,
+  paper/ink/pen rules, receipt anatomy, stamp, tape, pen, motion, data, copy, invariants, anti-generic list; v2 rules
+  deleted). QA script `e2e-shots/qa3.ts` (22 states: landing hero start and end, story end, overview, orders with the
+  receipt, rankings, Council, verify after a check, onboarding refusal, settings at 1440 and 390, overview and receipt in
+  Carbon copy; overflow, overlap and axe checks; landing CLS). Pass 1: CLS 0 at 1440 and 390, no overflow, axe 0 serious
+  on every state; overlaps reported only under the fixed top bar (the check now leaves fixed/sticky layers out); fixes:
+  rankings wait selector, the hero end frame captured inside the pin, more room under the giant $0.25. emil-design-eng
+  checklist: `transition-all` only in unused shadcn primitives (tabs, toggle, toggle-group, badge deleted; the dialog's
+  button primitive now names its properties); exit faster than enter already (receipt 560/220 ms); hover lifts are
+  hover-gated by Tailwind v4. impeccable audit checklist: the receipt's Close and Copy controls get 44 px targets on
+  coarse pointers. break-ui (`look.ts case=long|one|empty`, 320 px, 640 px for 200% zoom, `e2e-shots/keys.ts`): a
+  12-million-dollar total overflowed its column (the figure now sizes to its container by character count), the order
+  count lacked thousands separators (fixed), the phone receipt of very large figures widened the page (it now scrolls
+  inside, focusable region), the top bar overflowed at 320 px (⌘K hidden on phones; the drawer has every section); one
+  order and no orders render their states; the keyboard pass is 12 of 12 (tape tab stop, arrows, preview, Enter opens
+  the receipt, Escape closes, focus returns to the row, verify's file input focus ring).
 - **Step 8, done:** Verify as a drop envelope and a printed verification receipt (manifest lines tick OK or FAIL in turn,
   signature, key, file count, the outcome stamped VALID / CONSISTENT / INVALID / UNREADABLE with its line in words; the
   stamps differ in line style and words, colour only repeats them). Onboarding refusals as returned receipts (RETURNED

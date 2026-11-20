@@ -76,6 +76,11 @@
 .fs-r-close:hover { color: var(--ui-ink); }
 .fs-r-actions { display: flex; gap: 14px; justify-content: center; margin-top: 12px; }
 .fs-r-actions button, .fs-r-actions a { background: none; border: 0; text-decoration: underline; text-underline-offset: 3px; font-family: var(--ui-mono); font-size: 12px; padding: 4px; color: var(--ui-ink); }
+/* touch: the receipt's small printed controls still give a 44 px target */
+@media (pointer: coarse) {
+  .fs-r-close, .fs-r-actions button, .fs-r-actions a { min-height: 44px; min-width: 44px; display: inline-flex; align-items: center; justify-content: center; }
+  .fs-r-close { top: 6px; right: 6px; }
+}
 .fs-vaul { position: fixed; left: 0; right: 0; bottom: 0; z-index: 71; outline: none; max-height: 92dvh; display: flex; flex-direction: column; }
 .fs-vaul .fs-receipt { overflow-y: auto; padding: 14px 16px 28px; flex: 1; }
 .fs-vaul .grip { width: 44px; height: 4px; border-radius: 4px; background: var(--ui-edge); margin: 0 auto 12px; }

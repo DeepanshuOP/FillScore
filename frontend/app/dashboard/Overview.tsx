@@ -45,15 +45,17 @@ const Label = ({ children, className }: { children: ReactNode; className?: strin
 function Top({ headline, grade, band, v1, v1Note, periodLabel, isDemo }: Pick<OverviewProps, 'headline' | 'grade' | 'band' | 'v1' | 'v1Note' | 'periodLabel' | 'isDemo'>) {
   return (
     <div className="grid gap-x-10 gap-y-6 lg:grid-cols-[minmax(0,1fr)_minmax(300px,380px)] lg:items-start">
-      <section data-testid="headline" aria-labelledby="headline" className="min-w-0">
+      <section data-testid="headline" aria-labelledby="headline" className="min-w-0 [container-type:inline-size]">
         <Label>What the orders paid, {periodLabel}</Label>
         {headline ? (
           <>
-            <p aria-hidden="true" className="mt-3 -ml-[0.04em] text-[clamp(5.5rem,15.5vw,15rem)] leading-[0.8] font-black tracking-[-0.055em] text-ui-ink">
+            {/* the figure fills its column at most: about 0.6 em per character in Cabinet Black, so a long total shrinks to fit */}
+            <p aria-hidden="true" className="mt-3 -ml-[0.04em] leading-[0.8] font-black tracking-[-0.055em] whitespace-nowrap text-ui-ink"
+              style={{ fontSize: `min(15rem, calc(100cqi / ${(formatUsd(headline.totalUsd).length * 0.6).toFixed(2)}))` }}>
               <SplitFigure value={headline.totalUsd} text={formatUsd(headline.totalUsd)} format={USD_FORMAT} />
             </p>
             <h2 id="headline" className="mt-7 max-w-[30ch] text-[clamp(1.25rem,1.9vw,1.625rem)] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
-              The {headline.orders} {headline.orders === 1 ? 'order' : 'orders'} paid{' '}
+              The {headline.orders.toLocaleString('en-US')} {headline.orders === 1 ? 'order' : 'orders'} paid{' '}
               <Figure value={headline.totalUsd} text={formatUsd(headline.totalUsd)} format={USD_FORMAT} /> in total.
             </h2>
             <p className="mt-1.5 max-w-[60ch] text-[15px] text-ui-graphite">
@@ -122,7 +124,9 @@ function CostReceipt({ ordersBody, isDemo, headline }: { ordersBody: unknown; is
           <p className="c g mt-1">COST BY TERM, IN USD AND BPS OF THE VALUE ORDERED</p>
           <hr />
           {v?.totals ? (
-            <table data-testid="orders-totals" className="w-full border-collapse">
+            // on a narrow phone with very large figures the lines scroll sideways inside the receipt rather than widen the page
+            <div className="relative overflow-x-auto" role="region" aria-label="Cost by term" tabIndex={0}>
+            <table data-testid="orders-totals" className="w-full border-collapse max-sm:text-[11.5px]">
               <caption className="sr-only">Totals over the measured orders, in US dollars and basis points of the intended value</caption>
               <thead><tr className="g text-[11px]"><th scope="col" className="pb-1 text-left font-normal">TERM</th><th scope="col" className="text-right font-normal">BPS</th><th scope="col" className="text-right font-normal">USD</th><th scope="col" className="hidden text-right font-normal sm:table-cell">ORDERS</th></tr></thead>
               <tbody>
@@ -136,13 +140,14 @@ function CostReceipt({ ordersBody, isDemo, headline }: { ordersBody: unknown; is
                         {total ? null : <span aria-hidden="true" className="text-ui-rule max-sm:hidden"> ..................................................</span>}
                       </th>
                       <td className={cn('pl-2 text-right whitespace-nowrap', total ? 'pt-2 font-ui text-[18px] font-bold text-ui-graphite' : 'text-ui-graphite')}>{r.bps}</td>
-                      <td className={cn('pl-3 text-right whitespace-nowrap', total ? 'pt-2 font-ui text-[2rem] leading-none font-black tracking-[-0.04em]' : '')}>{r.usd}</td>
+                      <td className={cn('pl-3 text-right whitespace-nowrap', total ? 'pt-2 font-ui text-[2rem] leading-none font-black tracking-[-0.04em] max-sm:text-[1.5rem]' : '')}>{r.usd}</td>
                       <td className="hidden pl-3 text-right whitespace-nowrap text-ui-graphite sm:table-cell">{total ? '' : r.n.split(' ')[0]}</td>
                     </tr>
                   )
                 })}
               </tbody>
             </table>
+            </div>
           ) : <ValueState state="not-computed" label="Cost by term" reason="The orders were not measured, so there is no cost by term." />}
           {isDemo && v?.totals ? <p className="g mt-3 text-[11px]">* FEES AT THE PUBLISHED RATE, NOT INDEPENDENTLY MEASURED</p> : null}
         </div>

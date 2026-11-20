@@ -149,7 +149,7 @@ export function AppShell({ userId, page, dataSource, period, venue, title, actio
     <div className="flex min-h-dvh flex-col bg-ui-surface">
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-ui-raised focus:px-3 focus:py-2">Skip to content</a>
       <header className="sticky top-0 z-30 bg-ui-surface/95 px-[var(--ui-gutter)] backdrop-blur-sm">
-        <div className="flex h-14 items-center gap-3 lg:gap-5">
+        <div className="flex h-14 items-center gap-2 sm:gap-3 lg:gap-5">
           <Link href="/" className="shrink-0 no-underline" aria-label="FillScore home"><Logo /></Link>
           <AccountSwitcher userId={userId} signedIn={signedIn} className="max-sm:hidden" />
           {dataSource ? <ProvenanceChip dataSource={dataSource} className="max-md:hidden" /> : null}
@@ -162,8 +162,8 @@ export function AppShell({ userId, page, dataSource, period, venue, title, actio
           ) : null}
           {actions}
           <button type="button" onClick={() => setCmdOpen(true)}
-            className="inline-flex h-8 items-center gap-2.5 rounded-[4px] border border-ui-edge px-2.5 text-[13px] text-ui-graphite hover:border-ui-ink hover:text-ui-ink max-sm:px-2">
-            <span className="max-sm:sr-only">Jump to</span><kbd aria-hidden="true" className="fs-kbd border-0 p-0">⌘K</kbd>
+            className="inline-flex h-8 items-center gap-2.5 rounded-[4px] border border-ui-edge px-2.5 text-[13px] text-ui-graphite hover:border-ui-ink hover:text-ui-ink max-sm:hidden">
+            <span>Jump to</span><kbd aria-hidden="true" className="fs-kbd border-0 p-0">⌘K</kbd>
           </button>
           <ThemeToggle className="max-sm:hidden" />
           <AccountEnd signedIn={signedIn} />
