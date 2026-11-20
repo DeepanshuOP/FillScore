@@ -15,13 +15,15 @@ const code = all.filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l.text));   // comment
 const hits = (re: RegExp, src = code) => src.filter((l) => re.test(l.text)).map((l) => `${l.f}:${l.n}: ${l.text.trim().slice(0, 100)}`);
 
 describe('rebuilt screens', () => {
-  // Design v2 (2026-11-20): DESIGN.md expresses type through tight NEGATIVE tracking, so `tracking-[-0.02em]` is allowed;
-  // uppercase and any widened tracking (the eyebrow-label look) stay banned.
-  it('no uppercase text and no widened letter-spacing', () => {
-    expect(hits(/\buppercase\b|text-transform|tracking-(wide|wider|widest)\b|tracking-\[0?\.?[1-9]|tracking-\[0\.0*[1-9]|letterSpacing|letter-spacing/)).toEqual([]);
+  // Design v3 "Tape & Receipt" (2026-11-20): Cabinet Grotesk is set with tight NEGATIVE tracking; uppercase and widened
+  // tracking belong only to the printer's type (Departure Mono, the receipt's labels), so they must sit on a line that
+  // sets font-mono. The v2 ban on every uppercase label is replaced by this rule (DESIGN.md, "Type").
+  const printed = (l: { text: string }) => /font-mono|\bmono\b/.test(l.text)
+  it('uppercase and widened letter-spacing only in the printer type (font-mono on the same line)', () => {
+    expect(hits(/\buppercase\b|text-transform|tracking-(wide|wider|widest)\b|tracking-\[0?\.?[1-9]|tracking-\[0\.0*[1-9]|letterSpacing|letter-spacing/, code.filter((l) => !printed(l)))).toEqual([]);
   });
-  it('negative tracking only: every tracking utility is a negative bracket value (or the reset tracking-normal)', () => {
-    expect(hits(/tracking-(?!\[-|normal\b)/)).toEqual([]);
+  it('outside the printer type, tracking is negative only (or the reset tracking-normal)', () => {
+    expect(hits(/tracking-(?!\[-|normal\b)/, code.filter((l) => !printed(l)))).toEqual([]);
   });
   it('no arrow or decorative glyph in copy', () => {
     expect(hits(/[→↗↘←▶◈◆◉⬡⚖✓]/)).toEqual([]);

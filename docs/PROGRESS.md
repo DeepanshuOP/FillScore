@@ -8,8 +8,16 @@ Deepanshu chose direction 1 with four fixes (hero composition with connected pen
 $0.25 in penInk with "10.0 bps; fees were 99.99% of it" double-underlined; Carbon copy a real tested theme; DESIGN.md
 rewritten), then conversion steps 1-8 (one commit each), then QA. Design v2 stays live until he pushes.
 
-- **Next concrete action: conversion step 2, app shell** (top bar as in the overview prototype, section tabs with
-  Trades/Analytics/Methodology in a menu, phone navigation via Vaul).
+- **Next concrete action: conversion step 3, overview** (prototype top: giant total, stamp, month tape with receipt
+  preview, cost terms as receipt lines; then cost against expected as a bracket on a ruler, outcomes as a tally,
+  freshness and provenance footer line).
+- **Step 2, done:** `AppShell` rewritten: one top bar (wordmark with the orange dot, account switcher, synthetic badge,
+  period in mono, actions, "Jump to ⌘K", Carbon copy toggle, log in/out), section tabs (six views, then "More": Trades,
+  Analytics, Methodology, Settings when signed in), phone navigation in a Vaul drawer behind "Menu"; no sidebar (the
+  tabs fit at 1440 with room to spare). Quick-look tools for the rest of the work: `e2e-shots/mock.ts` (fixture API and
+  DOM/axe checks) and `e2e-shots/look.ts`. `rebuiltCopy.test.ts`: the v2 ban on uppercase is replaced by the v3 rule
+  (uppercase and widened tracking only in the printer type, `font-mono` on the same line). Checks: vitest 668 passed,
+  tsc 0, lint 0 errors; look at 1440/390 and the drawer: no overflow, axe 0 serious.
 - **Step 1, done:** tokens rewritten for paper (default) and carbon (`app/ui/tokens.css`, roles kept, new `pen`,
   `pen-ink`, `stamp`; next-themes themes `paper`/`carbon`, storage key `fs-theme`); contrast test covers both themes and
   the pen rules (pen-ink >= 4.5, stamp >= 3, pen on paper < 3 so it only doubles pen-ink text, no blue-black ground);
