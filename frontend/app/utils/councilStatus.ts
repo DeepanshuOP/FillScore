@@ -97,6 +97,46 @@ export function flagLabel(tag: string): string {
     return words.replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+// Display names only. The stored keys (alpha_architect, alpha, alphaRating) are unchanged.
+const AGENT_LABELS: Record<string, string> = {
+    liquidity_scout: 'Liquidity Scout',
+    alpha_architect: 'Benchmark Reviewer',
+    risk_auditor: 'Risk Auditor',
+    fee_optimizer: 'Fee Optimizer',
+};
+
+export function agentLabel(agent: string): string {
+    return AGENT_LABELS[agent] ?? agent;
+}
+
+/** A stored rating in words: SEVERELY_NEGATIVE -> "severely negative". */
+export function ratingWords(rating: string): string {
+    return (rating ?? '').toLowerCase().split('_').join(' ');
+}
+
+/** The benchmark specialist's rating as a phrase; empty when there is no rating. */
+export function alphaRatingPhrase(rating: string): string {
+    const words = ratingWords(rating);
+    return words ? `Versus the benchmark: ${words}` : '';
+}
+
+/**
+ * The benchmark the specialist compares against: `vwap5m`, the 5-minute volume-weighted average price at execution,
+ * for market orders (ml-service/agents/metrics/alpha_packet.py). Shown only when the run did not flag its absence.
+ */
+export function alphaBenchmarkNote(flags: string[]): string {
+    if (flags.includes('no_vwap_benchmark_available')) return '';
+    return 'Benchmark: the 5-minute volume-weighted average price (VWAP) at the time of each market order';
+}
+
+/** A specialist flag in sentence case: the fixed labels, else the tag lower-cased with a capital first letter. */
+export function flagText(tag: string): string {
+    if (TAG_LABELS[tag]) return TAG_LABELS[tag];
+    if (!/^[a-z0-9]+(_[a-z0-9]+)*$/.test(tag)) return tag;
+    const s = tag.split('_').join(' ');
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 /** "BTCUSDT · 82 trades" (the Council packet's scope; the dashboard covers every symbol). */
 export function councilScopeLabel(symbol: string, tradeCount: number | null | undefined): string {
     if (typeof tradeCount !== 'number') return symbol;

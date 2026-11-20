@@ -3,7 +3,7 @@
  * rested, the implementation shortfall and the cost of unfilled orders. Pure: every number is copied from the API,
  * which computed it from stored documents. A block that was not measured is null, never zero.
  */
-import { formatBps } from '../utils/formatBps';
+import { formatSignedBps, formatUsd } from '../ui/format';
 
 interface Median { execution: number | null; spread: number | null; impactTiming: number | null; opportunity: number | null; total: number | null }
 /** Total over all measured orders for one term: USD, bps of the intended notional of the orders that have it, their count. */
@@ -34,15 +34,8 @@ export function formatMs(ms: number | null | undefined): string {
   return `${(ms / 60_000).toFixed(1)} min`;
 }
 
-const bps = formatBps;
+const bps = formatSignedBps;
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-const usdFmt = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 });
-/** USD with cents; a real amount below one cent is "<$0.01", never "$0.00" or "-$0.00". */
-export function usdText(v: number | null | undefined): string {
-  if (!isNum(v)) return 'not computed';
-  if (v !== 0 && Math.abs(v) < 0.005) return v > 0 ? '<$0.01' : '>-$0.01';
-  return usdFmt.format(v === 0 ? 0 : v);
-}
 const TERM_LABELS: Array<[keyof Totals, string]> = [
   ['execution', 'Execution cost'], ['spread', 'Spread paid'], ['impactTiming', 'Impact and timing'],
   ['opportunity', 'Unfilled orders'], ['fees', 'Fees'], ['total', 'Total'],
@@ -73,7 +66,7 @@ export function describeOrders(body: unknown): OrdersView | null {
     totals: b.shortfall?.totals
       ? TERM_LABELS.map(([k, label]) => {
         const t = b.shortfall!.totals![k];
-        return t ? { label, usd: usdText(t.usd), bps: bps(t.bps), n: plural(t.n, 'order', 'orders') }
+        return t ? { label, usd: formatUsd(t.usd), bps: bps(t.bps), n: plural(t.n, 'order', 'orders') }
           : { label, usd: 'not computed', bps: 'not computed', n: '' };
       })
       : null,

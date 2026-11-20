@@ -364,7 +364,7 @@ function TradesContent() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-base, #0f0f0f)', color: 'var(--text-primary, #ede8e0)', fontFamily: 'var(--font-inter)' }}>
+    <div style={{ minHeight: '100vh', background: '#0f0f0f', color: '#ede8e0', fontFamily: 'var(--font-inter)' }}>
       {/* HEADER */}
       <Navbar userId={userId || undefined} exchange={exchangeRaw || undefined} currentPage="trades" showLive={true} />
 
@@ -810,7 +810,7 @@ function TradesContent() {
 
 function TradesFallback() {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg-base, #0f0f0f)', color: 'var(--text-primary, #ede8e0)', fontFamily: 'var(--font-inter)' }}>
+    <div style={{ minHeight: '100vh', background: '#0f0f0f', color: '#ede8e0', fontFamily: 'var(--font-inter)' }}>
       <Navbar currentPage="trades" showLive={true} />
       <main style={{ padding: '48px 2rem 2rem', maxWidth: '1200px', margin: '0 auto' }}>
         <div style={{ background: '#1a1917', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '3px', marginTop: 0 }}>

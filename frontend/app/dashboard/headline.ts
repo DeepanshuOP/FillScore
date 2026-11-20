@@ -1,0 +1,140 @@
+/**
+ * View model of the dashboard headline (M8 phase 2b, part 1). Pure: every number is copied from GET /api/audit/orders-summary
+ * and GET /api/audit/v2, which computed them from stored documents; this file only arranges them, in the past tense.
+ * A figure that was not measured is null (the screen then shows a ValueState), never zero.
+ */
+import { formatSignedBps, formatUsd } from '../ui/format'
+import type { BarRow } from '../ui/ChartFrame'
+import type { CostVsExpected } from './scoreV2'
+import { formatPeriodLabel } from '../utils/periodLabel'
+
+interface Term { usd: number; bps: number; n: number }
+interface Totals { execution?: Term | null; spread?: Term | null; impactTiming?: Term | null; opportunity?: Term | null; fees?: Term | null; total?: Term | null }
+interface OrdersBody { available?: boolean; shortfall?: { n: number; unmeasured: number; totals?: Totals | null } | null }
+
+const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+
+export interface Headline {
+  /** Orders the total covers. */
+  orders: number
+  totalUsd: number
+  totalBps: number
+  /** The part measured against market prices. For a demo account the fees are generated at the published rate and are left out. */
+  measuredUsd: number
+  /** Present for a demo account: the fees at the published rate, which no market data checks. */
+  feesUsd: number | null
+  feesNotMeasured: boolean
+  unmeasuredOrders: number
+}
+
+function totalsOf(body: unknown): Totals | null {
+  const b = body as OrdersBody | null
+  if (!b || b.available !== true) return null
+  return b.shortfall?.totals ?? null
+}
+
+export function describeHeadline(body: unknown, isDemo: boolean): Headline | null {
+  const t = totalsOf(body)
+  const total = t?.total
+  if (!t || !total || !isNum(total.usd) || !isNum(total.bps)) return null
+  const fees = t.fees && isNum(t.fees.usd) ? t.fees.usd : null
+  const split = isDemo && fees !== null
+  return {
+    orders: total.n,
+    totalUsd: total.usd,
+    totalBps: total.bps,
+    measuredUsd: split ? total.usd - fees : total.usd,
+    feesUsd: split ? fees : null,
+    feesNotMeasured: split,
+    unmeasuredOrders: (body as OrdersBody).shortfall?.unmeasured ?? 0,
+  }
+}
+
+export interface Bars {
+  title: string
+  summary: string
+  rows: BarRow[]
+  table: Array<{ label: string; value: string; note?: string }>
+}
+
+const BAR_TERMS: Array<[keyof Totals, string]> = [['fees', 'Fees'], ['opportunity', 'Unfilled orders'], ['spread', 'Spread paid'], ['impactTiming', 'Impact and timing']]
+
+/** Where the money went: one row per term, in dollars. A term with no value is left out of the bars and read "not computed" in the table. */
+export function barRows(body: unknown, isDemo: boolean): Bars | null {
+  const t = totalsOf(body)
+  const total = t?.total
+  if (!t || !total || !isNum(total.usd)) return null
+  const rows: BarRow[] = []
+  const table: Bars['table'] = []
+  for (const [key, label] of BAR_TERMS) {
+    const term = t[key]
+    const demoFee = isDemo && key === 'fees'
+    if (!term || !isNum(term.usd)) {
+      table.push({ label, value: 'not computed' })
+      continue
+    }
+    rows.push({ label, value: term.usd, valueLabel: formatUsd(term.usd), ...(demoFee ? { unmeasured: true, note: 'published rate' } : {}) })
+    table.push({ label, value: formatUsd(term.usd), ...(demoFee ? { note: 'at the published rate, not independently measured' } : {}) })
+  }
+  table.push({ label: 'Total', value: formatUsd(total.usd) })
+  const said = rows.map((r) => `${r.label.charAt(0).toLowerCase()}${r.label.slice(1)} ${r.valueLabel}`).join('; ')
+  return { title: `Where the ${formatUsd(total.usd)} went`, summary: `By term: ${said}.`, rows, table }
+}
+
+/** The orders the total leaves out, in a sentence that agrees in number ("" when every order was measured). */
+export function unmeasuredNote(n: number): string {
+  if (n <= 0) return ''
+  return n === 1 ? '1 order was not measured and is not in it.' : `${n} orders were not measured and are not in it.`
+}
+
+const plus = (v: number) => (v > 0 ? '+' : '') + formatSignedBps(v)
+
+/**
+ * The one short sentence under the headline: difference, interval and n. The method (what "expected" is, what the
+ * interval leaves out) is in the section "Cost against what was expected", not here.
+ */
+export function costSentence(c: CostVsExpected | undefined): string | null {
+  if (!c || c.insufficient) return null   // no number: the headline shows a ValueState with costInsufficientReason instead
+  const interval = c.lowBps !== null && c.highBps !== null
+    ? `${Math.round(c.level * 100)}% interval ${plus(c.lowBps)} to ${plus(c.highBps)}` : 'no interval'
+  return `Market orders cost ${formatSignedBps(c.paidBps)} against ${formatSignedBps(c.expectedBps)} expected: difference ${plus(c.excessBps)}, ${interval}, ${c.n} orders.`
+}
+
+/** What is missing when cost against expected has no figure; null when there is one. */
+export function costInsufficientReason(c: CostVsExpected | undefined): string | null {
+  if (!c) return 'no market context was stored for these orders'
+  return c.insufficient ? c.reason : null
+}
+
+interface Current { fills: number; orders: number; notionalUsd: number | null; makerRatio: number | null }
+interface AuditScope { totalTrades: number; totalNotional: number; breakdown: { makerRatio: number }; period: { start: string; end: string }; exchange: string }
+const VENUES: Record<string, string> = { binance: 'Binance', bybit: 'Bybit', okx: 'OKX', multi: 'Several venues' }
+const int = new Intl.NumberFormat('en-US')
+const pct = (r: number | null) => (r === null ? 'not computed' : `${Math.round(r * 100)}%`)
+
+/** The facts that say what the headline covers, as label and value. A rebuilt account (`current`) reads its present fills and orders. */
+export function scopeFacts(audit: AuditScope, current: Current | null | undefined): Array<[string, string]> {
+  const period = formatPeriodLabel(audit.period.start, audit.period.end)
+  const venue = VENUES[audit.exchange?.toLowerCase()] ?? audit.exchange
+  const rest: Array<[string, string]> = current
+    ? [['Fills', `${int.format(current.fills)}, in ${int.format(current.orders)} ${current.orders === 1 ? 'order' : 'orders'}`],
+      ['Value traded', formatUsd(current.notionalUsd)], ['Maker share of fills', pct(current.makerRatio)]]
+    : [['Fills', int.format(audit.totalTrades)], ['Value traded', formatUsd(audit.totalNotional)], ['Maker share of fills', pct(audit.breakdown.makerRatio)]]
+  return [['Period', period], ['Venue', venue], ...rest]
+}
+
+export type GradeView =
+  | { kind: 'graded'; letter: string; score: number; scoringVersion: string }
+  | { kind: 'none'; text: string }
+
+/** The measured (v2) grade for the headline. No letter is shown below the minimum sample. null while the answer is not in. */
+export function gradeView(status: number | null, body: unknown): GradeView | null {
+  if (status === null) return null
+  if (status === 404) return { kind: 'none', text: 'No measured grade yet. It is computed after the orders are synced and measured.' }
+  const b = body as { scoringVersion?: string; result?: { grade: string | null; composite: number | null; reason: string | null; fills: number } } | null
+  if (status !== 200 || !b?.result) return { kind: 'none', text: 'The measured grade could not be loaded.' }
+  const r = b.result
+  if (r.grade && r.composite !== null) return { kind: 'graded', letter: r.grade, score: r.composite, scoringVersion: b.scoringVersion ?? '' }
+  const why = r.reason?.startsWith('fewer than') ? `${r.reason} (${r.fills} so far)` : 'at least one component had insufficient data'
+  return { kind: 'none', text: `No letter grade: ${why}.` }
+}

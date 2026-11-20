@@ -3,17 +3,17 @@
  * from the API, which reads stored measurements; the sentences here only arrange them, in past tense. A value that was not
  * computed reads "not computed" or "insufficient data", never zero.
  */
-import { formatBps } from '../utils/formatBps';
+import { formatSignedBps as formatBps, formatUsd } from '../ui/format';
 
 /** The fixed headings of the panel. Tested against the advice and causal terms. */
 export const PANEL_COPY = {
-  queueTitle: 'Orders that met a rule · measured',
+  queueTitle: 'Orders that met a rule',
   rankingsTitle: 'Execution cost, ranked only where there are enough orders',
-  venuesTitle: 'Venues · own fills of the account, matched by symbol and size',
+  venuesTitle: 'Venues, from the account\'s own fills matched by symbol and size',
   showDismissed: 'Show dismissed',
 } as const;
 
-const usd = (v: number) => `${v < 0 ? '-' : ''}$${Math.abs(v).toFixed(2)}`;
+const usd = formatUsd;
 
 // The shapes of the API answers (backend/src/routes/explain.ts), as far as this view reads them.
 export interface QueueItemApi { orderId: string; symbol: string; rules: string[]; finding: string; usd: number; totalBps: number; state: string }
@@ -60,7 +60,7 @@ export function describeQueue(status: number, body: unknown): QueueView {
   const summary = `${b.total} of ${b.checked} measured orders met a rule${skipped}.`;
   const threshold = b.thresholds
     ? `The 90th percentile of the account's own total cost was ${formatBps(b.thresholds.p90TotalBps)}; rules that use it need ${b.thresholds.minOrders} measured orders.` : null;
-  const counts = b.reviewCounts ? `Open ${b.reviewCounts.open} · reviewed ${b.reviewCounts.reviewed} · dismissed ${b.reviewCounts.dismissed}` : null;
+  const counts = b.reviewCounts ? `Open: ${b.reviewCounts.open}, reviewed: ${b.reviewCounts.reviewed}, dismissed: ${b.reviewCounts.dismissed}` : null;
   const items: QueueItemView[] = b.items.map(i => ({
     orderId: i.orderId, symbol: i.symbol, finding: i.finding, usd: usd(i.usd), ruleLabels: i.rules.map(r => RULE_LABELS[r] ?? r),
     state: i.state, stateLabel: STATE_LABELS[i.state] ?? i.state,
@@ -105,7 +105,7 @@ export function describeReplay(status: number, bodyIn: unknown): ReplayView {
   if (status !== 200 || !body) return { error: 'The replay could not be loaded.', ...empty };
   const figures = body.decomposition.map(f => ({
     label: f.label,
-    value: f.bps === null ? 'not computed' : `${formatBps(f.bps)}${f.usd === null ? '' : ` · ${usd(f.usd)}`}`,
+    value: f.bps === null ? 'not computed' : `${formatBps(f.bps)}${f.usd === null ? '' : `, ${usd(f.usd)}`}`,
     source: String(f.source.field), indent: !!f.partOf,
   }));
   const ec = body.expectedCost;

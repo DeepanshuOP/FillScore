@@ -5,7 +5,7 @@ import { GradeBadge } from '../../ui/GradeBadge'
 import { Panel } from '../../ui/Panel'
 import { ProvenanceChip } from '../../ui/ProvenanceChip'
 import { ValueState } from '../../ui/ValueState'
-import { formatMoney, formatSignedBps } from '../../ui/format'
+import { formatUsd, formatSignedBps } from '../../ui/format'
 import { EvidencePanel } from '../EvidencePanel'
 import { LabShell } from '../LabShell'
 import { parseLab } from '../params'
@@ -20,7 +20,7 @@ export default async function DashboardMock({ searchParams }: { searchParams: Pr
     { label: 'Spread paid', value: mock.termsUsd.spread },
     { label: 'Impact and timing', value: mock.termsUsd.impactTiming },
   ]
-  const signed = (v: number) => formatMoney(v).replace('-', '−')
+  const signed = (v: number) => formatUsd(v).replace('-', '−')
   // the part measured against market prices: everything except the fees of a demo account (stated at the published rate)
   const measuredUsd = mock.termsUsd.spread + mock.termsUsd.impactTiming + mock.termsUsd.unfilled
   const c = mock.costVsExpected as unknown as CostVsExpected
@@ -36,13 +36,13 @@ export default async function DashboardMock({ searchParams }: { searchParams: Pr
         {/* The total is a sum of measured terms and of fees stated at the published rate (a demo account's fees are not
             independently measured), so the total carries no "measured" marker: the marker sits on the measured part below. */}
         <h2 id="headline" className="mt-6 max-w-[34ch] text-[1.5rem] leading-[1.3] font-semibold text-balance text-ui-ink sm:text-[1.75rem] sm:leading-[1.3]">
-          The {t.orders} orders paid {formatMoney(t.usd)} in total.
+          The {t.orders} orders paid {formatUsd(t.usd)} in total.
         </h2>
         <dl className="mt-4 grid gap-x-10 gap-y-3 sm:grid-cols-2">
           <div><dt className="mb-1 text-sm text-ui-graphite">Measured against market prices</dt>
-            <dd><ValueState state="measured" label="Measured part of the total" value={formatMoney(measuredUsd)} size="md" n={t.orders} nLabel="orders" /></dd></div>
+            <dd><ValueState state="measured" label="Measured part of the total" value={formatUsd(measuredUsd)} size="md" n={t.orders} nLabel="orders" /></dd></div>
           <div><dt className="mb-1 text-sm text-ui-graphite">Fees at the published rate, not independently measured</dt>
-            <dd className="text-[1.25rem] leading-7 font-semibold tabular-nums text-ui-ink">{formatMoney(mock.termsUsd.fees)}</dd></div>
+            <dd className="text-[1.25rem] leading-7 font-semibold tabular-nums text-ui-ink">{formatUsd(mock.termsUsd.fees)}</dd></div>
         </dl>
         <p className="mt-3 text-sm text-ui-graphite">The total is {t.bps.toFixed(1)} bps of the value ordered.</p>
         <p className="mt-4 max-w-[68ch] text-ui-graphite">{costVsExpectedLine(c).replace(/(^|[\s(])-(?=\d)/g, '$1−')}</p>
@@ -54,8 +54,8 @@ export default async function DashboardMock({ searchParams }: { searchParams: Pr
       <Banner kind="demo" title="Real prices, synthetic trader">{DEMO_NOTE}</Banner>
 
       <ChartFrame
-        title={`Where the ${formatMoney(t.usd)} went`}
-        summary={`Fees, at the published rate, were ${formatMoney(mock.termsUsd.fees)}; unfilled orders were ${formatMoney(mock.termsUsd.unfilled)}. Spread paid and impact and timing, the terms measured against prices, were each below zero in this period.`}
+        title={`Where the ${formatUsd(t.usd)} went`}
+        summary={`Fees, at the published rate, were ${formatUsd(mock.termsUsd.fees)}; unfilled orders were ${formatUsd(mock.termsUsd.unfilled)}. Spread paid and impact and timing, the terms measured against prices, were each below zero in this period.`}
         chart={<BarList rows={terms.map((r) => ({ label: r.label, value: r.value, valueLabel: signed(r.value),
           ...(r.label === 'Fees' ? { unmeasured: true, note: 'published rate' } : {}) }))} />}
         table={

@@ -14,9 +14,9 @@ test.beforeAll(async () => {
 test('sample dashboard Council: assessment without a letter, values cited, no advice or causal terms', async ({ page }) => {
   await page.goto('/dashboard?userId=demo-moderate')
   await page.getByRole('button', { name: 'RUN ANALYSIS' }).click()
-  const heading = page.getByRole('heading', { name: 'Council assessment' })
+  const heading = page.getByRole('heading', { name: 'Explanation (language model; every number was checked against the audit)' })
   await expect(heading).toBeVisible({ timeout: 45_000 })
-  const panel = page.locator('div.border-slate-700', { has: heading })
+  const panel = page.locator('section#agent-council', { has: heading })
 
   // no A-F letter badge on the assessment (the panel locator must really match, or the zero count proves nothing)
   await expect(panel).toHaveCount(1)
@@ -41,10 +41,10 @@ for (const id of ['demo-disciplined', 'demo-aggressive']) {
     await storeDemoRunForCurrentData(id)
     await page.goto(`/dashboard?userId=${id}`)
     await page.getByRole('button', { name: 'RUN ANALYSIS' }).click()
-    const heading = page.getByRole('heading', { name: 'Council assessment' })
+    const heading = page.getByRole('heading', { name: 'Explanation (language model; every number was checked against the audit)' })
     await expect(heading).toBeVisible({ timeout: 45_000 })
     // the Council panel only: the page around it still carries older copy that the dashboard rebuild replaces
-    const panel = page.locator('div.border-slate-700', { has: heading })
+    const panel = page.locator('section#agent-council', { has: heading })
     expect(findAdviceTerms(await panel.innerText())).toEqual([])
   })
 }
@@ -61,6 +61,6 @@ for (const [why, id, mutate] of REFUSED) {
     await page.goto(`/dashboard?userId=${id}`)
     await page.getByRole('button', { name: 'RUN ANALYSIS' }).click()
     await expect(page.getByText('Demo analysis not yet generated for the current demo data.')).toBeVisible({ timeout: 45_000 })
-    await expect(page.getByRole('heading', { name: 'Council assessment' })).toHaveCount(0)
+    await expect(page.getByRole('heading', { name: 'Explanation (language model; every number was checked against the audit)' })).toHaveCount(0)
   })
 }

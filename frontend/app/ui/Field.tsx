@@ -13,8 +13,9 @@ type AreaProps = Common & { multiline: true } & Omit<TextareaHTMLAttributes<HTML
  * (3:1 against both surfaces), because the separator colour is too faint to find a control by.
  */
 export function Field(props: InputProps | AreaProps) {
-  const id = useId()
-  const { label, hint, error, className, multiline, ...rest } = props as Common & { multiline?: boolean } & Record<string, unknown>
+  const generated = useId()
+  const { label, hint, error, className, multiline, id: given, ...rest } = props as Common & { multiline?: boolean; id?: string } & Record<string, unknown>
+  const id = given ?? generated   // a caller-chosen id (tests and links use them) is the one the label points at
   const describedBy = [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(' ') || undefined
   const control = cn(
     'w-full rounded-ui border bg-ui-raised px-3 py-2 text-ui-ink placeholder:text-ui-graphite disabled:cursor-not-allowed disabled:opacity-60',

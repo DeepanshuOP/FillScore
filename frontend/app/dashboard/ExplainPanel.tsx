@@ -1,6 +1,10 @@
 'use client';
 import React, { useEffect, useRef, useState } from 'react';
 import { track } from '../lib/track';
+import { Panel } from '../ui/Panel';
+import { Button } from '../ui/Button';
+import { ValueState } from '../ui/ValueState';
+import { EmptyState } from '../ui/EmptyState';
 import { describeQueue, describeRankings, describeReplay, nextStates, PANEL_COPY, type RankingsApi, type VenueApi } from './explainView';
 
 type Json = { status: number; body: unknown };
@@ -12,13 +16,7 @@ interface Props {
   request: (path: string, init?: { method?: string; body?: unknown }) => Promise<Json>;
 }
 
-const CARD = {
-  padding: '1.25rem 1.5rem', background: '#1c1c1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '3px',
-  display: 'flex', flexDirection: 'column' as const, gap: '0.9rem',
-};
-const LABEL = { fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' as const };
-const TEXT = { fontFamily: 'var(--font-inter)', fontSize: '0.8rem', lineHeight: 1.6, color: '#a09890', margin: 0 };
-const BTN = { background: 'transparent', border: '1px solid rgba(167,139,113,0.4)', color: '#a78b71', padding: '0.2rem 0.6rem', borderRadius: '2px', cursor: 'pointer', fontFamily: 'var(--font-mono)', fontSize: '0.62rem' } as const;
+const TEXT = 'text-sm text-ui-graphite';
 
 const withParams = (path: string, query: string, extra: Record<string, string> = {}) => {
   const u = new URLSearchParams(query.replace(/^\?/, ''));
@@ -28,7 +26,7 @@ const withParams = (path: string, query: string, extra: Record<string, string> =
 };
 
 /** The exception queue with review states, the rankings that say "too few to tell", and the order replay (M4).
- *  Every number comes from the API (stored measurements); the sentences only arrange them. M8 redesigns this panel. */
+ *  Every number comes from the API (stored measurements); the sentences only arrange them. */
 export default function ExplainPanel({ query, readOnly, request }: Props) {
   const [queue, setQueue] = useState<Json | null>(null);
   const [rank, setRank] = useState<{ by: 'symbol' | 'hour'; res: Json | null }>({ by: 'symbol', res: null });
@@ -81,82 +79,92 @@ export default function ExplainPanel({ query, readOnly, request }: Props) {
   const venueBody = venue && venue.status === 200 ? (venue.body as VenueApi) : null;
 
   return (
-    <section aria-label="Exceptions, rankings and order replay" data-testid="explain-panel" style={CARD}>
-      <div style={LABEL}>{PANEL_COPY.queueTitle}</div>
-      {!q ? <p style={TEXT}>Loading…</p> : (
-        <div data-testid="explain-queue">
-          {q.summary && <p style={TEXT}>{q.summary}</p>}
-          {q.threshold && <p style={{ ...TEXT, fontSize: '0.72rem' }}>{q.threshold}</p>}
-          {q.note && <p style={TEXT} data-testid="explain-queue-note">{q.note}</p>}
-          {q.kind === 'error' && <p style={TEXT}>{q.note}</p>}
-          {q.kind === 'empty' && <p style={TEXT}>No order met a rule.</p>}
-          {q.counts && <p style={{ ...TEXT, fontSize: '0.72rem' }}>{q.counts}</p>}
-          <ul style={{ listStyle: 'none', padding: 0, margin: '0.5rem 0 0', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {q.items.map(i => (
-              <li key={`${i.symbol}:${i.orderId}`} data-testid="explain-item">
-                <p style={{ ...TEXT, color: '#ede8e0' }}>{i.finding}</p>
-                <p style={{ ...TEXT, fontSize: '0.72rem' }}>{i.symbol} · order {i.orderId} · {i.usd} · {i.ruleLabels.join(', ')} · {i.stateLabel}</p>
-                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.3rem' }}>
-                  <button type="button" style={BTN} onClick={() => openReplay(i.orderId, i.symbol)}>{replay?.key === `${i.symbol}:${i.orderId}` ? 'Hide replay' : 'Replay'}</button>
-                  {nextStates(i.state, readOnly).map(([s, label]) => (
-                    <button key={s} type="button" style={BTN} onClick={() => setState(i.orderId, i.symbol, s)}>{label}</button>
-                  ))}
-                </div>
-                {rv && replay?.key === `${i.symbol}:${i.orderId}` && (
-                  <div data-testid="explain-replay" style={{ marginTop: '0.6rem', paddingLeft: '0.75rem', borderLeft: '1px solid rgba(255,255,255,0.1)' }}>
-                    {rv.error ? <p style={TEXT}>{rv.error}</p> : (
-                      <>
-                        <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
-                          {rv.figures.map(f => (
-                            <li key={f.label} style={{ ...TEXT, paddingLeft: f.indent ? '1rem' : 0 }}>
-                              <span style={{ color: '#888078' }}>{f.label}: </span><span style={{ color: '#ede8e0' }}>{f.value}</span>
-                              <span style={{ color: '#6f685f', fontSize: '0.68rem' }}> ({f.source})</span>
-                            </li>
-                          ))}
-                        </ul>
-                        {rv.expected && <p style={TEXT}>{rv.expected}</p>}
-                        {rv.fills.length > 0 && <p style={TEXT}>Fills: {rv.fills.map(f => `${f.time.slice(11, 23)} ${f.text}`).join(' · ')}</p>}
-                        {rv.notes.map(n => <p key={n} style={TEXT}>{n}</p>)}
-                        {rv.sources.map(s => (
-                          <p key={s.hash + s.label} style={{ ...TEXT, fontSize: '0.72rem' }}>
-                            Source: {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" style={{ color: '#a78b71' }}>{s.label}</a> : s.label} · SHA-256 {s.hash}
-                          </p>
-                        ))}
-                      </>
-                    )}
+    <div data-testid="explain-panel" className="flex flex-col gap-8">
+      <Panel title={PANEL_COPY.queueTitle} description="Orders whose stored measurements met one of the account's rules.">
+        {!q ? <p className={TEXT}>Loading…</p> : (
+          <div data-testid="explain-queue" className="flex flex-col gap-2">
+            {q.summary && <p className={TEXT}>{q.summary}</p>}
+            {q.threshold && <p className={TEXT}>{q.threshold}</p>}
+            {q.note && <p className={TEXT} data-testid="explain-queue-note">{q.note}</p>}
+            {q.kind === 'empty' && <EmptyState title="No order met a rule." />}
+            {q.counts && <p className={TEXT}>{q.counts}</p>}
+            <ul className="mt-2 flex flex-col gap-4">
+              {q.items.map(i => (
+                <li key={`${i.symbol}:${i.orderId}`} data-testid="explain-item" className="border-t border-ui-rule pt-3">
+                  <p className="text-sm text-ui-ink">{i.finding}</p>
+                  <p className={TEXT}>
+                    {i.symbol}, order <span className="font-[family-name:var(--ui-mono)]">{i.orderId}</span>, {i.usd}, {i.ruleLabels.join(', ')}, {i.stateLabel}
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <Button variant="secondary" onClick={() => openReplay(i.orderId, i.symbol)}>{replay?.key === `${i.symbol}:${i.orderId}` ? 'Hide replay' : 'Replay'}</Button>
+                    {nextStates(i.state, readOnly).map(([s, label]) => (
+                      <Button key={s} variant="secondary" onClick={() => setState(i.orderId, i.symbol, s)}>{label}</Button>
+                    ))}
                   </div>
-                )}
-              </li>
-            ))}
-          </ul>
-          <label style={{ ...TEXT, fontSize: '0.72rem', display: 'inline-flex', gap: '0.4rem', marginTop: '0.5rem' }}>
-            <input type="checkbox" checked={showDismissed} onChange={e => setShowDismissed(e.target.checked)} /> {PANEL_COPY.showDismissed}
-          </label>
-        </div>
-      )}
+                  {rv && replay?.key === `${i.symbol}:${i.orderId}` && (
+                    <div data-testid="explain-replay" className="mt-3 flex flex-col gap-2 border-l border-ui-rule pl-4">
+                      {rv.error ? <p className={TEXT}>{rv.error}</p> : (
+                        <>
+                          <h3 className="text-base font-semibold text-ui-ink">Order replay</h3>
+                          <ul className="flex flex-col gap-1">
+                            {rv.figures.map(f => (
+                              <li key={f.label} className={`${TEXT} ${f.indent ? 'pl-4' : ''}`}>
+                                <span>{f.label}: </span>
+                                {f.value === 'not computed'
+                                  ? <ValueState state="not-computed" label={f.label} size="inline" />
+                                  : <ValueState state="measured" label={f.label} value={f.value} size="inline" />}
+                                <span> ({f.source})</span>
+                              </li>
+                            ))}
+                          </ul>
+                          {rv.expected && <p className={TEXT}>{rv.expected}</p>}
+                          {rv.fills.length > 0 && <p className={TEXT}>Fills: {rv.fills.map(f => `${f.time.slice(11, 23)} ${f.text}`).join('; ')}</p>}
+                          {rv.notes.map(n => <p key={n} className={TEXT}>{n}</p>)}
+                          {rv.sources.map(s => (
+                            <p key={s.hash + s.label} className={TEXT}>
+                              Source: {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-ui-ink underline">{s.label}</a> : s.label}, SHA-256 <span className="font-[family-name:var(--ui-mono)]">{s.hash}</span>
+                            </p>
+                          ))}
+                        </>
+                      )}
+                    </div>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <label className="mt-2 inline-flex min-h-10 items-center gap-2 text-sm text-ui-ink">
+              <input type="checkbox" checked={showDismissed} onChange={e => setShowDismissed(e.target.checked)} /> {PANEL_COPY.showDismissed}
+            </label>
+          </div>
+        )}
+      </Panel>
 
       <div data-testid="explain-rankings">
-        <div style={LABEL}>{PANEL_COPY.rankingsTitle} · by {rank.by === 'symbol' ? 'symbol' : 'hour of the day'}</div>
-        <div style={{ display: 'flex', gap: '0.5rem', margin: '0.4rem 0' }}>
-          {(['symbol', 'hour'] as const).map(b => (
-            <button key={b} type="button" aria-pressed={rank.by === b} style={{ ...BTN, ...(rank.by === b ? { background: 'rgba(167,139,113,0.2)' } : {}) }}
-              onClick={() => setRank({ by: b, res: null })}>{b === 'symbol' ? 'Symbol' : 'Hour'}</button>
-          ))}
-        </div>
-        {rk ? rk.rows.map(r => <p key={r} style={TEXT}>{r}</p>) : <p style={TEXT}>{rank.res ? 'The rankings could not be loaded.' : 'Loading…'}</p>}
+        <Panel title={PANEL_COPY.rankingsTitle} description={`Grouped by ${rank.by === 'symbol' ? 'symbol' : 'hour of the day'}.`}
+          actions={(['symbol', 'hour'] as const).map(b => (
+            <Button key={b} variant={rank.by === b ? 'primary' : 'secondary'} aria-pressed={rank.by === b}
+              onClick={() => setRank({ by: b, res: null })}>{b === 'symbol' ? 'Symbol' : 'Hour'}</Button>
+          ))}>
+          <div className="flex flex-col gap-1">
+            {rk ? rk.rows.map(r => <p key={r} className={TEXT}>{r}</p>) : <p className={TEXT}>{rank.res ? 'The rankings could not be loaded.' : 'Loading…'}</p>}
+          </div>
+        </Panel>
       </div>
 
       {venueBody && (
         <div data-testid="explain-venue">
-          <div style={LABEL}>{PANEL_COPY.venuesTitle}</div>
-          {venueBody.note && <p style={TEXT}>{venueBody.note}</p>}
-          {venueBody.buckets.map(b => (
-            <p key={`${b.symbol}:${b.bucket}`} style={TEXT}>
-              {b.symbol} {b.bucket}: {b.note ?? describeRankings({ by: 'venue', level: 0.9, minOrders: 20, groups: b.venues }).rows.join(' ')}
-            </p>
-          ))}
+          <Panel title={PANEL_COPY.venuesTitle}>
+            <div className="flex flex-col gap-1">
+              {venueBody.note && <p className={TEXT}>{venueBody.note}</p>}
+              {venueBody.buckets.map(b => (
+                <p key={`${b.symbol}:${b.bucket}`} className={TEXT}>
+                  {b.symbol} {b.bucket}: {b.note ?? describeRankings({ by: 'venue', level: 0.9, minOrders: 20, groups: b.venues }).rows.join(' ')}
+                </p>
+              ))}
+            </div>
+          </Panel>
         </div>
       )}
-    </section>
+    </div>
   );
 }

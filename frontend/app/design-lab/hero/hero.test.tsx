@@ -53,8 +53,9 @@ describe('hero content', () => {
   it('writes the figures of the replay data, in the product formatting', () => {
     const html = renderToStaticMarkup(<Hero />)
     // bps: 1.5961691939331055 -> "1.6"; 3.1923383878698397 -> "3.2"; 10.004788507581804 -> "10.0"; total 14.793296 -> "14.8".
-    // USD = bps x 48.48757806057283 / 1e4: 0.0077394 -> $0.008; 0.0154789 -> $0.015; 0.0485108 -> $0.049; 0.0717334 -> $0.072.
-    for (const s of ['1.6 bps, $0.008', '3.2 bps, $0.015', '10.0 bps, $0.049', '14.8 bps, $0.072']) expect(html, s).toContain(s)
+    // USD = bps x 48.48757806057283 / 1e4: 0.0077394, 0.0154789, 0.0485108, 0.0717334, each at two decimals (the one
+    // formatUsd rule of 2026-11-20; the lab's earlier three decimals are gone): $0.01, $0.02, $0.05, $0.07.
+    for (const s of ['1.6 bps, $0.01', '3.2 bps, $0.02', '10.0 bps, $0.05', '14.8 bps, $0.07']) expect(html, s).toContain(s)
     expect(html).toContain('Filled at 313.40, 0.9 s later')
     expect(html).toContain('Mid when placed 313.25')
     expect(html).toContain('Order placed 19:01:52.910 UTC')

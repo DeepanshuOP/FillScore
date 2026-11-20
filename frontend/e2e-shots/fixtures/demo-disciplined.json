@@ -1,0 +1,259 @@
+{
+ "explain": {
+  "exceptions": {
+   "items": [
+    {
+     "orderId": "ord-disciplined-BTCUSDT-237766",
+     "symbol": "BTCUSDT",
+     "rules": [
+      "high-total-cost"
+     ],
+     "finding": "Total cost 59.2 bps against a 90th percentile of 10.0 bps for the account.",
+     "usd": 0.8746965543550498,
+     "totalBps": 59.159520200302104,
+     "state": "open"
+    },
+    {
+     "orderId": "ord-disciplined-ETHUSDT-258254",
+     "symbol": "ETHUSDT",
+     "rules": [
+      "high-total-cost"
+     ],
+     "finding": "Total cost 88.6 bps against a 90th percentile of 10.0 bps for the account.",
+     "usd": 0.8496043853369236,
+     "totalBps": 88.60641458731665,
+     "state": "open"
+    },
+    {
+     "orderId": "ord-disciplined-BTCUSDT-960505",
+     "symbol": "BTCUSDT",
+     "rules": [
+      "high-total-cost"
+     ],
+     "finding": "Total cost 60.9 bps against a 90th percentile of 10.0 bps for the account.",
+     "usd": 0.8444540237888918,
+     "totalBps": 60.85904914957944,
+     "state": "open"
+    },
+    {
+     "orderId": "ord-disciplined-BTCUSDT-234065",
+     "symbol": "BTCUSDT",
+     "rules": [
+      "high-total-cost"
+     ],
+     "finding": "Total cost 14.6 bps against a 90th percentile of 10.0 bps for the account.",
+     "usd": 0.2698686453902325,
+     "totalBps": 14.628129085278298,
+     "state": "open"
+    },
+    {
+     "orderId": "ord-disciplined-BTCUSDT-44527",
+     "symbol": "BTCUSDT",
+     "rules": [
+      "high-total-cost"
+     ],
+     "finding": "Total cost 10.0 bps against a 90th percentile of 10.0 bps for the account.",
+     "usd": 0.23099910864834763,
+     "totalBps": 10.019029024501,
+     "state": "open"
+    }
+   ],
+   "total": 5,
+   "checked": 144,
+   "skipped": 0,
+   "thresholds": {
+    "minOrders": 20,
+    "p90TotalBps": 9.984468428125526
+   },
+   "note": null,
+   "reviewCounts": {
+    "open": 5,
+    "reviewed": 0,
+    "dismissed": 0
+   }
+  },
+  "rankings": {
+   "by": "symbol",
+   "level": 0.9,
+   "minOrders": 20,
+   "groups": [
+    {
+     "key": "BTCUSDT",
+     "n": 82,
+     "median": 9.998830349366596,
+     "low": 8.679659699857863,
+     "high": 60.85904914957944,
+     "status": "ranked",
+     "rank": 1,
+     "tiedWith": []
+    },
+    {
+     "key": "ETHUSDT",
+     "n": 42,
+     "median": 9.978323029038927,
+     "low": 8.502515722079531,
+     "high": 88.60641458731665,
+     "status": "ranked",
+     "rank": 2,
+     "tiedWith": []
+    },
+    {
+     "key": "SOLUSDT",
+     "n": 7,
+     "median": null,
+     "low": null,
+     "high": null,
+     "status": "too_few",
+     "rank": null,
+     "tiedWith": []
+    },
+    {
+     "key": "BNBUSDT",
+     "n": 13,
+     "median": null,
+     "low": null,
+     "high": null,
+     "status": "too_few",
+     "rank": null,
+     "tiedWith": []
+    }
+   ]
+  },
+  "venues": {
+   "note": "Only one venue in this account, so there is nothing to compare.",
+   "buckets": []
+  }
+ },
+ "ordersBody": {
+  "available": true,
+  "orders": {
+   "total": 144,
+   "filled": 138,
+   "partial": 0,
+   "unfilled": 6,
+   "open": 0
+  },
+  "restingMs": {
+   "n": 138,
+   "medianMs": 11381,
+   "p90Ms": 294488.59999999986
+  },
+  "shortfall": {
+   "n": 144,
+   "unmeasured": 0,
+   "medianBps": {
+    "execution": -0.015516055818656053,
+    "spread": -0.019213368302938502,
+    "impactTiming": 0,
+    "opportunity": 0,
+    "total": 9.984468428125526
+   },
+   "totals": {
+    "execution": {
+     "usd": -0.17272818697880432,
+     "bps": -0.09504133243205994,
+     "n": 144
+    },
+    "spread": {
+     "usd": -0.3572547377316017,
+     "bps": -0.19657455384420885,
+     "n": 144
+    },
+    "impactTiming": {
+     "usd": 0.1845265507527974,
+     "bps": 0.1015332214121489,
+     "n": 144
+    },
+    "opportunity": {
+     "usd": 3.0161873095802836,
+     "bps": 1.6596159884568051,
+     "n": 144
+    },
+    "fees": {
+     "usd": 17.549102135054497,
+     "bps": 9.656154441698366,
+     "n": 144
+    },
+    "total": {
+     "usd": 20.39256125765597,
+     "bps": 11.220729097723106,
+     "n": 144
+    }
+   }
+  },
+  "unfilled": {
+   "n": 6,
+   "medianOpportunityBps": 50.38308863271645
+  }
+ },
+ "v2Body": {
+  "label": "v2 (measured)",
+  "scoringVersion": "v2.3.0",
+  "versionFileSha256": "2a4d6b1ad79a2b7d22aecfe7cae7b0d894db2865a54b4dfae2f8d77cea0f4fa3",
+  "measureVersion": "1.0.0",
+  "integrityHash": "d944f85ae96686e0cc6bcb104fae25d572fec36e0a9f35164b7137730d03f8bf",
+  "computedAt": null,
+  "result": {
+   "band": [
+    92.71008656246372,
+    94.47400891483662
+   ],
+   "components": {
+    "execution": {
+     "measured": 385,
+     "reason": null,
+     "score": 83.50949039086268,
+     "unmeasured": 0
+    },
+    "fees": {
+     "measured": 385,
+     "reason": null,
+     "score": 100.00000000000007,
+     "unmeasured": 0
+    },
+    "unfilled": {
+     "measured": 144,
+     "reason": null,
+     "score": 97.52139395883624,
+     "unmeasured": 0
+    }
+   },
+   "composite": 93.67696144989966,
+   "fills": 385,
+   "grade": "A",
+   "orders": 144,
+   "reason": null,
+   "timing": {
+    "fills": 385,
+    "fillsAboveFloor": 0,
+    "meanExcessBps": 0.002358420922825025,
+    "message": "No material difference between hours.",
+    "scored": false
+   }
+  },
+  "costVsExpected": {
+   "excluded": {
+    "noExpectedCost": 0,
+    "outsideModel": 144,
+    "partlyFilled": 0
+   },
+   "insufficient": true,
+   "n": 0,
+   "reason": "fewer than 20 market orders have an expected cost (found 0)"
+  },
+  "demo": {
+   "dataSource": "synthetic-demo",
+   "basis": "offline build (ml-service/scripts/build_demo_v2.py): real January 2024 prints, synthetic trading behaviour"
+  }
+ },
+ "v1": {
+  "grade": "A",
+  "score": 95.88542572161496
+ },
+ "current": {
+  "fills": 385,
+  "orders": 144,
+  "notionalUsd": 17549.102135054476,
+  "makerRatio": 1
+ }
+}

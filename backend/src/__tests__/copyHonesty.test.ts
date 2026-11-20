@@ -51,7 +51,11 @@ describe('copy honesty (audit §2.10)', () => {
             expect(t, f).not.toContain('venue alpha');
             expect(t, f).not.toContain('exchange spread cost');
         }
-        expect(read('frontend/app/dashboard/page.tsx')).toContain('Average slippage by venue (unmatched)');
-        expect(read('frontend/app/dashboard/componentCards.ts')).toContain("'LIQUIDITY PROVISION'");
+        // 2026-11-20 (dashboard rebuilt, M8 part 1): the venue-slippage card left the dashboard, so the assertion is conditional:
+        // if a card of that name ever returns, it must carry the "(unmatched)" wording of the original honesty fix.
+        const dashboard = read('frontend/app/dashboard/page.tsx');
+        if (dashboard.includes('Average slippage by venue')) expect(dashboard).toContain('Average slippage by venue (unmatched)');
+        // the component label is now sentence case (it was "LIQUIDITY PROVISION"); it is still not "Exchange spread cost"
+        expect(read('frontend/app/dashboard/componentCards.ts')).toContain("'Liquidity provision'");
     });
 });

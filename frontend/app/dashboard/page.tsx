@@ -1,57 +1,38 @@
 'use client';
 
-import { formatPeriodLabel } from '../utils/periodLabel';
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import Navbar from '../components/Navbar';
-import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, ReferenceLine
-} from 'recharts';
-import { Clock, ArrowLeftRight, Tag, AlertTriangle } from 'lucide-react';
 import AgentCouncil from '../components/AgentCouncil';
+import ConnectPrompt from '../components/ConnectPrompt';
+import { EvidencePanel } from '../components/EvidencePanel';
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/authFetch';
+import { apiBase } from '../lib/apiBase';
+import { downloadReport } from '../lib/downloads';
+import { track } from '../lib/track';
 import { resolveIdentityState } from '../utils/identityResolver';
 import { buildQuery } from '../utils/queryBuilder';
-import { buildTrend, HistoryPoint } from '../utils/trend';
-import { downloadReport } from '../lib/downloads';
-import Link from 'next/link';
-import ConnectPrompt from '../components/ConnectPrompt';
-import { venueComparisonNote } from '../utils/navLinks';
-import { apiBase } from '../lib/apiBase';
-import { buildComponentCards, cardVisual, type ComponentMeans } from './componentCards';
+import { Banner } from '../ui/Banner';
+import { Button } from '../ui/Button';
+import { Disclosure } from '../ui/Disclosure';
+import { EmptyState } from '../ui/EmptyState';
+import { Panel } from '../ui/Panel';
+import { useToast } from '../ui/Toast';
+import { buildComponentCards, type ComponentMeans } from './componentCards';
 import { skippedNotice, type SkippedTrades } from './skipped';
-import ScoreV2Panel from './ScoreV2Panel';
+import { type CurrentFigures } from './headerStats';
+import { costInsufficientReason, costSentence, describeHeadline, gradeView, scopeFacts } from './headline';
+import { DEMO_NOTE, type V2Response } from './scoreV2';
+import Headline from './Headline';
+import { CostAgainstExpected, WhereMoneyWent } from './CostPanels';
 import OrdersPanel from './OrdersPanel';
 import ExplainPanel from './ExplainPanel';
 import AskPanel from './AskPanel';
 import CsvCheckPanel from './CsvCheckPanel';
 import SyncFreshness from './SyncFreshness';
-import { track } from '../lib/track';
-import { describeHeaderStats, tradesCardCopy, type CurrentFigures } from './headerStats';
-import NotComputed from '../components/NotComputed';
-import { NOT_COMPUTED, isNotComputed } from '../utils/notComputed';
-import { formatBps } from '../utils/formatBps';
-
-interface CostAttribution {
-  slippageCost: number;
-  feeCost: number;
-  timingCost: number;
-  spreadCost: number;
-  totalCost: number;
-}
-
-interface AuditBreakdown {
-  avgSlippageBps: number;
-  avgFeeDragBps: number;
-  makerRatio: number;
-  bestHour: number;
-  worstHour: number;
-  bestSymbol: string;
-  worstSymbol: string;
-  componentMeans?: ComponentMeans | null;
-}
+import ScoreRecord from './ScoreRecord';
 
 interface AuditSummary {
   userId: string;
@@ -60,143 +41,44 @@ interface AuditSummary {
   totalTrades: number;
   totalNotional: number;
   avgFillScore: number;
-  fillGrade: 'A' | 'B' | 'C' | 'D' | 'F';
-  estimatedLossUSD: number;
-  breakdown: AuditBreakdown;
-  recommendations: string[];
+  fillGrade: string;
+  breakdown: { avgSlippageBps: number; makerRatio: number; bestHour: number; bestSymbol: string; worstSymbol: string; componentMeans?: ComponentMeans | null };
   skippedTrades?: SkippedTrades;
-  createdAt: string;
   /** False for a rebuilt demo: its trades carry no per-trade v1 fields (decision 11). Absent in old responses = true. */
   v1Computed?: boolean;
   /** Present for a rebuilt demo: figures from its current fills and orders (the stored audit describes the earlier trades). */
   current?: CurrentFigures;
 }
 
-const formatCurrency = (val: number) =>
-  new Intl.NumberFormat('en-US', {
-    style: 'currency', currency: 'USD',
-    minimumFractionDigits: 2, maximumFractionDigits: 2
-  }).format(val);
+const ML_URL = process.env.NEXT_PUBLIC_ML_URL ?? 'http://localhost:8000';
 
-
-const gradeConfig = {
-  A: { color: '#4ade80', glow: 'rgba(74,222,128,0.25)', label: 'Excellent' },
-  B: { color: '#86efac', glow: 'rgba(134,239,172,0.2)', label: 'Good' },
-  C: { color: '#fcd34d', glow: 'rgba(252,211,77,0.2)', label: 'Average' },
-  D: { color: '#f97316', glow: 'rgba(249,115,22,0.2)', label: 'Poor' },
-  F: { color: '#ef4444', glow: 'rgba(239,68,68,0.2)',  label: 'Critical' },
-};
-
-const getScoreColor = (score: number) => {
-  if (score >= 80) return '#4ade80';
-  if (score >= 60) return '#fcd34d';
-  if (score >= 40) return '#f97316';
-  return '#ef4444';
-};
-
-const getScoreLabel = (score: number) => {
-  if (score >= 90) return 'Excellent';
-  if (score >= 75) return 'Good';
-  if (score >= 60) return 'Average';
-  if (score >= 40) return 'Poor';
-  return 'Critical';
-};
-
-const getIcon = (text: string) => {
-  if (text.toLowerCase().includes('limit order') ||
-      text.toLowerCase().includes('maker')) return '◈';
-  if (text.toLowerCase().includes('hour') ||
-      text.toLowerCase().includes('utc') ||
-      text.toLowerCase().includes('timing')) return '◷';
-  if (text.toLowerCase().includes('slippage')) return '◬';
-  if (text.toLowerCase().includes('symbol') ||
-      text.toLowerCase().includes('best')) return '◎';
-  if (text.toLowerCase().includes('cost') ||
-      text.toLowerCase().includes('loss') ||
-      text.toLowerCase().includes('save')) return '◐';
-  return '◆';
-};
-
-const highlightDollars = (text: string) => {
-  const parts = text.split(/(\$[\d,]+(?:\.\d{2})?)/g);
-  return parts.map((part, i) =>
-    part.match(/^\$[\d,]+/) ? (
-      <span key={i} style={{
-        color: '#4ade80',
-        fontWeight: 600,
-        fontFamily: 'var(--font-mono)',
-        fontSize: '0.85rem'
-      }}>{part}</span>
-    ) : part
-  );
-};
-
-const SkeletonBlock = ({ width = '100%', height = '1rem', borderRadius = '2px' }: {
-  width?: string;
-  height?: string;
-  borderRadius?: string;
-}) => (
-  <div suppressHydrationWarning style={{
-    width, height, borderRadius,
-    background: 'linear-gradient(90deg, #1a1917 25%, #201f1d 50%, #1a1917 75%)',
-    backgroundSize: '200% 100%',
-    animation: 'shimmer 1.5s infinite',
-  }}/>
-);
-
-const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
-  if (!active || !payload?.length) return null;
-  const score = payload[0].value;
+function Loading() {
   return (
-    <div style={{
-      background: '#1c1c1a',
-      border: '1px solid rgba(167,139,113,0.25)',
-      borderRadius: '3px',
-      padding: '0.625rem 0.875rem',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.4)'
-    }}>
-      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#6a6560', marginBottom: '0.25rem' }}>
-        {label}
-      </div>
-      <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1.1rem', fontWeight: 700, color: getScoreColor(score), letterSpacing: '-0.02em' }}>
-        {score}
-        <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)', color: '#6a6560', marginLeft: '4px', fontWeight: 400 }}>/100</span>
-      </div>
+    <div role="status" aria-label="Loading the audit" className="flex flex-col gap-6">
+      <p className="text-ui-graphite">Loading the audit.</p>
+      <div aria-hidden="true" className="h-56 rounded-ui border border-ui-rule bg-ui-raised" />
+      <div aria-hidden="true" className="h-40 rounded-ui border border-ui-rule bg-ui-raised" />
     </div>
   );
-};
-
-const getExchangeColor = (exchange: string) => {
-  const ex = exchange?.toLowerCase() || '';
-  if (ex === 'binance') return '#F0B90B';
-  if (ex === 'bybit') return '#F7A600';
-  if (ex === 'okx') return '#1E8FFF';
-  return '#ede8e0';
-};
+}
 
 function DashboardContent() {
   const [audit, setAudit] = useState<AuditSummary | null>(null);
-  const [attribution, setAttribution] = useState<CostAttribution | null>(null);
-  const [, setAnalytics] = useState<unknown>(null);   // fetched for the page's other panels; this page itself reads nothing from it
-  const [exchangeComparison, setExchangeComparison] = useState<any>(null);
-  const [coach, setCoach] = useState<any>(null);
   const [ordersSummary, setOrdersSummary] = useState<unknown>(null);
-  const [history, setHistory] = useState<HistoryPoint[]>([]);
   const [scoreV2, setScoreV2] = useState<{ status: number | null; body: unknown }>({ status: null, body: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
-  const [barsVisible, setBarsVisible] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [dashboardMode, setDashboardMode] = useState<'demo' | 'real' | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
-  const [linkCopied, setLinkCopied] = useState(false);
 
   const { accessToken, isLoading: authLoading, refreshAccessToken } = useAuth();
   const searchParams = useSearchParams();
-  const [dashboardMode, setDashboardMode] = useState<'demo' | 'real' | null>(null);
+  const router = useRouter();
+  const toast = useToast();
 
-  // M4 panel: one request helper; a signed-in account sends its token, a demo account is read-only and sends none.
+  // One request helper for the explain panel: a signed-in account sends its token, a demo account is read-only and sends none.
   const explainRequest = useCallback(async (path: string, init?: { method?: string; body?: unknown }) => {
     const url = `${apiBase()}${path}`;
     const options: RequestInit = init?.body !== undefined
@@ -208,12 +90,14 @@ function DashboardContent() {
     return { status: r.status, body: await r.json().catch(() => null) };
   }, [dashboardMode, accessToken, refreshAccessToken]);
 
-  const handleShare = () => {
+  const handleShare = async () => {
     if (!resolvedUserId) return;
-    const url = `${window.location.origin}/share/${resolvedUserId}`;
-    navigator.clipboard.writeText(url);
-    setLinkCopied(true);
-    setTimeout(() => setLinkCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(`${window.location.origin}/share/${resolvedUserId}`);
+      toast.show({ title: 'Share link copied', detail: 'It opens the published score card of this account.' });
+    } catch {
+      toast.show({ title: 'The link was not copied', detail: `Copy it by hand: ${window.location.origin}/share/${resolvedUserId}` });
+    }
   };
 
   const handleDownloadReport = async () => {
@@ -227,1330 +111,183 @@ function DashboardContent() {
     } catch {
       setDownloadError('Could not prepare the report. Please try again.');
     } finally {
-      setDownloading(false); // never left on "generating"
+      setDownloading(false); // never left on "preparing"
     }
   };
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (audit) {
-      const timer = setTimeout(() => setBarsVisible(true), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [audit]);
-
-  const loadDashboard = async (effectiveUserId: string | null, mode: 'demo' | 'real') => {
-    try {
-      const fetchFn = mode === 'real' 
-        ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken }) 
-        : (url: string) => fetch(url);
-        
-      const query = buildQuery(mode, effectiveUserId);
-      const baseUrl = apiBase();
-      
-      const [res, attrRes, analyticsRes, comparisonRes, coachRes, historyRes] = await Promise.all([
-        fetchFn(`${baseUrl}/audit/score${query}`),
-        fetchFn(`${baseUrl}/attribution${query}`),
-        fetchFn(`${baseUrl}/audit/analytics${query}`),
-        fetchFn(`${baseUrl}/audit/analytics/exchange-comparison${query}`),
-        fetchFn(`${baseUrl}/audit/coach${query}`),
-        fetchFn(`${baseUrl}/audit/history${query}`)
-      ]);
-      
-      if (mode === 'real' && !res.ok) {
-        setAudit(null);
-        setLoading(false);
-        return;
-      }
-
-      if (!res.ok) throw new Error('Failed to fetch audit data');
-      const data = await res.json();
-      setAudit(data);
-      track('dashboard_view');
-      if (attrRes.ok) {
-        const attrData = await attrRes.json();
-        setAttribution(attrData);
-      }
-      if (analyticsRes.ok) {
-        const analyticsData = await analyticsRes.json();
-        setAnalytics(analyticsData);
-      }
-      if (comparisonRes.ok) {
-        const compData = await comparisonRes.json();
-        setExchangeComparison(compData);
-      }
-      if (coachRes.ok) {
-        const coachData = await coachRes.json();
-        setCoach(coachData);
-      }
-      if (historyRes.ok) {
-        const historyData = await historyRes.json();
-        setHistory(historyData.points ?? []);
-      }
-      // Scoring v2 (measured), shown beside the v1 rule-based grade. A failure here never blocks the dashboard.
-      try {
-        const v2 = await fetchFn(`${baseUrl}/audit/v2${query}`);
-        setScoreV2({ status: v2.status, body: await v2.json().catch(() => null) });
-      } catch {
-        setScoreV2({ status: 500, body: null });
-      }
-      // Measured order views; a failure here never blocks the dashboard either.
-      try {
-        const o = await fetchFn(`${baseUrl}/audit/orders-summary${query}`);
-        setOrdersSummary(o.ok ? await o.json().catch(() => null) : null);
-      } catch {
-        setOrdersSummary(null);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Something went wrong');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (authLoading) return; // Wait for auth resolution
+    if (authLoading) return; // wait for auth resolution
     const urlUserId = searchParams.get('userId');
     const storageUserId = localStorage.getItem('userId');
-    
     const identity = resolveIdentityState(urlUserId, storageUserId, accessToken, searchParams.get('sample') === '1');
-    
+
     if (identity.mode === 'redirect') {
-      window.location.href = '/';
+      router.replace('/');
       return;
     }
     if (identity.shouldClearStorage) localStorage.removeItem('userId');
     if (identity.shouldSetStorage && identity.effectiveUserId) localStorage.setItem('userId', identity.effectiveUserId);
-    
-    setDashboardMode(identity.mode);
-    setResolvedUserId(identity.effectiveUserId);
-    
-    loadDashboard(identity.effectiveUserId, identity.mode);
-  }, [authLoading, accessToken, searchParams]);
 
-  if (!mounted) {
-    return (
-      <div suppressHydrationWarning style={{
-        minHeight: '100vh',
-        background: 'var(--bg-base, #0f0f0f)',
-        color: 'var(--text-primary, #ede8e0)',
-        fontFamily: 'var(--font-inter)',
-        paddingBottom: '4rem'
-      }}>
-        {/* HEADER SKELETON */}
-        <Navbar userId={resolvedUserId || undefined} currentPage="dashboard" />
+    const mode = identity.mode;
 
-        {/* MAIN CONTENT AREA SKELETON */}
-        <main suppressHydrationWarning style={{ maxWidth: '1100px', margin: '0 auto', padding: '48px 2rem 2rem' }}>
-          <div suppressHydrationWarning>
-            <div suppressHydrationWarning style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
-              <SkeletonBlock width="200px" height="200px" borderRadius="4px"/>
-              <div suppressHydrationWarning style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <SkeletonBlock width="60%" height="2.5rem"/>
-                <SkeletonBlock width="40%" height="1.25rem"/>
-                <SkeletonBlock width="80%" height="1.25rem"/>
-              </div>
-            </div>
-            <div suppressHydrationWarning style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-              {[1,2,3,4].map(i => <SkeletonBlock key={i} height="100px" borderRadius="3px"/>)}
-            </div>
-            <div suppressHydrationWarning style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              {[1,2,3].map(i => <SkeletonBlock key={i} height="72px" borderRadius="3px"/>)}
-            </div>
-          </div>
-        </main>
-      </div>
-    );
-  }
+    const load = async () => {
+      try {
+        const fetchFn = mode === 'real'
+          ? (url: string) => authFetch(url, {}, { accessToken, refreshAccessToken })
+          : (url: string) => fetch(url);
+        const query = buildQuery(mode, identity.effectiveUserId);
+        const baseUrl = apiBase();
+        const res = await fetchFn(`${baseUrl}/audit/score${query}`);
+        // Nothing reads these while the page is loading, so they are set when the first answer is in.
+        setDashboardMode(mode);
+        setResolvedUserId(identity.effectiveUserId);
+        if (mode === 'real' && !res.ok) {
+          setAudit(null);
+          return;
+        }
+        if (!res.ok) throw new Error('Failed to fetch audit data');
+        setAudit(await res.json());
+        track('dashboard_view');
+        // The measured score and the measured order views. A failure in either never blocks the dashboard.
+        try {
+          const v2 = await fetchFn(`${baseUrl}/audit/v2${query}`);
+          setScoreV2({ status: v2.status, body: await v2.json().catch(() => null) });
+        } catch {
+          setScoreV2({ status: 500, body: null });
+        }
+        try {
+          const o = await fetchFn(`${baseUrl}/audit/orders-summary${query}`);
+          setOrdersSummary(o.ok ? await o.json().catch(() => null) : null);
+        } catch {
+          setOrdersSummary(null);
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Something went wrong');
+      } finally {
+        setLoading(false);
+      }
+    };
+    void load();
+  }, [authLoading, accessToken, refreshAccessToken, searchParams, router]);
+
+  const v2Body = scoreV2.body as (V2Response & { demo?: unknown }) | null;
+  const isDemoData = dashboardMode === 'demo' || !!v2Body?.demo;
+  const auth = { accessToken, refreshAccessToken };
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg-base, #0f0f0f)',
-      color: 'var(--text-primary, #ede8e0)',
-      fontFamily: 'var(--font-inter)',
-      paddingBottom: '4rem'
-    }}>
-      
-      {/* FIXED HEADER */}
+    <div className="min-h-screen bg-ui-surface pt-12">
       <Navbar userId={resolvedUserId || undefined} exchange={audit?.exchange} currentPage="dashboard" />
-
-      {/* MAIN CONTENT AREA */}
-      <main style={{
-        maxWidth: '1100px',
-        margin: '0 auto',
-        padding: '48px 2rem 2rem'
-      }}>
+      <main className="mx-auto flex max-w-6xl flex-col gap-10 px-4 py-8 sm:px-5">
         <h1 className="sr-only">Execution quality dashboard</h1>
 
-        {/* SKELETON LOADER */}
-        {loading && (
-          <div>
-            {/* Hero skeleton */}
-            <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
-              <SkeletonBlock width="200px" height="200px" borderRadius="4px"/>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <SkeletonBlock width="60%" height="2.5rem"/>
-                <SkeletonBlock width="40%" height="1.25rem"/>
-                <SkeletonBlock width="80%" height="1.25rem"/>
-              </div>
-            </div>
-            {/* Score bars skeleton */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-              {[1,2,3,4].map(i => <SkeletonBlock key={i} height="100px" borderRadius="3px"/>)}
-            </div>
-            {/* Recommendations skeleton */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-              {[1,2,3].map(i => <SkeletonBlock key={i} height="72px" borderRadius="3px"/>)}
-            </div>
-          </div>
-        )}
+        {loading && <Loading />}
 
-        {/* ERROR STATE */}
         {error && !loading && (
-          <div style={{
-            display: 'flex', flexDirection: 'column',
-            alignItems: 'center', justifyContent: 'center',
-            minHeight: '60vh', gap: '1.5rem', textAlign: 'center'
-          }}>
-            <div style={{
-              width: 48, height: 48, borderRadius: '50%',
-              border: '1px solid rgba(192,57,43,0.3)',
-              background: 'rgba(192,57,43,0.07)',
-              display: 'flex', alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '1.25rem'
-            }}>⚠</div>
-            
-            <div>
-              <p style={{
-                fontFamily: 'var(--font-playfair)', fontStyle: 'italic',
-                fontSize: '1.2rem', color: 'var(--text-primary)',
-                marginBottom: '0.5rem'
-              }}>Unable to load your data</p>
-              <p style={{
-                fontFamily: 'var(--font-inter)', fontSize: '0.82rem',
-                color: 'var(--text-tertiary)', maxWidth: '320px'
-              }}>{error}</p>
-            </div>
-            
-            <button
-              onClick={() => window.location.reload()}
-              style={{
-                padding: '0.6rem 1.5rem',
-                border: '1px solid rgba(167,139,113,0.3)',
-                borderRadius: '2px', background: 'transparent',
-                fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
-                letterSpacing: '0.15em', color: 'var(--gold)',
-                cursor: 'pointer'
-              }}
-            >RETRY</button>
-          </div>
+          <Banner kind="refused" title="The audit could not be loaded" action={<Button variant="secondary" onClick={() => window.location.reload()}>Try again</Button>}>
+            {error}
+          </Banner>
         )}
 
-        {/* NO DATA STATE (Demo) */}
         {!audit && !loading && !error && dashboardMode === 'demo' && (
-          <div style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-            <p style={{
-              fontFamily: 'var(--font-playfair)', fontStyle: 'italic',
-              fontSize: '1.1rem', color: 'var(--text-secondary)',
-              marginBottom: '1rem'
-            }}>No demo audit found.</p>
-            <p style={{
-              fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
-              color: 'var(--text-ghost)', letterSpacing: '0.1em'
-            }}>Return to the home page to select a demo account.</p>
-            <button
-              onClick={() => window.location.href = '/'}
-              style={{
-                marginTop: '1.5rem', padding: '0.6rem 1.5rem',
-                border: '1px solid rgba(167,139,113,0.3)',
-                borderRadius: '2px', background: 'transparent',
-                fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
-                letterSpacing: '0.15em', color: 'var(--gold)',
-                cursor: 'pointer'
-              }}
-            >GO HOME</button>
-          </div>
+          <EmptyState title="No demo audit found" action={<Link href="/" className="text-ui-ink">Return to the home page and choose a demo account</Link>}>
+            The demo account in the address was not found.
+          </EmptyState>
         )}
 
-        {/* NO DATA STATE (Real User - Empty State CTA) */}
-        {!audit && !loading && !error && dashboardMode === 'real' && (
-          <ConnectPrompt />
-        )}
+        {!audit && !loading && !error && dashboardMode === 'real' && <ConnectPrompt />}
 
-        {/* PLACEHOLDER for real content */}
         {audit && !loading && (() => {
-          const cfg = gradeConfig[audit.fillGrade];
           const v1Computed = audit.v1Computed !== false;
-          const header = describeHeaderStats(audit, audit.current);
-          const tradesCard = tradesCardCopy(v1Computed);
+          const headline = describeHeadline(ordersSummary, isDemoData);
+          const grade = gradeView(scoreV2.status, scoreV2.body);
+          const costVs = v2Body?.costVsExpected;
+          const cards = v1Computed ? buildComponentCards(audit.breakdown) : [];
+          const skipped = skippedNotice(audit.skippedTrades);
           return (
-            <div>
-              {dashboardMode === 'real' && <SyncFreshness accessToken={accessToken} refreshAccessToken={refreshAccessToken} />}
+            <>
               {dashboardMode === 'demo' && (
-                <div style={{
-                  background: 'rgba(167, 139, 113, 0.1)',
-                  border: '1px solid rgba(167, 139, 113, 0.3)',
-                  borderRadius: '4px',
-                  padding: '12px 16px',
-                  marginBottom: '2rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  color: '#e8d5b7'
-                }}>
-                  <AlertTriangle size={18} style={{ flexShrink: 0, color: '#c4a882' }} />
-                  <span style={{ fontFamily: 'var(--font-inter)', fontSize: '0.9rem' }}>
-                    Sample data — connect your exchange to score your own trades.
-                  </span>
-                </div>
+                <Banner kind="demo" title="Sample data: real prices, synthetic trader"
+                  action={<Link href="/signup" className="text-sm text-ui-ink">Connect your exchange to score your own orders</Link>}>
+                  {DEMO_NOTE}
+                </Banner>
               )}
-              
-              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.75rem', marginBottom: '1rem' }}>
-                {downloadError && (
-                  <span role="alert" style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#f97316' }}>
-                    {downloadError}
-                  </span>
-                )}
-                {dashboardMode === 'demo' && (
-                  <button
-                    onClick={handleShare}
-                    style={{
-                      display: 'flex', alignItems: 'center', gap: '6px',
-                      background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
-                      padding: '6px 12px', color: '#c4a882',
-                      fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
-                      cursor: 'pointer', transition: 'all 0.2s ease',
-                      height: 'fit-content'
-                    }}
-                    onMouseOver={e => e.currentTarget.style.background = 'rgba(167,139,113,0.1)'}
-                    onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    {linkCopied ? '✓ LINK COPIED!' : '↗ SHARE MY SCORE'}
-                  </button>
-                )}
-                <button
-                  onClick={handleDownloadReport}
-                  disabled={downloading}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '6px',
-                    background: 'transparent', border: '1px solid rgba(167,139,113,0.3)', borderRadius: '2px',
-                    padding: '6px 12px', color: '#c4a882',
-                    fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.1em',
-                    cursor: downloading ? 'wait' : 'pointer', transition: 'all 0.2s ease',
-                    opacity: downloading ? 0.6 : 1, height: 'fit-content'
-                  }}
-                  onMouseOver={e => { if (!downloading) e.currentTarget.style.background = 'rgba(167,139,113,0.1)' }}
-                  onMouseOut={e => { if (!downloading) e.currentTarget.style.background = 'transparent' }}
-                >
-                  {downloading ? 'GENERATING...' : '↓ DOWNLOAD REPORT'}
-                </button>
-              </div>
-              {/* HERO SECTION — Part 2 */}
-              <div 
-                className="grid grid-cols-1 md:grid-cols-[auto_1fr] items-center gap-[3rem] mb-[3rem] p-[2rem_2.5rem] relative overflow-hidden w-full"
-                style={{
-                  background: '#161614',
-                  border: '1px solid rgba(255,255,255,0.1)',
-                  borderRadius: '4px',
-                  boxShadow: '0 1px 0 rgba(255,255,255,0.05) inset, 0 20px 60px rgba(0,0,0,0.4)'
-                }}
-              >
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(167,139,113,0.3), transparent)' }} />
-                
-                {/* Background ambient glow */}
-                <div style={{
-                  position: 'absolute',
-                  top: '-60px',
-                  left: '-60px',
-                  width: '280px',
-                  height: '280px',
-                  background: `radial-gradient(circle, ${cfg.glow} 0%, transparent 70%)`,
-                  pointerEvents: 'none',
-                  zIndex: 0
-                }} />
 
-                {/* LEFT COLUMN — Grade Display */}
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', position: 'relative', zIndex: 1, minWidth: '200px' }}>
-                  <div style={{
-                    fontFamily: 'var(--font-playfair)',
-                    fontStyle: 'italic',
-                    fontSize: 'clamp(7rem, 12vw, 10rem)',
-                    lineHeight: 1,
-                    color: cfg.color,
-                    filter: `drop-shadow(0 0 60px ${cfg.glow}) drop-shadow(0 0 120px ${cfg.glow})`,
-                    letterSpacing: '-0.02em',
-                    transition: 'color 0.5s ease',
-                    minHeight: '1.2em',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}>
-                    {audit.fillGrade}
-                  </div>
-                  <div style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.72rem',
-                    letterSpacing: '0.22em',
-                    color: '#888078',
-                    marginTop: '0.5rem'
-                  }}>
-                    {Math.round(audit.avgFillScore)}  /  100
-                  </div>
-                  <div style={{
-                    padding: '0.25rem 0.75rem',
-                    border: `1px solid ${cfg.color}20`,
-                    borderRadius: '2px',
-                    background: `${cfg.color}08`,
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.58rem',
-                    letterSpacing: '0.18em',
-                    color: cfg.color,
-                    opacity: 0.85
-                  }}>
-                    {cfg.label.toUpperCase()}
-                  </div>
-                  <div data-testid="score-v1-label" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.18em', color: '#888078' }}>
-                    V1 · RULE-BASED
-                  </div>
-                  {(scoreV2.body as { demo?: unknown } | null)?.demo ? (
-                    <div data-testid="score-v1-demo-note" style={{ fontFamily: 'var(--font-inter)', fontSize: '0.7rem', lineHeight: 1.5, color: '#888078', maxWidth: '16rem' }}>
-                      Published grade of the earlier demo data, kept unchanged. The trades shown now were rebuilt from real prints; their measured score is the v2 panel.
-                    </div>
-                  ) : null}
-                </div>
+              <Headline
+                grade={grade}
+                headline={headline}
+                sentence={costSentence(v2Body?.costVsExpected)}
+                insufficientReason={costInsufficientReason(v2Body?.costVsExpected)}
+                dataSource={isDemoData ? 'synthetic-demo' : 'real-user'}
+                facts={scopeFacts(audit, audit.current)}
+                v1={{ grade: audit.fillGrade, score: audit.avgFillScore, basis: isDemoData ? undefined : 'rule-based, scoring v1' }}
+                v1Note={v2Body?.demo ? 'Kept unchanged. The measured grade above is the one that describes the orders shown now.' : null}
+                actions={<>
+                  {dashboardMode === 'demo' && <Button variant="secondary" onClick={handleShare}>Copy share link</Button>}
+                  <Button variant="secondary" loading={downloading} onClick={handleDownloadReport}>Download report</Button>
+                </>}
+              />
+              {downloadError && <Banner kind="refused" title="The report was not downloaded">{downloadError}</Banner>}
 
-                {/* RIGHT COLUMN — Three hero stats */}
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-[1.5rem] w-full" style={{ position: 'relative', zIndex: 1 }}>
-                  
-                  {/* Stat 1 — Estimated Loss */}
-                  <div className="col-span-1 md:col-span-1" style={{
-                    display: 'flex', flexDirection: 'column', gap: '0.5rem',
-                    padding: '1.25rem 1.5rem',
-                    background: '#1c1c1a',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '3px',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    width: '100%'
-                  }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent)' }} />
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' }}>
-                      EST. EXECUTION COST
-                    </div>
-                    {v1Computed && attribution ? (
-                      <div style={{
-                        fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em',
-                        color: attribution.totalCost > 100 ? '#f97316' : attribution.totalCost > 50 ? '#fcd34d' : '#4ade80'
-                      }}>
-                        {formatCurrency(attribution.totalCost)}
-                      </div>
-                    ) : (
-                      <div data-testid="est-cost-not-computed" style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', lineHeight: 1.4, color: '#888078' }}>
-                        {NOT_COMPUTED.charAt(0).toUpperCase() + NOT_COMPUTED.slice(1)}
-                      </div>
-                    )}
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#484844' }}>
-                      this period
-                    </div>
-                  </div>
-
-                  {/* Stat 2 — Total Trades */}
-                  <div className="col-span-1 md:col-span-1" style={{
-                    display: 'flex', flexDirection: 'column', gap: '0.5rem',
-                    padding: '1.25rem 1.5rem',
-                    background: '#1c1c1a',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '3px',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    width: '100%'
-                  }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent)' }} />
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' }}>
-                      {header.tradesLabel}
-                    </div>
-                    <div data-testid="header-trades" style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-primary, #ede8e0)' }}>
-                      {header.trades}
-                    </div>
-                    <div data-testid="header-trades-sub" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#484844' }}>
-                      {header.tradesSub}
-                    </div>
-                  </div>
-
-                  {/* Stat 3 — Total Volume */}
-                  <div className="col-span-2 md:col-span-1" style={{
-                    display: 'flex', flexDirection: 'column', gap: '0.5rem',
-                    padding: '1.25rem 1.5rem',
-                    background: '#1c1c1a',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '3px',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    width: '100%'
-                  }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(255,255,255,0.06), transparent)' }} />
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' }}>
-                      TOTAL VOLUME
-                    </div>
-                    <div data-testid="header-volume" style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.75rem', lineHeight: 1.1, letterSpacing: '-0.02em', color: 'var(--text-primary, #ede8e0)' }}>
-                      {header.volume}
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#484844' }}>
-                      {header.volumeSub}
-                    </div>
-                  </div>
-
-                </div>
-              </div>
-
-              {/* PERIOD STRIP */}
-              <div 
-                className="flex flex-col md:flex-row items-start md:items-center justify-between gap-[0.5rem] p-[0.75rem_1rem] rounded-[2px] mb-[2rem]"
-                style={{
-                  background: 'var(--bg-overlay, #1a1917)',
-                  border: '1px solid rgba(255,255,255,0.03)',
-                  marginTop: '-1rem'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.12em', color: '#888078' }}>
-                  <svg width="11" height="11" viewBox="0 0 12 12" fill="none" style={{ flexShrink: 0 }}>
-                    <rect x="1" y="2" width="10" height="9" rx="1" stroke="currentColor" strokeWidth="1"/>
-                    <line x1="1" y1="5" x2="11" y2="5" stroke="currentColor" strokeWidth="1"/>
-                    <line x1="4" y1="1" x2="4" y2="3" stroke="currentColor" strokeWidth="1"/>
-                    <line x1="8" y1="1" x2="8" y2="3" stroke="currentColor" strokeWidth="1"/>
-                  </svg>
-                  PERIOD  ·  {formatPeriodLabel(audit.period.start, audit.period.end)}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.1em', color: '#888078' }}>
-                  <span>EXCHANGE  ·  {audit.exchange.toUpperCase()}</span>
-                  <span data-testid="header-maker">MAKER RATIO  ·  {header.makerRatio}{header.makerSub ? ` ${header.makerSub}` : ''}</span>
-                </div>
-              </div>
-
-              <div style={{ marginBottom: '2rem' }}>
-                <ScoreV2Panel
-                  key={`${dashboardMode}:${(scoreV2.body as { integrityHash?: string } | null)?.integrityHash ?? 'none'}`}   // a new hash resets "Verified"
-                  status={scoreV2.status}
-                  body={scoreV2.body}
-                  ordersBody={ordersSummary}
-                  onVerify={dashboardMode === 'real' ? async () => {
-                    const r = await authFetch(`${apiBase()}/audit/verify`, {}, { accessToken, refreshAccessToken });
-                    return { status: r.status, body: await r.json().catch(() => null) };
-                  } : undefined}
-                />
-              </div>
-
-              {ordersSummary != null && (
-                <div style={{ marginBottom: '2rem' }}>
-                  <OrdersPanel body={ordersSummary} />
-                </div>
-              )}
+              <WhereMoneyWent ordersBody={ordersSummary} isDemo={isDemoData} />
+              <CostAgainstExpected c={costVs} />
+              {ordersSummary != null && <OrdersPanel body={ordersSummary} />}
 
               {ordersSummary != null && dashboardMode !== null && (
-                <div style={{ marginBottom: '2rem' }}>
-                  <ExplainPanel
-                    key={`${dashboardMode}:${buildQuery(dashboardMode, resolvedUserId)}`}   // a new account starts with an empty panel
-                    query={buildQuery(dashboardMode, resolvedUserId)}
-                    readOnly={dashboardMode !== 'real'}
-                    request={explainRequest}
-                  />
-                </div>
-              )}
-
-              {dashboardMode === 'real' && (
-                <div style={{ marginBottom: '2rem' }}>
-                  <AskPanel mlBaseUrl={process.env.NEXT_PUBLIC_ML_URL ?? 'http://localhost:8000'} accessToken={accessToken} />
-                </div>
-              )}
-
-              {dashboardMode === 'real' && (
-                <div style={{ marginBottom: '2rem' }}>
-                  <CsvCheckPanel mlBaseUrl={process.env.NEXT_PUBLIC_ML_URL ?? 'http://localhost:8000'} accessToken={accessToken} refreshAccessToken={refreshAccessToken} />
-                </div>
-              )}
-
-              <div style={{ marginBottom: '2.5rem' }}>
-                <AgentCouncil
-                  userId={dashboardMode === 'real' ? undefined : audit.userId}
-                  accessToken={accessToken}
-                  symbol="BTCUSDT"
-                  mlBaseUrl={process.env.NEXT_PUBLIC_ML_URL ?? "http://localhost:8000"}
+                <ExplainPanel
+                  key={`${dashboardMode}:${buildQuery(dashboardMode, resolvedUserId)}`}   // a new account starts with an empty panel
+                  query={buildQuery(dashboardMode, resolvedUserId)}
+                  readOnly={dashboardMode !== 'real'}
+                  request={explainRequest}
                 />
-              </div>
-
-              {/* SCORE BARS — Part 3 */}
-              {!v1Computed ? (
-                <div style={{ marginBottom: '2.5rem', marginTop: '2.5rem' }}>
-                  <NotComputed
-                    title="Component scores · v1"
-                    detail="The rule-based v1 components need per-trade fields that the rebuilt trades do not have. The measured components are in the v2 panel above."
-                  />
-                </div>
-              ) : (
-              <div style={{ marginBottom: '2.5rem', marginTop: '2.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
-                    COMPONENT SCORES
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.18em', color: '#a09890' }}>
-                    Weighted Composite
-                  </div>
-                </div>
-                {skippedNotice(audit.skippedTrades) && (
-                  <div data-testid="skipped-trades" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.08em', color: '#b8b0a6', marginBottom: '1rem' }}>
-                    {skippedNotice(audit.skippedTrades)}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-[1rem]">
-                  {buildComponentCards(audit.breakdown).map((card) => {
-                    const vis = cardVisual(card)
-                    return {
-                      ...card,
-                      display: card.score,
-                      vis,
-                      score: vis.colorScore ?? 0,
-                      color: vis.colorScore == null ? '#888078' : getScoreColor(vis.colorScore),
-                    }
-                  }).map((component) => (
-                    <div key={component.key} title={component.tooltip} style={{
-                      display: 'flex', flexDirection: 'column', gap: '1rem',
-                      padding: '1.5rem',
-                      background: '#161614',
-                      border: '1px solid rgba(255,255,255,0.08)',
-                      borderRadius: '3px',
-                      position: 'relative',
-                      overflow: 'hidden',
-                      transition: 'border-color 0.2s ease',
-                    }}
-                    onMouseOver={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}
-                    onMouseOut={(e) => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'}
-                    >
-                      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(to right, transparent, ${component.color}30, transparent)` }} />
-                      
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.18em', color: '#888078' }}>
-                          {component.label}
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.1em', color: '#888078', padding: '2px 6px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '2px' }}>
-                          {component.weight}
-                        </div>
-                      </div>
-
-                      <div>
-                        <div className="text-[2rem] md:text-[2.5rem]" style={{ margin: '0.25rem 0', fontFamily: 'var(--font-inter)', fontWeight: 700, lineHeight: 1, letterSpacing: '-0.03em', color: component.color, transition: 'color 0.3s ease' }}>
-                          {component.display}
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.12em', color: component.color, opacity: 0.7 }}>
-                          {component.display === '—' ? 'NO SCORE' : getScoreLabel(component.score).toUpperCase()}
-                        </div>
-                        
-                        {component.vis.hasBar && (
-                        <div style={{ margin: '0.25rem 0', width: '100%', height: '3px', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', overflow: 'hidden', marginTop: '0.75rem' }}>
-                          <div style={{
-                            height: '100%',
-                            width: `${barsVisible ? component.vis.barPct : 0}%`,
-                            background: `linear-gradient(to right, ${component.color}80, ${component.color})`,
-                            borderRadius: '2px',
-                            transition: 'width 1s cubic-bezier(0.22, 1, 0.36, 1)'
-                          }} />
-                        </div>
-                        )}
-                      </div>
-
-                      <div style={{ marginTop: 'auto' }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.08em', color: '#b8b0a6' }}>
-                          {component.value}
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.72rem', color: '#888078', lineHeight: 1.4, marginTop: '0.2rem' }}>
-                          {component.description}
-                        </div>
-                      </div>
-
-                    </div>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-[1rem]" style={{ marginTop: '1rem' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem', background: '#161614', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '3px' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#888078' }}>
-                      BEST SYMBOL
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', letterSpacing: '0.1em', fontWeight: 600, color: '#4ade80' }}>
-                      {audit.breakdown.bestSymbol}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem', background: '#161614', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '3px' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#888078' }}>
-                      WORST SYMBOL
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', letterSpacing: '0.1em', fontWeight: 600, color: '#f97316' }}>
-                      {audit.breakdown.worstSymbol}
-                    </div>
-                  </div>
-                </div>
-              </div>
               )}
 
-              {/* EXECUTION COST BREAKDOWN */}
-              {!v1Computed && (
-                <div style={{ marginBottom: '2.5rem' }}>
-                  <NotComputed title="Execution cost breakdown" detail="The breakdown is built from per-trade v1 fields, which the rebuilt trades do not have." />
-                </div>
-              )}
-              {v1Computed && attribution && (
-                <div style={{ marginBottom: '2.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890', textTransform: 'uppercase' }}>
-                      Execution Cost Breakdown
-                    </div>
-                  </div>
+              {dashboardMode === 'real' && <AskPanel mlBaseUrl={ML_URL} accessToken={accessToken} />}
 
-                  <div style={{
-                    padding: '1.75rem 2rem',
-                    background: '#161614',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '3px',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(167,139,113,0.3), transparent)' }} />
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-[1.5rem] mb-[1.5rem]">
-                      <div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', marginBottom: '0.5rem' }}>SLIPPAGE</div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.4rem', color: '#ede8e0', letterSpacing: '-0.02em' }}>{formatCurrency(attribution.slippageCost)}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', marginBottom: '0.5rem' }}>FEES</div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.4rem', color: '#ede8e0', letterSpacing: '-0.02em' }}>{formatCurrency(attribution.feeCost)}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', marginBottom: '0.5rem' }}>TIMING</div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.4rem', color: '#ede8e0', letterSpacing: '-0.02em' }}>{formatCurrency(attribution.timingCost)}</div>
-                      </div>
-                      <div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', marginBottom: '0.5rem' }}>SPREAD</div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '1.4rem', color: '#ede8e0', letterSpacing: '-0.02em' }}>{formatCurrency(attribution.spreadCost)}</div>
-                      </div>
-                    </div>
-                    
-                    <div style={{ height: '1px', background: 'rgba(255,255,255,0.06)', marginBottom: '1.5rem' }} />
-                    
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', marginBottom: '0.5rem' }}>TOTAL COST</div>
-                      <div style={{ fontFamily: 'var(--font-inter)', fontWeight: 700, fontSize: '2rem', color: '#f97316', lineHeight: 1, letterSpacing: '-0.03em' }}>{formatCurrency(attribution.totalCost)}</div>
-                      <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.82rem', color: '#4ade80', marginTop: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                        <span style={{ fontSize: '0.8rem' }}>◈</span>
-                        Modelled timing cost: ~{formatCurrency(attribution.timingCost)} over this audit period
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {/* TREND CHART — Part 4 */}
-              <div style={{ marginBottom: '2.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
-                    SCORE TREND
-                  </div>
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#a78b71' }} />
-                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#585450' }}>
-                        FillScore over time
-                      </div>
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#585450', padding: '2px 8px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                      {history.length} {history.length === 1 ? 'AUDIT' : 'AUDITS'}
-                    </div>
-                  </div>
-                </div>
+              <AgentCouncil
+                userId={dashboardMode === 'real' ? undefined : audit.userId}
+                accessToken={accessToken}
+                symbol="BTCUSDT"
+                mlBaseUrl={ML_URL}
+              />
 
-                {(() => {
-                  const trend = buildTrend(history);
+              {dashboardMode === 'real' && <SyncFreshness accessToken={accessToken} refreshAccessToken={refreshAccessToken} />}
+              {dashboardMode === 'real' && <CsvCheckPanel mlBaseUrl={ML_URL} accessToken={accessToken} refreshAccessToken={refreshAccessToken} />}
 
-                  if (trend.state !== 'series') {
-                    return (
-                      <div style={{ padding: '1.75rem 1.5rem', background: '#161614', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '3px' }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.7rem', letterSpacing: '0.1em', color: '#c8b898', marginBottom: '0.5rem' }}>
-                          {trend.state === 'single'
-                            ? `Initial audit recorded ${trend.label} — score ${trend.score}`
-                            : 'No audit history yet'}
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.8rem', lineHeight: 1.6, color: '#888078' }}>
-                          Your trend is built from stored audits only. It appears once a second audit has run, so every point on it is a real result.
-                        </div>
-                      </div>
-                    );
-                  }
+              <EvidencePanel mode={dashboardMode} auth={auth} />
 
-                  const trendData = trend.data;
-                  const scoreDiff = trend.delta;
-                  const isPositive = scoreDiff >= 0;
+              <ScoreRecord
+                key={`${dashboardMode}:${v2Body?.integrityHash ?? 'none'}`}   // a new hash resets "Verified"
+                status={scoreV2.status}
+                body={scoreV2.body}
+                onVerify={dashboardMode === 'real' ? async () => {
+                  const r = await authFetch(`${apiBase()}/audit/verify`, {}, { accessToken, refreshAccessToken });
+                  return { status: r.status, body: await r.json().catch(() => null) };
+                } : undefined}
+              />
 
-                  return (
-                    <>
-                      <div style={{ padding: '1.75rem 1.5rem 1rem', background: '#161614', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '3px', position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(to right, transparent, rgba(167,139,113,0.25), transparent)' }} />
-                        
-                        <div className="h-[180px] md:h-[220px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                              <XAxis dataKey="label" tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#888078', letterSpacing: '0.1em' }} axisLine={false} tickLine={false} dy={8} />
-                              <YAxis domain={[0, 100]} tick={{ fontFamily: 'var(--font-mono)', fontSize: 10, fill: '#888078' }} axisLine={false} tickLine={false} tickCount={5} dx={-4} />
-                              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(167,139,113,0.15)', strokeWidth: 1, strokeDasharray: '4 4' }} />
-                              <ReferenceLine y={75} stroke="rgba(167,139,113,0.12)" strokeDasharray="4 4" label={{ value: 'GOOD', position: 'right', fontFamily: 'var(--font-mono)', fontSize: 9, fill: 'rgba(167,139,113,0.4)', letterSpacing: '0.1em' }} />
-                              <Line type="monotone" dataKey="score" stroke="#a78b71" strokeWidth={1.5} dot={(props) => {
-                                const { cx, cy, payload } = props;
-                                if (payload.isCurrent) {
-                                  return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={4} fill="#a78b71" stroke="#0f0f0f" strokeWidth={2} />;
-                                }
-                                return <circle key={`dot-${cx}-${cy}`} cx={cx} cy={cy} r={2.5} fill="#0f0f0f" stroke="#a78b71" strokeWidth={1.5} />;
-                              }} activeDot={{ r: 5, fill: '#a78b71', stroke: '#0f0f0f', strokeWidth: 2 }} />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
-                      </div>
-
-                      <div className="flex-col gap-[0.5rem] md:flex-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.875rem', borderTop: '1px solid rgba(255,255,255,0.04)', marginTop: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span style={{ fontSize: '0.8rem', color: isPositive ? '#4ade80' : '#f97316' }}>{isPositive ? '↑' : '↓'}</span>
-                          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.1em', color: isPositive ? '#4ade80' : '#f97316' }}>
-                            {Math.abs(scoreDiff)} pts over {trend.spanDays} {trend.spanDays === 1 ? 'day' : 'days'}
-                          </span>
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.08em', color: '#888078' }}>
-                          from {trendData.length} stored audits
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-[1rem]" style={{ marginTop: '1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem', background: '#161614', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '3px' }}>
-                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#888078' }}>
-                            BEST HOUR
+              <Panel id="v1-details" title="Rule-based details (scoring v1)" description="The earlier, rule-based grade and its components. The measured grade above is the one the headline uses.">
+                <Disclosure summary="Show the rule-based components">
+                  {v1Computed ? (
+                    <div className="flex flex-col gap-4">
+                      {skipped ? <p data-testid="skipped-trades" className="text-sm text-ui-graphite">{skipped}.</p> : null}
+                      <dl className="grid gap-x-10 gap-y-3 sm:grid-cols-2">
+                        {cards.map((c) => (
+                          <div key={c.key} title={c.tooltip} className="border-b border-ui-rule py-1">
+                            <dt className="text-sm text-ui-graphite">{c.label}, weight {c.weight}</dt>
+                            <dd className="text-ui-ink">{c.score === '—' ? 'No score' : `${c.score} of 100`}, {c.value}<span className="block text-sm text-ui-graphite">{c.description}</span></dd>
                           </div>
-                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.08em', color: '#4ade80' }}>
-                            {audit.breakdown.bestHour}:00 UTC
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1.25rem', background: '#161614', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '3px' }}>
-                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', letterSpacing: '0.15em', color: '#888078' }}>
-                            WORST HOUR
-                          </div>
-                          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.78rem', fontWeight: 600, letterSpacing: '0.08em', color: '#f97316' }}>
-                            {audit.breakdown.worstHour}:00 UTC
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-
-              {/* EXCHANGE COMPARISON */}
-              {isNotComputed(exchangeComparison) && (
-                <div style={{ marginBottom: '2.5rem' }}>
-                  <NotComputed title="Average slippage by venue" detail="It is built from per-trade v1 fields, which the rebuilt trades do not have." />
-                </div>
-              )}
-              {exchangeComparison && !isNotComputed(exchangeComparison) && (
-                <div style={{ marginBottom: '2.5rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
-                      Average slippage by venue (unmatched)
+                        ))}
+                      </dl>
+                      <p className="text-sm text-ui-graphite">Best symbol: {audit.breakdown.bestSymbol}. Worst symbol: {audit.breakdown.worstSymbol}.</p>
                     </div>
-                  </div>
-
-                  {exchangeComparison.exchanges && exchangeComparison.exchanges.length > 1 ? (
-                    <>
-                      <div style={{
-                        padding: '16px 20px',
-                        background: 'rgba(212,175,55,0.05)',
-                        border: '1px solid rgba(212,175,55,0.3)',
-                        borderRadius: '4px',
-                        marginBottom: '20px',
-                        fontFamily: 'var(--font-inter)',
-                        fontSize: '0.85rem',
-                        color: '#ede8e0'
-                      }}>
-                        Fills on <span style={{ color: getExchangeColor(exchangeComparison.bestExchange), fontWeight: 600, textTransform: 'uppercase' }}>{exchangeComparison.bestExchange}</span> cost <span style={{ color: '#d4af37', fontWeight: 600 }}>~{exchangeComparison.venueAlphaBps.toFixed(1)} bps</span> less slippage than on <span style={{ color: getExchangeColor(exchangeComparison.worstExchange), fontWeight: 600, textTransform: 'uppercase' }}>{exchangeComparison.worstExchange}</span> in this period.
-                      </div>
-
-                      <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))',
-                        gap: '16px',
-                        marginBottom: '24px'
-                      }}>
-                        {exchangeComparison.exchanges.map((ex: any, idx: number) => {
-                          const isBest = idx === 0;
-                          const exColor = getExchangeColor(ex.exchange);
-                          return (
-                            <div key={ex.exchange} style={{
-                              padding: '20px',
-                              background: 'rgba(26, 25, 23, 0.8)',
-                              border: `1px solid ${isBest ? 'rgba(212,175,55,0.4)' : 'rgba(255,255,255,0.06)'}`,
-                              borderRadius: '4px',
-                              position: 'relative'
-                            }}>
-                              {isBest && (
-                                <div style={{
-                                  position: 'absolute',
-                                  top: '-10px',
-                                  right: '16px',
-                                  background: 'rgba(212,175,55,0.15)',
-                                  border: '1px solid rgba(212,175,55,0.5)',
-                                  color: '#d4af37',
-                                  padding: '2px 8px',
-                                  borderRadius: '3px',
-                                  fontFamily: 'var(--font-mono)',
-                                  fontSize: '0.55rem',
-                                  letterSpacing: '0.1em',
-                                  fontWeight: 700
-                                }}>
-                                  BEST VENUE
-                                </div>
-                              )}
-                              <div style={{ marginBottom: '12px' }}>
-                                <span style={{ 
-                                  color: exColor, 
-                                  fontFamily: 'var(--font-mono)', fontSize: '0.7rem', fontWeight: 600, padding: '2px 8px', 
-                                  border: `1px solid ${exColor}50`, 
-                                  borderRadius: '4px', textTransform: 'uppercase' 
-                                }}>
-                                  {ex.exchange}
-                                </span>
-                              </div>
-                              <div style={{ fontSize: '1.8rem', fontWeight: 700, color: '#ede8e0', marginBottom: '16px', fontFamily: 'var(--font-inter)' }}>
-                                {Math.round(ex.avgFillScore)} <span style={{ fontSize: '0.8rem', color: '#888078', fontWeight: 400 }}>score</span>
-                              </div>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#888078' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>MAKER RATIO</span>
-                                  <span style={{ color: '#ede8e0' }}>{Math.round(ex.makerRatio * 100)}%</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>AVG SLIPPAGE</span>
-                                  <span style={{ color: '#ede8e0' }}>{ex.avgSlippageBps.toFixed(1)} bps</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>NOTIONAL</span>
-                                  <span style={{ color: '#ede8e0' }}>{formatCurrency(ex.totalNotional)}</span>
-                                </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span>TRADES</span>
-                                  <span style={{ color: '#ede8e0' }}>{ex.tradeCount}</span>
-                                </div>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-
-                      <div style={{
-                        background: 'rgba(26, 25, 23, 0.8)',
-                        border: '1px solid rgba(255,255,255,0.06)',
-                        borderRadius: '4px',
-                        padding: '20px',
-                        marginBottom: '24px'
-                      }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.15em', color: '#888078', marginBottom: '16px' }}>
-                          PER-SYMBOL RANKING
-                        </div>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'var(--font-mono)', fontSize: '0.75rem' }}>
-                          <thead>
-                            <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#a09890', textAlign: 'left' }}>
-                              <th style={{ padding: '8px 0', fontWeight: 500 }}>SYMBOL</th>
-                              <th style={{ padding: '8px 0', fontWeight: 500 }}>BEST VENUE</th>
-                              <th style={{ padding: '8px 0', fontWeight: 500, textAlign: 'right' }}>BINANCE</th>
-                              <th style={{ padding: '8px 0', fontWeight: 500, textAlign: 'right' }}>BYBIT</th>
-                              <th style={{ padding: '8px 0', fontWeight: 500, textAlign: 'right' }}>OKX</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {exchangeComparison.perSymbolRanking.map((row: any, idx: number) => (
-                              <tr key={row.symbol} style={{ borderBottom: idx !== exchangeComparison.perSymbolRanking.length - 1 ? '1px solid rgba(255,255,255,0.03)' : 'none' }}>
-                                <td style={{ padding: '12px 0', color: '#ede8e0' }}>{row.symbol}</td>
-                                <td style={{ padding: '12px 0' }}>
-                                  <span style={{ color: getExchangeColor(row.bestExchange), textTransform: 'uppercase' }}>
-                                    {row.bestExchange}
-                                  </span>
-                                </td>
-                                <td style={{ padding: '12px 0', textAlign: 'right', color: row.bestExchange === 'binance' ? '#4ade80' : '#888078' }}>
-                                  {row.scoresByExchange.binance || '-'}
-                                </td>
-                                <td style={{ padding: '12px 0', textAlign: 'right', color: row.bestExchange === 'bybit' ? '#4ade80' : '#888078' }}>
-                                  {row.scoresByExchange.bybit || '-'}
-                                </td>
-                                <td style={{ padding: '12px 0', textAlign: 'right', color: row.bestExchange === 'okx' ? '#4ade80' : '#888078' }}>
-                                  {row.scoresByExchange.okx || '-'}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </>
                   ) : (
-                    <>
-                      <div style={{
-                        padding: '20px',
-                        background: 'rgba(26, 25, 23, 0.8)',
-                        border: '1px solid rgba(255,255,255,0.06)',
-                        borderRadius: '4px',
-                        marginBottom: '12px'
-                      }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <span style={{ 
-                            color: getExchangeColor(audit.exchange), 
-                            fontFamily: 'var(--font-mono)', fontSize: '0.8rem', fontWeight: 600, padding: '2px 8px', 
-                            border: `1px solid ${getExchangeColor(audit.exchange)}50`, 
-                            borderRadius: '4px', textTransform: 'uppercase' 
-                          }}>
-                            {audit.exchange}
-                          </span>
-                          <span style={{ color: '#ede8e0', fontSize: '1.1rem', fontWeight: 600 }}>{Math.round(audit.avgFillScore)} avg score</span>
-                        </div>
-                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', marginTop: '16px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#888078' }}>
-                          <div>TOTAL NOTIONAL: <span style={{ color: '#ede8e0' }}>{header.volume}</span></div>
-                          <div>MAKER RATIO: <span style={{ color: '#ede8e0' }}>{header.makerRatio}{header.makerSub ? ` ${header.makerSub}` : ''}</span></div>
-                          <div>AVG SLIPPAGE: <span style={{ color: '#ede8e0' }}>{v1Computed ? formatBps(audit.breakdown.avgSlippageBps) : NOT_COMPUTED}</span></div>
-                        </div>
-                      </div>
-                      <div style={{
-                        fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#686460', marginBottom: '24px', fontStyle: 'italic'
-                      }}>
-                        {venueComparisonNote(!!accessToken, dashboardMode !== 'real')}{' '}
-                        {accessToken && dashboardMode === 'real' && <Link href="/onboarding" style={{ color: '#c4a882' }}>Connect an exchange</Link>}
-                      </div>
-                    </>
+                    <p data-testid="not-computed" className="max-w-[68ch] text-ui-graphite">
+                      Not computed for this data. The rule-based components need per-trade fields that the rebuilt trades do not have. The measured components are in the record behind the grade.
+                    </p>
                   )}
-
-                  {/* Benchmark Row */}
-                  <div style={{
-                    padding: '20px',
-                    background: 'rgba(26, 25, 23, 0.8)',
-                    border: '1px solid rgba(212,175,55,0.3)',
-                    borderRadius: '4px',
-                    marginBottom: '24px'
-                  }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#ede8e0' }}>
-                      <span style={{ color: 'rgba(212,175,55,0.8)', fontWeight: 600, marginRight: '8px' }}>Synthetic Ideal Trader</span>
-                      Ideal Execution: 80% maker · 8-16 UTC · BTC/ETH only · est. score: 91
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* EXECUTION COACH */}
-              {isNotComputed(coach) && (
-                <div style={{ marginBottom: '3rem' }}>
-                  <NotComputed title="Execution patterns" detail="They are read from per-trade v1 fields, which the rebuilt trades do not have." />
-                </div>
-              )}
-              {coach && !isNotComputed(coach) && (
-                <div style={{ marginBottom: '3rem' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#c9b99a' }}>
-                      EXECUTION COACH
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#c9b99a', padding: '2px 8px', border: '1px solid rgba(201,185,154,0.3)', borderRadius: '2px', background: 'rgba(201,185,154,0.1)' }}>
-                      EXECUTION PATTERNS
-                    </div>
-                  </div>
-
-                  <div style={{ padding: '1.5rem', background: '#1a1917', border: '1px solid rgba(201,185,154,0.3)', borderRadius: '4px', marginBottom: '1.5rem' }}>
-                    <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1.1rem', fontWeight: 600, color: '#c9b99a' }}>
-                      {coach.headline}
-                    </div>
-                  </div>
-
-                  {coach.actions.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem', marginBottom: '1.5rem' }}>
-                      {coach.actions.map((action: any) => (
-                        <div key={action.priority} style={{
-                          display: 'flex', gap: '1.25rem', alignItems: 'center', padding: '1.25rem 1.5rem',
-                          background: '#161614', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '3px', position: 'relative', overflow: 'hidden'
-                        }}>
-                          <div style={{
-                            position: 'absolute', left: 0, top: 0, bottom: 0, width: '2px',
-                            background: 'linear-gradient(to bottom, transparent, rgba(201,185,154,0.5), transparent)'
-                          }} />
-                          
-                          <div style={{ width: '40px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
-                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: '1.25rem', color: '#c9b99a', opacity: 0.5 }}>
-                              0{action.priority}
-                            </div>
-                            {action.icon === 'clock' && <Clock size={18} color="#888078" />}
-                            {action.icon === 'exchange' && <ArrowLeftRight size={18} color="#888078" />}
-                            {action.icon === 'tag' && <Tag size={18} color="#888078" />}
-                          </div>
-
-                          <div style={{ flex: 1 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                              <span style={{ fontSize: '0.6rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', padding: '2px 6px', background: 'rgba(255,255,255,0.05)', color: '#a09890', borderRadius: '2px' }}>
-                                {action.category}
-                              </span>
-                              <span style={{ fontFamily: 'var(--font-inter)', fontSize: '1rem', fontWeight: 600, color: '#ede8e0' }}>
-                                {action.title}
-                              </span>
-                            </div>
-                            <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#888078', lineHeight: 1.5 }}>
-                              {action.detail}
-                            </div>
-                          </div>
-
-                          {action.estimatedImpact && (
-                            <div style={{ 
-                              padding: '6px 12px', background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)', 
-                              borderRadius: '4px', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: '#4ade80', whiteSpace: 'nowrap'
-                            }}>
-                              {action.estimatedImpact}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {coach.actions.some((a: any) => a.category === 'TIMING') && coach.bestWindow && coach.worstWindow && (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem' }}>
-                      <div style={{ padding: '1rem', background: '#161614', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '3px' }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#4ade80', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>BEST-SCORING WINDOW</div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1rem', color: '#ede8e0', marginBottom: '0.25rem' }}>{coach.bestWindow.hour}</div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#888078' }}>{coach.bestWindow.reason ?? ''}</div>
-                      </div>
-                      <div style={{ padding: '1rem', background: '#161614', border: '1px solid rgba(239,68,68,0.2)', borderRadius: '3px' }}>
-                        <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6rem', color: '#ef4444', letterSpacing: '0.1em', marginBottom: '0.25rem' }}>LOWEST-SCORING WINDOW</div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '1rem', color: '#ede8e0', marginBottom: '0.25rem' }}>{coach.worstWindow.hour}</div>
-                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#888078' }}>{coach.worstWindow.reason ?? ''}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* INSIGHTS — Part 5 */}
-              <div style={{ marginBottom: '3rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.28em', color: '#a09890' }}>
-                    INSIGHTS
-                  </div>
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.1em', color: '#585450', padding: '2px 8px', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '2px' }}>
-                    {audit.recommendations.length} FINDINGS
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-                  {audit.recommendations.map((rec, index) => {
-                    const hasDollar = /\$[\d,]+/.test(rec);
-                    const sentences = rec.split('. ');
-                    const headline = sentences.length > 1 ? sentences[0] + '.' : sentences[0];
-                    const detail = sentences.slice(1).join('. ');
-                    const clampedIndex = String(index + 1).padStart(2, '0');
-
-                    return (
-                      <div key={index}
-                        onMouseOver={e => e.currentTarget.style.borderColor = 'rgba(167,139,113,0.2)'}
-                        onMouseOut={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'}
-                        style={{
-                          display: 'flex',
-                          gap: '1.25rem',
-                          alignItems: 'flex-start',
-                          padding: '1.25rem 1.5rem',
-                          background: '#161614',
-                          border: '1px solid rgba(255,255,255,0.07)',
-                          borderRadius: '3px',
-                          position: 'relative',
-                          overflow: 'hidden',
-                          transition: 'border-color 0.2s ease',
-                          cursor: 'default'
-                        }}
-                      >
-                        {/* Left accent bar */}
-                        <div style={{
-                          position: 'absolute',
-                          left: 0, top: 0, bottom: 0,
-                          width: '2px',
-                          background: 'linear-gradient(to bottom, transparent, rgba(167,139,113,0.5), transparent)'
-                        }} />
-
-                        {/* Left column — number + icon */}
-                        <div style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          alignItems: 'center',
-                          gap: '0.5rem',
-                          flexShrink: 0,
-                          paddingTop: '2px'
-                        }}>
-                          <div style={{
-                            fontFamily: 'var(--font-mono)',
-                            fontSize: '0.55rem',
-                            letterSpacing: '0.1em',
-                            color: '#888078'
-                          }}>{clampedIndex}</div>
-                          <div style={{
-                            fontSize: '1rem',
-                            color: 'rgba(167,139,113,0.5)',
-                            lineHeight: 1
-                          }}>{getIcon(rec)}</div>
-                        </div>
-
-                        {/* Right column — content */}
-                        <div style={{
-                          flex: 1,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: '0.4rem'
-                        }}>
-                          <div style={{
-                            fontFamily: 'var(--font-inter)',
-                            fontSize: '0.88rem',
-                            fontWeight: 500,
-                            color: '#e8e4dc',
-                            lineHeight: 1.4
-                          }}>
-                            {highlightDollars(headline)}
-                          </div>
-
-                          {detail && (
-                            <div style={{
-                              fontFamily: 'var(--font-inter)',
-                              fontSize: '0.78rem',
-                              color: '#888078',
-                              lineHeight: 1.6,
-                              marginTop: '0.1rem'
-                            }}>
-                              {highlightDollars(detail)}
-                            </div>
-                          )}
-
-                          {hasDollar && (
-                            <div style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '5px',
-                              marginTop: '0.5rem',
-                              padding: '3px 8px',
-                              background: 'rgba(74,222,128,0.06)',
-                              border: '1px solid rgba(74,222,128,0.15)',
-                              borderRadius: '2px',
-                              fontFamily: 'var(--font-mono)',
-                              fontSize: '0.58rem',
-                              letterSpacing: '0.1em',
-                              color: '#4ade80',
-                              opacity: 0.8,
-                              width: 'fit-content'
-                            }}>
-                              POTENTIAL SAVINGS
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* BOTTOM CTA */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '1.25rem 1.5rem',
-                  background: 'rgba(167,139,113,0.04)',
-                  border: '1px solid rgba(167,139,113,0.15)',
-                  borderRadius: '3px',
-                  marginTop: '1.5rem'
-                }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <div style={{
-                      fontFamily: 'var(--font-playfair)',
-                      fontStyle: 'italic',
-                      fontSize: '1rem',
-                      color: '#ede8e0'
-                    }}>
-                      {tradesCard.title}
-                    </div>
-                    <div style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '0.6rem',
-                      letterSpacing: '0.1em',
-                      color: '#888078'
-                    }}>
-                      {tradesCard.subtitle}
-                    </div>
-                  </div>
-                  
-                  <button
-                    onClick={() => window.location.href = dashboardMode === 'real' ? '/trades' : `/trades?userId=${resolvedUserId}`}
-                    onMouseOver={e => {
-                      e.currentTarget.style.background = 'rgba(167,139,113,0.08)';
-                      e.currentTarget.style.borderColor = 'rgba(167,139,113,0.6)';
-                      e.currentTarget.style.color = '#c4a882';
-                    }}
-                    onMouseOut={e => {
-                      e.currentTarget.style.background = 'transparent';
-                      e.currentTarget.style.borderColor = 'rgba(167,139,113,0.35)';
-                      e.currentTarget.style.color = '#a78b71';
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.6rem 1.25rem',
-                      background: 'transparent',
-                      border: '1px solid rgba(167,139,113,0.35)',
-                      borderRadius: '2px',
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '0.7rem',
-                      letterSpacing: '0.12em',
-                      color: '#a78b71',
-                      cursor: 'pointer',
-                      transition: 'all 0.2s ease'
-                    }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                      <path d="M2 6h8M6 2l4 4-4 4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    VIEW ALL TRADES
-                  </button>
-                </div>
-              </div>
-
-              {/* DASHBOARD FOOTER STRIP */}
-              <div style={{
-                paddingTop: '1.5rem',
-                borderTop: '1px solid rgba(255,255,255,0.04)',
-                display: 'flex',
-                justifyContent: 'center',
-                marginTop: '2rem'
-              }}>
-                <div style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.58rem',
-                  letterSpacing: '0.12em',
-                  color: '#888078',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '1.5rem'
-                }}>
-                  <span>FillScore v0.9 beta</span>
-                  <span>·</span>
-                  <span>Data: {audit ? formatPeriodLabel(audit.period.start, audit.period.end) : '—'}</span>
-                  <span>·</span>
-                  <span>AES-256-GCM encrypted</span>
-                </div>
-              </div>
-            </div>
+                </Disclosure>
+              </Panel>
+            </>
           );
         })()}
       </main>
@@ -1558,45 +295,14 @@ function DashboardContent() {
   );
 }
 
-function DashboardFallback() {
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg-base, #0f0f0f)',
-      color: 'var(--text-primary, #ede8e0)',
-      fontFamily: 'var(--font-inter)',
-      paddingBottom: '4rem'
-    }}>
-      <Navbar currentPage="dashboard" />
-      <main style={{
-        maxWidth: '1100px',
-        margin: '0 auto',
-        padding: '48px 2rem 2rem'
-      }}>
-        <div>
-          <div style={{ display: 'flex', gap: '2rem', marginBottom: '2rem' }}>
-            <SkeletonBlock width="200px" height="200px" borderRadius="4px"/>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-              <SkeletonBlock width="60%" height="2.5rem"/>
-              <SkeletonBlock width="40%" height="1.25rem"/>
-              <SkeletonBlock width="80%" height="1.25rem"/>
-            </div>
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
-            {[1,2,3,4].map(i => <SkeletonBlock key={i} height="100px" borderRadius="3px"/>)}
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.875rem' }}>
-            {[1,2,3].map(i => <SkeletonBlock key={i} height="72px" borderRadius="3px"/>)}
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-
 export default function Dashboard() {
   return (
-    <Suspense fallback={<DashboardFallback />}>
+    <Suspense fallback={
+      <div className="min-h-screen bg-ui-surface pt-12">
+        <Navbar currentPage="dashboard" />
+        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-5"><Loading /></main>
+      </div>
+    }>
       <DashboardContent />
     </Suspense>
   );

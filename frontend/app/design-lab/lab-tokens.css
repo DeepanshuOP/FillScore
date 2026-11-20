@@ -1,0 +1,47 @@
+/*
+ * Design lab only (imported by app/design-lab/layout.tsx; no production screen loads this file).
+ * Direction A is the production token set (app/ui/tokens.css) and is picked up here through [data-ui-theme="a"].
+ * Direction B "Tape" (dark) and the font candidates stay here so the lab can still show them.
+ *
+ * B "Tape" (dark). Given: slate #1D2227, raised #252B31, ink #E7E9EB, graphite #9AA2AB, tape #3A424A, signal #6CC4D9
+ *   (measured), amber #D9A441 (insufficient data). Added: --ui-edge #737D87 (3.83:1 on slate, 3.41:1 on raised),
+ *   --ui-danger #F0857D (6.38:1 on slate).
+ * The contrast test parses this file for B.
+ */
+[data-ui-theme="b"] {
+  color-scheme: dark;
+  --ui-surface: #1D2227;
+  --ui-raised: #252B31;
+  --ui-ink: #E7E9EB;
+  --ui-graphite: #9AA2AB;
+  --ui-rule: #3A424A;
+  --ui-edge: #737D87;
+  --ui-measured: #6CC4D9;
+  --ui-on-measured: #1D2227;
+  --ui-insufficient: #D9A441;
+  --ui-insufficient-text: #D9A441;
+  --ui-danger: #F0857D;
+  --ui-on-danger: #1D2227;
+  --ui-focus: #6CC4D9;
+}
+
+/* The lab wrapper paints its own ground and type (the production body does the same for the product). */
+[data-ui-theme] {
+  --ui-font: var(--font-plex-sans), system-ui, sans-serif;
+  background: var(--ui-surface);
+  color: var(--ui-ink);
+  font-family: var(--ui-font);
+  font-size: var(--ui-text-md);
+  line-height: 1.5;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+[data-ui-font="plex"] { --ui-font: var(--font-plex-sans), system-ui, sans-serif; }
+[data-ui-font="hanken"] { --ui-font: var(--font-hanken), system-ui, sans-serif; }
+[data-ui-font="schibsted"] { --ui-font: var(--font-schibsted), system-ui, sans-serif; }
+
+[data-ui-theme] ::selection { background: var(--ui-measured); color: var(--ui-on-measured); }
+[data-ui-theme] input, [data-ui-theme] textarea { caret-color: var(--ui-measured); }
+[data-ui-theme] input::placeholder, [data-ui-theme] textarea::placeholder { color: var(--ui-graphite); opacity: 1; }
+[data-ui-theme] :focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+[data-ui-theme] * { scrollbar-color: var(--ui-edge) transparent; scrollbar-width: thin; }

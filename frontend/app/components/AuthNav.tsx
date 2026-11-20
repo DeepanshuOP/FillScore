@@ -2,82 +2,45 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../context/AuthContext';
+import { cn } from '../../lib/utils';
 
-export default function AuthNav() {
+/** The account part of the navbar: the signed-in email with its settings and log-out, or the log-in and sign-up links. */
+export default function AuthNav({ stacked = false }: { stacked?: boolean }) {
   const { user, logout, isLoading } = useAuth();
+  const router = useRouter();
+  const row = cn('flex items-center gap-4', stacked && 'flex-col items-start gap-1');
 
   if (isLoading) {
-    return (
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-        <div style={{
-          width: '60px', height: '14px', borderRadius: '2px',
-          background: 'rgba(255,255,255,0.05)',
-          animation: 'pulse-live-nav 2s ease-in-out infinite'
-        }} />
-      </div>
-    );
+    // The height of the real content, so the bar does not jump when the account is known.
+    return <div aria-hidden="true" className="h-6 w-28" />;
   }
 
   if (user) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-        <span style={{
-          fontFamily: 'var(--font-mono)', fontSize: '0.65rem',
-          color: '#888078', letterSpacing: '0.05em'
-        }}>
+      <div className={row}>
+        <Link href="/settings" className="max-w-[16rem] truncate py-2 text-sm text-ui-graphite hover:text-ui-ink" title="Account settings">
           {user.email}
-        </span>
+        </Link>
         <button
+          type="button"
           onClick={() => {
             logout();
-            window.location.href = '/';
+            router.push('/');
           }}
-          style={{
-            background: 'transparent',
-            border: '1px solid rgba(167,139,113,0.3)',
-            borderRadius: '2px',
-            padding: '4px 10px',
-            color: '#a78b71',
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.6rem',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }}
-          onMouseEnter={e => e.currentTarget.style.background = 'rgba(167,139,113,0.1)'}
-          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          className="rounded-ui border border-ui-edge px-3 py-1.5 text-sm text-ui-ink hover:bg-ui-raised"
         >
-          LOG OUT
+          Log out
         </button>
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-      <Link href="/login" style={{
-        fontFamily: 'var(--font-mono)', fontSize: '0.65rem',
-        color: '#ede8e0', textDecoration: 'none', letterSpacing: '0.1em',
-        transition: 'color 0.2s ease'
-      }}
-      onMouseEnter={e => e.currentTarget.style.color = '#c4a882'}
-      onMouseLeave={e => e.currentTarget.style.color = '#ede8e0'}
-      >
-        LOG IN
-      </Link>
-      <Link href="/signup" style={{
-        fontFamily: 'var(--font-mono)', fontSize: '0.65rem',
-        color: '#0f0f0f', background: '#a78b71', padding: '4px 10px',
-        borderRadius: '2px', textDecoration: 'none', letterSpacing: '0.1em',
-        transition: 'background 0.2s ease'
-      }}
-      onMouseEnter={e => e.currentTarget.style.background = '#c4a882'}
-      onMouseLeave={e => e.currentTarget.style.background = '#a78b71'}
-      >
-        SIGN UP
-      </Link>
+    <div className={row}>
+      <Link href="/login" className="py-2 text-sm text-ui-ink">Log in</Link>
+      <Link href="/signup" className="rounded-ui border border-ui-ink bg-ui-ink px-3 py-1.5 text-sm text-ui-surface no-underline hover:opacity-90">Sign up</Link>
     </div>
   );
 }

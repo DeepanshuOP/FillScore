@@ -114,6 +114,15 @@ describe('Field', () => {
   })
 })
 
+describe('Field with a chosen id', () => {
+  it('keeps that id on the control and points the label, hint and error at it (axe "label" violation found 2026-11-20)', () => {
+    const h = renderToStaticMarkup(<Field id="login-password" label="Password" hint="A hint" error="A problem" />)
+    expect(h).toContain('<input id="login-password"')
+    expect(h).toContain('for="login-password"')
+    expect(h).toContain('aria-describedby="login-password-hint login-password-error"')
+  })
+})
+
 describe('Tabs', () => {
   it('marks one tab selected and only it is in the tab order', () => {
     const h = renderToStaticMarkup(<Tabs label="Views" tabs={[{ id: 'a', label: 'A', content: 'one' }, { id: 'b', label: 'B', content: 'two' }]} />)

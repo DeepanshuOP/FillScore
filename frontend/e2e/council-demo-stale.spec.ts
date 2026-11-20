@@ -16,12 +16,12 @@ test('a stored run is served while it matches the data, and not after the data c
 
   await page.goto(`/dashboard?userId=${ID}`)
   await page.getByRole('button', { name: 'RUN ANALYSIS' }).click()
-  await expect(page.getByRole('heading', { name: 'Council assessment' })).toBeVisible({ timeout: 45_000 })
+  await expect(page.getByRole('heading', { name: 'Explanation (language model; every number was checked against the audit)' })).toBeVisible({ timeout: 45_000 })
   await expect(page.getByText(MESSAGE)).toHaveCount(0)
 
   await setExtraTrade(ID, true)                      // the demo data changes: the stored run now describes other data
   await page.goto(`/dashboard?userId=${ID}`)
   await page.getByRole('button', { name: 'RUN ANALYSIS' }).click()
   await expect(page.getByText(MESSAGE)).toBeVisible({ timeout: 45_000 })
-  await expect(page.getByRole('heading', { name: 'Council assessment' })).toHaveCount(0)
+  await expect(page.getByRole('heading', { name: 'Explanation (language model; every number was checked against the audit)' })).toHaveCount(0)
 })

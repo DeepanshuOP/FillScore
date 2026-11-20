@@ -3,13 +3,13 @@
  * fill with the public price at its second; the sentences only arrange them, in past tense, and state what could not be compared. An error
  * shows a fixed sentence; the server's text is shown only for the four codes whose messages hold counts and column names, never file rows.
  */
-import { formatBps } from '../utils/formatBps';
+import { formatSignedBps as formatBps, formatUsd } from '../ui/format';
 
 export const CSV_COPY = {
   title: 'Check a broker file against public prices',
   hint: 'Choose a trade-history CSV from Kraken, or map the columns of another broker\'s file. Each fill is compared with the public price at its second. '
     + 'The file is read once to make this check and is not stored.',
-  button: 'CHECK THE FILE',
+  button: 'Check the file',
 } as const;
 
 export interface CsvFillApi {
@@ -33,12 +33,7 @@ export interface CsvCheckView {
 const NO_FEE_LINE = 'The file has no fee column, so fees were not part of this check.';
 const SHOWN_ERROR_CODES = new Set(['too_many_fills', 'no_fills', 'not_readable', 'unknown_format']);
 
-const usd = (v: number): string => {
-  if (Math.abs(v) >= 1) return `$${v.toFixed(2)}`;
-  let s = v.toFixed(4).replace(/0+$/, '');
-  if (s.split('.')[1].length < 2) s = v.toFixed(2);
-  return `$${s}`;
-};
+const usd = formatUsd;
 const num = (v: number): string => String(Number(v.toPrecision(10)));
 const when = (ms: number): string => `${new Date(ms).toISOString().slice(0, 19).replace('T', ' ')} UTC`;
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;

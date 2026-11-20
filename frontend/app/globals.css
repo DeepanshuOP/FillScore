@@ -1,69 +1,22 @@
 @import "tailwindcss";
-/* M8 phase 2a: design tokens of the two candidate directions. Matches only under [data-ui-theme] (the design lab). */
+/* The one production token set (direction A, light) and the base body styles: app/ui/tokens.css. */
 @import "./ui/tokens.css";
 
-/* Fonts applied to html in layout.tsx */
-body {
-  background: var(--bg-base);
-  color: var(--text-primary);
-  font-family: var(--font-inter);
+/* M8 part 1 (2026-11-20): removed the dark/light token set (--bg-*, --text-*, --gold*), the unlayered
+   `* { margin: 0; padding: 0 }` reset and the `input::placeholder` rule (both beat Tailwind utilities; Tailwind's
+   own preflight does the reset), the scrollbar and selection colours of the old palette, and the theme toggle's
+   [data-theme] blocks. */
+
+/* Bridge for the screens that part 2 rebuilds (landing, trades, analytics, methodology, verify, check, share,
+   onboarding). They still name the three old font variables; here the names resolve to the one new family so that
+   no old font is loaded. Delete this block, and the helpers below, when the last of those screens is rebuilt. */
+:root {
+  --font-inter: var(--ui-font);
+  --font-playfair: var(--ui-font);
+  --font-mono: var(--ui-mono);
 }
 
-/* The reset below is unlayered, so it beats every Tailwind spacing utility. It is left as it was for every production
-   element and lifted under [data-ui-theme] (the design lab, M8 phase 2a): Tailwind's own preflight already resets margins
-   and padding there. :where() keeps the specificity at zero, so nothing else changes. Remove it in phase 2b. */
-*:where(:not([data-ui-theme], [data-ui-theme] *)) { box-sizing: border-box; margin: 0; padding: 0; }
-
-::selection {
-  background: rgba(167,139,113,0.25);
-  color: var(--text-primary);
-}
-
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: var(--bg-base); }
-::-webkit-scrollbar-thumb {
-  background: var(--bg-subtle);
-  border-radius: 2px;
-}
-::-webkit-scrollbar-thumb:hover { background: var(--gold); }
-
-/* Theme tokens */
-[data-theme="dark"], :root {
-  --bg-base:        #0f0f0f;
-  --bg-raised:      #1a1917;
-  --bg-overlay:     #201f1d;
-  --bg-subtle:      #272523;
-  --bg-muted:       #302e2b;
-  --text-primary:   #f0ece4;
-  --text-secondary: #b8b0a6;
-  --text-tertiary:  #888078;
-  --text-ghost:     #585450;
-  --gold:           #a78b71;
-  --gold-light:     #c4a882;
-  --gold-bright:    #e8d5b7;
-  --gold-dim:       #6b5a47;
-  --green:          #4db87a;
-  --red:            #c0392b;
-}
-
-[data-theme="light"] {
-  --bg-base:        #f5f2ee;
-  --bg-raised:      #ffffff;
-  --bg-overlay:     #ede9e3;
-  --bg-subtle:      #e4e0da;
-  --bg-muted:       #d4cfc8;
-  --text-primary:   #1a1814;
-  --text-secondary: #4a4640;
-  --text-tertiary:  #7a7570;
-  --text-ghost:     #c4bfb8;
-  --gold:           #8a6e50;
-  --gold-light:     #a07850;
-  --gold-bright:    #6a5038;
-  --gold-dim:       #c4a882;
-}
-
-input::placeholder { color: var(--text-ghost); }
-
+/* Helpers still used by the landing page and the onboarding page (part 2). */
 .form-enter {
   opacity: 0;
   transform: translateY(10px);
@@ -73,8 +26,6 @@ input::placeholder { color: var(--text-ghost); }
   transform: translateY(0);
   transition: opacity 0.3s ease, transform 0.3s ease;
 }
-
-ol li::marker { color: var(--gold); }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
@@ -102,25 +53,6 @@ ol li::marker { color: var(--gold); }
   }
 }
 
-@keyframes pulse-status {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 6px rgba(77,184,122,0.9);
-  }
-  50% {
-    opacity: 0.5;
-    box-shadow: 0 0 3px rgba(77,184,122,0.3);
-  }
-}
-
-/* Demo button hover */
-.demo-btn:hover {
-  border-color: rgba(167,139,113,0.28);
-  color: #c4a882;
-  background: rgba(167,139,113,0.04);
-}
-
-/* Bottom strip badge hover */
 .trust-badge:hover {
   color: #6a6560;
 }

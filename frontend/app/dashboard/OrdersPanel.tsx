@@ -1,14 +1,17 @@
 'use client';
 import React from 'react';
+import { DataTable, type Column } from '../ui/DataTable';
+import { Panel } from '../ui/Panel';
+import { StatBlock, StatList } from '../ui/StatBlock';
 import { describeOrders } from './ordersView';
 
-const CARD = {
-  padding: '1.25rem 1.5rem', background: '#1c1c1a', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '3px',
-  display: 'flex', flexDirection: 'column' as const, gap: '0.9rem',
-};
-const LABEL = { fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em', color: '#888078', textTransform: 'uppercase' as const };
-const TEXT = { fontFamily: 'var(--font-inter)', fontSize: '0.8rem', lineHeight: 1.6, color: '#a09890', margin: 0 };
-const GRID = { listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '0.5rem' } as const;
+interface Term { label: string; usd: string; bps: string; n: string }
+
+const TERM_COLUMNS: Column<Term>[] = [
+  { key: 'term', header: 'Term', sortValue: (r) => r.label, cell: (r) => r.label },
+  { key: 'usd', header: 'Total, USD', numeric: true, cell: (r) => (r.usd === 'not computed' ? null : r.usd) },
+  { key: 'bps', header: 'Share of intended value, bps', numeric: true, priority: 'low', cell: (r) => (r.bps === 'not computed' ? null : r.bps) },
+];
 
 /** Measured order views: outcomes, resting time of limit orders, implementation shortfall, unfilled orders.
  *  All numbers come from GET /api/audit/orders-summary (stored documents, deterministic statistics). */
@@ -16,49 +19,53 @@ export default function OrdersPanel({ body }: { body: unknown }) {
   const v = describeOrders(body);
   if (!v) return null;
   return (
-    <section aria-label="Measured orders" data-testid="orders-panel" style={CARD}>
-      <div style={LABEL}>Orders · measured</div>
-      <ul style={GRID}>
-        {v.outcomes.map(([k, val]) => (
-          <li key={k}><span style={{ color: '#888078' }}>{k}: </span><span style={{ color: '#ede8e0' }}>{val}</span></li>
-        ))}
-      </ul>
-      {v.resting && (
-        <div data-testid="orders-resting">
-          <div style={LABEL}>Resting time of limit orders</div>
-          <p style={TEXT}>Median {v.resting.median}, 90th percentile {v.resting.p90} ({v.resting.n}).</p>
-        </div>
-      )}
-      {v.shortfall && (
-        <div data-testid="orders-shortfall">
-          <div style={LABEL}>Implementation shortfall, per order</div>
-          <ul style={GRID}>
-            {v.shortfall.map(([k, val]) => (
-              <li key={k}><span style={{ color: '#888078' }}>{k}: </span><span style={{ color: '#ede8e0' }}>{val}</span></li>
+    <div data-testid="orders-panel">
+      <Panel id="orders" title="Orders and outcomes" description="How the orders ended, how long limit orders rested, and what each term of the cost added up to.">
+        <div className="flex flex-col gap-8">
+          <StatList className="sm:grid-cols-3 lg:grid-cols-5">
+            {v.outcomes.map(([k, val]) => (
+              // a count of orders is a plain figure: the measured marker stays on costs, so it keeps its meaning
+              <StatBlock key={k} label={k}><span role="group" aria-label={`${k}: ${val}`} className="text-[1.25rem] leading-7 font-semibold tabular-nums text-ui-ink">{val}</span></StatBlock>
             ))}
-          </ul>
-          <p style={{ ...TEXT, fontSize: '0.72rem' }}>{v.shortfallNote}</p>
+          </StatList>
+
+          {v.resting && (
+            <div data-testid="orders-resting">
+              <h3 className="text-base font-semibold text-ui-ink">Resting time of limit orders</h3>
+              <p className="mt-1 text-ui-graphite">Median {v.resting.median}, 90th percentile {v.resting.p90} ({v.resting.n}).</p>
+            </div>
+          )}
+
+          {v.shortfall && (
+            <div data-testid="orders-shortfall">
+              <h3 className="text-base font-semibold text-ui-ink">Median shortfall per order</h3>
+              <dl className="mt-2 grid gap-x-10 gap-y-2 sm:grid-cols-2 lg:grid-cols-3">
+                {v.shortfall.map(([k, val]) => (
+                  <div key={k} className="flex items-baseline justify-between gap-4 border-b border-ui-rule py-1">
+                    <dt className="text-ui-graphite">{k}</dt>
+                    <dd className="tabular-nums text-ui-ink">{val}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="mt-2 text-sm text-ui-graphite">{v.shortfallNote} These are medians, so the terms do not add up to the median total.</p>
+            </div>
+          )}
+
+          {v.totals && (
+            <div data-testid="orders-totals">
+              <h3 className="mb-2 text-base font-semibold text-ui-ink">Total over all orders, by term</h3>
+              <DataTable caption="Total cost by term, in US dollars and basis points of the intended value" columns={TERM_COLUMNS}
+                rows={v.totals} rowId={(r) => r.label} maxHeight="24rem" />
+              <p className="mt-2 text-sm text-ui-graphite">
+                Each line adds up the orders that have that term; the bps share is over the intended value of those orders.
+              </p>
+            </div>
+          )}
+
+          {v.unfilledNote && <p className="text-ui-ink" data-testid="orders-unfilled">{v.unfilledNote}</p>}
+          <p className="text-sm text-ui-graphite">These costs coincided with the orders; the audit does not show what caused them.</p>
         </div>
-      )}
-      {v.totals && (
-        <div data-testid="orders-totals">
-          <div style={LABEL}>Total over all orders · USD and bps of intended notional</div>
-          <ul style={GRID}>
-            {v.totals.map(r => (
-              <li key={r.label}>
-                <span style={{ color: '#888078' }}>{r.label}: </span>
-                <span style={{ color: '#ede8e0' }}>{r.usd} · {r.bps}</span>
-                {r.n && <span style={{ color: '#888078', fontSize: '0.7rem' }}> ({r.n})</span>}
-              </li>
-            ))}
-          </ul>
-          <p style={{ ...TEXT, fontSize: '0.72rem' }}>
-            Each line adds up the orders that have that term; the bps share is over the intended notional of those orders.
-          </p>
-        </div>
-      )}
-      {v.unfilledNote && <p style={TEXT} data-testid="orders-unfilled">{v.unfilledNote}</p>}
-      <p style={{ ...TEXT, fontSize: '0.72rem' }}>These costs coincided with the orders; the audit does not show what caused them.</p>
-    </section>
+      </Panel>
+    </div>
   );
 }

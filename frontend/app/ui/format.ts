@@ -1,15 +1,19 @@
-/** Number formatting for the design-system components. Pure; never colours or judges a value. */
+/** Number formatting for every rebuilt screen. Pure; never colours or judges a value. */
 import { formatBps } from '../utils/formatBps'
 
-/** USD: two decimals from one dollar, three below it (a small real cost is not rounded to zero). */
-export function formatMoney(v: number | null | undefined): string {
+const TWO_DECIMALS = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+/**
+ * USD, one rule everywhere: two decimals with thousands separators; a negative value takes a true minus sign (U+2212);
+ * a value that is not zero but would read "$0.00" reads "<$0.01" (">−$0.01" if negative), so a real cost is never shown
+ * as nothing; a value that is not a finite number reads "not computed", never zero.
+ */
+export function formatUsd(v: number | null | undefined): string {
   if (typeof v !== 'number' || !Number.isFinite(v)) return 'not computed'
   if (v === 0) return '$0.00'
-  const a = Math.abs(v)
-  const sign = v < 0 ? '-' : ''
-  if (a >= 1) return `${sign}$${a.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-  if (a < 0.0005) return v > 0 ? '<$0.001' : '>-$0.001'
-  return `${sign}$${a.toFixed(3)}`
+  const shown = TWO_DECIMALS.format(Math.abs(v))
+  if (shown === '0.00') return v > 0 ? '<$0.01' : '>−$0.01'
+  return `${v < 0 ? '−' : ''}$${shown}`
 }
 
 export function formatScore(v: number): string {

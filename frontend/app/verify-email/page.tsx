@@ -1,18 +1,13 @@
 'use client';
 
 import React, { useEffect, useRef, useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import AuthCard from '../components/AuthCard';
 import { apiBase } from '../lib/apiBase';
+import AuthLayout from '../components/AuthLayout';
+import { Banner } from '../ui/Banner';
 
 type Status = 'verifying' | 'success' | 'invalid';
-
-const linkButton: React.CSSProperties = {
-  display: 'inline-block', width: '100%', padding: '0.925rem', borderRadius: '2px',
-  fontFamily: 'var(--font-mono)', fontSize: '0.8rem', letterSpacing: '0.1em', fontWeight: 600,
-  background: 'rgba(167,139,113,0.15)', color: '#d4c4b4', border: '1px solid rgba(167,139,113,0.3)',
-  textDecoration: 'none', textAlign: 'center',
-};
 
 function VerifyEmailContent() {
   const token = useSearchParams().get('token');
@@ -33,45 +28,31 @@ function VerifyEmailContent() {
       .catch(() => setStatus('invalid'));
   }, [token]);
 
+  const title = status === 'success' ? 'Email verified' : status === 'verifying' ? 'Verifying…' : 'Link not valid';
+  const intro = status === 'verifying' ? 'One moment.' : status === 'success' ? 'Your address is confirmed.' : undefined;
+
   return (
-    <div className="px-[1.5rem] py-[2rem] sm:px-[2rem]" style={{ textAlign: 'center' }}>
-      <h1 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '1rem' }}>
-        {status === 'success' ? 'Email verified' : status === 'verifying' ? 'Verifying…' : 'Link not valid'}
-      </h1>
-
-      {status === 'verifying' && (
-        <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#8a8078' }}>One moment.</p>
-      )}
-
+    <AuthLayout title={title} intro={intro}>
       {status === 'success' && (
-        <>
-          <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#8a8078', marginBottom: '1.5rem' }}>
-            Your address is confirmed.
-          </p>
-          <a href="/dashboard" style={linkButton}>Go to dashboard</a>
-        </>
+        <Link href="/dashboard" className="text-ui-ink">Go to dashboard</Link>
       )}
 
       {status === 'invalid' && (
-        <>
-          <div role="alert" style={{ padding: '1rem', background: 'rgba(192,57,43,0.07)', borderLeft: '2px solid rgba(192,57,43,0.65)', borderRadius: '0 2px 2px 0', marginBottom: '1.5rem', textAlign: 'left' }}>
-            <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#d9534f', margin: 0 }}>
-              This verification link is invalid, already used, or has expired. Sign in and request a new one.
-            </p>
-          </div>
-          <a href="/login" style={linkButton}>Sign in</a>
-        </>
+        <div className="flex flex-col gap-5">
+          <Banner kind="refused" title="The link did not verify">
+            This verification link is invalid, already used, or has expired. Sign in and request a new one.
+          </Banner>
+          <Link href="/login" className="text-ui-ink">Sign in</Link>
+        </div>
       )}
-    </div>
+    </AuthLayout>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <AuthCard>
-      <Suspense fallback={<div className="px-[1.5rem] py-[2rem] text-center" style={{ color: '#8a8078', fontFamily: 'var(--font-inter)' }}>Loading...</div>}>
-        <VerifyEmailContent />
-      </Suspense>
-    </AuthCard>
+    <Suspense fallback={<AuthLayout title="Loading">{null}</AuthLayout>}>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

@@ -14,7 +14,7 @@ import { StatBlock, StatList } from '../ui/StatBlock'
 import { Tabs } from '../ui/Tabs'
 import { useToast } from '../ui/Toast'
 import { ValueState } from '../ui/ValueState'
-import { formatMoney } from '../ui/format'
+import { formatUsd } from '../ui/format'
 import { formatBps } from '../utils/formatBps'
 
 interface SymbolRow { symbol: string; orders: number; medianTotalBps: number | null; totalUsd: number | null; notionalUsd: number }
@@ -26,8 +26,8 @@ export function Gallery({ symbols }: { symbols: SymbolRow[] }) {
     { key: 'symbol', header: 'Symbol', sortValue: (r) => r.symbol, cell: (r) => r.symbol },
     { key: 'orders', header: 'Orders', numeric: true, sortValue: (r) => r.orders, cell: (r) => r.orders.toLocaleString('en-US') },
     { key: 'bps', header: 'Median total cost', numeric: true, sortValue: (r) => r.medianTotalBps, cell: (r) => (r.medianTotalBps === null ? null : formatBps(r.medianTotalBps)) },
-    { key: 'usd', header: 'Total cost', numeric: true, priority: 'low', sortValue: (r) => r.totalUsd, cell: (r) => (r.totalUsd === null ? null : formatMoney(r.totalUsd)) },
-    { key: 'notional', header: 'Value ordered', numeric: true, priority: 'low', sortValue: (r) => r.notionalUsd, cell: (r) => formatMoney(r.notionalUsd) },
+    { key: 'usd', header: 'Total cost', numeric: true, priority: 'low', sortValue: (r) => r.totalUsd, cell: (r) => (r.totalUsd === null ? null : formatUsd(r.totalUsd)) },
+    { key: 'notional', header: 'Value ordered', numeric: true, priority: 'low', sortValue: (r) => r.notionalUsd, cell: (r) => formatUsd(r.notionalUsd) },
   ]
   // One row is deliberately without a value, to show how the table renders a value that was not computed.
   const rows: SymbolRow[] = [...symbols, { symbol: 'XRPUSDT', orders: 0, medianTotalBps: null, totalUsd: null, notionalUsd: 0 }]

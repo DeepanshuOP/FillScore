@@ -5,6 +5,6 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     pool: 'threads',
-    exclude: ['e2e/**', 'e2e-lab/**', 'node_modules/**', '.next/**'], // Playwright specs run under `npm run test:e2e` and `npm run test:lab`
+    exclude: ['e2e/**', 'e2e-lab/**', 'e2e-shots/**', 'node_modules/**', '.next/**'], // Playwright specs run under `npm run test:e2e`, `test:lab` and `test:shots`
   },
 })

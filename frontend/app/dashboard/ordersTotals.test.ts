@@ -43,8 +43,9 @@ describe('orders panel: totals beside medians', () => {
     ]);
   });
   it('medians use the shared formatter: no "-0.0 bps"', () => {
-    expect(v.shortfall![0]).toEqual(['Execution cost', '>-0.01 bps']);
-    expect(JSON.stringify(v)).not.toMatch(/-0\.0 bps/);
+    // 2026-11-20: rebuilt screens print a true minus sign (U+2212), formatSignedBps; the value and the rule are unchanged.
+    expect(v.shortfall![0]).toEqual(['Execution cost', '>−0.01 bps']);
+    expect(JSON.stringify(v)).not.toMatch(/-0\.0 bps|−0\.0 bps/);
   });
   it('totals the API did not send are absent, not zero', () => {
     const w = describeOrders({ ...base, shortfall: { ...base.shortfall, totals: null } })!;

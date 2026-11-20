@@ -1,11 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import OAuthLinks from '../components/OAuthLinks';
 import { useAuth } from '../context/AuthContext';
 import { apiBase } from '../lib/apiBase';
+import AuthLayout from '../components/AuthLayout';
+import { Banner } from '../ui/Banner';
+import { Button } from '../ui/Button';
+import { Field } from '../ui/Field';
 
 export default function SignupPage() {
   const { login } = useAuth();
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -15,9 +23,9 @@ export default function SignupPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !confirmPassword || loading) return;
-    
+
     if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
+      setError('Use at least 8 characters for the password.');
       return;
     }
     if (password !== confirmPassword) {
@@ -43,7 +51,7 @@ export default function SignupPage() {
       }
 
       await login(data.accessToken);
-      window.location.href = '/dashboard';
+      router.push('/dashboard');
     } catch (err) {
       setError((err instanceof Error && err.message) || 'Something went wrong');
     } finally {
@@ -51,155 +59,40 @@ export default function SignupPage() {
     }
   };
 
-  const handleOAuth = (provider: 'google' | 'github') => {
-    const baseUrl = apiBase();
-    window.location.href = `${baseUrl}/auth/${provider}`;
-  };
-
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: '#0f0f0f', overflow: 'hidden', paddingBottom: '5rem', paddingTop: '48px' }}>
-      {/* Layer 2 — Atmospheric vignette */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none' }}>
-        <div style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          background: 'linear-gradient(to bottom, rgba(15,15,15,0.82) 0%, rgba(15,15,15,0.38) 35%, rgba(15,15,15,0.55) 65%, rgba(15,15,15,0.96) 100%)' 
-        }} />
-        <div style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          background: 'radial-gradient(ellipse 120% 80% at 50% 0%, transparent 40%, rgba(10,10,10,0.6) 100%)' 
-        }} />
+    <AuthLayout
+      title="Create an account"
+      intro="Create an account to see the audit of your own orders."
+      footer={<>Already have an account? <Link href="/login" className="text-ui-ink">Log in</Link>.</>}
+    >
+      <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+        <Field id="signup-email" label="Email" type="email" autoComplete="email" placeholder="name@example.com"
+          value={email} onChange={(e) => setEmail(e.target.value)} />
+        <Field id="signup-password" label="Password" type="password" autoComplete="new-password"
+          hint="At least 8 characters."
+          value={password} onChange={(e) => setPassword(e.target.value)} />
+        <Field id="signup-confirm" label="Confirm password" type="password" autoComplete="new-password"
+          value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+
+        {error && <Banner kind="refused" title="Sign up did not work">{error}</Banner>}
+
+        <Button type="submit" loading={loading} disabled={!email || !password || !confirmPassword}>
+          {loading ? 'Creating account' : 'Create account'}
+        </Button>
+        <p className="text-sm text-ui-graphite">
+          By creating an account you agree to the{' '}
+          <Link href="/terms" className="text-ui-ink">Terms of Service</Link> and the{' '}
+          <Link href="/privacy" className="text-ui-ink">Privacy Policy</Link>.
+        </p>
+      </form>
+
+      <div className="my-6 flex items-center gap-4" role="separator" aria-label="or">
+        <span className="h-px flex-1 bg-ui-rule" />
+        <span className="text-sm text-ui-graphite">or</span>
+        <span className="h-px flex-1 bg-ui-rule" />
       </div>
 
-      {/* Layer 3 — Content */}
-      <div style={{ position: 'relative', zIndex: 20, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
-        <div className="w-full max-w-[420px] relative overflow-hidden rounded-[3px]"
-             style={{
-               background: '#141412',
-               border: '1px solid rgba(167,139,113,0.2)',
-               padding: '0',
-               backdropFilter: 'blur(40px)',
-               boxShadow: '0 0 0 1px rgba(255,255,255,0.03) inset, 0 0 120px rgba(167,139,113,0.06), 0 60px 100px rgba(0,0,0,0.6)',
-             }}>
-             
-          <div style={{
-            height: '1px',
-            width: '100%',
-            background: 'linear-gradient(to right, transparent 0%, rgba(167,139,113,0.3) 15%, rgba(232,213,183,0.85) 50%, rgba(167,139,113,0.3) 85%, transparent 100%)',
-            position: 'relative',
-            zIndex: 1
-          }} />
-
-          <div className="px-[1.5rem] py-[2rem] sm:px-[2rem]">
-            <h1 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '0.5rem', textAlign: 'center' }}>
-              Create an account
-            </h1>
-            <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#8a8078', textAlign: 'center', marginBottom: '2rem' }}>
-              Join FillScore to analyze your trades
-            </p>
-
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              <div>
-                <label htmlFor="signup-email" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
-                  Email
-                </label>
-                <input id="signup-email"
-                  type="email"
-                  placeholder="name@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  style={{
-                    width: '100%', padding: '0.85rem 0.9rem',
-                    background: '#0f0f0f', border: '1px solid #2a2926',
-                    borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
-                    color: '#c8b898', outline: 'none'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="signup-password" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
-                  Password
-                </label>
-                <input id="signup-password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  style={{
-                    width: '100%', padding: '0.85rem 0.9rem',
-                    background: '#0f0f0f', border: '1px solid #2a2926',
-                    borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
-                    color: '#c8b898', outline: 'none'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="signup-confirm" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
-                  Confirm Password
-                </label>
-                <input id="signup-confirm"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  style={{
-                    width: '100%', padding: '0.85rem 0.9rem',
-                    background: '#0f0f0f', border: '1px solid #2a2926',
-                    borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
-                    color: '#c8b898', outline: 'none'
-                  }}
-                />
-              </div>
-
-              {error && (
-                <div style={{ padding: '0.75rem 0.9rem', background: 'rgba(192,57,43,0.07)', borderLeft: '2px solid rgba(192,57,43,0.65)', borderRadius: '0 2px 2px 0', fontFamily: 'var(--font-inter)', fontSize: '0.78rem', color: '#d9534f' }}>
-                  {error}
-                </div>
-              )}
-
-              <button type="submit" disabled={loading || !email || !password || !confirmPassword}
-                style={{
-                  width: '100%', marginTop: '0.5rem', padding: '0.925rem', borderRadius: '2px',
-                  fontFamily: 'var(--font-mono)', fontSize: '0.8rem', letterSpacing: '0.1em', fontWeight: 600,
-                  background: (loading || !email || !password || !confirmPassword) ? 'rgba(167,139,113,0.1)' : 'rgba(167,139,113,0.15)',
-                  color: (loading || !email || !password || !confirmPassword) ? 'rgba(167,139,113,0.5)' : '#d4c4b4',
-                  border: '1px solid rgba(167,139,113,0.3)',
-                  cursor: (loading || !email || !password || !confirmPassword) ? 'not-allowed' : 'pointer'
-                }}>
-                {loading ? 'Creating account...' : 'Sign Up'}
-              </button>
-              <p style={{ marginTop: '0.75rem', fontFamily: 'var(--font-inter)', fontSize: '0.72rem', lineHeight: 1.6, color: '#6a6560', textAlign: 'center' }}>
-                By creating an account you agree to the{' '}
-                <a href="/terms" style={{ color: '#a78b71', textDecoration: 'none' }}>Terms of Service</a>{' '}
-                and the{' '}
-                <a href="/privacy" style={{ color: '#a78b71', textDecoration: 'none' }}>Privacy Policy</a>.
-              </p>
-            </form>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', margin: '1.5rem 0' }}>
-              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
-              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.2em', color: '#3d3b38' }}>OR</span>
-              <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
-            </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              <button onClick={() => handleOAuth('google')} style={{ width: '100%', padding: '0.85rem', background: '#1a1917', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '2px', color: '#a09890', fontFamily: 'var(--font-inter)', fontSize: '0.85rem', cursor: 'pointer' }}>
-                Continue with Google
-              </button>
-              <button onClick={() => handleOAuth('github')} style={{ width: '100%', padding: '0.85rem', background: '#1a1917', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '2px', color: '#a09890', fontFamily: 'var(--font-inter)', fontSize: '0.85rem', cursor: 'pointer' }}>
-                Continue with GitHub
-              </button>
-            </div>
-
-            <p style={{ marginTop: '2rem', textAlign: 'center', fontFamily: 'var(--font-inter)', fontSize: '0.8rem', color: '#6a6560' }}>
-              Already have an account? <a href="/login" style={{ color: '#a78b71', textDecoration: 'none' }}>Log in</a>
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
+      <OAuthLinks />
+    </AuthLayout>
   );
 }

@@ -14,7 +14,7 @@ describe('the static copy of the panel', () => {
     for (const s of Object.values(PANEL_COPY)) expect(s, s).not.toMatch(ADVICE);
   });
   it('names the queue by what it holds', () => {
-    expect(PANEL_COPY.queueTitle).toBe('Orders that met a rule · measured');
+    expect(PANEL_COPY.queueTitle).toBe('Orders that met a rule');
   });
 });
 
@@ -80,7 +80,7 @@ describe('describeReplay', () => {
     it('lists each figure with its source field; a term that was not computed is "not computed"', () => {
         const v = describeReplay(200, replay);
         expect(v.figures).toEqual([
-            { label: 'Execution cost', value: '3.0 bps · $6.00', source: 'shortfall.executionBps', indent: false },
+            { label: 'Execution cost', value: '3.0 bps, $6.00', source: 'shortfall.executionBps', indent: false },
             { label: 'Spread paid', value: 'not computed', source: 'shortfall.spreadBps', indent: true },
         ]);
     });

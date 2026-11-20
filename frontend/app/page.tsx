@@ -398,15 +398,15 @@ export default function Home() {
                 >
                   <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(167,139,113,0.18), transparent)', margin: '1.5rem 0' }} />
 
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.3em', color: 'var(--gold, #a78b71)', opacity: 1, marginBottom: '1.25rem' }}>
+                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.3em', color: '#a78b71', opacity: 1, marginBottom: '1.25rem' }}>
                     02  /  AUTHENTICATE
                   </div>
                   
-                  <div style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.2rem', color: 'var(--text-primary, #ede8e0)', marginBottom: '1.5rem', fontWeight: 400 }}>
+                  <div style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.2rem', color: '#ede8e0', marginBottom: '1.5rem', fontWeight: 400 }}>
                     Sign in to connect {selectedExchange}
                   </div>
                   
-                  <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: 'var(--text-tertiary, #6a6560)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+                  <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#6a6560', marginBottom: '1.5rem', lineHeight: 1.6 }}>
                     FillScore requires an account to securely encrypt and store your read-only API keys.
                   </div>
 
@@ -427,7 +427,7 @@ export default function Home() {
                   {/* OR DIVIDER */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '1.25rem' }}>
                     <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.2em', color: 'var(--text-ghost, #3d3b38)', whiteSpace: 'nowrap' }}>OR</span>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.2em', color: '#3d3b38', whiteSpace: 'nowrap' }}>OR</span>
                     <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
                   </div>
 
@@ -589,21 +589,21 @@ export default function Home() {
       }}>
         <div style={{ maxWidth: '860px', margin: '0 auto', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0 }}>
           
-          <div className="trust-badge px-[0.875rem] text-[0.55rem] sm:px-[2rem] sm:text-[0.6rem]" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', color: 'var(--text-ghost, #3d3b38)', transition: 'color 0.2s ease' }}>
+          <div className="trust-badge px-[0.875rem] text-[0.55rem] sm:px-[2rem] sm:text-[0.6rem]" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', color: '#3d3b38', transition: 'color 0.2s ease' }}>
             <span style={{ fontSize: '0.7rem' }}>🔒</span>
             <span>Read-only keys only</span>
           </div>
 
           <div className="hidden sm:block" style={{ width: '1px', height: '10px', background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
           
-          <div className="trust-badge px-[0.875rem] text-[0.55rem] sm:px-[2rem] sm:text-[0.6rem]" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', color: 'var(--text-ghost, #3d3b38)', transition: 'color 0.2s ease' }}>
+          <div className="trust-badge px-[0.875rem] text-[0.55rem] sm:px-[2rem] sm:text-[0.6rem]" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', color: '#3d3b38', transition: 'color 0.2s ease' }}>
             <span style={{ fontSize: '0.7rem' }}>⚡</span>
             <span>AES-256-GCM encrypted</span>
           </div>
 
           <div className="hidden sm:block" style={{ width: '1px', height: '10px', background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
           
-          <div className="trust-badge px-[0.875rem] text-[0.55rem] sm:px-[2rem] sm:text-[0.6rem]" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', color: 'var(--text-ghost, #3d3b38)', transition: 'color 0.2s ease' }}>
+          <div className="trust-badge px-[0.875rem] text-[0.55rem] sm:px-[2rem] sm:text-[0.6rem]" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', color: '#3d3b38', transition: 'color 0.2s ease' }}>
             <span style={{ fontSize: '0.7rem' }}>◎</span>
             <span>No trading access</span>
           </div>

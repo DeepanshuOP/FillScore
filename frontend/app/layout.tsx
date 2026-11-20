@@ -1,27 +1,23 @@
 import type { Metadata } from 'next'
-import { Playfair_Display, Inter, JetBrains_Mono } 
-  from 'next/font/google'
+import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from './context/AuthContext'
 import OAuthRedirectHandler from './components/OAuthRedirectHandler'
 import SiteFooter from './components/SiteFooter'
 
-const playfair = Playfair_Display({
+// IBM Plex Sans for text and figures (equal-width default figures, measured in the design lab: 0.00 px spread);
+// IBM Plex Mono only for hashes, ids and the key fingerprint. Both are SIL OFL 1.1, self-hosted at build time.
+const plexSans = IBM_Plex_Sans({
   subsets: ['latin'],
-  style: ['normal', 'italic'],
-  variable: '--font-playfair',
+  weight: ['400', '500', '600'],
+  variable: '--font-plex-sans',
   display: 'swap',
 })
 
-const inter = Inter({
+const plexMono = IBM_Plex_Mono({
   subsets: ['latin'],
-  variable: '--font-inter',
-  display: 'swap',
-})
-
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ['latin'],
-  variable: '--font-mono',
+  weight: ['400', '500'],
+  variable: '--font-plex-mono',
   display: 'swap',
 })
 
@@ -36,16 +32,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html 
-      lang="en" 
-      data-theme="dark"
-      suppressHydrationWarning
-      className={`
-        ${playfair.variable} 
-        ${inter.variable} 
-        ${jetbrainsMono.variable}
-      `}
-    >
+    <html lang="en" suppressHydrationWarning className={`${plexSans.variable} ${plexMono.variable}`}>
       <body suppressHydrationWarning>
         <AuthProvider>
           <OAuthRedirectHandler />

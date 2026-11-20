@@ -10,13 +10,13 @@ describe('describeAsk', () => {
     const v = describeAsk(200, ok());
     expect(v.error).toBeNull();
     expect(v.answer).toBe('The measured score was A at 93.4.');
-    expect(v.meta).toBe('Read: score · 2 model calls');
+    expect(v.meta).toBe('Read: score. Used 2 model calls.');
     expect(v.values).toEqual(['score.grade: A', 'score.composite_score: 93.4']);
     expect(v.note).toBeNull();
   });
   it('a refusal (no tool) says how many calls were made and lists no values', () => {
     const v = describeAsk(200, ok({ answer: 'I can only answer ...', tools_used: [], n_calls: 1, values: [] }));
-    expect(v.meta).toBe('No data was read · 1 model call');
+    expect(v.meta).toBe('No data was read. Used 1 model call.');
     expect(v.values).toEqual([]);
   });
   it('a code-built answer is labelled as such, with its reason', () => {

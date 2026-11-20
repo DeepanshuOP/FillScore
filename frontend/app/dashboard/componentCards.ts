@@ -28,13 +28,13 @@ export function buildComponentCards(b: CardInput): ComponentCard[] {
   const m = b.componentMeans ?? null
   const tip = (v: number | null | undefined) => (m == null || v == null ? NO_SCORES_TOOLTIP : undefined)
   return [
-    { label: 'SLIPPAGE', key: 'slippage', score: show(m?.slippage), weight: '35%',
+    { label: 'Slippage', key: 'slippage', score: show(m?.slippage), weight: '35%',
       value: `${formatBps(b.avgSlippageBps)} avg`, description: 'Arrival price vs execution', tooltip: tip(m?.slippage) },
-    { label: 'LIQUIDITY PROVISION', key: 'fees', score: show(m?.fees), weight: '25%',
+    { label: 'Liquidity provision', key: 'fees', score: show(m?.fees), weight: '25%',
       value: `${Math.round(b.makerRatio * 100)}% maker`, description: 'Maker vs taker order ratio', tooltip: tip(m?.fees) },
-    { label: 'TIMING', key: 'timing', score: show(m?.timing), weight: '25%',
+    { label: 'Timing', key: 'timing', score: show(m?.timing), weight: '25%',
       value: `Best hour: ${b.bestHour}:00 UTC`, description: 'UTC session (rule-based)', tooltip: tip(m?.timing) },
-    { label: 'SPREAD', key: 'exchange', score: show(m?.spread), weight: '15%',
+    { label: 'Spread', key: 'exchange', score: show(m?.spread), weight: '15%',
       value: m?.spread == null ? '—' : 'Estimated spread score', description: 'Estimated spread at execution', tooltip: tip(m?.spread) },
   ]
 }

@@ -455,7 +455,7 @@ export default function OnboardingPage() {
                       </div>
                       <span style={{
                         marginTop: '0.5rem', fontFamily: 'var(--font-mono)', fontSize: '0.65rem',
-                        color: 'var(--text-tertiary, #6a6560)'
+                        color: '#6a6560'
                       }}>
                         {ex.desc}
                       </span>

@@ -33,7 +33,9 @@ test('settings: a read-only API key is shown once, reads the account, cannot do 
   await expect(page.getByText(`${key!.slice(0, 12)}…`)).toBeVisible()
   expect(await page.content()).not.toContain(key!.slice(13))
 
-  await page.getByRole('button', { name: 'Revoke' }).click()
+  // 2026-11-20: Revoke is the destructive button with its confirm step: the first click arms it, the second acts
+  await page.getByRole('button', { name: 'Revoke', exact: true }).click()
+  await page.getByRole('button', { name: 'Revoke key', exact: true }).click()
   await expect(page.getByText('Key revoked. It stopped working at once.')).toBeVisible()
   expect((await page.request.get(`${API}/api/audit/orders-summary`, { headers: bearer })).status()).toBe(401)
 })

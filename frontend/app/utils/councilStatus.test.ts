@@ -190,11 +190,61 @@ describe('councilScopeLabel', () => {
 // The Council panel must not render a letter grade; the only one on the page is the FillScore grade (2c.A6).
 import { readFileSync } from 'node:fs';
 describe('AgentCouncil panel source', () => {
-    it('renders no grade glyph and says "Council assessment"', () => {
+    it('renders no grade glyph and carries the heading renamed by order of 2026-11-20', () => {
         const src = readFileSync(`${__dirname}/../components/AgentCouncil.tsx`, 'utf8');
         expect(src).not.toMatch(/view\.grade|overallToGrade|text-4xl/);
-        expect(src).toContain('Council assessment');
+        expect(src).toContain('Explanation (language model; every number was checked against the audit)');
+        expect(src).not.toContain('Council assessment');
         expect(src).not.toContain('Council Verdict');
         expect(src).not.toMatch(/Confidence|evidence keys/);
+    });
+    it('uses no slate classes, hex colours, uppercase or animation of its own', () => {
+        const src = readFileSync(`${__dirname}/../components/AgentCouncil.tsx`, 'utf8');
+        expect(src).not.toMatch(/slate-|#[0-9a-fA-F]{3,6}\b|rgba?\(|uppercase|tracking-|animate-|transition-|violet-|emerald-|amber-|red-\d/);
+    });
+});
+
+// ── 2026-11-20 display changes: labels and phrases only; stored keys are unchanged ──────────
+import { agentLabel, ratingWords, alphaRatingPhrase, alphaBenchmarkNote, flagText } from './councilStatus';
+
+describe('agentLabel', () => {
+    it('shows the alpha specialist as Benchmark Reviewer; the stored key stays alpha_architect', () => {
+        expect(agentLabel('alpha_architect')).toBe('Benchmark Reviewer');
+        expect(agentLabel('liquidity_scout')).toBe('Liquidity Scout');
+        expect(agentLabel('risk_auditor')).toBe('Risk Auditor');
+        expect(agentLabel('fee_optimizer')).toBe('Fee Optimizer');
+        expect(agentLabel('unknown_agent')).toBe('unknown_agent');
+        expect(Object.keys(verdictCardsFromResult({ alpha: { alphaRating: 'NEUTRAL' } }))).toContain('alpha_architect');
+    });
+});
+
+describe('ratingWords and alphaRatingPhrase', () => {
+    it('writes a rating in words', () => {
+        expect(ratingWords('SEVERELY_NEGATIVE')).toBe('severely negative');
+        expect(ratingWords('POSITIVE')).toBe('positive');
+        expect(ratingWords('')).toBe('');
+    });
+    it('phrases the benchmark rating', () => {
+        expect(alphaRatingPhrase('NEUTRAL')).toBe('Versus the benchmark: neutral');
+        expect(alphaRatingPhrase('SEVERELY_NEGATIVE')).toBe('Versus the benchmark: severely negative');
+        expect(alphaRatingPhrase('')).toBe('');
+    });
+});
+
+describe('alphaBenchmarkNote', () => {
+    // ml-service/agents/metrics/alpha_packet.py: deviation is against vwap5m, the 5-minute VWAP at execution, market orders only
+    it('names the benchmark when there is one', () => {
+        expect(alphaBenchmarkNote([])).toBe('Benchmark: the 5-minute volume-weighted average price (VWAP) at the time of each market order');
+    });
+    it('shows nothing when the run flagged that no VWAP benchmark was available', () => {
+        expect(alphaBenchmarkNote(['no_vwap_benchmark_available'])).toBe('');
+    });
+});
+
+describe('flagText', () => {
+    it('is sentence case for tags and leaves sentences alone', () => {
+        expect(flagText('high_taker_streak')).toBe('High taker streak');
+        expect(flagText('zero_market_orders')).toBe('No market orders');
+        expect(flagText('Adverse selection occurred.')).toBe('Adverse selection occurred.');
     });
 });

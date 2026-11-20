@@ -7,7 +7,7 @@ import { councilErrorMessage } from '../utils/councilStatus';
 export const ASK_COPY = {
   title: 'Ask about your past executions',
   hint: 'Questions about your score, what your orders cost and which orders cost the most. Answers use only your stored measurements.',
-  button: 'ASK',
+  button: 'Ask',
   placeholder: 'For example: which orders cost the most?',
 } as const;
 
@@ -29,7 +29,7 @@ export function describeAsk(status: number, body: unknown): AskView {
   const calls = `${b.n_calls} model call${b.n_calls === 1 ? '' : 's'}`;
   return {
     error: null, answer: b.answer,
-    meta: b.tools_used.length ? `Read: ${b.tools_used.join(', ')} · ${calls}` : `No data was read · ${calls}`,
+    meta: b.tools_used.length ? `Read: ${b.tools_used.join(', ')}. Used ${calls}.` : `No data was read. Used ${calls}.`,
     values: b.values.map(v => `${v.placeholder}: ${v.shown}`),
     note: b.degraded && b.fallback ? `Written by code from the measured values, because ${b.fallback}.` : null,
   };

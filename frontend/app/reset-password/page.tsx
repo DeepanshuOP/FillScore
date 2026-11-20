@@ -1,9 +1,14 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { mapOnboardingError } from '../utils/errorMapping';
 import { apiBase } from '../lib/apiBase';
+import AuthLayout from '../components/AuthLayout';
+import { Banner } from '../ui/Banner';
+import { Button } from '../ui/Button';
+import { Field } from '../ui/Field';
 
 function ResetPasswordContent() {
   const searchParams = useSearchParams();
@@ -18,25 +23,14 @@ function ResetPasswordContent() {
 
   if (!token) {
     return (
-      <div className="px-[1.5rem] py-[2rem] sm:px-[2rem]" style={{ textAlign: 'center' }}>
-        <h1 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '1rem' }}>
-          Invalid Reset Link
-        </h1>
-        <div style={{ padding: '1rem', background: 'rgba(192,57,43,0.07)', borderLeft: '2px solid rgba(192,57,43,0.65)', borderRadius: '0 2px 2px 0', marginBottom: '1.5rem', textAlign: 'left' }}>
-          <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#d9534f', margin: 0 }}>
+      <AuthLayout title="Reset link not valid">
+        <div className="flex flex-col gap-5">
+          <Banner kind="refused" title="The link did not work">
             This reset link is invalid or has expired.
-          </p>
+          </Banner>
+          <Link href="/forgot-password" className="text-ui-ink">Request a new reset link</Link>
         </div>
-        <a href="/forgot-password"
-          style={{
-            display: 'inline-block', width: '100%', padding: '0.925rem', borderRadius: '2px',
-            fontFamily: 'var(--font-mono)', fontSize: '0.8rem', letterSpacing: '0.1em', fontWeight: 600,
-            background: 'rgba(167,139,113,0.15)', color: '#d4c4b4', border: '1px solid rgba(167,139,113,0.3)',
-            textDecoration: 'none'
-          }}>
-          Request a new reset link
-        </a>
-      </div>
+      </AuthLayout>
     );
   }
 
@@ -72,155 +66,48 @@ function ResetPasswordContent() {
   };
 
   return (
-    <div className="px-[1.5rem] py-[2rem] sm:px-[2rem]">
-      <h1 style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.6rem', color: '#ede8e0', fontWeight: 400, marginBottom: '0.5rem', textAlign: 'center' }}>
-        Set new password
-      </h1>
-      <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#8a8078', textAlign: 'center', marginBottom: '2rem' }}>
-        Enter and confirm your new password below.
-      </p>
-
+    <AuthLayout
+      title="Set new password"
+      intro="Enter and confirm your new password below."
+      footer={<Link href="/login" className="text-ui-ink">Back to log in</Link>}
+    >
       {success ? (
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ padding: '1rem', background: 'rgba(167,139,113,0.08)', border: '1px solid rgba(167,139,113,0.25)', borderRadius: '2px', marginBottom: '1.5rem' }}>
-            <p style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#ede8e0', lineHeight: 1.5, margin: 0 }}>
-              Password updated. You&apos;ve been signed out on all devices.
-            </p>
-          </div>
-          <a href="/login"
-            style={{
-              display: 'inline-block', width: '100%', padding: '0.925rem', borderRadius: '2px',
-              fontFamily: 'var(--font-mono)', fontSize: '0.8rem', letterSpacing: '0.1em', fontWeight: 600,
-              background: 'rgba(167,139,113,0.15)', color: '#d4c4b4', border: '1px solid rgba(167,139,113,0.3)',
-              textDecoration: 'none'
-            }}>
-            Log In
-          </a>
+        <div className="flex flex-col gap-5">
+          <Banner kind="info" title="Password updated">
+            You were signed out on all devices.
+          </Banner>
+          <Link href="/login" className="text-ui-ink">Log in</Link>
         </div>
       ) : (
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.375rem' }}>
-              <label htmlFor="reset-password" style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
-                New Password
-              </label>
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                style={{ background: 'none', border: 'none', color: '#a78b71', fontFamily: 'var(--font-mono)', fontSize: '0.65rem', cursor: 'pointer', padding: 0 }}>
-                {showPassword ? 'HIDE' : 'SHOW'}
-              </button>
-            </div>
-            <input id="reset-password"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="At least 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={{
-                width: '100%', padding: '0.85rem 0.9rem',
-                background: '#0f0f0f', border: '1px solid #2a2926',
-                borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
-                color: '#c8b898', outline: 'none'
-              }}
-            />
-            {password.length > 0 && !isPasswordValid && (
-              <p style={{ marginTop: '0.35rem', fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#8a8078' }}>
-                Password must be at least 8 characters.
-              </p>
-            )}
-          </div>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+          <Field id="reset-password" label="New password" type={showPassword ? 'text' : 'password'}
+            autoComplete="new-password" placeholder="At least 8 characters"
+            error={password.length > 0 && !isPasswordValid ? 'Use at least 8 characters.' : undefined}
+            value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Field id="reset-confirm" label="Confirm password" type={showPassword ? 'text' : 'password'}
+            autoComplete="new-password" placeholder="Repeat your new password"
+            error={confirmPassword.length > 0 && !doPasswordsMatch ? 'Passwords do not match.' : undefined}
+            value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+          <Button variant="quiet" className="self-start" aria-pressed={showPassword}
+            onClick={() => setShowPassword(!showPassword)}>
+            {showPassword ? 'Hide passwords' : 'Show passwords'}
+          </Button>
 
-          <div>
-            <label htmlFor="reset-confirm" style={{ display: 'block', marginBottom: '0.375rem', fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.14em', textTransform: 'uppercase', color: 'var(--text-tertiary, #6a6560)' }}>
-              Confirm Password
-            </label>
-            <input id="reset-confirm"
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Repeat your new password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              style={{
-                width: '100%', padding: '0.85rem 0.9rem',
-                background: '#0f0f0f', border: '1px solid #2a2926',
-                borderRadius: '2px', fontFamily: 'var(--font-mono)', fontSize: '0.82rem',
-                color: '#c8b898', outline: 'none'
-              }}
-            />
-            {confirmPassword.length > 0 && !doPasswordsMatch && (
-              <p style={{ marginTop: '0.35rem', fontFamily: 'var(--font-inter)', fontSize: '0.75rem', color: '#d9534f' }}>
-                Passwords do not match.
-              </p>
-            )}
-          </div>
+          {error && <Banner kind="refused" title="Update did not work">{error}</Banner>}
 
-          {error && (
-            <div style={{ padding: '0.75rem 0.9rem', background: 'rgba(192,57,43,0.07)', borderLeft: '2px solid rgba(192,57,43,0.65)', borderRadius: '0 2px 2px 0', fontFamily: 'var(--font-inter)', fontSize: '0.78rem', color: '#d9534f' }}>
-              {error}
-            </div>
-          )}
-
-          <button type="submit" disabled={!canSubmit}
-            style={{
-              width: '100%', marginTop: '0.5rem', padding: '0.925rem', borderRadius: '2px',
-              fontFamily: 'var(--font-mono)', fontSize: '0.8rem', letterSpacing: '0.1em', fontWeight: 600,
-              background: !canSubmit ? 'rgba(167,139,113,0.1)' : 'rgba(167,139,113,0.15)',
-              color: !canSubmit ? 'rgba(167,139,113,0.5)' : '#d4c4b4',
-              border: '1px solid rgba(167,139,113,0.3)',
-              cursor: !canSubmit ? 'not-allowed' : 'pointer'
-            }}>
-            {loading ? 'Updating...' : 'Update Password'}
-          </button>
+          <Button type="submit" loading={loading} disabled={!canSubmit}>
+            {loading ? 'Updating' : 'Update password'}
+          </Button>
         </form>
       )}
-
-      <p style={{ marginTop: '2rem', textAlign: 'center', fontFamily: 'var(--font-inter)', fontSize: '0.8rem', color: '#6a6560' }}>
-        <a href="/login" style={{ color: '#a78b71', textDecoration: 'none' }}>Back to login</a>
-      </p>
-    </div>
+    </AuthLayout>
   );
 }
 
 export default function ResetPasswordPage() {
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', background: '#0f0f0f', overflow: 'hidden', paddingBottom: '5rem', paddingTop: '48px' }}>
-      {/* Layer 2 — Atmospheric vignette */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none' }}>
-        <div style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          background: 'linear-gradient(to bottom, rgba(15,15,15,0.82) 0%, rgba(15,15,15,0.38) 35%, rgba(15,15,15,0.55) 65%, rgba(15,15,15,0.96) 100%)' 
-        }} />
-        <div style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          background: 'radial-gradient(ellipse 120% 80% at 50% 0%, transparent 40%, rgba(10,10,10,0.6) 100%)' 
-        }} />
-      </div>
-
-      {/* Layer 3 — Content */}
-      <div style={{ position: 'relative', zIndex: 20, display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
-        <div className="w-full max-w-[420px] relative overflow-hidden rounded-[3px]"
-             style={{
-               background: '#141412',
-               border: '1px solid rgba(167,139,113,0.2)',
-               padding: '0',
-               backdropFilter: 'blur(40px)',
-               boxShadow: '0 0 0 1px rgba(255,255,255,0.03) inset, 0 0 120px rgba(167,139,113,0.06), 0 60px 100px rgba(0,0,0,0.6)',
-             }}>
-             
-          <div style={{
-            height: '1px',
-            width: '100%',
-            background: 'linear-gradient(to right, transparent 0%, rgba(167,139,113,0.3) 15%, rgba(232,213,183,0.85) 50%, rgba(167,139,113,0.3) 85%, transparent 100%)',
-            position: 'relative',
-            zIndex: 1
-          }} />
-
-          <Suspense fallback={<div className="px-[1.5rem] py-[2rem] text-center" style={{ color: '#8a8078', fontFamily: 'var(--font-inter)' }}>Loading...</div>}>
-            <ResetPasswordContent />
-          </Suspense>
-        </div>
-      </div>
-    </div>
+    <Suspense fallback={<AuthLayout title="Loading">{null}</AuthLayout>}>
+      <ResetPasswordContent />
+    </Suspense>
   );
 }

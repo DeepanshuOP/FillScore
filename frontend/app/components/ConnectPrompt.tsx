@@ -1,69 +1,24 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
+import { EmptyState } from '../ui/EmptyState';
 
+/** The dashboard of a signed-in account with nothing scored yet: what is missing, and the next step. */
 export default function ConnectPrompt() {
   return (
-    <div style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: '4rem 2rem', textAlign: 'center',
-      background: '#161614', border: '1px solid rgba(255,255,255,0.08)',
-      borderRadius: '4px', maxWidth: '600px', margin: '4rem auto'
-    }}>
-      <h2 style={{
-        fontFamily: 'var(--font-playfair)', fontStyle: 'italic',
-        fontSize: '2rem', color: '#ede8e0', marginBottom: '1rem',
-        letterSpacing: '-0.02em'
-      }}>
-        No trades yet
-      </h2>
-      <p style={{
-        fontFamily: 'var(--font-inter)', fontSize: '0.9rem',
-        color: '#888078', marginBottom: '2rem', lineHeight: 1.5,
-        maxWidth: '400px'
-      }}>
-        No scored trades were found for your account in the period last synced. Sync again, optionally over a longer period, to audit your past fills.
-      </p>
-      
-      <Link href="/onboarding" style={{
-        display: 'inline-block',
-        background: '#a78b71', color: '#0f0f0f',
-        padding: '12px 24px', borderRadius: '3px',
-        fontFamily: 'var(--font-mono)', fontSize: '0.75rem',
-        letterSpacing: '0.1em', textDecoration: 'none',
-        fontWeight: 600, transition: 'background 0.2s ease',
-        marginBottom: '1.5rem'
-      }}
-      onMouseEnter={e => e.currentTarget.style.background = '#c4a882'}
-      onMouseLeave={e => e.currentTarget.style.background = '#a78b71'}
+    <div className="mx-auto max-w-2xl">
+      <EmptyState
+        title="No trades yet"
+        action={
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+            <Link href="/onboarding" className="no-underline"><span className="inline-flex min-h-10 items-center rounded-ui border border-ui-ink bg-ui-ink px-4 py-2 text-sm font-medium text-ui-surface">Sync again</span></Link>
+            <Link href="/check" className="text-sm text-ui-ink">Trades in a broker app? Check a trade-history file</Link>
+            <Link href="/dashboard?userId=demo-disciplined&sample=1" className="text-sm text-ui-ink">View the sample dashboard</Link>
+          </div>
+        }
       >
-        SYNC AGAIN
-      </Link>
-
-      <Link href="/check" style={{
-        fontFamily: 'var(--font-mono)', fontSize: '0.7rem', color: '#a78b71', textDecoration: 'none', letterSpacing: '0.05em', marginBottom: '1rem',
-      }}>
-        Trades in a broker app? Check a trade-history file
-      </Link>
-
-      <Link href="/dashboard?userId=demo-disciplined&sample=1" style={{
-        fontFamily: 'var(--font-mono)', fontSize: '0.7rem',
-        color: '#888078', textDecoration: 'none', letterSpacing: '0.05em',
-        transition: 'color 0.2s ease', marginBottom: '3rem'
-      }}
-      onMouseEnter={e => e.currentTarget.style.color = '#c4a882'}
-      onMouseLeave={e => e.currentTarget.style.color = '#888078'}
-      >
-        View sample dashboard
-      </Link>
-
-      <div style={{
-        fontFamily: 'var(--font-mono)', fontSize: '0.6rem',
-        color: '#484844', letterSpacing: '0.1em',
-        display: 'flex', alignItems: 'center', gap: '6px'
-      }}>
-        <span>🔒</span> Read-only API keys. We never request withdrawal access.
-      </div>
+        No scored trades were found for your account in the period last synced. Sync again, optionally over a longer period, to audit your past fills. Exchange keys are read-only; FillScore never asks for withdrawal access.
+      </EmptyState>
     </div>
   );
 }

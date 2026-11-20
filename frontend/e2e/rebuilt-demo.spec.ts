@@ -5,7 +5,12 @@ import { reshapeDemoAsRebuilt } from './db'
 // M2 closing task (decision 11, option A). demo-aggressive is reshaped, in the local e2e database only, into what the
 // M2 seed produces: trades with no per-trade v1 fields, plus orders and order measurements. The real backend and the
 // real pages then answer. Every v1-only view must say "not computed for this data" (never 0), and the measured views
-// (v2 components, order outcomes, resting time, shortfall, unfilled orders) must be shown.
+// (headline, order outcomes, resting time, shortfall, unfilled orders) must be shown.
+//
+// 2026-11-20 (dashboard rebuilt, M8 part 1): the markup changed, the facts under test did not. Each assertion below keeps its
+// hand value and is read from the new structure: the header cards became the "scope facts" of the headline, the cost lines
+// of the score panel became the headline sentence and the "Where the money went" table, and the order lines became a
+// description list and a sortable table. The old "est-cost-not-computed" card is gone with the cards.
 const ID = 'demo-aggressive'
 
 test.beforeAll(async () => { await reshapeDemoAsRebuilt(ID) })
@@ -14,42 +19,39 @@ test('dashboard of a rebuilt demo: v1-only views say "not computed", measured vi
   await page.goto(`/dashboard?userId=${ID}`)
   await expect(page.getByTestId('score-v1-label')).toBeVisible({ timeout: 30_000 })
 
-  // v1-only views
-  await expect(page.getByTestId('est-cost-not-computed')).toHaveText(/not computed for this data/i)
+  // v1-only views: the rule-based details say so, inside their disclosure
+  await page.getByRole('button', { name: 'Show the rule-based components' }).click()
   const notComputed = page.getByTestId('not-computed')
-  await expect(notComputed.first()).toBeVisible()
-  expect(await notComputed.count()).toBeGreaterThanOrEqual(3)     // component scores, cost breakdown, venue/coach
-  await expect(page.getByTestId('est-cost-not-computed')).not.toContainText('$')   // never a made-up zero cost
+  await expect(notComputed).toBeVisible()
+  await expect(notComputed).toContainText(/not computed for this data/i)
+
+  // the headline never makes up a figure: the total is the measured total of the orders (hand value, see below)
+  // (3 of the 5 orders carry a measured total: one was not measured and one did not fill; the sentence says "3 orders")
+  await expect(page.getByRole('heading', { name: 'The 3 orders paid $15.00 in total.' })).toBeVisible()
 
   // measured views
-  await expect(page.getByTestId('score-v2')).toContainText(/Measured score/i)
   const orders = page.getByTestId('orders-panel')
   await expect(orders).toBeVisible()
-  await expect(orders).toContainText('Orders: 5')
-  await expect(orders).toContainText('Filled: 3')
-  await expect(orders).toContainText('Unfilled: 1')
+  await expect(orders).toContainText(/Orders\s*5(?!\d)/)
+  await expect(orders).toContainText(/Filled\s*3(?!\d)/)
+  await expect(orders).toContainText(/Unfilled\s*1(?!\d)/)
   await expect(page.getByTestId('orders-resting')).toContainText('Median 3.0 s')
-  await expect(page.getByTestId('orders-shortfall')).toContainText('Execution cost: 2.0 bps')
+  await expect(page.getByTestId('orders-shortfall')).toContainText(/Execution cost\s*2\.0 bps/)
   await expect(page.getByTestId('orders-unfilled')).toContainText('7.0 bps')
 
   expect(findAdviceTerms(await orders.innerText())).toEqual([])
 })
 
 // Live-site review of the rebuilt demo (2026-11-14), items 1 to 4 and 6, against the real backend and pages.
-test('header cards come from the current fills and orders, not from the stored v1 audit', async ({ page }) => {
+test('the scope facts come from the current fills and orders, not from the stored v1 audit', async ({ page }) => {
   await page.goto(`/dashboard?userId=${ID}`)
   await expect(page.getByTestId('score-v1-label')).toBeVisible({ timeout: 30_000 })
   // 3 fills of $420 in 5 orders, none a maker fill (reshapeDemoAsRebuilt)
-  await expect(page.getByText('FILLS ANALYSED')).toBeVisible()
-  await expect(page.getByTestId('header-trades')).toHaveText('3')
-  await expect(page.getByTestId('header-trades-sub')).toHaveText('in 5 orders')
-  await expect(page.getByTestId('header-volume')).toHaveText('$1,260.00')
-  await expect(page.getByTestId('header-maker')).toContainText('0% of fills')
+  const facts = page.getByTestId('scope-facts')
+  await expect(facts).toContainText(/Fills\s*3, in 5 orders/)
+  await expect(facts).toContainText(/Value traded\s*\$1,260\.00/)
+  await expect(facts).toContainText(/Maker share of fills\s*0%/)
   await expect(page.getByText('TRADES ANALYSED')).toHaveCount(0)
-  // item 6: the card that links to the trades table no longer promises per-trade scores
-  await expect(page.getByText('See every fill')).toBeVisible()
-  await expect(page.getByText(/Per-trade scores not computed for this data/)).toBeVisible()
-  await expect(page.getByText('Sortable table · Per-trade scores · Full breakdown')).toHaveCount(0)
 })
 
 test('no negative zero; totals per term in USD and bps; grammar of the unfilled note', async ({ page }) => {
@@ -57,39 +59,46 @@ test('no negative zero; totals per term in USD and bps; grammar of the unfilled 
   const orders = page.getByTestId('orders-panel')
   await expect(orders).toBeVisible({ timeout: 30_000 })
   const text = await orders.innerText()
-  expect(text).not.toMatch(/-0\.0 bps|-\$0\.00/)
-  await expect(page.getByTestId('orders-shortfall')).toContainText('Impact and timing: >-0.01 bps')
+  expect(text).not.toMatch(/-0\.0 bps|−0\.0 bps|-\$0\.00|−\$0\.00/)
+  await expect(page.getByTestId('orders-shortfall')).toContainText(/Impact and timing\s*>−0\.01 bps/)   // true minus sign
   // hand values (see reshapeDemoAsRebuilt): execution $2 + $8 + $0 = $10 over $35,000 = 2.9 bps; fees $30 = 8.6 bps;
   // unfilled orders 7 bps x $5,000 = $3.50 over $35,000 = 1.0 bps; total $2.50 + $9 + $3.50 = $15 = 4.3 bps
   const totals = page.getByTestId('orders-totals')
-  await expect(totals).toContainText('Execution cost: $10.00 · 2.9 bps')
-  await expect(totals).toContainText('Spread paid: $3.00 · 1.0 bps')
-  await expect(totals).toContainText('Fees: $30.00 · 8.6 bps')
-  await expect(totals).toContainText('Unfilled orders: $3.50 · 1.0 bps')
-  await expect(totals).toContainText('Total: $15.00 · 4.3 bps')
-  await expect(totals).toContainText('Impact and timing: >-$0.01 · >-0.01 bps')
+  const row = (term: string) => totals.getByRole('row', { name: new RegExp(`^${term}\\b`) })
+  await expect(row('Execution cost')).toContainText('$10.00')
+  await expect(row('Execution cost')).toContainText('2.9 bps')
+  await expect(row('Spread paid')).toContainText('$3.00')
+  await expect(row('Spread paid')).toContainText('1.0 bps')
+  await expect(row('Fees')).toContainText('$30.00')
+  await expect(row('Fees')).toContainText('8.6 bps')
+  await expect(row('Unfilled orders')).toContainText('$3.50')
+  await expect(row('Unfilled orders')).toContainText('1.0 bps')
+  await expect(row('Total')).toContainText('$15.00')
+  await expect(row('Total')).toContainText('4.3 bps')
+  await expect(row('Impact and timing')).toContainText('>−$0.01')
+  await expect(row('Impact and timing')).toContainText('>−0.01 bps')
   // one unfilled order in this fixture: "its"
   await expect(page.getByTestId('orders-unfilled')).toContainText('its median cost')
 })
 
-test('v2.3.0 panel: dollar costs beside the letter, components named after the shortfall terms, timing as information', async ({ page }) => {
+test('headline and record: dollar total, the cost sentence, components named after the shortfall terms, timing as information', async ({ page }) => {
   await page.goto(`/dashboard?userId=${ID}`)
+  // hand values of reshapeDemoAsRebuilt: total $15.00 (4.3 bps) over the 3 orders that carry a measured total
+  const headline = page.getByTestId('headline')
+  await expect(headline).toBeVisible({ timeout: 30_000 })
+  await expect(headline).toContainText('The 3 orders paid $15.00 in total.')
+  await expect(headline).toContainText('The total is 4.3 bps of the value ordered. 1 order was not measured and is not in it.')
+  // the record behind the grade, inside its disclosure
+  await page.getByRole('button', { name: 'Components, version and integrity hash' }).click()
   const v2 = page.getByTestId('score-v2')
-  await expect(v2).toBeVisible({ timeout: 30_000 })
-  // hand values of reshapeDemoAsRebuilt: execution $10.00 (2.9 bps), unfilled orders $3.50 (1.0 bps), fees $30.00 (8.6 bps), total $15.00 (4.3 bps)
-  const costs = page.getByTestId('score-v2-costs')
-  await expect(costs).toBeVisible()
-  await expect(costs).toContainText('Execution cost: $10.00 · 2.9 bps')
-  await expect(costs).toContainText('Unfilled orders: $3.50 · 1.0 bps')
-  await expect(costs).toContainText('Fees: $30.00 · 8.6 bps')
-  await expect(costs).toContainText('Total: $15.00 · 4.3 bps')
+  await expect(v2).toBeVisible()
   const text = await v2.innerText()
   for (const name of ['Execution cost', 'Fees', 'Unfilled orders']) expect(text).toContain(name)
   expect(text).not.toMatch(/Slippage|Spread:/)                  // the old component names are gone from the panel
   await expect(page.getByTestId('score-v2-timing')).toHaveText('Timing, not scored: No material difference between hours.')
-  // M3 §2: cost vs expected beside the letter, past tense, with its interval (numbers come from the offline build; the pattern is checked, not the values)
-  await expect(page.getByTestId('score-v2-cost-vs-expected')).toHaveText(
-    /^Market orders cost -?[\d.]+ bps against -?[\d.]+ bps, the modelled cost of a taker event of the same size in the hour before the order \(fitted on January 2024\) \(difference [+-]?[\d.]+ bps; 90% interval [+-]?[\d.]+ bps to [+-]?[\d.]+ bps, a bootstrap over orders that leaves out the model's own error; \d+ orders\)\.$/)
+  // M3 §2: cost against expected, one past-tense sentence with its interval (numbers come from the offline build; the pattern is checked, not the values)
+  await expect(page.getByTestId('cost-sentence')).toHaveText(
+    /^Market orders cost [<>]?[−\d.]+ bps against [<>]?[−\d.]+ bps expected: difference [<>]?[+−]?[\d.]+ bps, 90% interval [<>]?[+−]?[\d.]+ bps to [<>]?[+−]?[\d.]+ bps, \d+ orders\.$/)
 })
 
 test('M4 panel on a rebuilt demo: insufficient data for the queue, "too few to tell" in the rankings, no review controls, offline-build badge', async ({ page }) => {

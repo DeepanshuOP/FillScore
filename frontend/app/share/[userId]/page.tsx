@@ -39,7 +39,7 @@ export default async function SharePage({ params }: Props) {
   
   if (!res.ok) {
     return (
-      <div style={{ minHeight: '100vh', background: 'var(--bg-base, #0f0f0f)', color: '#ede8e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ minHeight: '100vh', background: '#0f0f0f', color: '#ede8e0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <p style={{ fontFamily: 'var(--font-mono)' }}>This score card is no longer available.</p>
       </div>
     );
@@ -75,8 +75,8 @@ export default async function SharePage({ params }: Props) {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'var(--bg-base, #0f0f0f)',
-      color: 'var(--text-primary, #ede8e0)',
+      background: '#0f0f0f',
+      color: '#ede8e0',
       fontFamily: 'var(--font-inter)',
       display: 'flex',
       flexDirection: 'column',

@@ -1,10 +1,10 @@
 /*
- * FillScore design tokens, M8 phase 2a (2026-11-19). Two candidate sets on the same components; the winner ships
- * and the other is deleted (Q3: exactly one theme, no toggle). The selector is the data attribute the design lab sets
- * on its wrapper, so nothing here touches a production screen: no rule below matches a page that has no
- * data-ui-theme ancestor.
+ * FillScore design tokens, production (M8 phase 2b part 1, 2026-11-20). One theme: direction A "Audit report" (light),
+ * chosen by Deepanshu on 2026-11-20. There is no toggle and no second set here; direction B and the other font
+ * candidates live only in app/design-lab/lab-tokens.css.
  *
- * The contrast test (app/ui/contrast.test.ts) parses THIS file. Do not move a value into TypeScript.
+ * The contrast test (app/ui/contrast.test.ts) parses THIS file for A and lab-tokens.css for B. Do not move a value into
+ * TypeScript.
  *
  * A "Audit report" (light). Colours given by Deepanshu: ledger #F5F6F3, ink #1C2127, graphite #59616B, rule #D9DCD6,
  *   audit blue #2B4BB5 (the "measured" annotation colour), ochre #A86F12 (insufficient data).
@@ -13,12 +13,9 @@
  *   --ui-edge       #7A828B  border of a control (3.59:1 on ledger, 3.89:1 on white; rule is 1.28:1 and is a separator only)
  *   --ui-insufficient-text #8A5A0B  ochre as TEXT: #A86F12 is 3.91:1 on ledger, below 4.5; ochre stays for marks (3:1 suffices)
  *   --ui-danger     #A3261F  destructive action and refusal (6.78:1 on ledger)
- * B "Tape" (dark). Given: slate #1D2227, raised #252B31, ink #E7E9EB, graphite #9AA2AB, tape #3A424A, signal #6CC4D9
- *   (measured), amber #D9A441 (insufficient data). Added: --ui-edge #737D87 (3.83:1 on slate, 3.41:1 on raised),
- *   --ui-danger #F0857D (6.38:1 on slate).
  * Money is never coloured good or bad: no token below means "profit" or "loss". Grades keep their own set (gradeColor.ts).
  */
-[data-ui-theme="a"] {
+:root, [data-ui-theme="a"] {
   color-scheme: light;
   --ui-surface: #F5F6F3;
   --ui-raised: #FFFFFF;
@@ -35,26 +32,9 @@
   --ui-focus: #2B4BB5;
 }
 
-[data-ui-theme="b"] {
-  color-scheme: dark;
-  --ui-surface: #1D2227;
-  --ui-raised: #252B31;
-  --ui-ink: #E7E9EB;
-  --ui-graphite: #9AA2AB;
-  --ui-rule: #3A424A;
-  --ui-edge: #737D87;
-  --ui-measured: #6CC4D9;
-  --ui-on-measured: #1D2227;
-  --ui-insufficient: #D9A441;
-  --ui-insufficient-text: #D9A441;
-  --ui-danger: #F0857D;
-  --ui-on-danger: #1D2227;
-  --ui-focus: #6CC4D9;
-}
-
-/* Type: one family for text and figures (the lab sets --ui-font from the candidate being shown), a code face only for
-   code-like content (hashes, ids, the key fingerprint). Scale of six steps (px): 12 14 16 20 28 40. */
-[data-ui-theme] {
+/* Type: one family for text and figures, a code face only for code-like content (hashes, ids, the key fingerprint).
+   Scale of six steps (px): 12 14 16 20 28 40. The families come from next/font in app/layout.tsx. */
+:root {
   --ui-font: var(--font-plex-sans), system-ui, sans-serif;
   --ui-mono: var(--font-plex-mono), ui-monospace, monospace;
   --ui-text-xs: 0.75rem;
@@ -64,6 +44,9 @@
   --ui-text-xl: 1.75rem;
   --ui-text-2xl: 2.5rem;
   --ui-radius: 2px;
+}
+
+body {
   background: var(--ui-surface);
   color: var(--ui-ink);
   font-family: var(--ui-font);
@@ -72,22 +55,18 @@
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
-[data-ui-font="plex"] { --ui-font: var(--font-plex-sans), system-ui, sans-serif; }
-[data-ui-font="hanken"] { --ui-font: var(--font-hanken), system-ui, sans-serif; }
-[data-ui-font="schibsted"] { --ui-font: var(--font-schibsted), system-ui, sans-serif; }
 
-/* The parts the browser draws: selection, caret, focus ring, scrollbar, themed from the palette. */
-[data-ui-theme] ::selection { background: var(--ui-measured); color: var(--ui-on-measured); }
-[data-ui-theme] input, [data-ui-theme] textarea { caret-color: var(--ui-measured); }
-/* The production stylesheet colours every placeholder with its "ghost" grey (2.55:1 on the old dark ground) and that rule is
-   unlayered, so a utility class cannot beat it. Under the lab tokens a placeholder is graphite (>= 5.5:1), at full opacity. */
-[data-ui-theme] input::placeholder, [data-ui-theme] textarea::placeholder { color: var(--ui-graphite); opacity: 1; }
-[data-ui-theme] :focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
-[data-ui-theme] * { scrollbar-color: var(--ui-edge) transparent; scrollbar-width: thin; }
-[data-ui-theme] a { text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
+/* The parts the browser draws: selection, caret, placeholder, focus ring, scrollbar, themed from the palette. */
+::selection { background: var(--ui-measured); color: var(--ui-on-measured); }
+input, textarea { caret-color: var(--ui-measured); }
+/* A placeholder is graphite (5.78:1 on the ledger) at full opacity. */
+input::placeholder, textarea::placeholder { color: var(--ui-graphite); opacity: 1; }
+:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+* { scrollbar-color: var(--ui-edge) transparent; scrollbar-width: thin; }
+/* A link is underlined (Tailwind's reset removes it). In the base layer, so a utility such as no-underline still wins. */
+@layer base { a { text-decoration-line: underline; text-underline-offset: 0.2em; text-decoration-thickness: 1px; } }
 
-/* Tailwind theme: utilities `bg-ui-surface`, `text-ui-ink`, `border-ui-rule` ... read the variables above, so one
-   component works under either set. The ui- prefix keeps them apart from the production tokens. */
+/* Tailwind theme: utilities `bg-ui-surface`, `text-ui-ink`, `border-ui-rule` ... read the variables above. */
 @theme inline {
   --color-ui-surface: var(--ui-surface);
   --color-ui-raised: var(--ui-raised);
@@ -107,5 +86,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-ui-theme] * { scroll-behavior: auto !important; }
+  * { scroll-behavior: auto !important; }
 }

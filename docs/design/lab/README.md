@@ -2,7 +2,9 @@
 
 Built 2026-11-19. Read this first; the screenshots are in this folder. The lab is the route `/design-lab` (four pages). It answers 404 in production, it is not in any sitemap, and it asks search engines not to index it. **No production screen was changed.** Two production stylesheet lines were touched (see "Changes outside the lab").
 
-Waiting for Deepanshu: **pick direction A or B, and the font.** Everything below is what is needed to choose.
+**Decided by Deepanshu, 2026-11-20: direction A "Audit report" (light) with IBM Plex Sans; IBM Plex Mono only for hashes, ids and the key fingerprint.** The production tokens are `frontend/app/ui/tokens.css` (A only, no toggle); B and the other font candidates stay in the lab (`frontend/app/design-lab/lab-tokens.css` and the lab layout). Phase 2b part 1 is in `docs/design/2b-1/README.md`. What follows is the phase 2a record, as written.
+
+Was waiting for Deepanshu: **pick direction A or B, and the font.** Everything below is what was needed to choose.
 
 ## What was built
 

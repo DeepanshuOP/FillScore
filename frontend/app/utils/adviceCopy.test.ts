@@ -2,11 +2,15 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { findAdviceTerms, KNOWN_BAD_STRINGS } from '../../../backend/src/constants/adviceTerms';
+import { REBUILT_FILES } from './rebuiltFiles';
 
 // Scans the user-visible text (JSX text nodes and string literals) of the pages that render audit copy:
 // dashboard coach/insights, Trade Journal (trades page) and the share card.
-const FILES = ['app/dashboard/page.tsx', 'app/trades/page.tsx', 'app/share/[userId]/page.tsx', 'app/components/ConnectPrompt.tsx', 'app/utils/makerAdvice.ts',
-  'app/dashboard/ScoreV2Panel.tsx', 'app/dashboard/scoreV2.ts', 'app/methodology/page.tsx'];
+// M8 part 1 (2026-11-20): ScoreV2Panel.tsx is replaced by ScoreRecord.tsx, and every rebuilt screen is added.
+// ordersView.ts is left out of this scan only: its generic type parameters (`Array<[keyof Totals, string]>`) look like JSX text
+// to the scanner and its object keys name the stored field "opportunity". Its visible strings are rendered by OrdersPanel.tsx
+// (scanned) and read by the e2e advice scans of the rendered page.
+const FILES = [...REBUILT_FILES.filter((f) => f !== 'app/dashboard/ordersView.ts'), 'app/trades/page.tsx', 'app/share/[userId]/page.tsx', 'app/utils/makerAdvice.ts', 'app/dashboard/scoreV2.ts', 'app/methodology/page.tsx'];
 
 function visibleText(src: string): string[] {
   const out: string[] = [];

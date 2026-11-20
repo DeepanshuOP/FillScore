@@ -9,15 +9,17 @@ import {
   quickOffer,
   councilOfflineMessage,
   councilVerdictView,
-  flagLabel,
+  flagText,
   councilScopeLabel,
   verdictCardsFromResult,
+  agentLabel,
+  ratingWords,
+  alphaRatingPhrase,
+  alphaBenchmarkNote,
   COUNCIL_DISCLAIMER,
   type CouncilAgentCard as AgentCard,
 } from "../utils/councilStatus";
 import {
-  formatEffectUsd,
-  formatEffectBps,
   groundingLine,
   verificationLine,
   splitFindings,
@@ -28,6 +30,13 @@ import {
   type CouncilGrounding,
   type CouncilVerification,
 } from "../utils/councilFindings";
+import { formatUsd, formatSignedBps } from "../ui/format";
+import { Panel } from "../ui/Panel";
+import { Banner } from "../ui/Banner";
+import { Button } from "../ui/Button";
+import { Disclosure } from "../ui/Disclosure";
+import { EmptyState } from "../ui/EmptyState";
+import { ValueState } from "../ui/ValueState";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface SynthesisResult {
@@ -49,34 +58,30 @@ interface DebateResult {
   claim_count: number;
 }
 
-const AGENT_LABELS: Record<string, string> = {
-  liquidity_scout: "Liquidity Scout",
-  alpha_architect: "Alpha Architect",
-  risk_auditor: "Risk Auditor",
-  fee_optimizer: "Fee Optimizer",
+// One stream event's data. Each event type carries only some of these fields; every read below is defensive.
+type StreamPayload = {
+  agent?: string;
+  rating?: string;
+  severity?: string;
+  flags?: string[];
+  failed?: boolean;
+  code?: string;
+  quick_available?: boolean;
+  mode?: string;
+  verification?: CouncilVerification | null;
+  grounding?: CouncilGrounding | null;
+  synthesis?: SynthesisResult;
+  degraded?: boolean;
+  degraded_reasons?: string[];
+  totalLatencyMs?: number;
+  cached?: boolean;
+  debate_transcript?: (Omit<DebateResult, "claim_count"> & { claims?: unknown[] }) | null;
+  tradeContext?: { trade_count?: number };
 };
-
-const AGENT_ICONS: Record<string, string> = {
-  liquidity_scout: "◈",
-  alpha_architect: "◆",
-  risk_auditor: "⬡",
-  fee_optimizer: "◉",
-};
-
-function ratingColor(rating: string): string {
-  const r = rating?.toUpperCase();
-  if (["GOOD", "OPTIMAL", "LOW", "POSITIVE", "EXCELLENT"].includes(r))
-    return "text-emerald-400 border-emerald-400/40 bg-emerald-400/10";
-  if (["MODERATE", "NEUTRAL", "MEDIUM", "FAIR"].includes(r))
-    return "text-amber-400 border-amber-400/40 bg-amber-400/10";
-  if (["POOR", "WASTEFUL", "HIGH", "NEGATIVE"].includes(r))
-    return "text-red-400 border-red-400/40 bg-red-400/10";
-  if (["CRITICAL", "SEVERELY_WASTEFUL", "SEVERELY_NEGATIVE"].includes(r))
-    return "text-red-600 border-red-600/40 bg-red-600/10";
-  return "text-slate-400 border-slate-400/40 bg-slate-400/10";
-}
 
 const AGENT_ORDER = ["liquidity_scout", "alpha_architect", "risk_auditor", "fee_optimizer"];
+
+const ASSESSMENT_HEADING = "Explanation (language model; every number was checked against the audit)";
 
 // ── Component ────────────────────────────────────────────────────────────────────
 export default function AgentCouncil({
@@ -108,15 +113,15 @@ export default function AgentCouncil({
   const [waking, setWaking] = useState(false);
   const [cached, setCached] = useState(false);
   const [tradeCount, setTradeCount] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Free hosting puts the service to sleep; ping it as soon as the panel mounts so it is
   // already waking while the user reads the dashboard.
   useEffect(() => {
     fetch(`${mlBaseUrl}/health`).catch(() => {});
   }, [mlBaseUrl]);
-  const [error, setError] = useState<string | null>(null);
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setResultMode(null);
     setModeLabel(null);
     setOfferQuick(false);
@@ -130,7 +135,77 @@ export default function AgentCouncil({
     setTotalLatencyMs(null);
     setCached(false);
     setError(null);
-  };
+  }, []);
+
+  const handleEvent = useCallback((eventType: string, payload: StreamPayload) => {
+    if (eventType === "agent_start") {
+      const agent = payload.agent as string;
+      setActiveAgent(agent);
+      if (AGENT_ORDER.includes(agent)) {
+        setCards((prev) => ({
+          ...prev,
+          [agent]: {
+            agent,
+            rating: "",
+            valuesCited: null,
+            severity: "MEDIUM",
+            flags: [],
+            status: "running",
+            failed: false,
+          },
+        }));
+      }
+    } else if (eventType === "agent_done") {
+      const agent = payload.agent as string;
+      setActiveAgent(null);
+      setCards((prev) => ({
+        ...prev,
+        [agent]: {
+          agent,
+          rating: payload.rating ?? "",
+          valuesCited: null,
+          severity: payload.severity ?? "MEDIUM",
+          flags: payload.flags ?? [],
+          status: "done",
+          failed: Boolean(payload.failed),
+        },
+      }));
+    } else if (eventType === "debate_started") {
+      setDebateRunning(true);
+    } else if (eventType === "debate_done") {
+      // The live event carries text from before the claim check; the sanitized debate arrives with `complete`.
+      setDebateRunning(false);
+    } else if (eventType === "synthesis_done") {
+      setSynthesis(payload as unknown as SynthesisResult);
+    } else if (eventType === "gate_done") {
+      setVerification(payload.verification ?? null);
+      setGrounding(payload.grounding ?? null);
+    } else if (eventType === "complete") {
+      // The final event carries the whole result, identical to the non-stream endpoint. It is
+      // the source of truth: every number on the panel is re-read from it.
+      setCards(verdictCardsFromResult(payload));
+      setResultMode(payload.mode === "quick" ? "quick" : "deep");
+      setModeLabel(userId ? null : auditModeLabel(payload));
+      setSynthesis({
+        ...(payload.synthesis as SynthesisResult),
+        degraded: payload.degraded,
+        degraded_reasons: payload.degraded_reasons ?? [],
+      });
+      setVerification(payload.verification ?? null);
+      setGrounding(payload.grounding ?? null);
+      setTotalLatencyMs(payload.totalLatencyMs ?? null);
+      setCached(Boolean(payload.cached));
+      if (payload.debate_transcript?.claims) {
+        const d = payload.debate_transcript;
+        setDebate({ ...d, claim_count: d.claims?.length ?? 0 });
+      }
+      setTradeCount(typeof payload.tradeContext?.trade_count === "number" ? payload.tradeContext.trade_count : null);
+      setActiveAgent(null);
+    } else if (eventType === "error") {
+      setError(councilErrorMessage(payload.code, typeof payload.quick_available === "boolean" ? payload.quick_available : undefined));
+      setOfferQuick(quickOffer(payload));
+    }
+  }, [userId]);
 
   const runAnalysis = useCallback(async (runMode: "quick" | "deep" = mode) => {
     if (running) return;
@@ -149,25 +224,25 @@ export default function AgentCouncil({
 
     // SSE via fetch+ReadableStream (EventSource doesn't support POST)
     try {
-      const headers: HeadersInit = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
       if (accessToken) {
         headers["Authorization"] = `Bearer ${accessToken}`;
       }
-      
-      const payload: any = { symbol, mode: userId ? "deep" : runMode };
+
+      const body: { symbol: string; mode: string; userId?: string } = { symbol, mode: userId ? "deep" : runMode };
       if (userId) {
-        payload.userId = userId;
+        body.userId = userId;
       }
 
       const res = await fetch(`${mlBaseUrl}/ml/agents/council/stream`, {
         method: "POST",
         headers,
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       });
 
       if (res.status === 503) {
-        const body = await res.json().catch(() => null);
-        setError(councilMaintenanceMessage(503, body));
+        const errBody = await res.json().catch(() => null);
+        setError(councilMaintenanceMessage(503, errBody));
         return;
       }
 
@@ -198,16 +273,16 @@ export default function AgentCouncil({
           } else if (line === "" && eventType && dataStr) {
             // Dispatch event
             try {
-              const payload = JSON.parse(dataStr);
-              handleEvent(eventType, payload);
+              const data = JSON.parse(dataStr) as StreamPayload;
+              handleEvent(eventType, data);
             } catch {}
             eventType = "";
             dataStr = "";
           }
         }
       }
-    } catch (e: any) {
-      const msg = e.message ?? "";
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : "";
       if (msg.includes("fetch") || msg.includes("refused") || msg.includes("network")) {
         setError(councilOfflineMessage(process.env.NODE_ENV !== 'production'));
       } else {
@@ -216,121 +291,42 @@ export default function AgentCouncil({
     } finally {
       setRunning(false);
     }
-  }, [userId, symbol, mlBaseUrl, running, mode]);
+  }, [userId, symbol, mlBaseUrl, accessToken, running, mode, reset, handleEvent]);
 
-  function handleEvent(eventType: string, payload: any) {
-    if (eventType === "agent_start") {
-      const agent = payload.agent as string;
-      setActiveAgent(agent);
-      if (AGENT_ORDER.includes(agent)) {
-        setCards((prev) => ({
-          ...prev,
-          [agent]: {
-            agent,
-            rating: "",
-            valuesCited: null,
-            severity: "MEDIUM",
-            flags: [],
-            status: "running",
-            failed: false,
-          },
-        }));
-      }
-    } else if (eventType === "agent_done") {
-      const agent = payload.agent as string;
-      setActiveAgent(null);
-      setCards((prev) => ({
-        ...prev,
-        [agent]: {
-          agent,
-          rating: payload.rating,
-          valuesCited: null,
-          severity: payload.severity,
-          flags: payload.flags ?? [],
-          status: "done",
-          failed: Boolean(payload.failed),
-        },
-      }));
-    } else if (eventType === "debate_started") {
-      setDebateRunning(true);
-    } else if (eventType === "debate_done") {
-      // The live event carries text from before the claim check; the sanitized debate arrives with `complete`.
-      setDebateRunning(false);
-    } else if (eventType === "synthesis_done") {
-      setSynthesis(payload);
-    } else if (eventType === "gate_done") {
-      setVerification(payload.verification ?? null);
-      setGrounding(payload.grounding ?? null);
-    } else if (eventType === "complete") {
-      // The final event carries the whole result, identical to the non-stream endpoint. It is
-      // the source of truth: every number on the panel is re-read from it.
-      setCards(verdictCardsFromResult(payload));
-      setResultMode(payload.mode === "quick" ? "quick" : "deep");
-      setModeLabel(userId ? null : auditModeLabel(payload));
-      setSynthesis({
-        ...payload.synthesis,
-        degraded: payload.degraded,
-        degraded_reasons: payload.degraded_reasons ?? [],
-      });
-      setVerification(payload.verification ?? null);
-      setGrounding(payload.grounding ?? null);
-      setTotalLatencyMs(payload.totalLatencyMs);
-      setCached(Boolean(payload.cached));
-      if (payload.debate_transcript?.claims) {
-        const d = payload.debate_transcript;
-        setDebate({ ...d, claim_count: d.claims.length });
-      }
-      setTradeCount(typeof payload.tradeContext?.trade_count === "number" ? payload.tradeContext.trade_count : null);
-      setActiveAgent(null);
-    } else if (eventType === "error") {
-      setError(councilErrorMessage(payload.code, typeof payload.quick_available === "boolean" ? payload.quick_available : undefined));
-      setOfferQuick(quickOffer(payload));
-    }
-  }
+  const view = synthesis ? councilVerdictView(synthesis) : null;
+  const { findings, observations } = synthesis ? splitFindings(synthesis) : { findings: [], observations: [] };
+  const showSpecialists = Boolean(userId) || (resultMode ?? mode) === "deep";
+
+  const runButton = (
+    <Button onClick={() => runAnalysis()} loading={running}>
+      {running ? "Analysing" : userId ? "Run analysis" : mode === "quick" ? "Run quick audit" : "Run deep audit"}
+    </Button>
+  );
 
   return (
-    <div className="bg-[#161614] border border-[rgba(255,255,255,0.08)] rounded p-6 space-y-5">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-[#f0ece4] font-semibold text-base tracking-wide">
-            Agent Council
-          </h2>
-          <p className="text-[#888078] text-xs font-mono tracking-wide mt-0.5">
-            Multi-agent execution audit · {symbol}
-          </p>
-          <p className="text-[#888078] text-[11px] mt-1">{COUNCIL_DISCLAIMER}</p>
-        </div>
-        <button
-          onClick={() => runAnalysis()}
-          disabled={running}
-          className={`px-4 py-2 rounded text-xs font-mono tracking-wider font-semibold transition-all duration-200 inline-flex items-center justify-center ${
-            running
-              ? "bg-[#201f1d] text-[#888078] cursor-not-allowed border border-[rgba(255,255,255,0.08)]"
-              : "bg-[rgba(167,139,113,0.15)] hover:bg-[rgba(167,139,113,0.25)] text-[#e8d5b7] border border-[rgba(167,139,113,0.35)] shadow-sm"
-          }`}
-        >
-          {running ? "ANALYSING…" : userId ? "RUN ANALYSIS" : mode === "quick" ? "RUN QUICK AUDIT" : "RUN DEEP AUDIT"}
-        </button>
-      </div>
-
+    <Panel
+      id="agent-council"
+      title={synthesis ? ASSESSMENT_HEADING : "Agent Council"}
+      description={`Execution audit of past trades, ${symbol}. ${COUNCIL_DISCLAIMER}`}
+      actions={runButton}
+      className="space-y-5"
+    >
       {!userId && (
-        <div data-testid="audit-mode" className="flex flex-wrap items-center gap-3 text-xs font-mono text-[#888078]">
-          <div role="group" aria-label="Audit mode" className="inline-flex border border-[rgba(255,255,255,0.1)] rounded overflow-hidden">
+        <div data-testid="audit-mode" className="mb-4 flex flex-wrap items-center gap-3 text-sm text-ui-graphite">
+          <div role="group" aria-label="Audit mode" className="inline-flex gap-2">
             {(["quick", "deep"] as const).map((m) => (
-              <button
+              <Button
                 key={m}
-                type="button"
+                variant={mode === m ? "primary" : "secondary"}
                 aria-pressed={mode === m}
                 disabled={running}
                 onClick={() => setMode(m)}
-                className={`px-3 py-1.5 tracking-wider ${mode === m ? "bg-[rgba(167,139,113,0.2)] text-[#e8d5b7]" : "text-[#888078]"}`}
               >
                 {m === "quick" ? "Quick" : "Deep"}
-              </button>
+              </Button>
             ))}
           </div>
-          <span>
+          <span className="max-w-[68ch]">
             {mode === "quick"
               ? "Usually one model call (a second one only when a replay check needs it). The default."
               : "The full Council: nine model calls, four specialists and a debate. It uses nine times the budget of a Quick audit."}
@@ -338,97 +334,80 @@ export default function AgentCouncil({
         </div>
       )}
 
-      {modeLabel && <p data-testid="audit-mode-label" className="text-[#888078] text-[11px] font-mono">{modeLabel}</p>}
+      {modeLabel && <p data-testid="audit-mode-label" className="mb-4 text-sm text-ui-graphite">{modeLabel}</p>}
+
+      {running && !synthesis && !error && (
+        <p role="status" className="mb-4 text-sm text-ui-graphite">
+          {debateRunning ? "Loading the debate between the specialists." : "Loading the analysis of your past trades."}
+        </p>
+      )}
 
       {waking && (
-        <div role="status" className="text-[#c4a882] text-xs font-mono bg-[rgba(167,139,113,0.08)] border border-[rgba(167,139,113,0.25)] rounded px-4 py-3">
+        <Banner kind="info" title="The Council service is waking up" className="mb-4">
           The Council service was asleep and is waking up. This can take up to a minute the first time.
-        </div>
+        </Banner>
       )}
 
       {error && (
-        <div className="text-red-400 text-xs font-mono bg-red-400/10 border border-red-400/20 rounded px-4 py-3 space-y-2">
-          <p>{error}</p>
-          {offerQuick && !running && (
-            <button
-              type="button"
+        <Banner
+          kind="refused"
+          title="The Council result is not shown"
+          className="mb-4"
+          action={offerQuick && !running ? (
+            <Button
+              variant="secondary"
               data-testid="run-quick-instead"
               onClick={() => { setMode("quick"); runAnalysis("quick"); }}
-              className="px-3 py-1.5 rounded border border-[rgba(167,139,113,0.35)] text-[#e8d5b7] bg-[rgba(167,139,113,0.15)]"
             >
-              RUN A QUICK AUDIT INSTEAD
-            </button>
-          )}
-        </div>
+              Run a quick audit instead
+            </Button>
+          ) : undefined}
+        >
+          {error}
+        </Banner>
       )}
 
       {/* 2×2 specialist grid: a Quick audit has no specialists to show */}
-      <div className={`grid grid-cols-2 gap-3 ${userId || (resultMode ?? mode) === "deep" ? "" : "hidden"}`}>
+      <div className={`mb-4 grid grid-cols-1 gap-3 sm:grid-cols-2 ${showSpecialists ? "" : "hidden"}`}>
         {AGENT_ORDER.map((agent) => {
           const card = cards[agent];
           const isRunning = card?.status === "running" || activeAgent === agent;
+          const benchmarkNote = agent === "alpha_architect" && card?.status === "done" && !card.failed
+            ? alphaBenchmarkNote(card.flags)
+            : "";
 
           return (
             <div
               key={agent}
-              className={`border rounded p-4 transition-all duration-300 ${
-                isRunning
-                  ? "border-[rgba(167,139,113,0.6)] bg-[rgba(167,139,113,0.05)] shadow-sm"
-                  : card?.status === "done"
-                  ? "border-[rgba(255,255,255,0.1)] bg-[#1c1c1a]"
-                  : "border-[rgba(255,255,255,0.05)] bg-[#121210] opacity-70"
-              }`}
+              className={`rounded-ui border p-4 ${card?.status === "done" ? "border-ui-edge bg-ui-surface" : "border-ui-rule bg-ui-raised"}`}
             >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-[#c4a882] text-sm">
-                    {AGENT_ICONS[agent]}
-                  </span>
-                  <span className="text-[#f0ece4] text-xs font-mono font-medium tracking-wide">
-                    {AGENT_LABELS[agent]}
-                  </span>
-                </div>
-                {isRunning && (
-                  <span className="text-xs text-violet-400 animate-pulse">
-                    thinking…
-                  </span>
-                )}
-                {card?.status === "done" && card.failed && (
-                  <span className="text-xs px-2 py-0.5 rounded-full border font-medium text-slate-400 border-slate-400/40 bg-slate-400/10">
-                    UNAVAILABLE
-                  </span>
-                )}
-                {card?.status === "done" && !card.failed && card.rating && (
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full border font-medium ${ratingColor(card.rating)}`}
-                  >
-                    {card.rating}
-                  </span>
-                )}
-              </div>
+              <p className="text-sm font-semibold text-ui-ink">{agentLabel(agent)}</p>
+
+              {isRunning && <p className="mt-2 text-sm text-ui-graphite">Working on its part of the audit.</p>}
+              {!card && !isRunning && <p className="mt-2 text-sm text-ui-graphite">Waiting for the run.</p>}
 
               {card?.status === "done" && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs text-slate-500">
+                <div className="mt-2 space-y-2 text-sm text-ui-graphite">
+                  {card.failed && <p className="text-ui-danger">Unavailable for this run</p>}
+                  {!card.failed && card.rating && (
+                    <p className="text-ui-ink">
+                      {agent === "alpha_architect" ? alphaRatingPhrase(card.rating) : `Rating: ${ratingWords(card.rating)}`}
+                    </p>
+                  )}
+                  {benchmarkNote && <p>{benchmarkNote}</p>}
+                  <div className="flex flex-wrap items-center justify-between gap-2">
                     <span>{card.valuesCited === null ? "" : `${card.valuesCited} values cited`}</span>
-                    <span
-                      className={`${ratingColor(card.severity)} px-1.5 py-0.5 rounded border text-xs`}
-                    >
-                      {card.severity}
-                    </span>
+                    <span>Severity: {ratingWords(card.severity)}</span>
                   </div>
 
                   {card.flags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-1">
+                    <ul className="flex flex-wrap gap-1">
                       {card.flags.slice(0, 2).map((f) => (
-                        <span
-                          key={f}
-                          className="text-xs text-slate-500 bg-slate-800 rounded px-1.5 py-0.5"
-                        >
-                          {flagLabel(f)}
-                        </span>
+                        <li key={f} className="rounded-ui border border-ui-rule px-1.5 py-0.5 text-xs">
+                          {flagText(f)}
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   )}
                 </div>
               )}
@@ -437,120 +416,98 @@ export default function AgentCouncil({
         })}
       </div>
 
-      {/* Debate panel */}
+      {/* Debate */}
       {(debate || debateRunning) && (
-        <div className="border border-violet-800/40 bg-violet-950/20 rounded-xl p-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-violet-300 text-sm font-semibold uppercase tracking-wider">
-              ⚖ Execution Trial
-            </h3>
-            {debateRunning && (
-              <span className="text-xs text-violet-400 animate-pulse">debating…</span>
-            )}
+        <div className="mb-4 space-y-3 border-t border-ui-rule pt-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-base font-semibold text-ui-ink">Debate between the specialists</h3>
+            {debateRunning && <span className="text-sm text-ui-graphite">Loading the debate.</span>}
             {debate && (
-              <span className="text-xs text-slate-500">
-                {debate.round_count} round{debate.round_count !== 1 ? "s" : ""} · {debate.claim_count} claims
+              <span className="text-sm text-ui-graphite">
+                {debate.round_count} round{debate.round_count !== 1 ? "s" : ""}, {debate.claim_count} claims
               </span>
             )}
           </div>
 
           {debate && (
-            <>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-red-950/20 border border-red-800/30 rounded-lg p-3">
-                  <p className="text-red-400 text-xs font-semibold mb-1 uppercase">Prosecution</p>
-                  <p className="text-slate-300 text-xs leading-relaxed">{debate.prosecution_summary}</p>
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-ui border border-ui-rule bg-ui-surface p-3">
+                  <p className="mb-1 text-sm font-semibold text-ui-ink">Prosecution</p>
+                  <p className="text-sm text-ui-graphite">{debate.prosecution_summary}</p>
                 </div>
-                <div className="bg-emerald-950/20 border border-emerald-800/30 rounded-lg p-3">
-                  <p className="text-emerald-400 text-xs font-semibold mb-1 uppercase">Defense</p>
-                  <p className="text-slate-300 text-xs leading-relaxed">{debate.defense_summary}</p>
+                <div className="rounded-ui border border-ui-rule bg-ui-surface p-3">
+                  <p className="mb-1 text-sm font-semibold text-ui-ink">Defense</p>
+                  <p className="text-sm text-ui-graphite">{debate.defense_summary}</p>
                 </div>
               </div>
-              <div className="bg-slate-900/40 rounded-lg p-3">
-                <p className="text-slate-500 text-xs uppercase tracking-wider mb-1">Key Dispute</p>
-                <p className="text-slate-300 text-xs leading-relaxed">{debate.key_dispute}</p>
+              <div className="rounded-ui border border-ui-rule bg-ui-raised p-3">
+                <p className="mb-1 text-sm font-semibold text-ui-ink">Key dispute</p>
+                <p className="text-sm text-ui-graphite">{debate.key_dispute}</p>
               </div>
-            </>
+            </div>
           )}
         </div>
       )}
 
-      {/* Synthesis panel */}
-      {synthesis && (() => {
-        const view = councilVerdictView(synthesis);
-        const { findings, observations } = splitFindings(synthesis);
-        return (
-        <div className="border border-slate-700 bg-slate-900/40 rounded-xl p-5 space-y-4 transition-all duration-500">
-          <div className="flex items-center justify-between">
-            <h3 className="text-white font-semibold">Council assessment</h3>
-            {view.kind === "graded" ? (
-              <div className="flex items-center gap-3">
-                <span className={`text-sm px-3 py-1 rounded-full border font-medium ${ratingColor(view.rating)}`}>
-                  {view.rating}
-                </span>
-              </div>
-            ) : (
-              <span className="text-sm px-3 py-1 rounded-full border font-medium text-amber-400 border-amber-400/40 bg-amber-400/10">
-                {view.title}
-              </span>
-            )}
-          </div>
-
+      {/* Assessment */}
+      {synthesis && view && (
+        <div className="space-y-4 border-t border-ui-rule pt-4">
           {view.kind === "incomplete" ? (
-            <div role="status" className="space-y-2">
-              <p className="text-slate-300 text-sm leading-relaxed">
-                Part of the Council could not finish, so this run has no grade.
-              </p>
+            <Banner kind="info" title={view.title}>
+              <p>Part of the Council could not finish, so this run has no grade.</p>
               {view.reasons.length > 0 && (
-                <ul className="list-disc pl-5 text-xs text-slate-400 space-y-1">
+                <ul className="mt-2 list-disc space-y-1 pl-5">
                   {view.reasons.map((r, i) => (
                     <li key={i}>{r}</li>
                   ))}
                 </ul>
               )}
-            </div>
+            </Banner>
           ) : (
-            <p className="text-slate-300 text-sm leading-relaxed">{synthesis.headline}</p>
+            <>
+              <p className="text-sm text-ui-graphite">Overall: {ratingWords(view.rating)}</p>
+              <p className="max-w-[68ch] text-base text-ui-ink">{synthesis.headline}</p>
+            </>
           )}
 
-          {noFindingsLine(synthesis) && (
-            <p className="text-slate-500 text-xs">{noFindingsLine(synthesis)}</p>
+          {!synthesis.degraded && findings.length === 0 && noFindingsLine(synthesis) && (
+            <EmptyState title="No verified findings">{noFindingsLine(synthesis)}</EmptyState>
           )}
           {!synthesis.degraded && notComputableLine(verification) && (
-            <p className="text-slate-500 text-xs">{notComputableLine(verification)}</p>
+            <p className="text-sm text-ui-graphite">{notComputableLine(verification)}</p>
           )}
 
           {!synthesis.degraded && findings.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-slate-500 text-xs uppercase tracking-wider">Key findings</p>
-              {findings.map((f, i) => (
-                <div key={i} className="flex gap-3 text-sm text-slate-300">
-                  <span className="text-violet-400 font-bold shrink-0">{i + 1}.</span>
-                  <div className="space-y-1">
-                    <p>{f.text}</p>
-                    <p className="text-xs text-slate-400">
-                      <span className="text-slate-200 font-medium">{formatEffectUsd(f.effect_usd)}</span>
-                      {Number.isFinite(f.effect_bps) && <> ({formatEffectBps(f.effect_bps)})</>}
-                      <span className="ml-2 text-emerald-400 border border-emerald-400/40 rounded px-1.5 py-0.5">
-                        verified
-                      </span>
-                    </p>
-                    <details className="text-xs text-slate-500">
-                      <summary className="cursor-pointer">How this was computed</summary>
-                      <p className="mt-1">
-                        {f.method} · {f.n_trades_affected} trades affected
+            <div className="space-y-3">
+              <h3 className="text-base font-semibold text-ui-ink">Key findings</h3>
+              <ol className="space-y-4">
+                {findings.map((f, i) => (
+                  <li key={i} className="flex gap-3 text-sm text-ui-ink">
+                    <span className="shrink-0 font-semibold">{i + 1}.</span>
+                    <div className="min-w-0 flex-1 space-y-1">
+                      <p>{f.text}</p>
+                      <p className="text-ui-graphite">
+                        <span className="font-medium text-ui-ink tabular-nums">{formatUsd(f.effect_usd)}</span>
+                        {Number.isFinite(f.effect_bps) && <> ({formatSignedBps(f.effect_bps)})</>}
+                        <span className="ml-2 rounded-ui border border-ui-edge px-1.5 py-0.5 text-xs text-ui-ink">
+                          verified
+                        </span>
                       </p>
-                    </details>
-                  </div>
-                </div>
-              ))}
+                      <Disclosure summary="How this was computed">
+                        <p>{f.method}, {f.n_trades_affected} trades affected</p>
+                      </Disclosure>
+                    </div>
+                  </li>
+                ))}
+              </ol>
             </div>
           )}
 
           {!synthesis.degraded && observations.length > 0 && (
             <div className="space-y-1">
-              <p className="text-slate-600 text-xs uppercase tracking-wider">Observations</p>
-              <ul className="list-disc pl-5 text-xs text-slate-500 space-y-1">
+              <h3 className="text-base font-semibold text-ui-ink">Observations</h3>
+              <ul className="list-disc space-y-1 pl-5 text-sm text-ui-graphite">
                 {observations.map((o, i) => (
                   <li key={i}>{o.text}</li>
                 ))}
@@ -559,25 +516,27 @@ export default function AgentCouncil({
           )}
 
           {synthesis.estimatedMonthlyCostUSD > 0 && (
-            <p className="text-slate-500 text-xs">
+            <p className="text-sm text-ui-graphite">
               Fees paid in the audited period ({councilScopeLabel(symbol, tradeCount)}):{" "}
-              <span className="text-slate-300 font-medium">
-                ${synthesis.estimatedMonthlyCostUSD.toFixed(2)}
-              </span>
+              <ValueState
+                state="measured"
+                size="inline"
+                label="Fees paid in the audited period"
+                value={formatUsd(synthesis.estimatedMonthlyCostUSD)}
+              />
             </p>
           )}
         </div>
-        );
-      })()}
+      )}
 
       {/* Verification line */}
       {verification && !synthesis?.degraded && verificationLine(verification) && (
-        <p className="text-slate-500 text-xs">{verificationLine(verification)}</p>
+        <p className="mt-4 text-sm text-ui-graphite">{verificationLine(verification)}</p>
       )}
 
       {/* Latency footer */}
       {totalLatencyMs !== null && (
-        <p className="text-slate-600 text-xs text-right">
+        <p className="mt-2 text-sm text-ui-graphite">
           {cached
             ? "Stored analysis of the same trades (no new AI calls)"
             : `Analysis completed in ${(totalLatencyMs / 1000).toFixed(2)}s`}
@@ -586,8 +545,8 @@ export default function AgentCouncil({
 
       {/* Grounding stats */}
       {grounding && !synthesis?.degraded && groundingLine(grounding) && (
-        <p className="text-slate-600 text-[11px] text-right">{groundingLine(grounding)}</p>
+        <p className="mt-1 text-sm text-ui-graphite">{groundingLine(grounding)}</p>
       )}
-    </div>
+    </Panel>
   );
 }

@@ -15,11 +15,13 @@ import { contrastRatio, mixHex, readableOn } from './contrast'
 import { HUE_MIN_SHARE, hueShare, RULER_SHARES } from './hue'
 import { getGradeColor } from '../utils/gradeColor'
 
-const css = readFileSync(resolve(__dirname, 'tokens.css'), 'utf8')
+// A is the production token file; B (the dark direction, not shipped) lives in the lab's own file.
+const FILES = { a: resolve(__dirname, 'tokens.css'), b: resolve(__dirname, '../design-lab/lab-tokens.css') } as const
 
 function theme(name: 'a' | 'b'): Record<string, string> {
+  const css = readFileSync(FILES[name], 'utf8')
   const block = css.match(new RegExp(`\\[data-ui-theme="${name}"\\]\\s*\\{([^}]*)\\}`))
-  if (!block) throw new Error(`theme ${name} not found in tokens.css`)
+  if (!block) throw new Error(`theme ${name} not found in ${FILES[name]}`)
   const out: Record<string, string> = {}
   for (const m of block[1].matchAll(/--ui-([a-z-]+):\s*(#[0-9A-Fa-f]{6})\s*;/g)) out[m[1]] = m[2]
   return out

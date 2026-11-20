@@ -5,7 +5,7 @@ import { useRef, useState } from 'react'
 import { Button } from '../../ui/Button'
 import { Disclosure } from '../../ui/Disclosure'
 import { ProvenanceChip } from '../../ui/ProvenanceChip'
-import { formatMoney, formatSignedBps } from '../../ui/format'
+import { formatUsd, formatSignedBps } from '../../ui/format'
 import { useGSAP, withMotion } from '../../lib/motion'
 import { formatBps } from '../../utils/formatBps'
 import { hueCss, RULER_SHARES } from '../../ui/hue'
@@ -38,7 +38,7 @@ const P_HI = Math.ceil((Math.max(...prices) + 0.02) * 10) / 10
 const TICKS = Array.from({ length: Math.round((P_HI - P_LO) * 10) + 1 }, (_, i) => Math.round((P_LO + i / 10) * 10) / 10)
 const UTC = (iso: string) => iso.slice(11, 23)
 const minus = (s: string) => s.replace('-', '−')
-const val = (k: string) => `${formatBps(fig[k].bps)}, ${formatMoney(fig[k].usd)}`
+const val = (k: string) => `${formatBps(fig[k].bps)}, ${formatUsd(fig[k].usd)}`
 
 function Chart({ c }: { c: Cfg }) {
   const t0 = Date.parse(tape.windowStart), t1 = Date.parse(tape.windowEnd)
@@ -135,14 +135,14 @@ function Chart({ c }: { c: Cfg }) {
       <g data-h="bracket-spread">
         <path data-draw d={bracket(bx1, yMid, ySpread)} pathLength={1} fill="none" className="stroke-ui-measured" strokeWidth={2} />
         {(c.narrow
-          ? [['Spread', 'ink'], [formatBps(fig.spread.bps), 'g'], [formatMoney(fig.spread.usd), 'g']]
+          ? [['Spread', 'ink'], [formatBps(fig.spread.bps), 'g'], [formatUsd(fig.spread.usd), 'g']]
           : [[names.spread, 'ink'], [val('spread'), 'g'], [`${arrivalMid.toFixed(2)} to ${(arrivalMid + spreadSpan).toFixed(2)}`, 'g']]
         ).map(([t, tone], i) => <text key={i} x={bx1 + 12} y={yMid + 18 + i * (c.small + 3)} className={tone === 'ink' ? 'fill-ui-ink' : 'fill-ui-graphite'} style={sm}>{t}</text>)}
       </g>
       <g data-h="bracket-impact">
         <path data-draw d={bracket(bx2, ySpread, yFill)} pathLength={1} fill="none" className="stroke-ui-measured" strokeWidth={2} />
         {(c.narrow
-          ? [['Impact', 'ink'], [formatBps(fig.impactTiming.bps), 'g'], [formatMoney(fig.impactTiming.usd), 'g']]
+          ? [['Impact', 'ink'], [formatBps(fig.impactTiming.bps), 'g'], [formatUsd(fig.impactTiming.usd), 'g']]
           : [[names.impactTiming, 'ink'], [val('impactTiming'), 'g'], [`${(arrivalMid + spreadSpan).toFixed(2)} to ${(arrivalMid + spreadSpan + impactSpan).toFixed(2)}`, 'g']]
         ).map(([t, tone], i) => <text key={i} x={bx2 + 12} y={(ySpread + yFill) / 2 - 10 + i * (c.small + 3)} className={tone === 'ink' ? 'fill-ui-ink' : 'fill-ui-graphite'} style={sm}>{t}</text>)}
       </g>
@@ -231,7 +231,7 @@ export function Hero({ freezeAt }: { freezeAt?: number }) {
       </p>
       <div className="mt-6"><Chart c={WIDE} /><Chart c={NARROW} /></div>
       <p data-h="closing" className="mt-4 max-w-[68ch] text-ui-ink">
-        {`In all the order cost ${formatBps(fig.total.bps)} (${formatMoney(fig.total.usd)}): ${formatBps(fig.spread.bps)} for the spread, ${formatBps(fig.impactTiming.bps)} for impact and timing, and ${formatBps(fig.fees.bps)} in fees.`}
+        {`In all the order cost ${formatBps(fig.total.bps)} (${formatUsd(fig.total.usd)}): ${formatBps(fig.spread.bps)} for the spread, ${formatBps(fig.impactTiming.bps)} for impact and timing, and ${formatBps(fig.fees.bps)} in fees.`}
         {rel && ec && ec.expectedBps !== null && ec.lowBps !== null && ec.highBps !== null
           ? ` Its execution cost, ${formatBps(exec)}, was ${rel} the interval of ${formatSignedBps(ec.lowBps)} to ${formatBps(ec.highBps)} around the expected ${formatBps(ec.expectedBps)}.` : ''}
       </p>
@@ -247,7 +247,7 @@ export function Hero({ freezeAt }: { freezeAt?: number }) {
           <tbody>{replay.decomposition.map((f) => (
             <tr key={f.key} className="border-t border-ui-rule"><th scope="row" className="py-1 text-left font-normal text-ui-ink">{f.label}</th>
               <td className="py-1 text-right tabular-nums text-ui-ink">{f.bps === null ? 'not computed' : minus(f.bps.toFixed(3))}</td>
-              <td className="py-1 text-right tabular-nums text-ui-ink">{formatMoney(f.usd)}</td></tr>
+              <td className="py-1 text-right tabular-nums text-ui-ink">{formatUsd(f.usd)}</td></tr>
           ))}</tbody>
         </table>
         <ul className="mt-3 list-none space-y-1">

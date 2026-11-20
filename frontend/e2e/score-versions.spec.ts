@@ -5,12 +5,14 @@ import { findAdviceTerms } from '../../backend/src/constants/adviceTerms'
 // have no v2 score until M2 rebuilds them from real prints, so the panel says so instead of showing a number.
 test('dashboard: v1 is labelled rule-based and the v2 panel states its demo status', async ({ page }) => {
   await page.goto('/dashboard?userId=demo-moderate')
-  await expect(page.getByTestId('score-v1-label')).toHaveText(/V1 · RULE-BASED/, { timeout: 30_000 })
-  const v2 = page.getByTestId('score-v2')
-  await expect(v2).toBeVisible()
-  const text = await v2.innerText()
-  expect(text).toMatch(/not available for demo accounts yet/i)
-  expect(text).not.toMatch(/\b[A-F] · \d+ \/ 100/)          // no letter or score for a demo
+  // 2026-11-20 (dashboard rebuilt): the v1 grade is a labelled secondary line, "Rule-based score, grade X"; a demo's v2 grade
+  // is served only from the offline build, so the headline carries the measured letter with its "Measured score" label.
+  await expect(page.getByTestId('score-v1-label')).toContainText(/Rule-based score, grade [A-F]/, { timeout: 30_000 })
+  await expect(page.getByTestId('score-v1-label')).toContainText(/published grade of the earlier demo data/)
+  const headline = page.getByTestId('headline')
+  await expect(headline).toBeVisible()
+  const text = await headline.innerText()
+  expect(text).not.toMatch(/\b[A-F] · \d+ \/ 100/)          // no "A · 95 / 100" string
   expect(findAdviceTerms(text)).toEqual([])
 })
 
