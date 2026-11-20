@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config'
+import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
+  // The same `@/` alias as tsconfig.json (design v2 imports the shadcn components as `@/components/ui/...`).
+  resolve: { alias: { '@': fileURLToPath(new URL('./', import.meta.url)) } },
   test: {
     environment: 'jsdom',
     globals: true,

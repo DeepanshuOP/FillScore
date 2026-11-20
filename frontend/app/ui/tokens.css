@@ -1,88 +1,139 @@
 /*
- * FillScore design tokens, production (M8 phase 2b part 1, 2026-11-20). One theme: direction A "Audit report" (light),
- * chosen by Deepanshu on 2026-11-20. There is no toggle and no second set here; direction B and the other font
- * candidates live only in app/design-lab/lab-tokens.css.
+ * FillScore design tokens, design v2 "Instrument" (orders of 2026-11-20). Dark first, with a light theme; next-themes
+ * sets data-theme on <html> (app/providers.tsx). DESIGN.md at the repo root is the rulebook; this file is its values.
  *
- * The contrast test (app/ui/contrast.test.ts) parses THIS file for A and lab-tokens.css for B. Do not move a value into
- * TypeScript.
+ * The contrast test (app/ui/contrast.test.ts) parses the two blocks below by their [data-theme="..."] selector, so the
+ * file the browser reads is the file under test. Do not move a value into TypeScript.
  *
- * A "Audit report" (light). Colours given by Deepanshu: ledger #F5F6F3, ink #1C2127, graphite #59616B, rule #D9DCD6,
- *   audit blue #2B4BB5 (the "measured" annotation colour), ochre #A86F12 (insufficient data).
- *   Added, each with its measured reason:
- *   --ui-raised     #FFFFFF  surface of the one raised strip (the headline row)
- *   --ui-edge       #7A828B  border of a control (3.59:1 on ledger, 3.89:1 on white; rule is 1.28:1 and is a separator only)
- *   --ui-insufficient-text #8A5A0B  ochre as TEXT: #A86F12 is 3.91:1 on ledger, below 4.5; ochre stays for marks (3:1 suffices)
- *   --ui-danger     #A3261F  destructive action and refusal (6.78:1 on ledger)
- * Money is never coloured good or bad: no token below means "profit" or "loss". Grades keep their own set (gradeColor.ts).
+ * Roles (the same names in both themes):
+ *   surface   the page ground                     raised   a panel on the ground       overlay  menus, sheets, hover
+ *   ink       text                                graphite secondary text (>= 4.5:1)   rule     separator only (< 3:1)
+ *   edge      border of a control (>= 3:1)        measured a measured value and its marks (the data accent, cyan)
+ *   action    links, primary actions, focus (electric blue)                            insufficient  "insufficient data" (amber)
+ *   danger    destructive actions and refusals
+ * Money is never coloured good or bad: no token means "profit" or "loss". Grades have their own chip set below.
  */
-:root, [data-ui-theme="a"] {
-  color-scheme: light;
-  --ui-surface: #F5F6F3;
-  --ui-raised: #FFFFFF;
-  --ui-ink: #1C2127;
-  --ui-graphite: #59616B;
-  --ui-rule: #D9DCD6;
-  --ui-edge: #7A828B;
-  --ui-measured: #2B4BB5;
-  --ui-on-measured: #FFFFFF;
-  --ui-insufficient: #A86F12;
-  --ui-insufficient-text: #8A5A0B;
-  --ui-danger: #A3261F;
-  --ui-on-danger: #FFFFFF;
-  --ui-focus: #2B4BB5;
+:root, [data-theme="dark"] {
+  color-scheme: dark;
+  --ui-surface: #0B1015;
+  --ui-raised: #11171E;
+  --ui-overlay: #18202A;
+  --ui-ink: #E8EDF2;
+  --ui-graphite: #8A96A3;
+  --ui-rule: #1F2833;
+  --ui-edge: #66748A;
+  --ui-measured: #5EC8E5;
+  --ui-on-measured: #0B1015;
+  --ui-action: #4C8DFF;
+  --ui-on-action: #0B1015;
+  --ui-insufficient: #E3A73B;
+  --ui-insufficient-text: #E3A73B;
+  --ui-danger: #F2685E;
+  --ui-on-danger: #0B1015;
+  --ui-focus: #4C8DFF;
+  --ui-grade-a: #6BD6A6;
+  --ui-grade-b: #A9D46F;
+  --ui-grade-c: #E3C25B;
+  --ui-grade-d: #E8955A;
+  --ui-grade-f: #EF7A73;
+  --ui-highlight: rgb(255 255 255 / 0.05);
+  --ui-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.5);
+  --ui-shadow-float: 0 2px 4px rgb(0 0 0 / 0.4), 0 24px 48px -12px rgb(0 0 0 / 0.65);
 }
 
-/* Type: one family for text and figures, a code face only for code-like content (hashes, ids, the key fingerprint).
-   Scale of six steps (px): 12 14 16 20 28 40. The families come from next/font in app/layout.tsx. */
+[data-theme="light"] {
+  color-scheme: light;
+  --ui-surface: #F6F7F9;
+  --ui-raised: #FFFFFF;
+  --ui-overlay: #EEF1F4;
+  --ui-ink: #0B1015;
+  --ui-graphite: #566170;
+  --ui-rule: #E1E5EA;
+  --ui-edge: #7C8796;
+  --ui-measured: #06627C;
+  --ui-on-measured: #FFFFFF;
+  --ui-action: #2563EB;
+  --ui-on-action: #FFFFFF;
+  --ui-insufficient: #B7791F;
+  --ui-insufficient-text: #8A5A0B;
+  --ui-danger: #B42318;
+  --ui-on-danger: #FFFFFF;
+  --ui-focus: #2563EB;
+  --ui-grade-a: #12724A;
+  --ui-grade-b: #4A7413;
+  --ui-grade-c: #7F6200;
+  --ui-grade-d: #9C4A0C;
+  --ui-grade-f: #B02A26;
+  --ui-highlight: rgb(255 255 255 / 0.7);
+  --ui-shadow: 0 1px 2px rgb(16 24 40 / 0.06), 0 8px 24px -10px rgb(16 24 40 / 0.12);
+  --ui-shadow-float: 0 2px 4px rgb(16 24 40 / 0.06), 0 24px 48px -12px rgb(16 24 40 / 0.22);
+}
+
+/* Type: Geist Sans for text and figures, Geist Mono only for ids, hashes and the key fingerprint (app/layout.tsx). */
 :root {
-  --ui-font: var(--font-plex-sans), system-ui, sans-serif;
-  --ui-mono: var(--font-plex-mono), ui-monospace, monospace;
-  --ui-text-xs: 0.75rem;
-  --ui-text-sm: 0.875rem;
-  --ui-text-md: 1rem;
-  --ui-text-lg: 1.25rem;
-  --ui-text-xl: 1.75rem;
-  --ui-text-2xl: 2.5rem;
-  --ui-radius: 2px;
+  --ui-font: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --ui-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --ui-radius-sm: 6px;
+  --ui-radius: 10px;
+  --ui-radius-lg: 16px;
+  --ui-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ui-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 body {
   background: var(--ui-surface);
   color: var(--ui-ink);
   font-family: var(--ui-font);
-  font-size: var(--ui-text-md);
-  line-height: 1.5;
+  font-size: 15px;
+  line-height: 1.55;
   font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "cv11" 1;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* The parts the browser draws: selection, caret, placeholder, focus ring, scrollbar, themed from the palette. */
-::selection { background: var(--ui-measured); color: var(--ui-on-measured); }
-input, textarea { caret-color: var(--ui-measured); }
-/* A placeholder is graphite (5.78:1 on the ledger) at full opacity. */
+/* The parts the browser draws, themed from the palette. */
+::selection { background: color-mix(in srgb, var(--ui-action) 35%, transparent); color: var(--ui-ink); }
+input, textarea { caret-color: var(--ui-action); }
 input::placeholder, textarea::placeholder { color: var(--ui-graphite); opacity: 1; }
-:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 2px; border-radius: 4px; }
 * { scrollbar-color: var(--ui-edge) transparent; scrollbar-width: thin; }
-/* A link is underlined (Tailwind's reset removes it). In the base layer, so a utility such as no-underline still wins. */
-@layer base { a { text-decoration-line: underline; text-underline-offset: 0.2em; text-decoration-thickness: 1px; } }
+@layer base {
+  a { text-decoration-line: underline; text-underline-offset: 0.22em; text-decoration-thickness: 1px; text-decoration-color: color-mix(in srgb, currentColor 40%, transparent); }
+  a:hover { text-decoration-color: currentColor; }
+}
 
 /* Tailwind theme: utilities `bg-ui-surface`, `text-ui-ink`, `border-ui-rule` ... read the variables above. */
 @theme inline {
   --color-ui-surface: var(--ui-surface);
   --color-ui-raised: var(--ui-raised);
+  --color-ui-overlay: var(--ui-overlay);
   --color-ui-ink: var(--ui-ink);
   --color-ui-graphite: var(--ui-graphite);
   --color-ui-rule: var(--ui-rule);
   --color-ui-edge: var(--ui-edge);
   --color-ui-measured: var(--ui-measured);
   --color-ui-on-measured: var(--ui-on-measured);
+  --color-ui-action: var(--ui-action);
+  --color-ui-on-action: var(--ui-on-action);
   --color-ui-insufficient: var(--ui-insufficient);
   --color-ui-insufficient-text: var(--ui-insufficient-text);
   --color-ui-danger: var(--ui-danger);
   --color-ui-on-danger: var(--ui-on-danger);
+  --color-ui-grade-a: var(--ui-grade-a);
+  --color-ui-grade-b: var(--ui-grade-b);
+  --color-ui-grade-c: var(--ui-grade-c);
+  --color-ui-grade-d: var(--ui-grade-d);
+  --color-ui-grade-f: var(--ui-grade-f);
   --font-ui: var(--ui-font);
   --font-ui-mono: var(--ui-mono);
-  --radius-ui: 2px;
+  --radius-ui-sm: 6px;
+  --radius-ui: 10px;
+  --radius-ui-lg: 16px;
+  --shadow-ui: var(--ui-shadow);
+  --shadow-ui-float: var(--ui-shadow-float);
+  --ease-ui-out: var(--ui-ease-out);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,58 +1,102 @@
 @import "tailwindcss";
-/* The one production token set (direction A, light) and the base body styles: app/ui/tokens.css. */
+@import "tw-animate-css";
+/* The design v2 token set (dark and light) and the base body styles: app/ui/tokens.css. Rules: DESIGN.md. */
 @import "./ui/tokens.css";
 
-/* M8 part 1 (2026-11-20): removed the dark/light token set (--bg-*, --text-*, --gold*), the unlayered
-   `* { margin: 0; padding: 0 }` reset and the `input::placeholder` rule (both beat Tailwind utilities; Tailwind's
-   own preflight does the reset), the scrollbar and selection colours of the old palette, and the theme toggle's
-   [data-theme] blocks. */
+/* next-themes writes data-theme="light" | "dark" on <html>. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
 
-/* Bridge for the screens that part 2 rebuilds (landing, trades, analytics, methodology, verify, check, share,
-   onboarding). They still name the three old font variables; here the names resolve to the one new family so that
-   no old font is loaded. Delete this block, and the helpers below, when the last of those screens is rebuilt. */
+/* shadcn/ui reads these names; they map onto the FillScore roles so a generated component wears the system. */
 :root {
-  --font-inter: var(--ui-font);
-  --font-playfair: var(--ui-font);
+  --background: var(--ui-surface);
+  --foreground: var(--ui-ink);
+  --card: var(--ui-raised);
+  --card-foreground: var(--ui-ink);
+  --popover: var(--ui-overlay);
+  --popover-foreground: var(--ui-ink);
+  --primary: var(--ui-action);
+  --primary-foreground: var(--ui-on-action);
+  --secondary: var(--ui-overlay);
+  --secondary-foreground: var(--ui-ink);
+  --muted: var(--ui-overlay);
+  --muted-foreground: var(--ui-graphite);
+  --accent: var(--ui-overlay);
+  --accent-foreground: var(--ui-ink);
+  --destructive: var(--ui-danger);
+  --border: var(--ui-rule);
+  --input: var(--ui-edge);
+  --ring: var(--ui-focus);
+  --chart-1: var(--ui-measured);
+  --chart-2: color-mix(in srgb, var(--ui-measured) 70%, var(--ui-surface));
+  --chart-3: var(--ui-graphite);
+  --chart-4: var(--ui-action);
+  --chart-5: var(--ui-insufficient);
+  --radius: 0.625rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--ui-font);
   --font-mono: var(--ui-mono);
 }
 
-/* Helpers still used by the landing page and the onboarding page (part 2). */
-.form-enter {
-  opacity: 0;
-  transform: translateY(10px);
-}
-.form-visible {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 0.3s ease, transform 0.3s ease;
+@layer base {
+  * { border-color: var(--border); }
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
 }
 
-@keyframes spin {
-  to { transform: rotate(360deg); }
+/* A panel of the app: raised ground, hairline, a one-pixel top highlight. */
+@utility panel {
+  background: var(--ui-raised);
+  border: 1px solid var(--ui-rule);
+  border-radius: var(--ui-radius-lg);
+  box-shadow: inset 0 1px 0 var(--ui-highlight), var(--ui-shadow);
 }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(18px); }
-  to   { opacity: 1; transform: translateY(0); }
+/* Display type: tight tracking that grows with size (DESIGN.md, "Type"). */
+@utility display-xl { font-size: clamp(2.75rem, 6vw, 5rem); line-height: 1.02; letter-spacing: -0.045em; font-weight: 600; }
+@utility display-lg { font-size: clamp(2.25rem, 4.2vw, 3.5rem); line-height: 1.06; letter-spacing: -0.035em; font-weight: 600; }
+@utility display-md { font-size: clamp(1.75rem, 2.8vw, 2.5rem); line-height: 1.1; letter-spacing: -0.028em; font-weight: 600; }
+@utility title { font-size: 1.25rem; line-height: 1.3; letter-spacing: -0.015em; font-weight: 600; }
+
+/* The hero tape before its story plays: the story marks wait hidden (opacity only, so nothing shifts). The tape itself
+   is visible from frame 0. With reduced motion the attribute is ignored and removed, and the final frame shows; without
+   script, a <noscript> rule on the landing page shows it too. */
+@media (prefers-reduced-motion: no-preference) {
+  .tape[data-armed] [data-story] { opacity: 0; }
 }
 
-.anim-fadein {
-  opacity: 0;
-  animation: fadeUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-@keyframes pulse-dot {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 10px rgba(167,139,113,0.8),
-                0 0 20px rgba(167,139,113,0.3);
-  }
-  50% {
-    opacity: 0.5;
-    box-shadow: 0 0 4px rgba(167,139,113,0.3);
-  }
-}
-
-.trust-badge:hover {
-  color: #6a6560;
+/* The hero's one aurora (DESIGN.md: one soft gradient, hero only). */
+@utility aurora {
+  background:
+    radial-gradient(60% 50% at 70% 10%, color-mix(in srgb, var(--ui-measured) 22%, transparent), transparent 70%),
+    radial-gradient(50% 45% at 20% 0%, color-mix(in srgb, var(--ui-action) 20%, transparent), transparent 70%);
 }

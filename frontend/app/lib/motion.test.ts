@@ -94,10 +94,21 @@ describe('source rules', () => {
       expect(src, relative(APP, f)).not.toMatch(/\b(snap|textContent|innerText|innerHTML|countUp|count-up)\b\s*[:=(]/)
     }
   })
-  it('no scroll-jacking: no ScrollSmoother, ScrollTrigger pin or scrub in the app screens or the lab', () => {
+  // Design v2 (orders of 2026-11-20): the landing page's scroll story is ordered to be pinned and scrubbed (ScrollTrigger
+  // with Lenis), so scrub is allowed in app/components/marketing/ only. Everywhere else, and ScrollSmoother anywhere, stays banned.
+  it('no scroll-jacking outside the landing page: no ScrollSmoother anywhere; no ScrollTrigger pin or scrub in the app screens or the lab', () => {
     for (const f of sources(APP)) {
       const src = readFileSync(f, 'utf8')
-      expect(src, relative(APP, f)).not.toMatch(/ScrollSmoother|scrub\s*:|pin\s*:\s*true/)
+      const rel = relative(APP, f)
+      expect(src, rel).not.toMatch(/ScrollSmoother/)
+      if (!rel.startsWith(join('components', 'marketing'))) expect(src, rel).not.toMatch(/scrub\s*:|pin\s*:\s*true/)
+    }
+  })
+  it('Lenis and ScrollTrigger are loaded only by the landing page, by dynamic import', () => {
+    const users = sources(APP).filter((f) => /['"](lenis|gsap\/ScrollTrigger|gsap\/SplitText)['"]/.test(readFileSync(f, 'utf8')))
+    for (const f of users) {
+      expect(relative(APP, f), 'only marketing components').toMatch(/^components[\\/]marketing[\\/]/)
+      expect(readFileSync(f, 'utf8'), relative(APP, f)).not.toMatch(/^import .* from ['"](lenis|gsap\/ScrollTrigger|gsap\/SplitText)['"]/m)
     }
   })
 })

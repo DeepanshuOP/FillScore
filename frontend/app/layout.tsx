@@ -1,44 +1,32 @@
-import type { Metadata } from 'next'
-import { IBM_Plex_Mono, IBM_Plex_Sans } from 'next/font/google'
+import type { Metadata, Viewport } from 'next'
+import { GeistSans } from 'geist/font/sans'
+import { GeistMono } from 'geist/font/mono'
 import './globals.css'
 import { AuthProvider } from './context/AuthContext'
 import OAuthRedirectHandler from './components/OAuthRedirectHandler'
-import SiteFooter from './components/SiteFooter'
+import { Providers } from './providers'
 
-// IBM Plex Sans for text and figures (equal-width default figures, measured in the design lab: 0.00 px spread);
-// IBM Plex Mono only for hashes, ids and the key fingerprint. Both are SIL OFL 1.1, self-hosted at build time.
-const plexSans = IBM_Plex_Sans({
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-  variable: '--font-plex-sans',
-  display: 'swap',
-})
-
-const plexMono = IBM_Plex_Mono({
-  subsets: ['latin'],
-  weight: ['400', '500'],
-  variable: '--font-plex-mono',
-  display: 'swap',
-})
-
+// Design v2: Geist Sans for text and figures (tabular figures on), Geist Mono only for ids, hashes and the key
+// fingerprint. Both SIL OFL 1.1, served from the app by the `geist` package (next/font underneath).
 export const metadata: Metadata = {
-  title: 'FillScore — Execution Intelligence',
-  description: 'Transaction cost analysis for retail crypto traders, graded against public Binance market data.',
+  title: 'FillScore: an audit of past crypto executions',
+  description: 'FillScore grades how past crypto orders were executed, against the public market prints of the same seconds. It audits the past; it never advises.',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export const viewport: Viewport = {
+  themeColor: [{ media: '(prefers-color-scheme: dark)', color: '#0B1015' }, { media: '(prefers-color-scheme: light)', color: '#F6F7F9' }],
+}
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" suppressHydrationWarning className={`${plexSans.variable} ${plexMono.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body suppressHydrationWarning>
-        <AuthProvider>
-          <OAuthRedirectHandler />
-          {children}
-          <SiteFooter />
-        </AuthProvider>
+        <Providers>
+          <AuthProvider>
+            <OAuthRedirectHandler />
+            {children}
+          </AuthProvider>
+        </Providers>
       </body>
     </html>
   )

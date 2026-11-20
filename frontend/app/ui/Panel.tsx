@@ -2,31 +2,34 @@ import type { ReactNode } from 'react'
 import { cn } from '../../lib/utils'
 
 /**
- * A ruled section, not a card: a 1 px rule above, space around, no shadow. `raised` is the one place a surface
- * changes (the headline strip). Heading levels are the caller's choice (`as`), so a page keeps a real outline.
+ * Design v2: a panel of the app (raised ground, hairline, one-pixel top highlight). The title is a real heading
+ * (`as`), the caption one line; explanation belongs in a HoverCard or the Method sheet, not here. `flat` drops the
+ * panel ground for a section that sits directly on the page.
  */
-export function Panel({ title, description, actions, children, as: Heading = 'h2', raised = false, className, id }: {
-  title: string
-  description?: string
+export function Panel({ title, description, actions, children, as: Heading = 'h2', flat = false, className, id, bodyClassName }: {
+  title: ReactNode
+  description?: ReactNode
   actions?: ReactNode
   children: ReactNode
   as?: 'h2' | 'h3'
+  /** @deprecated kept for older call sites; every panel is raised now. */
   raised?: boolean
+  flat?: boolean
   className?: string
+  bodyClassName?: string
   id?: string
 }) {
   const headingId = id ? `${id}-title` : undefined
   return (
-    <section id={id} aria-labelledby={headingId}
-      className={cn('border-t border-ui-rule pt-6', raised && 'rounded-ui border border-ui-rule bg-ui-raised p-6', className)}>
-      <header className="mb-4 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-        <div className="max-w-[68ch]">
-          <Heading id={headingId} className="text-[1.25rem] leading-7 font-semibold text-ui-ink">{title}</Heading>
-          {description ? <p className="mt-1 text-sm text-ui-graphite">{description}</p> : null}
+    <section id={id} aria-labelledby={headingId} className={cn(flat ? '' : 'panel p-5 sm:p-6', 'min-w-0', className)}>
+      <header className="mb-4 flex flex-wrap items-start justify-between gap-x-6 gap-y-2">
+        <div className="min-w-0 max-w-[68ch]">
+          <Heading id={headingId} className="text-[15px] font-semibold leading-6 tracking-[-0.01em] text-ui-ink">{title}</Heading>
+          {description ? <p className="mt-0.5 text-[13px] leading-5 text-ui-graphite">{description}</p> : null}
         </div>
-        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
       </header>
-      {children}
+      <div className={bodyClassName}>{children}</div>
     </section>
   )
 }

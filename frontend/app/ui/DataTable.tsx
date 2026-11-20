@@ -1,10 +1,8 @@
 'use client'
 
 import { useId, useMemo, useRef, useState, type ReactNode } from 'react'
-import { flushSync } from 'react-dom'
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp } from 'lucide-react'
 import { cn } from '../../lib/utils'
-import { flipChange } from '../lib/motion'
 import { ValueState } from './ValueState'
 
 export interface Column<T> {
@@ -62,7 +60,8 @@ export function DataTable<T>({ caption, columns, rows, rowId, defaultSort, maxHe
     return out
   }, [rows, columns, sort, filter])
 
-  const flip = (change: () => void) => flipChange(Array.from(body.current?.querySelectorAll('[data-flip]') ?? []), () => flushSync(change))
+  // Design v2: GSAP is loaded by the landing page only, so rows no longer Flip; the change applies at once.
+  const flip = (change: () => void) => change()
   const low = columns.filter((c) => c.priority === 'low')
 
   function toggleSort(key: string) {

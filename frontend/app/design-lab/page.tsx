@@ -1,14 +1,15 @@
-import { Gallery } from './Gallery'
-import { LabShell } from './LabShell'
-import { parseLab } from './params'
-import mock from './fixtures/dashboard-mock.json'
+import Link from 'next/link'
 
-export default async function LabHome({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  const params = parseLab(await searchParams)
+/** Index of the design v2 prototype round. The choices and their reasons are in DESIGN.md section 12. */
+export default function LabIndex() {
   return (
-    <LabShell params={params} page="/design-lab" title="Components on two token sets"
-      intro="The same components under direction A, Audit report (light), and direction B, Tape (dark). Switch the direction and the type family above. The table rows are demo-moderate's real per-symbol costs; the state examples are labelled as examples.">
-      <Gallery symbols={mock.symbols} />
-    </LabShell>
+    <main className="mx-auto max-w-3xl px-6 py-16">
+      <h1 className="display-md text-ui-ink">Design lab</h1>
+      <p className="mt-3 text-ui-graphite">Prototype round of design v2. Development only; this route answers 404 in production.</p>
+      <ul className="mt-8 flex flex-col gap-2">
+        <li><Link href="/design-lab/hero" className="text-ui-ink">Landing hero</Link></li>
+        <li><Link href="/design-lab/dashboard" className="text-ui-ink">Dashboard overview</Link></li>
+      </ul>
+    </main>
   )
 }

@@ -18,15 +18,16 @@ export function Field(props: InputProps | AreaProps) {
   const id = given ?? generated   // a caller-chosen id (tests and links use them) is the one the label points at
   const describedBy = [hint ? `${id}-hint` : null, error ? `${id}-error` : null].filter(Boolean).join(' ') || undefined
   const control = cn(
-    'w-full rounded-ui border bg-ui-raised px-3 py-2 text-ui-ink placeholder:text-ui-graphite disabled:cursor-not-allowed disabled:opacity-60',
-    error ? 'border-ui-danger' : 'border-ui-edge',
+    'w-full rounded-[10px] bg-ui-raised px-3 text-sm text-ui-ink ring-1 ring-inset placeholder:text-ui-graphite outline-none transition-shadow duration-150 focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-60',
+    error ? 'ring-ui-danger' : 'ring-ui-edge',
+    multiline ? 'min-h-24 py-2' : 'h-10',
   )
   return (
     <div className={cn('flex flex-col gap-1', className)}>
       <label htmlFor={id} className="text-sm font-medium text-ui-ink">{label}</label>
       {hint ? <p id={`${id}-hint`} className="text-sm text-ui-graphite">{hint}</p> : null}
       {multiline
-        ? <textarea id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} className={cn(control, 'min-h-24')} {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)} />
+        ? <textarea id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} className={control} {...(rest as TextareaHTMLAttributes<HTMLTextAreaElement>)} />
         : <input id={id} aria-invalid={error ? true : undefined} aria-describedby={describedBy} className={control} {...(rest as InputHTMLAttributes<HTMLInputElement>)} />}
       {error ? <p id={`${id}-error`} className="text-sm font-medium text-ui-danger">{error}</p> : null}
     </div>

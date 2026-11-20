@@ -15,8 +15,13 @@ const code = all.filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l.text));   // comment
 const hits = (re: RegExp, src = code) => src.filter((l) => re.test(l.text)).map((l) => `${l.f}:${l.n}: ${l.text.trim().slice(0, 100)}`);
 
 describe('rebuilt screens', () => {
-  it('no uppercase text and no letter-spacing', () => {
-    expect(hits(/\buppercase\b|text-transform|tracking-|letterSpacing|letter-spacing/)).toEqual([]);
+  // Design v2 (2026-11-20): DESIGN.md expresses type through tight NEGATIVE tracking, so `tracking-[-0.02em]` is allowed;
+  // uppercase and any widened tracking (the eyebrow-label look) stay banned.
+  it('no uppercase text and no widened letter-spacing', () => {
+    expect(hits(/\buppercase\b|text-transform|tracking-(wide|wider|widest)\b|tracking-\[0?\.?[1-9]|tracking-\[0\.0*[1-9]|letterSpacing|letter-spacing/)).toEqual([]);
+  });
+  it('negative tracking only: every tracking utility is a negative bracket value (or the reset tracking-normal)', () => {
+    expect(hits(/tracking-(?!\[-|normal\b)/)).toEqual([]);
   });
   it('no arrow or decorative glyph in copy', () => {
     expect(hits(/[→↗↘←▶◈◆◉⬡⚖✓]/)).toEqual([]);

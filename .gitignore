@@ -42,6 +42,7 @@ PROJECT_STATUS_AUDIT.md
 .claude/settings.local.json
 .claude/settings.json.graphify-bak
 .playwright-mcp/
+.mcp.json
 .work/
 
 # Scratch export artifacts and one-off scripts (F-31)
