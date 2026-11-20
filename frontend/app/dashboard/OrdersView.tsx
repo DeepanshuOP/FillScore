@@ -52,10 +52,10 @@ declare module '@tanstack/react-table' {
 
 function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: Array<[T, string]>; onChange: (v: T) => void; label: string }) {
   return (
-    <div role="group" aria-label={label} className="flex rounded-[8px] bg-ui-overlay p-0.5 text-[12px]">
+    <div role="group" aria-label={label} className="flex gap-0.5 rounded-full border border-ui-edge p-[3px] text-[13px]">
       {options.map(([k, text]) => (
         <button key={k} type="button" aria-pressed={value === k} onClick={() => onChange(k)}
-          className={cn('rounded-[6px] px-2.5 py-1 transition-colors', value === k ? 'bg-ui-raised text-ui-ink shadow-ui' : 'text-ui-graphite hover:text-ui-ink')}>{text}</button>
+          className={cn('h-7 rounded-full px-3 font-medium transition-colors', value === k ? 'bg-ui-ink text-ui-surface' : 'text-ui-graphite hover:text-ui-ink')}>{text}</button>
       ))}
     </div>
   );
@@ -123,7 +123,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
   return (
     <div data-testid="orders-view" className="flex flex-col gap-5">
       <Panel title="Orders"
-        description={loaded ? `${loaded.rows.length} order${loaded.rows.length === 1 ? '' : 's'} from ${loaded.fills} fill${loaded.fills === 1 ? '' : 's'}. Select a row to replay it.` : 'Loading the orders.'}
+        description={loaded ? `${loaded.rows.length} order${loaded.rows.length === 1 ? '' : 's'} from ${loaded.fills} fill${loaded.fills === 1 ? '' : 's'}. Select a row to print its receipt.` : 'Loading the orders.'}
         actions={mode === 'demo' ? <span className="text-[12px] text-ui-graphite">Synthetic trader, real prices</span> : null}>
         {load === 'error' ? <Banner kind="refused" title="The orders could not be loaded" />
           : !loaded ? (
@@ -137,7 +137,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
                   <label className="relative min-w-[12rem] flex-1 sm:max-w-xs">
                     <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-ui-graphite" />
                     <input type="search" value={text} onChange={(e) => { setText(e.target.value); setShown(PAGE); }} aria-label="Filter by symbol or order id" placeholder="Symbol or order id"
-                      className="h-9 w-full rounded-[10px] bg-ui-overlay pr-3 pl-8 text-[13px] text-ui-ink ring-1 ring-inset ring-ui-edge placeholder:text-ui-graphite focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ui-action" />
+                      className="h-9 w-full rounded-[4px] bg-ui-raised pr-3 pl-8 text-sm text-ui-ink ring-1 ring-inset ring-ui-edge placeholder:text-ui-graphite" />
                   </label>
                   <Segmented label="Side" value={side} onChange={(v) => { setSide(v); setShown(PAGE); }} options={[['all', 'All'], ['BUY', 'Buy'], ['SELL', 'Sell']]} />
                   <DropdownMenu>
@@ -153,8 +153,8 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
                 </div>
 
                 {sortedRows.length === 0 ? <EmptyState title="No order matches the filter" /> : (
-                  <div className="max-h-[640px] overflow-auto rounded-[12px] ring-1 ring-inset ring-ui-rule">
-                    <table className="w-full border-collapse text-[13px] text-ui-ink">
+                  <div role="region" aria-label="Orders ledger" tabIndex={0} className="max-h-[640px] overflow-auto border-t border-ui-ink">
+                    <table className="w-full border-collapse font-mono text-[13px] text-ui-ink">
                       <thead>
                         {table.getHeaderGroups().map((hg) => (
                           <tr key={hg.id}>
@@ -163,9 +163,9 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
                               const numeric = h.column.columnDef.meta?.numeric;
                               return (
                                 <th key={h.id} scope="col" aria-sort={dir === 'asc' ? 'ascending' : dir === 'desc' ? 'descending' : 'none'}
-                                  className={cn('sticky top-0 z-10 bg-ui-raised px-3 py-2 text-[12px] font-medium whitespace-nowrap text-ui-graphite shadow-[inset_0_-1px_0_var(--ui-rule)]', numeric ? 'text-right' : 'text-left')}>
+                                  className={cn('sticky top-0 z-10 bg-ui-surface px-3 py-2 font-mono text-[11px] font-normal tracking-[0.06em] whitespace-nowrap text-ui-graphite uppercase shadow-[inset_0_-1px_0_var(--ui-ink)]', numeric ? 'text-right' : 'text-left')}>
                                   <button type="button" onClick={h.column.getToggleSortingHandler()}
-                                    className={cn('inline-flex items-center gap-1 rounded-[6px] hover:text-ui-ink', numeric && 'flex-row-reverse')}>
+                                    className={cn('inline-flex items-center gap-1 font-mono tracking-[0.06em] uppercase hover:text-ui-ink', numeric && 'flex-row-reverse', dir && 'text-ui-ink')}>
                                     {flexRender(h.column.columnDef.header, h.getContext())}
                                     {dir === 'asc' ? <ArrowUp aria-hidden="true" className="size-3.5" /> : dir === 'desc' ? <ArrowDown aria-hidden="true" className="size-3.5" /> : <ChevronsUpDown aria-hidden="true" className="size-3.5 opacity-60" />}
                                   </button>
@@ -180,7 +180,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
                           <tr key={row.id} data-testid="orders-row" tabIndex={row.original.orderId ? 0 : undefined}
                             onClick={() => pick(row.original)}
                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(row.original); } }}
-                            className={cn('border-t border-ui-rule focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-ui-action', row.original.orderId && 'cursor-pointer hover:bg-ui-overlay/60')}>
+                            className={cn('border-t border-dashed border-ui-rule focus-visible:outline-2 focus-visible:-outline-offset-2', row.original.orderId && 'cursor-pointer hover:bg-ui-raised')}>
                             {row.getVisibleCells().map((cell) => (
                               <td key={cell.id} className={cn('px-3 py-2 whitespace-nowrap', cell.column.columnDef.meta?.numeric ? NUM : 'text-left')}>
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -204,7 +204,8 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
       </Panel>
 
       {selected && (
-        <OrderReplay open={open} onOpenChange={setOpen} onCloseAutoFocus={restoreFocus}orderId={selected.orderId} symbol={selected.symbol} query={query} request={request} row={selected.row} />
+        <OrderReplay open={open} onOpenChange={setOpen} onCloseAutoFocus={restoreFocus} orderId={selected.orderId} symbol={selected.symbol} query={query} request={request} row={selected.row}
+          demo={mode === 'demo'} evidenceHref={withParams('/dashboard', query, { view: 'evidence' })} />
       )}
     </div>
   );

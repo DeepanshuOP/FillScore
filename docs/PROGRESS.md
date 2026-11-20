@@ -8,8 +8,18 @@ Deepanshu chose direction 1 with four fixes (hero composition with connected pen
 $0.25 in penInk with "10.0 bps; fees were 99.99% of it" double-underlined; Carbon copy a real tested theme; DESIGN.md
 rewritten), then conversion steps 1-8 (one commit each), then QA. Design v2 stays live until he pushes.
 
-- **Next concrete action: conversion step 4, orders** (ledger table; a row prints the thermal receipt wired to the real
-  replay API; "fills only; the public prints are in the source file" where the payload has no prints).
+- **Next concrete action: conversion step 5, rules and rankings** (rules as ledger rows with the pen circling what met a
+  rule, review actions for signed-in accounts; rankings as a tape with interval brackets, ties "not distinguishable",
+  under 20 orders "too few to tell").
+- **Step 4, done:** Orders as a ledger (Departure Mono figures, ink header rule, dashed row rules, sortable, filter and
+  side switch kept); `OrderReplay` rewritten as the thermal receipt (Radix Dialog printing down from a slot on a desktop,
+  Vaul drawer with a torn top on a phone), wired to `GET /audit/orders/:id/replay` for every order: order record, fills,
+  the fills drawn against time with "FILLS ONLY; THE PUBLIC PRINTS ARE IN THE SOURCE FILE." (the payload never carries
+  prints today), cost lines with leaders and NOT COMPUTED for a missing value, perforation, heavy total, the expected-cost
+  line or its insufficient-data reason, notes, sources with hashes, the SHA-256 of the order record and its bars
+  (labelled not scannable), a SIGNED stamp linking to the Evidence section, "Copy order id" as a printed slip. Test id
+  `explain-replay` kept. Checks: vitest 678 passed, tsc 0, lint 0 errors; looks at 1440/390 with the receipt open: no
+  overflow, no overlap, axe 0 serious.
 - **Step 3, done:** `Overview` rewritten: the total as the image (`SplitFigure`: ink dollars, graphite cents, NumberFlow
   only after a change), the headline sentence, measured and published-rate fee figures; the grade as a rubber stamp
   (`GradeStamp`, served v2 letter and score, band, the frozen v1 line beneath); the month tape (`MonthTape`, model
