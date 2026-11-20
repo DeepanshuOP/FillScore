@@ -7,7 +7,7 @@ import { API } from './env'
 test('settings: a read-only API key is shown once, reads the account, cannot do more, and stops when revoked', async ({ page }) => {
   await signUpFresh(page)
   await page.goto('/settings')
-  await expect(page.getByRole('heading', { name: 'API KEYS FOR AI CLIENTS (READ-ONLY)' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'API keys for AI clients (read-only)' })).toBeVisible()   // design v2: sentence case
 
   await page.locator('#key-name').fill('e2e client')
   await page.locator('#key-password').fill('E2e-Password-123!')

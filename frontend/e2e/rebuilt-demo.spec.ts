@@ -19,15 +19,18 @@ test('dashboard of a rebuilt demo: v1-only views say "not computed", measured vi
   await page.goto(`/dashboard?userId=${ID}`)
   await expect(page.getByTestId('score-v1-label')).toBeVisible({ timeout: 30_000 })
 
-  // v1-only views: the rule-based details say so, inside their disclosure
+  // the headline never makes up a figure: the total is the measured total of the orders (hand value, see below)
+  // (3 of the 5 orders carry a measured total: one was not measured and one did not fill; the sentence says "3 orders")
+  // design v2: the total is an animated figure inside the heading, so the text is read from the headline card
+  await expect(page.getByTestId('headline')).toContainText('The 3 orders paid $15.00 in total.')
+
+  // v1-only views: the rule-based details say so, inside their disclosure (design v2: in the Evidence section)
+  await page.goto(`/dashboard?userId=${ID}&view=evidence`)
   await page.getByRole('button', { name: 'Show the rule-based components' }).click()
   const notComputed = page.getByTestId('not-computed')
   await expect(notComputed).toBeVisible()
   await expect(notComputed).toContainText(/not computed for this data/i)
-
-  // the headline never makes up a figure: the total is the measured total of the orders (hand value, see below)
-  // (3 of the 5 orders carry a measured total: one was not measured and one did not fill; the sentence says "3 orders")
-  await expect(page.getByRole('heading', { name: 'The 3 orders paid $15.00 in total.' })).toBeVisible()
+  await page.goto(`/dashboard?userId=${ID}`)
 
   // measured views
   const orders = page.getByTestId('orders-panel')
@@ -63,6 +66,8 @@ test('no negative zero; totals per term in USD and bps; grammar of the unfilled 
   await expect(page.getByTestId('orders-shortfall')).toContainText(/Impact and timing\s*>−0\.01 bps/)   // true minus sign
   // hand values (see reshapeDemoAsRebuilt): execution $2 + $8 + $0 = $10 over $35,000 = 2.9 bps; fees $30 = 8.6 bps;
   // unfilled orders 7 bps x $5,000 = $3.50 over $35,000 = 1.0 bps; total $2.50 + $9 + $3.50 = $15 = 4.3 bps
+  // design v2: the totals table is the "Table" view of the where-the-money-went card
+  await page.getByRole('button', { name: 'Table' }).click()
   const totals = page.getByTestId('orders-totals')
   const row = (term: string) => totals.getByRole('row', { name: new RegExp(`^${term}\\b`) })
   await expect(row('Execution cost')).toContainText('$10.00')
@@ -88,7 +93,11 @@ test('headline and record: dollar total, the cost sentence, components named aft
   await expect(headline).toBeVisible({ timeout: 30_000 })
   await expect(headline).toContainText('The 3 orders paid $15.00 in total.')
   await expect(headline).toContainText('The total is 4.3 bps of the value ordered. 1 order was not measured and is not in it.')
-  // the record behind the grade, inside its disclosure
+  // M3 §2: cost against expected, one past-tense sentence with its interval (numbers come from the offline build; the pattern is checked, not the values)
+  await expect(page.getByTestId('cost-sentence')).toHaveText(
+    /^Market orders cost [<>]?[−\d.]+ bps against [<>]?[−\d.]+ bps expected: difference [<>]?[+−]?[\d.]+ bps, 90% interval [<>]?[+−]?[\d.]+ bps to [<>]?[+−]?[\d.]+ bps, \d+ orders\.$/)
+  // the record behind the grade, inside its disclosure (design v2: in the Evidence section)
+  await page.goto(`/dashboard?userId=${ID}&view=evidence`)
   await page.getByRole('button', { name: 'Components, version and integrity hash' }).click()
   const v2 = page.getByTestId('score-v2')
   await expect(v2).toBeVisible()
@@ -96,21 +105,24 @@ test('headline and record: dollar total, the cost sentence, components named aft
   for (const name of ['Execution cost', 'Fees', 'Unfilled orders']) expect(text).toContain(name)
   expect(text).not.toMatch(/Slippage|Spread:/)                  // the old component names are gone from the panel
   await expect(page.getByTestId('score-v2-timing')).toHaveText('Timing, not scored: No material difference between hours.')
-  // M3 §2: cost against expected, one past-tense sentence with its interval (numbers come from the offline build; the pattern is checked, not the values)
-  await expect(page.getByTestId('cost-sentence')).toHaveText(
-    /^Market orders cost [<>]?[−\d.]+ bps against [<>]?[−\d.]+ bps expected: difference [<>]?[+−]?[\d.]+ bps, 90% interval [<>]?[+−]?[\d.]+ bps to [<>]?[+−]?[\d.]+ bps, \d+ orders\.$/)
 })
 
+// design v2: the queue, the rankings and the record are separate sections (?view=rules, ?view=rankings, ?view=evidence);
+// every assertion of the old combined panel is kept, each on its section.
 test('M4 panel on a rebuilt demo: insufficient data for the queue, "too few to tell" in the rankings, no review controls, offline-build badge', async ({ page }) => {
-  await page.goto(`/dashboard?userId=${ID}`)
-  const panel = page.getByTestId('explain-panel')
-  await expect(panel).toBeVisible({ timeout: 30_000 })
+  await page.goto(`/dashboard?userId=${ID}&view=rules`)
+  const rules = page.getByTestId('explain-panel')
+  await expect(rules).toBeVisible({ timeout: 30_000 })
   await expect(page.getByTestId('explain-queue-note')).toContainText(/^Insufficient data: fewer than 20 measured orders/)
-  await expect(page.getByTestId('explain-rankings')).toContainText('too few to tell')
-  await expect(panel.getByRole('button', { name: /Mark reviewed|Dismiss|Reopen/ })).toHaveCount(0)     // a demo account is read-only
-  await expect(page.getByTestId('score-v2-badge')).toHaveText('Offline build, hash recorded')
-  const text = await panel.innerText()
-  expect(text).not.toMatch(/\bshould\b|\bbecause\b|\bcaused by\b/i)
+  await expect(rules.getByRole('button', { name: /Mark reviewed|Dismiss|Reopen/ })).toHaveCount(0)     // a demo account is read-only
+  expect(await rules.innerText()).not.toMatch(/\bshould\b|\bbecause\b|\bcaused by\b/i)
+
+  await page.goto(`/dashboard?userId=${ID}&view=rankings`)
+  await expect(page.getByTestId('explain-rankings')).toContainText('too few to tell', { timeout: 30_000 })
+  expect(await page.getByTestId('explain-panel').innerText()).not.toMatch(/\bshould\b|\bbecause\b|\bcaused by\b/i)
+
+  await page.goto(`/dashboard?userId=${ID}&view=evidence`)
+  await expect(page.getByTestId('score-v2-badge')).toHaveText('Offline build, hash recorded', { timeout: 30_000 })
 })
 
 test('analytics of a rebuilt demo says not computed instead of drawing empty charts', async ({ page }) => {

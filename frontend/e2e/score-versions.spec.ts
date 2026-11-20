@@ -20,6 +20,6 @@ test('methodology page renders the generated method and the scoring version', as
   await page.goto('/methodology')
   await expect(page.getByRole('heading', { name: 'Methodology' })).toBeVisible()
   await expect(page.getByText('fill.effective_half_spread_bps', { exact: false })).toBeVisible()
-  await expect(page.getByText(/SCORING v2\.\d+\.\d+/)).toBeVisible()
+  await expect(page.getByText(/Scoring v2\.\d+\.\d+/)).toBeVisible()   // design v2: sentence case, no uppercase labels
   expect(findAdviceTerms(await page.locator('main').innerText())).toEqual([])
 })

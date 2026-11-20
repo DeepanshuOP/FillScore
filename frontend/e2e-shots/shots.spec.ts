@@ -57,7 +57,7 @@ const SCREENS: Array<{ name: string; path: string; demo?: string; signedIn?: boo
   // Signed in: the Ask, data-freshness and broker-file panels and the evidence buttons show. The demo fixture stands in for the
   // account's data here (the sync status is not mocked, so the freshness line is absent); the screenshot reviews layout.
   { name: 'dashboard-signedin', path: '/dashboard', demo: 'demo-moderate', signedIn: true, wait: 'Where the' },
-  { name: 'settings', path: '/settings', signedIn: true, wait: 'Account settings' },
+  { name: 'settings', path: '/settings', signedIn: true, wait: 'Connected exchanges' },   // design v2: the page title is "Settings"
   { name: 'login', path: '/login', wait: 'Log in' },
 ]
 

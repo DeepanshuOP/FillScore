@@ -16,7 +16,7 @@ test('verify page: a pack is checked in the browser, with no request that carrie
   await expect(page.getByRole('heading', { name: 'Check an evidence pack' })).toBeVisible()
 
   await page.setInputFiles('#pack', PACK)
-  const result = page.locator('section[aria-live="polite"]')
+  const result = page.locator('main section[aria-live="polite"]')   // design v2: the toast region (Sonner) is a second live section, outside main
   await expect(result).toContainText('CONSISTENT', { timeout: 15_000 })
   await expect(result).toContainText('does not show that it came from FillScore')
 
@@ -42,8 +42,8 @@ test('verify page: a changed file is named, a non-pack file is said to be unread
   doc.files['scorecard.json'] = doc.files['scorecard.json'].replace('"A"', '"B"')
   await page.goto('/verify')
   await page.setInputFiles('#pack', { name: 'changed.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(doc)) })
-  await expect(page.locator('section[aria-live="polite"]')).toContainText('scorecard.json: the file does not match the SHA-256 in the manifest')
+  await expect(page.locator('main section[aria-live="polite"]')).toContainText('scorecard.json: the file does not match the SHA-256 in the manifest')
 
   await page.setInputFiles('#pack', { name: 'other.json', mimeType: 'application/json', buffer: Buffer.from('{"hello":1}') })
-  await expect(page.locator('section[aria-live="polite"]')).toContainText('UNREADABLE')
+  await expect(page.locator('main section[aria-live="polite"]')).toContainText('UNREADABLE')
 })
