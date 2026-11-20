@@ -83,9 +83,9 @@ function OrderTypeBadge({ isMaker }: { isMaker: boolean }) {
 
 function StatCell({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="panel flex min-w-0 flex-col gap-1 p-4">
-      <span className="text-[13px] text-ui-graphite">{label}</span>
-      <span className="text-[1.25rem] leading-7 font-semibold tracking-[-0.015em] text-ui-ink">{children}</span>
+    <div className="panel flex min-w-0 flex-col gap-1 pt-3">
+      <span className="font-mono text-[11px] tracking-[0.06em] text-ui-graphite uppercase">{label}</span>
+      <span className="text-[1.5rem] leading-8 font-black tracking-[-0.03em] text-ui-ink">{children}</span>
     </div>
   )
 }
@@ -408,7 +408,8 @@ function TradesContent() {
             {filterSelect('Grade', gradeFilter, ['ALL', 'A', 'B', 'C', 'D', 'F'], setGradeFilter)}
           </div>
 
-          <div className="-mx-1 max-h-[70vh] overflow-auto rounded-[10px] ring-1 ring-inset ring-ui-rule">
+          {/* relative: the table's visually hidden caption stays inside the scroller instead of widening the page */}
+          <div className="relative max-h-[70vh] overflow-auto border-t border-ui-ink">
             <table className="w-full min-w-[960px] border-collapse text-[13px] text-ui-ink">
               <thead>
                 <tr>

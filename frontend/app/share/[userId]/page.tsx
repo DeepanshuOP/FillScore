@@ -72,28 +72,32 @@ export default async function SharePage({ params }: Props) {
       <MarketingNav />
       <main className="min-h-screen bg-ui-surface pb-24">
         <div className="mx-auto max-w-[1240px] px-5 pt-28 sm:px-8">
-          <section className="panel mx-auto flex max-w-[560px] flex-col items-center p-8 text-center sm:p-10" aria-label="Score card">
-            <p className="text-[13px] font-medium text-ui-graphite">FillScore</p>
-            <h1 className="display-md mt-1 text-ui-ink">{lead.score} <span className="text-lg font-normal text-ui-graphite">out of 100</span></h1>
-            <GradeChip grade={lead.grade} size="xl" label={`Grade ${lead.grade}`} className="mt-6" />
-            <p className="mt-3 text-sm text-ui-ink">{measured ? 'Measured score (v2)' : 'Rule-based score (v1)'}</p>
-            <p className="mt-1 text-[13px] text-ui-graphite">Measured against public market prints</p>
-            {measured && (
-              <p className="mt-4 text-[13px] text-ui-graphite">Rule-based score (v1): grade {v1.grade}, {v1.score} out of 100</p>
-            )}
-
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-              <ProvenanceChip dataSource={source} />
-              <span className="inline-flex h-6 items-center rounded-full border border-ui-rule px-2.5 text-xs text-ui-graphite">{data.exchange}</span>
+          {/* design v3: the score card is a receipt with the grade stamped on it */}
+          <section className="mx-auto max-w-[480px]" aria-label="Score card">
+            <div className="fs-receipt shadow-ui">
+              <p className="fs-r-title">FillScore</p>
+              <p className="c mt-1">SCORE CARD</p>
+              <p className="c g">{source === 'synthetic-demo' ? 'SYNTHETIC TRADER, REAL PRICES' : 'YOUR EXCHANGE DATA, READ-ONLY KEY'}</p>
+              <hr />
+              <div className="flex justify-center py-4">
+                <GradeChip grade={lead.grade} size="xl" label={`Grade ${lead.grade}`} />
+              </div>
+              <h1 className="c font-ui text-[2.25rem] leading-none font-black tracking-[-0.04em] text-ui-ink">{lead.score} <span className="text-base font-normal tracking-normal text-ui-graphite">out of 100</span></h1>
+              <p className="c mt-2">{measured ? 'MEASURED SCORE (V2)' : 'RULE-BASED SCORE (V1)'}</p>
+              <p className="c g">MEASURED AGAINST PUBLIC MARKET PRINTS</p>
+              {measured && <p className="c g mt-2">RULE-BASED SCORE (V1): GRADE {v1.grade}, {v1.score} OUT OF 100</p>}
+              <hr />
+              <dl className="kv" style={{ gridTemplateColumns: '14ch minmax(0,1fr)' }}>
+                <dt className="g">VENUE</dt><dd>{data.exchange}</dd>
+                <dt className="g">PERIOD</dt><dd>{data.period}</dd>
+                <dt className="g">TRADES</dt><dd>{data.topStats.tradesAnalysed}</dd>
+                <dt className="g">MAKER SHARE</dt><dd>{data.topStats.makerRatio}</dd>
+                <dt className="g">AVG SLIPPAGE</dt><dd>{data.topStats.avgSlippageBps} bps</dd>
+                <dt className="g">BEST SYMBOL</dt><dd>{data.topStats.bestSymbol}</dd>
+              </dl>
+              <div className="mt-4 flex justify-center"><ProvenanceChip dataSource={source} /></div>
             </div>
-            <p className="mt-3 text-[13px] text-ui-graphite">{data.period}</p>
-
-            <dl className="mt-8 grid w-full grid-cols-2 gap-x-6 gap-y-5 border-t border-ui-rule pt-6 text-left">
-              <div><dt className="text-[13px] text-ui-graphite">Trades analysed</dt><dd className="mt-1 text-lg font-semibold text-ui-ink">{data.topStats.tradesAnalysed}</dd></div>
-              <div><dt className="text-[13px] text-ui-graphite">Maker share of fills</dt><dd className="mt-1 text-lg font-semibold text-ui-ink">{data.topStats.makerRatio}</dd></div>
-              <div><dt className="text-[13px] text-ui-graphite">Average slippage</dt><dd className="mt-1 text-lg font-semibold text-ui-ink">{data.topStats.avgSlippageBps} bps</dd></div>
-              <div><dt className="text-[13px] text-ui-graphite">Best symbol</dt><dd className="mt-1 text-lg font-semibold text-ui-ink">{data.topStats.bestSymbol}</dd></div>
-            </dl>
+            <div aria-hidden="true" className="fs-torn-bottom" />
           </section>
 
           <div className="mt-8 flex flex-col items-center gap-5 text-center">

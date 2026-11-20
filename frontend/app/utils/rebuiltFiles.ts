@@ -3,8 +3,8 @@ export const REBUILT_FILES = [
   // design v2 core: landing, shell, marketing, tape, charts, primitives (Headline, CostPanels and OrdersPanel were replaced by Overview)
   'app/page.tsx', 'app/providers.tsx', 'app/components/shell/AppShell.tsx', 'app/components/shell/CommandMenu.tsx', 'app/components/shell/Logo.tsx',
   'app/components/shell/ThemeToggle.tsx', 'app/components/marketing/MarketingNav.tsx', 'app/components/marketing/TapeHero.tsx',
-  'app/components/marketing/DemoCards.tsx', 'app/components/marketing/CheckIt.tsx', 'app/ui/charts/ScoreGauge.tsx',
-  'app/ui/charts/StackBar.tsx', 'app/ui/charts/IntervalPlot.tsx', 'app/ui/charts/RankPlot.tsx', 'app/ui/GradeChip.tsx', 'app/ui/GradeBadge.tsx',
+  'app/components/marketing/DemoCards.tsx', 'app/components/marketing/CheckIt.tsx',
+  'app/ui/charts/RankPlot.tsx', 'app/ui/GradeChip.tsx', 'app/ui/GradeBadge.tsx',
   'app/ui/ValueState.tsx', 'app/ui/Panel.tsx', 'app/ui/Banner.tsx', 'app/ui/EmptyState.tsx', 'app/ui/Disclosure.tsx', 'app/ui/ProvenanceChip.tsx',
   'app/design-lab/page.tsx',
   // design v3 (2026-11-20): the new production pieces

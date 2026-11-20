@@ -8,7 +8,7 @@ export default function NotComputed({ title, detail }: { title: string; detail?:
     <section
       data-testid="not-computed"
       aria-label={`${title}: ${NOT_COMPUTED}`}
-      className="panel flex flex-col gap-2 p-5"
+      className="panel flex flex-col gap-2 pt-4"
     >
       <h3 className="text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">{title}</h3>
       <div className="text-[13px] leading-5 text-ui-graphite">

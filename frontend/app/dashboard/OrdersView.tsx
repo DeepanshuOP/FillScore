@@ -153,7 +153,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
                 </div>
 
                 {sortedRows.length === 0 ? <EmptyState title="No order matches the filter" /> : (
-                  <div role="region" aria-label="Orders ledger" tabIndex={0} className="max-h-[640px] overflow-auto border-t border-ui-ink">
+                  <div role="region" aria-label="Orders ledger" tabIndex={0} className="relative max-h-[640px] overflow-auto border-t border-ui-ink">
                     <table className="w-full border-collapse font-mono text-[13px] text-ui-ink">
                       <thead>
                         {table.getHeaderGroups().map((hg) => (

@@ -24,11 +24,19 @@ async function main() {
     await page.goto(BASE + path, { waitUntil: 'networkidle', timeout: 60000 })
     await page.evaluate(() => document.fonts.ready)
     const wait = flag('wait'); if (wait) await page.getByText(wait).first().waitFor({ timeout: 30000 })
+    const upload = flag('upload'); if (upload) { await page.locator('input[type=file]').first().setInputFiles(resolve(__dirname, '..', upload)); await page.waitForTimeout(400) }
+    const trusted = flag('trusted'); if (trusted) { await page.locator('#trusted').fill(trusted); await page.waitForTimeout(400) }
     const click = flag('click'); if (click) { await page.locator(click).first().click(); await page.waitForTimeout(1200) }
     const scroll = flag('scroll'); if (scroll) { await page.mouse.wheel(0, Number(scroll)); await page.waitForTimeout(1500) }
     await page.waitForTimeout(900)
     await page.screenshot({ path: resolve(OUT, `${name}-${width}.jpg`), type: 'jpeg', quality: 60 })
     console.log(JSON.stringify({ width, ...(await checks(page, name)) }))
+    const probe = flag('probe')
+    if (probe) console.log(await page.evaluate((sel) => {
+      const out: string[] = []
+      for (let el = document.querySelector<HTMLElement>(sel); el; el = el.parentElement) out.push(`${el.tagName}.${String(el.className).slice(0, 40)} w=${el.getBoundingClientRect().width} sw=${el.scrollWidth} ov=${getComputedStyle(el).overflowX}`)
+      return out.join('\n')
+    }, probe))
     if (flag('wide') !== undefined) console.log(await page.evaluate(() => {
       const vw = document.documentElement.clientWidth, out: string[] = [String(document.documentElement.scrollWidth)]
       for (const el of document.querySelectorAll<HTMLElement>('*')) { const r = el.getBoundingClientRect(); if (r.right > vw + 1 && r.width > 0) out.push(`${el.tagName}.${String(el.className).slice(0, 50)} ${Math.round(r.left)}-${Math.round(r.right)} ${getComputedStyle(el).position}`) }

@@ -118,6 +118,9 @@
 }
 .fs-word-stamp small { display: block; font-family: var(--ui-mono); font-weight: 400; font-size: 10px; letter-spacing: 0.02em; color: var(--ui-pen-ink); }
 .fs-word-stamp[data-tone='ink'] small { color: var(--ui-ink); }
+.fs-word-stamp[data-tone='danger'], .fs-word-stamp[data-tone='danger'] small { color: var(--ui-danger); }
+.fs-word-stamp[data-tone='dashed'] { color: var(--ui-ink); border-style: dashed; }
+.fs-word-stamp[data-tone='dashed'] small { color: var(--ui-ink); }
 .fs-word-stamp[data-tone='ink'] { color: var(--ui-ink); }
 .fs-word-stamp[data-in='true'] { animation: fs-word-in 360ms var(--ui-ease-out) both; }
 @keyframes fs-word-in { 0% { opacity: 0; transform: rotate(0deg) scale(1.5); } 60% { opacity: 1; transform: rotate(-4deg) scale(0.96); } 100% { transform: rotate(-4deg) scale(1); } }

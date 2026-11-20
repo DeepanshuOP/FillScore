@@ -8,8 +8,22 @@ Deepanshu chose direction 1 with four fixes (hero composition with connected pen
 $0.25 in penInk with "10.0 bps; fees were 99.99% of it" double-underlined; Carbon copy a real tested theme; DESIGN.md
 rewritten), then conversion steps 1-8 (one commit each), then QA. Design v2 stays live until he pushes.
 
-- **Next concrete action: conversion step 8, remaining screens** (verify, onboarding, settings, auth, trades, analytics,
-  methodology, check, share card and Open Graph image, legal, 404 and error).
+- **Next concrete action: QA** (one QA script run, at most three fix passes; review checklists and break-ui on overview,
+  receipt and verify; independent reviewer on the images; full checks; curated images; DESIGN.md rewrite (fix 4);
+  M8.md and ARCHITECTURE.md §4).
+- **Step 8, done:** Verify as a drop envelope and a printed verification receipt (manifest lines tick OK or FAIL in turn,
+  signature, key, file count, the outcome stamped VALID / CONSISTENT / INVALID / UNREADABLE with its line in words; the
+  stamps differ in line style and words, colour only repeats them). Onboarding refusals as returned receipts (RETURNED
+  stamp, corrections numbered in pen-ink; network errors as NO ANSWER). Share page as a receipt score card; Open Graph
+  image redrawn as a receipt with the grade stamped, on the paper (labels synthetic demos). Auth pages: display title
+  and a "terms of the audit" receipt beside the form. 404 ("404." and a NOT ON FILE stamp) and error (NOT PRINTED).
+  Methodology: ink reading text, mono chips, ledger headings (generated text untouched). Trades: ledger stat cells,
+  ledger table frame. Analytics: single-hue ink scales come from the tokens (measured = ink); not-computed blocks as
+  ledger sections. Settings, check, legal and analytics charts restyle through the tokens. Fixed on the way: a visually
+  hidden table caption widened the trades page on phones (scroll containers are now `relative`, also DataTable and
+  Orders). Deleted v2 leftovers: ScoreGauge, StackBar, IntervalPlot and their geometry test; the lab keeps only v3.
+  Checks: vitest 664 passed, tsc 0, lint 0 errors, build ok; looks at 1440/390 of verify, login, settings, trades,
+  analytics, methodology, 404, onboarding: no overflow, axe 0 serious (the share page's axe finding is in the QA list).
 - **Step 7, done (with fixes 1 and 2):** landing page rebuilt. Hero (`TapeHero`): headline bottom-left at editorial
   scale, lede and the call to action bottom-right, the tape of the 38 real prints full-bleed and feeding right to left
   from frame 0 (starts at -40 px, never an empty left side); pinned and scrubbed, it stops on the order and the pen draws

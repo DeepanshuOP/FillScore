@@ -86,7 +86,7 @@ export function DataTable<T>({ caption, columns, rows, rowId, defaultSort, maxHe
           <span aria-live="polite" className="text-sm text-ui-graphite tabular-nums">{view.length} of {rows.length} rows</span>
         </div>
       ) : null}
-      <div role="region" aria-label={caption} tabIndex={0} style={{ maxHeight }} className="overflow-auto border-t border-ui-ink">
+      <div role="region" aria-label={caption} tabIndex={0} style={{ maxHeight }} className="relative overflow-auto border-t border-ui-ink">
         <table className="w-full border-collapse text-sm">
           <caption className="sr-only">{caption}</caption>
           <thead>

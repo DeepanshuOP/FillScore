@@ -120,7 +120,7 @@ export default function WhaleCorrelation({ userId, dashboardMode }: { userId: st
 
   if (loading) {
     return (
-      <section className="panel p-5 sm:p-6">
+      <section className="panel pt-4">
         <div className="mb-4 h-5 w-1/4 rounded-[6px] bg-ui-overlay/60" />
         <div className="h-32 w-full rounded-[10px] bg-ui-overlay/60" />
       </section>

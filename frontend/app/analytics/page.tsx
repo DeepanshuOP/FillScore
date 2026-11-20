@@ -326,7 +326,7 @@ function AnalyticsContent() {
   if (isNotComputed(data)) {
     // A rebuilt demo (decision 11): every chart on this page reads per-trade v1 fields, so none is drawn.
     return shell(
-      <section data-testid="not-computed" aria-label="Analytics: not computed for this data" className="panel p-5 sm:p-6">
+      <section data-testid="not-computed" aria-label="Analytics: not computed for this data" className="panel pt-4">
         <h2 className="mb-3 text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">Analytics</h2>
         <ValueState state="not-computed" label="Analytics"
           reason={`The heatmap, symbol breakdown, score distribution and markouts need per-trade v1 fields, and these ${data.totalTrades} trades do not have them. The measured views are on the dashboard.`} />

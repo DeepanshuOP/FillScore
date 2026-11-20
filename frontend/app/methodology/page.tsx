@@ -17,13 +17,14 @@ const NAMES: Record<string, string> = {
   execution: 'Execution cost (spread and impact)', unfilled: 'Unfilled orders',
 };
 
-const P = 'mb-4 text-[15.5px] leading-[1.75] text-ui-graphite';
-const CHIP = 'rounded-ui border border-ui-rule bg-ui-raised px-1.5 py-0.5 font-ui-mono text-[0.8125rem] text-ui-ink';
+// Design v3: long reading text is ink on the paper; ids, versions and hashes are printed in the mono, in a dashed box.
+const P = 'mb-4 text-[16px] leading-[1.7] text-ui-ink';
+const CHIP = 'border border-dashed border-ui-edge px-1.5 py-0.5 font-mono text-[0.8125rem] text-ui-ink';
 
 /** A heading with an id anchor and a "#" link icon that shows on hover or focus. */
 function Anchor({ id, level, children, label }: { id: string; level: 2 | 3; children: ReactNode; label: string }) {
   const H = level === 2 ? 'h2' : 'h3';
-  const size = level === 2 ? 'mt-12 mb-4 text-xl font-semibold tracking-[-0.02em]' : 'mt-8 mb-2 text-base font-semibold tracking-[-0.01em]';
+  const size = level === 2 ? 'mt-14 mb-4 border-t border-ui-ink pt-4 text-[1.75rem] font-black tracking-[-0.03em]' : 'mt-8 mb-2 text-[17px] font-bold tracking-[-0.01em]';
   return (
     <H id={id} className={`group scroll-mt-24 text-ui-ink ${size}`}>
       {children}
@@ -50,9 +51,9 @@ export default function MethodologyPage() {
     <>
       <MarketingNav />
       <main className="min-h-screen bg-ui-surface pb-24">
-        <div className="mx-auto max-w-[1240px] px-5 pt-28 sm:px-8">
+        <div className="px-[var(--ui-gutter)] pt-28">
           <header className="mb-12 max-w-[68ch]">
-            <h1 className="display-md text-ui-ink">Methodology</h1>
+            <h1 className="display-xl text-ui-ink">Methodology</h1>
             <p className="mt-4 flex flex-wrap items-center gap-2 text-[13px] text-ui-graphite">
               <code className={CHIP}>Measurement {data.measureVersion}</code>
               <code className={CHIP}>Scoring {s.version}</code>

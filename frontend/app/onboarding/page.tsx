@@ -80,13 +80,30 @@ function RefusalBanner({ refusal, exchange, message }: { refusal: Refusal; excha
     title = `${exchange} did not answer`;
     steps = ['Nothing was stored.', 'Try again in a moment.'];
   }
+  // Design v3: a refusal is the key handed back as a returned receipt, with the corrections printed in the pen's ink.
+  const network = refusal.code === 'network_error';
   return (
-    <Banner kind={refusal.code === 'network_error' ? 'stale' : 'refused'} title={title} className="mb-6">
-      <p>{message}</p>
-      <ol className="mt-2 list-decimal space-y-0.5 pl-5">
-        {steps.map((s) => <li key={s}>{s}</li>)}
-      </ol>
-    </Banner>
+    <div role={network ? 'status' : 'alert'} data-kind={network ? 'stale' : 'refused'} className="mb-6">
+      <div className="fs-receipt shadow-ui">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <p className="g">KEY {network ? 'NOT CHECKED' : 'RETURNED'}, NOTHING STORED</p>
+          <span className="fs-word-stamp !text-[15px]" data-tone={network ? 'dashed' : 'danger'} data-in="true">{network ? 'NO ANSWER' : 'RETURNED'}<small>{exchange}</small></span>
+        </div>
+        <p className="mt-2 font-ui text-[1.25rem] font-black tracking-[-0.02em] text-ui-ink">{title}</p>
+        <p className="mt-1 font-ui text-sm leading-6 text-ui-graphite">{message}</p>
+        <hr />
+        <p className="sec !text-left">{network ? 'WHAT HAPPENED' : 'CORRECTIONS'}</p>
+        <ol className="flex flex-col gap-1">
+          {steps.map((s, i) => (
+            <li key={s} className="grid grid-cols-[3ch_minmax(0,1fr)] gap-x-2">
+              <span className="g">{String(i + 1).padStart(2, '0')}</span>
+              <span className={network ? 'text-ui-ink' : 'font-ui text-[15px] font-bold leading-snug text-ui-pen-ink'}>{s}</span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      <div aria-hidden="true" className="fs-torn-bottom" />
+    </div>
   );
 }
 
@@ -305,7 +322,7 @@ export default function OnboardingPage() {
         {errorMsg && !refusal ? <Banner kind="refused" title="Something did not work" className="mb-6">{errorMsg}</Banner> : null}
 
         {noTrades ? (
-          <section className="panel flex flex-col gap-4 p-5 sm:p-6">
+          <section className="sheet flex flex-col gap-4 p-5 sm:p-6">
             <h1 className="display-md">No trades yet</h1>
             <p className="text-[13px] leading-5 text-ui-graphite">
               We connected successfully, but found no spot trades in {lookbackLabel(usedLookback)}. Assets you hold are searched automatically; an asset you fully sold is only found if you list it. Use “Sync a longer period” or add symbols below.
@@ -319,7 +336,7 @@ export default function OnboardingPage() {
             </div>
           </section>
         ) : syncResult ? (
-          <section className="panel flex flex-col gap-6 p-5 text-center sm:p-6">
+          <section className="sheet flex flex-col gap-6 p-5 text-center sm:p-6">
             <div className="flex flex-col items-center gap-3">
               <p className="text-[13px] text-ui-graphite">Your FillScore</p>
               <p className="text-[4rem] font-semibold leading-none tracking-[-0.02em] text-ui-ink">{syncResult.fillScore.toFixed(1)}</p>
@@ -339,7 +356,7 @@ export default function OnboardingPage() {
             <Button onClick={() => router.push('/dashboard')}>View my dashboard</Button>
           </section>
         ) : isSuccess ? (
-          <section className="panel flex flex-col gap-5 p-5 sm:p-6">
+          <section className="sheet flex flex-col gap-5 p-5 sm:p-6">
             <div>
               <h1 className="display-md">Connected</h1>
               <p className="mt-2 text-[13px] leading-5 text-ui-graphite">Your read-only key has been verified and securely stored.</p>
@@ -355,7 +372,7 @@ export default function OnboardingPage() {
                 <div className="flex flex-col gap-1">
                   <label htmlFor="lookback" className="text-sm font-medium text-ui-ink">History to analyse</label>
                   <select id="lookback" value={lookbackDays} onChange={e => setLookbackDays(Number(e.target.value))}
-                    className="h-10 w-full rounded-[10px] bg-ui-raised px-3 text-sm text-ui-ink outline-none ring-1 ring-inset ring-ui-edge focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]">
+                    className="h-10 w-full rounded-[4px] bg-ui-raised px-3 text-sm text-ui-ink outline-none ring-1 ring-inset ring-ui-edge focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]">
                     <option value={30}>Last 30 days</option>
                     <option value={90}>Last 90 days</option>
                     <option value={365}>Last 365 days (default)</option>
@@ -375,10 +392,10 @@ export default function OnboardingPage() {
             <div className="flex flex-col gap-3">
               {EXCHANGES.map((ex) => (
                 <button key={ex.id} type="button" onClick={() => { if (ex.enabled) setSelectedExchange(ex.id); }} disabled={!ex.enabled}
-                  className="panel flex w-full flex-col gap-1 p-4 text-left transition-shadow duration-150 hover:ring-1 hover:ring-ui-edge focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-60">
+                  className="sheet flex w-full flex-col gap-1 p-4 text-left transition-shadow duration-150 hover:ring-1 hover:ring-ui-edge focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-60">
                   <span className="flex items-center justify-between">
                     <span className="text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">{ex.name}</span>
-                    {!ex.enabled && <span className="rounded-[6px] bg-ui-overlay px-2 py-0.5 text-[12px] text-ui-graphite">Coming soon</span>}
+                    {!ex.enabled && <span className="border border-dashed border-ui-edge px-2 py-0.5 font-mono text-[11px] text-ui-graphite">COMING SOON</span>}
                   </span>
                   <span className="text-[13px] text-ui-graphite">{ex.desc}</span>
                 </button>
