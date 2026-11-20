@@ -1,0 +1,125 @@
+{
+ "order": {
+  "orderId": "ord-moderate-BTCUSDT-968874",
+  "symbol": "BTCUSDT",
+  "exchange": "binance",
+  "type": "MARKET",
+  "side": "SELL",
+  "quantity": 0.005974358528452387,
+  "executedQuantity": 0.005974358528452387,
+  "status": "FILLED",
+  "restingMs": null,
+  "createdAt": "2024-01-28T20:41:40.962Z",
+  "updatedAt": "2024-01-28T20:41:42.095Z"
+ },
+ "fills": [
+  {
+   "tradeId": "v2:syn-moderate-BTCUSDT-93252:0",
+   "time": "2024-01-28T20:41:41.679Z",
+   "price": 41918,
+   "quantity": 0.00072,
+   "notional": 30.18096,
+   "feeUsd": 0.030180960000000003,
+   "isMaker": false
+  },
+  {
+   "tradeId": "v2:syn-moderate-BTCUSDT-93252:1",
+   "time": "2024-01-28T20:41:42.095Z",
+   "price": 41918,
+   "quantity": 0.005254358528452387,
+   "notional": 220.2522008,
+   "feeUsd": 0.22025220079566715,
+   "isMaker": false
+  }
+ ],
+ "decomposition": [
+  {
+   "key": "execution",
+   "label": "Execution cost",
+   "bps": 0.001192804859071087,
+   "usd": 0.00002987179267008221,
+   "source": {
+    "kind": "order-measurement",
+    "field": "shortfall.executionBps"
+   }
+  },
+  {
+   "key": "spread",
+   "label": "Spread paid",
+   "bps": 0.001192804859071087,
+   "usd": 0.00002987179267008221,
+   "partOf": "execution",
+   "source": {
+    "kind": "order-measurement",
+    "field": "shortfall.spreadBps"
+   }
+  },
+  {
+   "key": "impactTiming",
+   "label": "Impact and timing",
+   "bps": 0,
+   "usd": 0,
+   "partOf": "execution",
+   "source": {
+    "kind": "order-measurement",
+    "field": "shortfall.impactTimingBps"
+   }
+  },
+  {
+   "key": "unfilled",
+   "label": "Unfilled orders",
+   "bps": 0,
+   "usd": 0,
+   "source": {
+    "kind": "order-measurement",
+    "field": "shortfall.opportunityBps"
+   }
+  },
+  {
+   "key": "fees",
+   "label": "Fees",
+   "bps": 9.999998807195139,
+   "usd": 0.25043316079566713,
+   "source": {
+    "kind": "order-measurement",
+    "field": "shortfall.feesBps"
+   }
+  },
+  {
+   "key": "total",
+   "label": "Total",
+   "bps": 10.00119161205421,
+   "usd": 0.2504630325883372,
+   "source": {
+    "kind": "order-measurement",
+    "field": "shortfall.totalBps"
+   }
+  }
+ ],
+ "expectedCost": {
+  "applies": true,
+  "expectedBps": 0.041443171979745196,
+  "lowBps": -0.35281313049526575,
+  "highBps": 0.4356994744547561,
+  "level": 0.9,
+  "bucket": "lt1k",
+  "reason": null,
+  "source": {
+   "kind": "order-measurement",
+   "field": "expectedCost",
+   "version": "ec1.0.0",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08"
+  }
+ },
+ "sources": [
+  {
+   "kind": "public-market-data",
+   "label": "Binance daily trades file, BTCUSDT, 2024-01-28",
+   "sha256": "ec7442f3c645d8a57b23657bf8456b98e97fabbd90910ebc8e37a69c2fc474d5",
+   "url": "https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-28.zip"
+  }
+ ],
+ "notes": [
+  "Delay cost: not measured (no decision timestamp)."
+ ]
+}

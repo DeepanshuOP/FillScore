@@ -1,0 +1,474 @@
+{
+ "fills": [
+  {
+   "accountId": "demo-moderate",
+   "dataSource": "synthetic-demo",
+   "exchange": "binance",
+   "executedAt": "2024-01-28T20:41:41.679Z",
+   "executionPrice": 41918.0,
+   "fee": 0.030180960000000003,
+   "feeAsset": "USDT",
+   "feeUsd": 0.030180960000000003,
+   "isMaker": false,
+   "notional": 30.180960000000002,
+   "orderId": "ord-moderate-BTCUSDT-968874",
+   "orderType": "MARKET",
+   "quantity": 0.00072,
+   "side": "SELL",
+   "symbol": "BTCUSDT",
+   "tradeId": "v2:syn-moderate-BTCUSDT-93252:0",
+   "userId": "demo-moderate"
+  },
+  {
+   "accountId": "demo-moderate",
+   "dataSource": "synthetic-demo",
+   "exchange": "binance",
+   "executedAt": "2024-01-28T20:41:42.095Z",
+   "executionPrice": 41918.0,
+   "fee": 0.22025220079566715,
+   "feeAsset": "USDT",
+   "feeUsd": 0.22025220079566715,
+   "isMaker": false,
+   "notional": 220.25220079566714,
+   "orderId": "ord-moderate-BTCUSDT-968874",
+   "orderType": "MARKET",
+   "quantity": 0.005254358528452387,
+   "side": "SELL",
+   "symbol": "BTCUSDT",
+   "tradeId": "v2:syn-moderate-BTCUSDT-93252:1",
+   "userId": "demo-moderate"
+  }
+ ],
+ "measurement": {
+  "accountId": "demo-moderate",
+  "arrivalMid": 41918.005000000005,
+  "arrivalMs": 1706474500962,
+  "endBasis": "filled",
+  "endMid": null,
+  "endMs": null,
+  "exchange": "binance",
+  "expectedCost": {
+   "applies": true,
+   "bucket": "lt1k",
+   "calibrationSha256": "74ec3535253d10b62ba7324766e877a2120e7a84bf111bca71358fdf96bded08",
+   "context": {
+    "sigmaBps": 48.274308210023804,
+    "volume": 1352.0377799999987
+   },
+   "expectedBps": 0.041443171979745196,
+   "highBps": 0.4356994744547561,
+   "level": 0.9,
+   "lowBps": -0.35281313049526575,
+   "reason": null,
+   "version": "ec1.0.0"
+  },
+  "marketDataRefs": [
+   {
+    "dataset": "spot/daily/aggTrades",
+    "date": "2024-01-28",
+    "sha256": "ec7442f3c645d8a57b23657bf8456b98e97fabbd90910ebc8e37a69c2fc474d5",
+    "source": "data.binance.vision",
+    "symbol": "BTCUSDT",
+    "window": null
+   }
+  ],
+  "measuredAt": "2024-03-01T00:00:00+00:00",
+  "orderId": "ord-moderate-BTCUSDT-968874",
+  "shortfall": {
+   "basis": "order",
+   "delayBps": null,
+   "delayReason": "no decision timestamp",
+   "executionBps": 0.001192804859071087,
+   "feesBps": 9.999998807195139,
+   "fillRatio": 1.0,
+   "filledQty": 0.005974358528452387,
+   "fillsWithoutMid": 0,
+   "impactTimingBps": 0.0,
+   "intendedNotional": 250.43319066745983,
+   "opportunityBps": 0.0,
+   "orderedQty": 0.005974358528452387,
+   "spreadBps": 0.001192804859071087,
+   "totalBps": 10.00119161205421,
+   "totalReason": null
+  },
+  "side": -1,
+  "symbol": "BTCUSDT",
+  "tradeIds": [
+   "v2:syn-moderate-BTCUSDT-93252:0",
+   "v2:syn-moderate-BTCUSDT-93252:1"
+  ],
+  "unmeasuredReason": null,
+  "version": "1.0.0"
+ },
+ "note": "Real public prints and the production mid function around one synthetic-demo order. Trader behaviour is synthetic; prices are real.",
+ "order": {
+  "accountId": "demo-moderate",
+  "createdAt": "2024-01-28T20:41:40.962Z",
+  "cummulativeQuoteQty": 250.43316079566713,
+  "dataSource": "synthetic-demo",
+  "exchange": "binance",
+  "executedQty": 0.005974358528452387,
+  "orderId": "ord-moderate-BTCUSDT-968874",
+  "origQty": 0.005974358528452387,
+  "price": null,
+  "restingMs": null,
+  "side": "SELL",
+  "status": "FILLED",
+  "symbol": "BTCUSDT",
+  "timeInForce": null,
+  "type": "MARKET",
+  "updatedAt": "2024-01-28T20:41:42.095Z"
+ },
+ "tape": {
+  "arrivalMs": 1706474500962,
+  "date": "2024-01-28",
+  "fillMs": 1706474502095,
+  "mid": [
+   {
+    "ask": 41922.03,
+    "bid": 41918.39,
+    "mid": 41920.21,
+    "ts": 1706474496962
+   },
+   {
+    "ask": 41918.4,
+    "bid": 41918.39,
+    "mid": 41918.395,
+    "ts": 1706474497105
+   },
+   {
+    "ask": 41918.4,
+    "bid": 41918.15,
+    "mid": 41918.275,
+    "ts": 1706474497474
+   },
+   {
+    "ask": 41918.4,
+    "bid": 41918.0,
+    "mid": 41918.2,
+    "ts": 1706474497480
+   },
+   {
+    "ask": 41918.01,
+    "bid": 41918.0,
+    "mid": 41918.005,
+    "ts": 1706474497736
+   },
+   {
+    "ask": 41918.01,
+    "bid": 41917.91,
+    "mid": 41917.96,
+    "ts": 1706474502097
+   },
+   {
+    "ask": 41918.01,
+    "bid": 41917.67,
+    "mid": 41917.84,
+    "ts": 1706474502098
+   },
+   {
+    "ask": 41918.01,
+    "bid": 41917.43,
+    "mid": 41917.72,
+    "ts": 1706474502105
+   },
+   {
+    "ask": 41918.01,
+    "bid": 41916.0,
+    "mid": 41917.005,
+    "ts": 1706474502109
+   },
+   {
+    "ask": 41918.01,
+    "bid": 41915.37,
+    "mid": 41916.69,
+    "ts": 1706474502118
+   },
+   {
+    "ask": 41918.01,
+    "bid": 41914.0,
+    "mid": 41916.005,
+    "ts": 1706474502169
+   },
+   {
+    "ask": 41914.01,
+    "bid": 41914.0,
+    "mid": 41914.005,
+    "ts": 1706474502296
+   }
+  ],
+  "prints": [
+   {
+    "buyerInitiated": false,
+    "id": 2846395587,
+    "price": 41918.39,
+    "qty": 0.00343,
+    "ts": 1706474496963
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395588,
+    "price": 41918.4,
+    "qty": 0.001,
+    "ts": 1706474497104
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395589,
+    "price": 41918.39,
+    "qty": 0.04801,
+    "ts": 1706474497459
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395590,
+    "price": 41918.39,
+    "qty": 0.00018,
+    "ts": 1706474497473
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395591,
+    "price": 41918.17,
+    "qty": 0.00013,
+    "ts": 1706474497473
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395592,
+    "price": 41918.15,
+    "qty": 0.00021,
+    "ts": 1706474497473
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395593,
+    "price": 41918.0,
+    "qty": 0.00018,
+    "ts": 1706474497479
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395594,
+    "price": 41918.01,
+    "qty": 0.5,
+    "ts": 1706474497735
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395595,
+    "price": 41918.01,
+    "qty": 0.0117,
+    "ts": 1706474498243
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395596,
+    "price": 41918.0,
+    "qty": 0.00021,
+    "ts": 1706474498389
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395597,
+    "price": 41918.01,
+    "qty": 0.02367,
+    "ts": 1706474498866
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395598,
+    "price": 41918.01,
+    "qty": 0.00233,
+    "ts": 1706474498889
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395599,
+    "price": 41918.01,
+    "qty": 0.0024,
+    "ts": 1706474499087
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395600,
+    "price": 41918.0,
+    "qty": 0.00038,
+    "ts": 1706474499249
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395601,
+    "price": 41918.0,
+    "qty": 0.00099,
+    "ts": 1706474499363
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395602,
+    "price": 41918.01,
+    "qty": 0.00235,
+    "ts": 1706474499898
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395603,
+    "price": 41918.01,
+    "qty": 0.00102,
+    "ts": 1706474500510
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395604,
+    "price": 41918.01,
+    "qty": 0.00026,
+    "ts": 1706474501068
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395605,
+    "price": 41918.01,
+    "qty": 0.01192,
+    "ts": 1706474501164
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395606,
+    "price": 41918.01,
+    "qty": 0.00024,
+    "ts": 1706474501618
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395607,
+    "price": 41918.0,
+    "qty": 0.00072,
+    "ts": 1706474501679
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395608,
+    "price": 41918.0,
+    "qty": 0.24865,
+    "ts": 1706474502095
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395609,
+    "price": 41917.91,
+    "qty": 0.00021,
+    "ts": 1706474502096
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395610,
+    "price": 41917.67,
+    "qty": 0.00021,
+    "ts": 1706474502097
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395611,
+    "price": 41917.43,
+    "qty": 0.00021,
+    "ts": 1706474502104
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395612,
+    "price": 41917.21,
+    "qty": 0.00013,
+    "ts": 1706474502108
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395613,
+    "price": 41917.19,
+    "qty": 0.00021,
+    "ts": 1706474502108
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395614,
+    "price": 41917.09,
+    "qty": 0.00018,
+    "ts": 1706474502108
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395615,
+    "price": 41917.02,
+    "qty": 0.005,
+    "ts": 1706474502108
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395616,
+    "price": 41916.95,
+    "qty": 0.00021,
+    "ts": 1706474502108
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395617,
+    "price": 41916.71,
+    "qty": 0.00021,
+    "ts": 1706474502108
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395618,
+    "price": 41916.0,
+    "qty": 0.05423,
+    "ts": 1706474502108
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395619,
+    "price": 41915.37,
+    "qty": 0.00018,
+    "ts": 1706474502117
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395620,
+    "price": 41914.0,
+    "qty": 0.01543,
+    "ts": 1706474502168
+   },
+   {
+    "buyerInitiated": false,
+    "id": 2846395621,
+    "price": 41914.0,
+    "qty": 0.00171,
+    "ts": 1706474502193
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395622,
+    "price": 41914.01,
+    "qty": 0.00635,
+    "ts": 1706474502295
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395623,
+    "price": 41914.01,
+    "qty": 0.00298,
+    "ts": 1706474503202
+   },
+   {
+    "buyerInitiated": true,
+    "id": 2846395624,
+    "price": 41914.01,
+    "qty": 0.00031,
+    "ts": 1706474503326
+   }
+  ],
+  "source": "data.binance.vision spot/daily/aggTrades",
+  "sourceSha256": "ec7442f3c645d8a57b23657bf8456b98e97fabbd90910ebc8e37a69c2fc474d5",
+  "symbol": "BTCUSDT",
+  "windowEnd": "2024-01-28T20:41:43.595Z",
+  "windowStart": "2024-01-28T20:41:36.962Z"
+ }
+}

@@ -36,19 +36,29 @@ def iso_ms(ms: int) -> str:
 
 
 def main() -> None:
+    # Optional (M8 design v2, 2026-11-20): `--order <id> --out <file name in fixtures/>` cuts another order the same way.
+    # The landing hero uses `--order ord-moderate-BTCUSDT-968874 --out landing-order.inputs.json` (selection rule in
+    # frontend/app/lib/landing/heroOrder.ts). Without arguments the script writes the lab's hero fixture as before.
+    order_id, out = ORDER_ID, OUT
+    args = sys.argv[1:]
+    if "--order" in args:
+        order_id = args[args.index("--order") + 1]
+    if "--out" in args:
+        out = OUT.parent / args[args.index("--out") + 1]
     d = ROOT / "demo_v2" / "out" / ACCOUNT
-    order = next(o for o in json.loads((d / "orders.json").read_text()) if o["orderId"] == ORDER_ID)
-    fills = [t for t in json.loads((d / "trades.json").read_text()) if t["orderId"] == ORDER_ID]
-    meas = next(m for m in json.loads((d / "order_measurements.json").read_text()) if m["orderId"] == ORDER_ID)
-    assert len(fills) == 1 and order["symbol"] == "BNBUSDT" and meas["unmeasuredReason"] is None
+    order = next(o for o in json.loads((d / "orders.json").read_text()) if o["orderId"] == order_id)
+    fills = [t for t in json.loads((d / "trades.json").read_text()) if t["orderId"] == order_id]
+    meas = next(m for m in json.loads((d / "order_measurements.json").read_text()) if m["orderId"] == order_id)
+    symbol = order["symbol"]
+    assert len(fills) >= 1 and meas["unmeasuredReason"] is None
 
     day = meas["marketDataRefs"][0]["date"]
-    w = load_day("BNBUSDT", day, ROOT / ".cache" / "market" / "zips")
+    w = load_day(symbol, day, ROOT / ".cache" / "market" / "zips")
     sha = w.refs[0].sha256
     assert sha == meas["marketDataRefs"][0]["sha256"], "cached file differs from the one the measurement used"
 
     arrival = int(meas["arrivalMs"])
-    fill_ms = int(datetime.fromisoformat(fills[0]["executedAt"].replace("Z", "+00:00")).timestamp() * 1000)
+    fill_ms = max(int(datetime.fromisoformat(f["executedAt"].replace("Z", "+00:00")).timestamp() * 1000) for f in fills)
     lo, hi = arrival - BEFORE_MS, fill_ms + AFTER_MS
     prints = [{"id": int(w.agg_id[i]), "ts": int(w.ts_ms[i]), "price": float(w.price[i]), "qty": float(w.qty[i]),
                "buyerInitiated": not bool(w.is_buyer_maker[i])}      # is_buyer_maker false = the buyer was the aggressor
@@ -60,16 +70,17 @@ def main() -> None:
         if q.mid is not None and q.mid != last:
             mid.append({"ts": t, "mid": round(q.mid, 8), "bid": q.bid, "ask": q.ask})
             last = q.mid
-    out = {
+    out_doc = {
         "note": "Real public prints and the production mid function around one synthetic-demo order. Trader behaviour is synthetic; prices are real.",
         "order": order, "fills": fills, "measurement": meas,
-        "tape": {"symbol": "BNBUSDT", "date": day, "source": "data.binance.vision spot/daily/aggTrades", "sourceSha256": sha,
+        "tape": {"symbol": symbol, "date": day, "source": "data.binance.vision spot/daily/aggTrades", "sourceSha256": sha,
                  "windowStart": iso_ms(lo), "windowEnd": iso_ms(hi), "arrivalMs": arrival, "fillMs": fill_ms,
                  "prints": prints, "mid": mid},
     }
-    OUT.parent.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(out, indent=1, sort_keys=True) + "\n")
-    print(f"wrote {OUT.relative_to(ROOT.parent)}: {len(prints)} prints, {len(mid)} mid points, window {iso_ms(lo)} to {iso_ms(hi)}")
+    out_path = out
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(out_doc, indent=1, sort_keys=True) + "\n")
+    print(f"wrote {out_path.relative_to(ROOT.parent)}:{len(prints)} prints, {len(mid)} mid points, window {iso_ms(lo)} to {iso_ms(hi)}")
 
 
 if __name__ == "__main__":

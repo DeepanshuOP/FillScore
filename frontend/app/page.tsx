@@ -1,615 +1,76 @@
-'use client'
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
+import { DotPattern } from '@/components/ui/dot-pattern'
+import { buttonClass } from './ui/buttonClass'
+import { HeroTape } from './ui/tape/HeroTape'
+import { MarketingNav } from './components/marketing/MarketingNav'
+import { LandingMotion } from './components/marketing/LandingMotion'
+import { ScrollStory } from './components/marketing/ScrollStory'
+import { DemoCards } from './components/marketing/DemoCards'
+import { CheckIt } from './components/marketing/CheckIt'
+import SiteFooter from './components/SiteFooter'
 
-import React, { useRef, useState, useEffect } from 'react';
-import WaveBackground from '../components/ui/wave-background';
-import Navbar from './components/Navbar';
-import { DEMO_PROFILES, gradeFromScore } from './utils/demoProfiles';
-import { apiBase } from './lib/apiBase';
-
+/**
+ * The landing page of design v2. Hero: what FillScore does in one line, and the market tape of one real order on the
+ * exchange's real prints (the order is chosen by a stated rule; see "Figures and sources" on the tape). Then the scroll
+ * story, the demo accounts, "check it yourself", what it never does, and the close.
+ */
 export default function Home() {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [selectedExchange, setSelectedExchange] = useState<'binance' | 'bybit' | 'okx' | null>(null);
-  const [selectedDemo, setSelectedDemo] = useState<string | null>(null);
-  const [cardVisible, setCardVisible] = useState(false);
-  const [userId, setUserId] = useState<string>('');
-
-  const handleDemoSelect = (profileId: string, exchange: string) => {
-    setSelectedDemo(profileId)
-    localStorage.setItem('userId', profileId)
-    window.location.href = `/dashboard?userId=${profileId}&exchange=${exchange}`
-  }
-
-  // Canonical scores render immediately; live audits replace them when the API answers.
-  const [liveStats, setLiveStats] = useState<Record<string, { score: number; makerRatio: number }>>({});
-
-  useEffect(() => {
-    const baseUrl = apiBase();
-    if (!baseUrl) return;
-    let cancelled = false;
-
-    Promise.all(
-      DEMO_PROFILES.map(async (p) => {
-        try {
-          const res = await fetch(`${baseUrl}/audit/score?userId=${p.id}`);
-          if (!res.ok) return null;
-          const audit = await res.json();
-          return [p.id, { score: audit.avgFillScore, makerRatio: audit.breakdown?.makerRatio }] as const;
-        } catch {
-          return null;
-        }
-      })
-    ).then((entries) => {
-      if (cancelled) return;
-      const next: Record<string, { score: number; makerRatio: number }> = {};
-      for (const entry of entries) {
-        if (entry && typeof entry[1].score === 'number') next[entry[0]] = entry[1];
-      }
-      setLiveStats(next);
-    });
-
-    return () => { cancelled = true; };
-  }, []);
-
-  const demoProfiles = DEMO_PROFILES.map((p) => {
-    const live = liveStats[p.id];
-    const score = live?.score ?? p.score;
-    return {
-      ...p,
-      grade: gradeFromScore(score),
-      avgScore: Math.round(score),
-      makerRatio: typeof live?.makerRatio === 'number' ? `${Math.round(live.makerRatio * 100)}%` : null,
-    };
-  });
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) setCardVisible(true); },
-      { threshold: 0.15 }
-    );
-    if (cardRef.current) observer.observe(cardRef.current);
-    
-    setUserId(localStorage.getItem('userId') || '');
-    
-    return () => observer.disconnect();
-  }, []);
-
-  const performScroll = () => {
-    cardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  };
-
-  const exchanges = [
-    {
-      id: 'binance' as const,
-      name: 'Binance',
-      desc: "World's largest crypto exchange",
-      tags: ['Spot', 'Futures', '#1 Volume']
-    },
-    {
-      id: 'bybit' as const,
-      name: 'Bybit',
-      desc: "Derivatives platform",
-      tags: ['Derivatives', 'Perpetuals', 'Large venue']
-    },
-    {
-      id: 'okx' as const,
-      name: 'OKX',
-      desc: 'Spot and derivatives platform',
-      tags: ['Spot', 'Derivatives']
-    }
-  ];
-
   return (
-    <>
-      <div style={{ position: 'relative', minHeight: '100vh', background: '#0f0f0f', overflow: 'hidden', paddingBottom: '5rem', paddingTop: '48px' }}>
-      
-      {/* Layer 1 — Wave canvas */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
-        <WaveBackground strokeColor="#7a6550" backgroundColor="transparent" />
-      </div>
-
-      {/* Layer 2 — Atmospheric vignette */}
-      <div style={{ position: 'absolute', inset: 0, zIndex: 10, pointerEvents: 'none' }}>
-        <div style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          background: 'linear-gradient(to bottom, rgba(15,15,15,0.82) 0%, rgba(15,15,15,0.38) 35%, rgba(15,15,15,0.55) 65%, rgba(15,15,15,0.96) 100%)' 
-        }} />
-        <div style={{ 
-          position: 'absolute', 
-          inset: 0, 
-          background: 'radial-gradient(ellipse 120% 80% at 50% 0%, transparent 40%, rgba(10,10,10,0.6) 100%)' 
-        }} />
-      </div>
-
-      {/* Layer 3 — Content */}
-      <div style={{ position: 'relative', zIndex: 20 }}>
-        
-        {/* HEADER */}
-        <Navbar userId={userId} currentPage="home" showLive={true} />
-
-        {/* HERO */}
-        <main className="px-5 pb-[5vh] sm:px-[2rem] text-left sm:text-center flex flex-col items-start sm:items-center justify-center relative pt-[8rem] sm:pt-[10vh]" 
-              style={{ minHeight: '92vh' }}>
-          
-          {/* Decorative Elements */}
-          <div className="hidden sm:block" style={{ position: 'absolute', top: '6vh', left: '3rem', width: '40px', height: '40px', borderTop: '1px solid rgba(167,139,113,0.15)', borderLeft: '1px solid rgba(167,139,113,0.15)' }} />
-          <div className="hidden sm:block" style={{ position: 'absolute', top: '6vh', right: '3rem', width: '40px', height: '40px', borderTop: '1px solid rgba(167,139,113,0.15)', borderRight: '1px solid rgba(167,139,113,0.15)' }} />
-          <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', fontFamily: 'var(--font-mono)', fontSize: 'clamp(12rem, 20vw, 18rem)', color: 'rgba(167,139,113,0.018)', letterSpacing: '-0.05em', pointerEvents: 'none', userSelect: 'none', whiteSpace: 'nowrap', zIndex: -1 }}>
-            TCA
+    <LandingMotion>
+      {/* Without script the hero tape's story marks would stay hidden: show the final frame. */}
+      <noscript><style>{'.tape[data-armed] [data-story]{opacity:1 !important}'}</style></noscript>
+      <MarketingNav />
+      <main id="main">
+        <section aria-labelledby="hero-title" className="relative isolate overflow-hidden">
+          <div aria-hidden="true" className="aurora pointer-events-none absolute inset-0 -z-10" />
+          <DotPattern width={22} height={22} cr={0.9} className="-z-10 text-ui-edge/35 [mask-image:radial-gradient(70%_60%_at_60%_30%,black,transparent)]" />
+          <div className="mx-auto grid max-w-[1240px] items-center gap-12 px-5 pt-32 pb-20 sm:px-8 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)] lg:gap-14 lg:pt-40 lg:pb-28">
+            <div className="max-w-xl">
+              <h1 id="hero-title" className="display-xl text-ui-ink">Every past fill, held against the tape.</h1>
+              <p className="mt-6 max-w-[48ch] text-[17px] leading-7 text-ui-graphite sm:text-lg sm:leading-8">
+                FillScore replays each order you placed against the exchange&rsquo;s public prints of the same seconds, and writes down what it cost: the spread, the impact and timing, the orders that never filled, and the fees against your real rates.
+              </p>
+              <div className="mt-9 flex flex-wrap items-center gap-3">
+                <Link href="/dashboard?userId=demo-moderate" className={buttonClass('primary', 'lg', 'no-underline')}>
+                  Open the demo audit <ArrowRight aria-hidden="true" />
+                </Link>
+                <Link href="/signup" className={buttonClass('secondary', 'lg', 'no-underline')}>Connect a read-only key</Link>
+              </div>
+              <p className="mt-6 text-[13px] text-ui-graphite">Read-only keys only. Every number comes from code, never from a language model.</p>
+            </div>
+            <HeroTape className="w-full" />
           </div>
+        </section>
 
-          {/* 1. Eyebrow label */}
-          <div className="anim-fadein" style={{ animationDelay: '0.1s', display: 'inline-flex', alignItems: 'center', gap: '10px', padding: '0.35rem 1rem 0.35rem 0.75rem', border: '1px solid rgba(167,139,113,0.35)', borderRadius: '2px', background: 'rgba(167,139,113,0.08)', marginBottom: '2.5rem', position: 'relative' }}>
-            <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '2px', background: 'linear-gradient(to bottom, transparent, #a78b71, transparent)', borderRadius: '2px 0 0 2px' }} />
-            <div style={{ width: '5px', height: '5px', borderRadius: '50%', background: '#a78b71', opacity: 0.9 }} />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.62rem', letterSpacing: '0.35em', color: '#b8a088' }}>
-              TRANSACTION COST ANALYSIS
-            </span>
-          </div>
+        <ScrollStory />
+        <DemoCards />
+        <CheckIt />
 
-          {/* 2. Headline */}
-          <div className="anim-fadein w-full text-left sm:text-center flex flex-col items-start sm:items-center" style={{ animationDelay: '0.22s', marginBottom: '1.75rem' }}>
-            <div className="mr-auto ml-0 sm:mx-auto mb-6" style={{ width: '1px', height: '32px', background: 'linear-gradient(to bottom, transparent, rgba(167,139,113,0.3))' }} />
-            <h1 style={{ 
-              fontFamily: 'var(--font-playfair)', 
-              fontStyle: 'italic',
-              fontSize: 'clamp(3rem, 5.5vw, 4.5rem)', 
-              lineHeight: 1.08,
-              maxWidth: '780px', 
-              color: '#ede8e0', 
-              fontWeight: 400, 
-              letterSpacing: '-0.015em'
-            }}>
-              Understand exactly{' '}<br />
-              what your trades{' '}
-              <span style={{
-                fontStyle: 'italic',
-                background: 'linear-gradient(135deg, #d4a574 0%, #f0dfc0 40%, #c4956a 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
-              }}>
-                cost you.
-              </span>
-            </h1>
-          </div>
-
-          {/* 3. Subtext */}
-          <p className="anim-fadein"
-             style={{ 
-               animationDelay: '0.36s', 
-               marginBottom: '3rem',
-               maxWidth: '500px', 
-               fontFamily: 'var(--font-inter)', 
-               fontSize: '0.98rem', 
-               lineHeight: 1.85, 
-               color: '#a09890'
-             }}>
-            Transaction cost analysis for retail crypto traders, measured against public Binance market data. See what your past orders cost: the spread, the price movement, unfilled orders and fees.
+        <section aria-labelledby="never-title" className="mx-auto max-w-[1240px] px-5 py-28 sm:px-8 lg:py-40">
+          <h2 id="never-title" className="sr-only">What FillScore never does</h2>
+          <p data-split className="max-w-[24ch] text-[clamp(1.875rem,4.2vw,3.5rem)] leading-[1.08] font-semibold tracking-[-0.035em] text-ui-ink">
+            FillScore never tells you what to trade, never predicts a price, and never lets a language model write a number.
           </p>
+          <p className="mt-6 max-w-[56ch] text-[15px] leading-6 text-ui-graphite">
+            It audits what already happened. Explanations may be written by a model, but every figure in them is checked against the audit first, and copy that reads as advice is refused.
+          </p>
+        </section>
 
-          {/* 4. Stat strip */}
-          <div className="anim-fadein w-full sm:w-auto mt-0" style={{ animationDelay: '0.48s' }}>
-            <div className="flex flex-col sm:flex-row items-stretch border border-[rgba(167,139,113,0.22)] rounded-[3px] bg-[rgba(20,19,17,0.9)] backdrop-blur-[12px] overflow-hidden hover:border-[rgba(167,139,113,0.3)] transition-colors duration-300 w-full sm:w-auto">
-              {[
-                { label: 'score parts', value: 'slippage · fees · timing · spread' },
-                { label: 'exchanges', value: 'Binance · Bybit · OKX' },
-                { label: 'access', value: 'read-only keys' }
-              ].map((stat, i, arr) => (
-                <React.Fragment key={stat.label}>
-                  <div className="flex items-center gap-[8px] py-[0.6rem] px-[1.25rem] w-full sm:w-auto" style={{
-                    fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.05em'
-                  }}>
-                    <span style={{ color: '#888078' }}>{stat.label}</span>
-                    <span style={{ color: '#888078', margin: '0 4px' }}>·</span>
-                    <span style={{ color: '#b8a488', fontWeight: 600 }}>{stat.value}</span>
-                  </div>
-                  {i < arr.length - 1 && (
-                    <>
-                      <div className="hidden sm:block w-[1px] h-auto bg-[rgba(167,139,113,0.15)] shrink-0" />
-                      <div className="block sm:hidden w-full h-[1px] bg-[rgba(167,139,113,0.15)] shrink-0" />
-                    </>
-                  )}
-                </React.Fragment>
-              ))}
+        <section aria-labelledby="cta-title" className="relative isolate overflow-hidden border-t border-ui-rule">
+          <div className="mx-auto flex max-w-[1240px] flex-col items-start gap-8 px-5 py-24 sm:px-8 lg:flex-row lg:items-end lg:justify-between lg:py-32">
+            <div className="max-w-2xl">
+              <h2 id="cta-title" data-split className="display-lg text-ui-ink">See what your own orders cost.</h2>
+              <p className="mt-4 text-[17px] leading-7 text-ui-graphite">Connect a key that can only read. FillScore refuses anything more.</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/signup" className={buttonClass('primary', 'lg', 'no-underline')}>Connect a read-only key</Link>
+              <Link href="/dashboard?userId=demo-moderate" className={buttonClass('secondary', 'lg', 'no-underline')}>Open a demo</Link>
             </div>
           </div>
-
-          {/* 5. Scroll hint */}
-          <button 
-            className="anim-fadein flex flex-col items-center gap-[8px] hover:opacity-100 transition-opacity duration-200 cursor-pointer bg-transparent border-none outline-none mt-[2.5rem]"
-            onClick={performScroll}
-            style={{ animationDelay: '0.62s', opacity: 0.6 }}
-          >
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.25em', color: '#8a7a68' }}>
-              scroll
-            </span>
-            <div style={{ width: '1px', height: '28px', background: 'linear-gradient(to bottom, #a78b71, transparent)' }} />
-          </button>
-
-        </main>
-
-        {/* CARD SECTION — Part 4 */}
-        <div className="flex justify-center px-[1.25rem] sm:px-[1.5rem]" style={{ paddingBottom: '10rem' }}>
-          <div ref={cardRef} className="w-full max-w-[520px] relative overflow-hidden rounded-[3px]"
-               style={{
-                 background: '#141412',
-                 border: '1px solid rgba(167,139,113,0.2)',
-                 padding: '0',
-                 backdropFilter: 'blur(40px)',
-                 WebkitBackdropFilter: 'blur(40px)',
-                 boxShadow: '0 0 0 1px rgba(255,255,255,0.03) inset, 0 0 120px rgba(167,139,113,0.06), 0 60px 100px rgba(0,0,0,0.6)',
-                 transition: 'opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.8s cubic-bezier(0.22, 1, 0.36, 1)',
-                 opacity: cardVisible ? 1 : 0,
-                 transform: cardVisible ? 'translateY(0)' : 'translateY(32px)'
-               }}>
-            
-            {/* Card ambient glow */}
-            <div style={{
-              position: 'absolute',
-              bottom: '-80px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: '300px',
-              height: '150px',
-              background: 'radial-gradient(ellipse, rgba(167,139,113,0.06) 0%, transparent 70%)',
-              pointerEvents: 'none',
-              zIndex: 0
-            }} />
-
-            {/* Card top accent bar */}
-            <div style={{
-              height: '1px',
-              width: '100%',
-              background: 'linear-gradient(to right, transparent 0%, rgba(167,139,113,0.3) 15%, rgba(232,213,183,0.85) 50%, rgba(167,139,113,0.3) 85%, transparent 100%)',
-              position: 'relative',
-              zIndex: 1
-            }} />
-
-            {/* Card content wrapper */}
-            <div style={{ position: 'relative', zIndex: 1 }}>
-              
-              {/* CARD HEADER ROW */}
-              <div className="flex justify-between items-center border-b border-[rgba(255,255,255,0.04)] px-[1.25rem] py-[1.25rem] sm:px-[2rem] sm:pt-[1.5rem] sm:pb-[1.25rem]">
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.3em', color: '#a78b71', opacity: 1 }}>
-                  01  /  CONNECT
-                </span>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.55rem', letterSpacing: '0.2em', color: '#8a7560' }}>
-                    READY
-                  </span>
-                  <div style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    background: '#a78b71',
-                    boxShadow: '0 0 10px rgba(167,139,113,0.8), 0 0 20px rgba(167,139,113,0.3)',
-                    animation: 'pulse-dot 2s ease-in-out infinite'
-                  }} />
-                </div>
-              </div>
-
-              {/* CARD BODY */}
-              <div className="px-[1.25rem] py-[1.25rem] sm:px-[2rem] sm:pt-[1.75rem] sm:pb-[2rem]">
-                <h2 style={{
-                  fontFamily: 'var(--font-playfair)',
-                  fontStyle: 'italic',
-                  fontSize: '1.4rem',
-                  color: '#ede8e0',
-                  fontWeight: 400,
-                  marginBottom: '1.5rem'
-                }}>
-                  Select Your Exchange
-                </h2>
-
-                {/* EXCHANGE GRID */}
-                <div className="grid grid-cols-1 sm:grid-cols-3" style={{ gap: '0.75rem', alignItems: 'stretch' }}>
-                  {exchanges.map((ex) => {
-                    const isSelected = selectedExchange === ex.id;
-                    return (
-                      <button 
-                        key={ex.id}
-                        onClick={() => setSelectedExchange(ex.id)}
-                        className={`group flex flex-col relative overflow-hidden w-full text-left rounded-[2px] transition-all duration-[220ms] ease cursor-pointer outline-none border p-[1.25rem] ${
-                          isSelected 
-                            ? 'bg-[rgba(167,139,113,0.07)] border-[rgba(167,139,113,0.45)]' 
-                            : 'bg-[#1a1917] border-[rgba(255,255,255,0.08)] hover:border-[rgba(167,139,113,0.25)] hover:bg-[rgba(167,139,113,0.03)]'
-                        }`}
-                        style={{
-                          height: '100%',
-                          minHeight: '140px',
-                          boxShadow: isSelected ? 'inset 0 1px 0 rgba(167,139,113,0.15), 0 0 30px rgba(167,139,113,0.06)' : 'none'
-                        }}
-                      >
-                        {/* Top edge glow */}
-                        <div style={{
-                          position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-                          background: 'linear-gradient(to right, transparent, rgba(167,139,113,0.7), transparent)',
-                          opacity: isSelected ? 1 : 0, transition: 'opacity 0.2s ease'
-                        }} />
-                        
-                        {/* Exchange SVG Logo */}
-                        {ex.id === 'binance' ? (
-                          <svg width="22" height="22" viewBox="0 0 32 32" fill="none" 
-                            style={{ marginBottom: '0.75rem', opacity: isSelected ? 1 : 0.3, transition: 'opacity 0.2s ease' }}>
-                            <path d="M16 4L19.5 7.5L13 14L9.5 10.5L16 4Z" fill="#F3BA2F"/>
-                            <path d="M9.5 10.5L13 14L7.5 19.5L4 16L9.5 10.5Z" fill="#F3BA2F"/>
-                            <path d="M22.5 10.5L26 14L20.5 19.5L17 16L22.5 10.5Z" fill="#F3BA2F"/>
-                            <path d="M16 18L19.5 21.5L16 25L12.5 21.5L16 18Z" fill="#F3BA2F"/>
-                            <path d="M13 14L16 11L19 14L16 17L13 14Z" fill="#F3BA2F"/>
-                          </svg>
-                        ) : ex.id === 'bybit' ? (
-                          <svg width="22" height="22" viewBox="0 0 32 32" fill="none"
-                            style={{ marginBottom: '0.75rem', opacity: isSelected ? 1 : 0.3, transition: 'opacity 0.2s ease' }}>
-                            <rect x="4" y="10" width="10" height="3" rx="1.5" fill="#F7A600"/>
-                            <rect x="4" y="15" width="14" height="3" rx="1.5" fill="#F7A600"/>
-                            <rect x="4" y="20" width="10" height="3" rx="1.5" fill="#F7A600"/>
-                            <rect x="18" y="10" width="10" height="6" rx="2" fill="#F7A600"/>
-                          </svg>
-                        ) : (
-                          <div style={{ marginBottom: '0.75rem', opacity: isSelected ? 1 : 0.3, transition: 'opacity 0.2s ease', fontFamily: 'var(--font-inter)', fontSize: '18px', fontWeight: 700, color: '#1E8FFF', height: '22px', display: 'flex', alignItems: 'center' }}>
-                            OKX
-                          </div>
-                        )}
-                        
-                        {/* Name Line */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%', marginBottom: '0.5rem' }}>
-                          <span className={`transition-colors duration-200 uppercase tracking-[0.18em] font-mono text-[0.75rem] ${
-                            isSelected ? 'text-[#e8d5b7]' : 'text-[#9a9490] group-hover:text-[#c4b8a8]'
-                          }`}>
-                            {ex.name}
-                          </span>
-                          <div style={{
-                            width: '8px', height: '8px', borderRadius: '50%', flexShrink: 0, marginTop: '2px', transition: 'all 0.2s ease',
-                            background: isSelected ? '#a78b71' : 'transparent',
-                            border: isSelected ? 'none' : '1px solid #2a2a2a',
-                            boxShadow: isSelected ? '0 0 10px rgba(167,139,113,0.6)' : 'none'
-                          }} />
-                        </div>
-
-                        {/* Description */}
-                        <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.76rem', color: isSelected ? '#8a8078' : '#6a6560', lineHeight: 1.4, flex: 1, transition: 'color 0.2s ease' }}>
-                          {ex.desc}
-                        </div>
-
-                        {/* Data Tags */}
-                        <div className="hidden sm:flex flex-nowrap overflow-hidden" style={{ gap: '0.4rem', marginTop: 'auto', paddingTop: '0.875rem' }}>
-                          {ex.tags.map(tag => (
-                            <span key={tag} style={{
-                              fontFamily: 'var(--font-mono)', fontSize: '0.52rem', letterSpacing: '0.1em',
-                              padding: '2px 5px', borderRadius: '1px', transition: 'all 0.2s ease', whiteSpace: 'nowrap',
-                              color: isSelected ? '#a08060' : '#4a4844',
-                              border: isSelected ? '1px solid rgba(167,139,113,0.25)' : '1px solid rgba(255,255,255,0.07)',
-                              background: isSelected ? 'rgba(167,139,113,0.06)' : 'rgba(255,255,255,0.02)'
-                            }}>
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      </button>
-                    )
-                  })}
-                </div>
-
-                {/* CONNECT PROMPT */}
-                <div
-                  className={`mt-6 ${selectedExchange ? 'form-visible' : 'form-enter'}`}
-                  style={{ display: selectedExchange ? 'block' : 'none' }}
-                >
-                  <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(167,139,113,0.18), transparent)', margin: '1.5rem 0' }} />
-
-                  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.65rem', letterSpacing: '0.3em', color: '#a78b71', opacity: 1, marginBottom: '1.25rem' }}>
-                    02  /  AUTHENTICATE
-                  </div>
-                  
-                  <div style={{ fontFamily: 'var(--font-playfair)', fontStyle: 'italic', fontSize: '1.2rem', color: '#ede8e0', marginBottom: '1.5rem', fontWeight: 400 }}>
-                    Sign in to connect {selectedExchange}
-                  </div>
-                  
-                  <div style={{ fontFamily: 'var(--font-inter)', fontSize: '0.85rem', color: '#6a6560', marginBottom: '1.5rem', lineHeight: 1.6 }}>
-                    FillScore requires an account to securely encrypt and store your read-only API keys.
-                  </div>
-
-                  <button type="button" onClick={() => window.location.href = '/signup'}
-                          className="submit-btn enabled"
-                          style={{
-                            width: '100%', padding: '0.925rem', borderRadius: '2px',
-                            fontFamily: 'var(--font-mono)', fontSize: '0.8rem', letterSpacing: '0.1em', fontWeight: 600,
-                            transition: 'all 0.2s ease', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.625rem',
-                            cursor: 'pointer'
-                          }}>
-                    Create Account →
-                  </button>
-                  
-                  {/* CARD FOOTER SECTION */}
-                  <div className="my-[1.25rem] sm:mt-[1.75rem] sm:mb-[1.5rem]" style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(167,139,113,0.12), transparent)' }} />
-
-                  {/* OR DIVIDER */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem', marginBottom: '1.25rem' }}>
-                    <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
-                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.2em', color: '#3d3b38', whiteSpace: 'nowrap' }}>OR</span>
-                    <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.05)' }} />
-                  </div>
-
-                  {/* DEMO PROFILE SELECTOR */}
-                  <div style={{ marginBottom: '0.5rem' }}>
-                    <div style={{
-                      fontFamily: 'var(--font-mono)', fontSize: '0.58rem', letterSpacing: '0.18em',
-                      color: '#4a4844', textAlign: 'center', marginBottom: '0.875rem'
-                    }}>
-                      Or explore with synthetic demo data
-                    </div>
-
-                    <div style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(3, 1fr)',
-                      gap: '12px',
-                      marginTop: '16px'
-                    }}>
-                      {demoProfiles.map((profile) => {
-                        const isSelected = selectedDemo === profile.id
-                        const gradeClr = (
-                          profile.grade === 'A' ? '#4ade80' :
-                          profile.grade === 'B' ? '#86efac' :
-                          profile.grade === 'C' ? '#fcd34d' :
-                          profile.grade === 'D' ? '#f97316' : '#ef4444'
-                        )
-                        return (
-                          <button
-                            key={profile.id}
-                            type="button"
-                            onClick={() => handleDemoSelect(profile.id, profile.exchange)}
-                            style={{
-                              position: 'relative',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '8px',
-                              padding: '14px',
-                              background: isSelected ? `${profile.exchangeColor}10` : 'rgba(20,19,18,0.8)',
-                              border: `1px solid ${isSelected ? profile.exchangeColor : 'rgba(255,255,255,0.06)'}`,
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              textAlign: 'left',
-                              outline: 'none',
-                              transition: 'all 0.15s ease',
-                              minHeight: '140px',
-                              boxShadow: isSelected
-                                ? `0 0 18px ${profile.exchangeColor}18, inset 0 1px 0 ${profile.exchangeColor}20`
-                                : 'none',
-                              transform: isSelected ? 'translateY(-2px)' : 'translateY(0)'
-                            }}
-                            onMouseEnter={e => {
-                              if (!isSelected) {
-                                e.currentTarget.style.borderColor = `${profile.exchangeColor}40`
-                                e.currentTarget.style.transform = 'translateY(-4px)'
-                                e.currentTarget.style.boxShadow = `0 8px 24px ${profile.exchangeColor}12`
-                                e.currentTarget.style.background = `${profile.exchangeColor}05`
-                              }
-                            }}
-                            onMouseLeave={e => {
-                              if (!isSelected) {
-                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'
-                                e.currentTarget.style.transform = 'translateY(0)'
-                                e.currentTarget.style.boxShadow = 'none'
-                                e.currentTarget.style.background = 'rgba(20,19,18,0.8)'
-                              }
-                            }}
-                          >
-                            {/* Top inset accent line on selected */}
-                            <div style={{
-                              position: 'absolute', top: 0, left: 0, right: 0, height: '1px',
-                              background: `linear-gradient(to right, transparent, ${profile.exchangeColor}90, transparent)`,
-                              borderRadius: '4px 4px 0 0',
-                              opacity: isSelected ? 1 : 0,
-                              transition: 'opacity 0.15s ease'
-                            }} />
-
-                            {/* Row 1: Exchange badge + Grade badge */}
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-                              <div style={{
-                                fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.1em',
-                                color: profile.exchangeColor, padding: '2px 6px',
-                                border: `1px solid ${profile.exchangeColor}60`,
-                                borderRadius: '3px'
-                              }}>
-                                {profile.exchangeLabel}
-                              </div>
-                              <div style={{
-                                fontFamily: 'var(--font-mono)', fontSize: '13px', fontWeight: 700,
-                                color: gradeClr, padding: '2px 8px',
-                                border: `1px solid ${gradeClr}40`,
-                                borderRadius: '3px'
-                              }}>
-                                {profile.grade}
-                              </div>
-                            </div>
-
-                            {/* Row 2: Archetype name */}
-                            <div style={{
-                              fontFamily: 'var(--font-inter)', fontSize: '13px', fontWeight: 600,
-                              color: isSelected ? '#ede8e0' : '#c8c0b8',
-                              transition: 'color 0.15s ease'
-                            }}>
-                              {profile.archetype}
-                            </div>
-
-                            {/* Row 3: Tagline */}
-                            <div style={{
-                              fontFamily: 'var(--font-inter)', fontSize: '11px',
-                              color: '#585450', whiteSpace: 'normal'
-                            }}>
-                              {profile.tagline}
-                            </div>
-
-                            {/* Row 4: Stats row */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: 'auto' }}>
-                              <div style={{
-                                fontFamily: 'var(--font-mono)', fontSize: '10px',
-                                color: 'rgba(255,255,255,0.6)', padding: '3px 8px',
-                                background: 'rgba(255,255,255,0.04)',
-                                border: '1px solid rgba(255,255,255,0.08)',
-                                borderRadius: '3px'
-                              }}>
-                                {profile.avgScore} avg
-                              </div>
-                              {profile.makerRatio && (
-                                <div style={{
-                                  fontFamily: 'var(--font-mono)', fontSize: '10px',
-                                  color: 'rgba(255,255,255,0.6)', padding: '3px 8px',
-                                  background: 'rgba(255,255,255,0.04)',
-                                  border: '1px solid rgba(255,255,255,0.08)',
-                                  borderRadius: '3px'
-                                }}>
-                                  {profile.makerRatio} maker
-                                </div>
-                              )}
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                  
-                  {/* CARD BOTTOM ACCENT */}
-                  <div style={{ marginTop: '1.5rem', height: '1px', background: 'linear-gradient(to right, transparent, rgba(167,139,113,0.08), transparent)' }} />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    {/* BOTTOM STRIP */}
-      <div className="px-[1rem] py-[0.625rem] sm:px-[2rem] sm:py-[0.75rem]" style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
-        background: 'rgba(10,10,10,0.92)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(255,255,255,0.04)'
-      }}>
-        <div style={{ maxWidth: '860px', margin: '0 auto', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 0 }}>
-          
-          <div className="trust-badge px-[0.875rem] text-[0.55rem] sm:px-[2rem] sm:text-[0.6rem]" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', color: '#3d3b38', transition: 'color 0.2s ease' }}>
-            <span style={{ fontSize: '0.7rem' }}>🔒</span>
-            <span>Read-only keys only</span>
-          </div>
-
-          <div className="hidden sm:block" style={{ width: '1px', height: '10px', background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
-          
-          <div className="trust-badge px-[0.875rem] text-[0.55rem] sm:px-[2rem] sm:text-[0.6rem]" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', color: '#3d3b38', transition: 'color 0.2s ease' }}>
-            <span style={{ fontSize: '0.7rem' }}>⚡</span>
-            <span>AES-256-GCM encrypted</span>
-          </div>
-
-          <div className="hidden sm:block" style={{ width: '1px', height: '10px', background: 'rgba(255,255,255,0.06)', flexShrink: 0 }} />
-          
-          <div className="trust-badge px-[0.875rem] text-[0.55rem] sm:px-[2rem] sm:text-[0.6rem]" style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontFamily: 'var(--font-mono)', letterSpacing: '0.1em', color: '#3d3b38', transition: 'color 0.2s ease' }}>
-            <span style={{ fontSize: '0.7rem' }}>◎</span>
-            <span>No trading access</span>
-          </div>
-          
-        </div>
-      </div>
-    </>
-  );
+        </section>
+      </main>
+      <SiteFooter />
+    </LandingMotion>
+  )
 }
