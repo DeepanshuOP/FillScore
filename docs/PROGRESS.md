@@ -7,7 +7,11 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: A5 (receipt sentences in sentence case).**
+- **Next concrete action: A6 (landing hero at 390: pen circles and the fee leader).**
+- **A5, done.** The receipt's sentences (expected cost or its insufficient-data reason, the chart legend, "no fills",
+  "no cost terms", the bars note, errors) are sentence case in `app/dashboard/receiptCopy.ts` (tested); the stored
+  notes (delay) were already. Capitals stay only on printed labels (ORDER, MARKET, PLACED, STATUS, FILLS, COSTS, TOTAL,
+  SOURCE, the provenance line). qa3 gained `orders-receipt-end` and `orders-receipt-unfilled`.
 - **A4, done.** Cause: the tab row ends in an ink rule, `main` adds 24-32 px, and the view's first `Panel` drew its own
   ink rule (the `panel` utility) with 16 px more. Fix (`globals.css`, `[data-view-body]` on the dashboard's view column
   and on Settings): the section that opens a view, or the top of each column of a grid view, draws no rule and no top

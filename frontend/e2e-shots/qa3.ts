@@ -36,6 +36,16 @@ const STATES: State[] = [
     await p.locator('[data-testid=orders-row]').nth(2).click()
     await p.getByTestId('explain-replay').getByText('COSTS').waitFor({ timeout: 15000 }); await p.waitForTimeout(1200)
   } },
+  // design v3 fixes (2026-11-21): the end of the same receipt (expected cost, notes, sources, bars), and an unfilled order
+  { name: 'orders-receipt-end', path: '/dashboard?userId=demo-moderate&view=orders', prepare: async (p) => {
+    await p.locator('[data-testid=orders-row]').nth(2).click()
+    await p.getByTestId('explain-replay').getByText('COSTS').waitFor({ timeout: 15000 }); await p.waitForTimeout(1200)
+    await p.getByText('Copy order id').scrollIntoViewIfNeeded(); await p.waitForTimeout(600)
+  } },
+  { name: 'orders-receipt-unfilled', path: '/dashboard?userId=demo-moderate&view=orders', prepare: async (p) => {
+    await p.locator('[data-testid=orders-row]', { hasText: 'Cancelled' }).first().click()
+    await p.getByTestId('explain-replay').getByText('COSTS').waitFor({ timeout: 15000 }); await p.waitForTimeout(1200)
+  } },
   { name: 'rankings', path: '/dashboard?userId=demo-moderate&view=rankings', prepare: async (p) => { await p.getByTestId('explain-rankings').getByText('RANK', { exact: true }).first().waitFor({ timeout: 30000 }); await p.waitForTimeout(800) } },
   { name: 'council', path: '/dashboard?userId=demo-moderate&view=council', prepare: async (p) => {
     await p.getByRole('button', { name: 'Run analysis' }).click()

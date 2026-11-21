@@ -7,6 +7,7 @@ import { track } from '../lib/track';
 import { useToast } from '../ui/Toast';
 import { exactTitle, formatSignedBps, formatUsd } from '../ui/format';
 import { Fig } from '../ui/Fig';
+import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, expectedLine } from './receiptCopy';
 import { bars, barsWidth, canonicalJson, sha256Hex } from '../ui/hash';
 import { describeReplay, type ReplayApi } from './explainView';
 import { formatUtc, withParams, type OrderRow } from './ordersTable';
@@ -55,7 +56,7 @@ const cell = (v: number | null | undefined, f: (n: number) => string) => (typeof
 function PriceLines({ body }: { body: ReplayBody }) {
   const W = 400, H = 72;
   const fills = body.fills.map((f) => ({ t: Date.parse(f.time), p: f.price })).filter((f) => Number.isFinite(f.t) && Number.isFinite(f.p));
-  if (!fills.length) return <p className="g">NO FILLS: THE ORDER DID NOT TRADE.</p>;
+  if (!fills.length) return <p className="g">{NO_FILLS}</p>;
   const arrival = body.order?.createdAt ? Date.parse(body.order.createdAt) : NaN;
   const ts = [...fills.map((f) => f.t), ...(Number.isFinite(arrival) ? [arrival] : [])];
   const t0 = Math.min(...ts), t1 = Math.max(...ts);
@@ -71,7 +72,7 @@ function PriceLines({ body }: { body: ReplayBody }) {
         {fills.map((f, i) => <rect key={i} className="fl" x={x(f.t) - 4} y={y(f.p) - 4} width={8} height={8} />)}
       </svg>
       <div className="g flex justify-between text-[11px]"><span>{hms(t0)}</span><span>{hms(t1)} UTC</span></div>
-      <p className="g c text-[11px]">SQUARES: THE FILLS{Number.isFinite(arrival) ? '. DASHED LINE: ORDER PLACED' : ''}. FILLS ONLY; THE PUBLIC PRINTS ARE IN THE SOURCE FILE.</p>
+      <p className="g c text-[11px]">Squares: the fills.{Number.isFinite(arrival) ? ' Dashed line: the order was placed.' : ''} {CHART_NOTE}</p>
     </>
   );
 }
@@ -135,7 +136,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
       {!view ? (
         <p className="g c mt-6" aria-live="polite">PRINTING</p>
       ) : view.error ? (
-        <p role="status" className="mt-4 text-center">{view.error.toUpperCase()}</p>
+        <p role="status" className="mt-4 text-center">{view.error}</p>
       ) : body && (
         <>
           <p className="sec">FILLS</p>
@@ -161,12 +162,11 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
                 </div>
               ))}
             </div>
-          ) : <p className="g">INSUFFICIENT DATA: NO COST TERMS WERE STORED</p>}
+          ) : <p className="g">{NO_COST_TERMS}</p>}
           <div className="fs-perf" aria-hidden="true" />
           <div className="fs-totalline"><span className="k">TOTAL</span><span className="b"><Fig text={cell(total?.bps, formatSignedBps)} exact={exactTitle(total?.bps, 'bps')} /></span><span className="u"><Fig text={cell(total?.usd, formatUsd)} exact={exactTitle(total?.usd, 'usd')} /></span></div>
           {ec ? (
-            <p className="g mt-1.5">{ec.expectedBps === null ? `EXPECTED COST: INSUFFICIENT DATA (${(ec.reason ?? 'no reason was stored').toUpperCase()})`
-              : `ORDERS LIKE IT: MODELLED ${formatSignedBps(ec.expectedBps)}${ec.lowBps !== null && ec.highBps !== null ? `, ${Math.round(ec.level * 100)}% RANGE ${formatSignedBps(ec.lowBps)} TO ${formatSignedBps(ec.highBps)}` : ''}`}</p>
+            <p className="g mt-1.5">{expectedLine(ec)}</p>
           ) : null}
           {view.notes.map((n) => <p key={n} className="g mt-1">{n}</p>)}
           <hr />
@@ -182,7 +182,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
                   {b.map((r, i) => <rect key={i} x={r.x} y={0} width={r.w} height={10} />)}
                 </svg>
               ) : null}
-              <p className="g text-[10.5px] leading-[1.35] [overflow-wrap:anywhere]">{hex ?? (o ? 'HASHING' : 'NO ORDER RECORD')}<br />SHA-256 OF THE ORDER RECORD; THE BARS DRAW IT, THEY ARE NOT A SCANNABLE CODE</p>
+              <p className="g text-[10.5px] leading-[1.35] [overflow-wrap:anywhere]">{hex ?? (o ? 'HASHING' : 'NO ORDER RECORD')}<br />{BARS_NOTE}</p>
             </div>
             <div className="c">
               {/* only a real account has signed evidence packs; a demo receipt says why there is no signature */}
