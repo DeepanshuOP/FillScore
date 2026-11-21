@@ -8,7 +8,9 @@ test('dashboard: v1 is labelled rule-based and the v2 panel states its demo stat
   // 2026-11-20 (dashboard rebuilt): the v1 grade is a labelled secondary line, "Rule-based score, grade X"; a demo's v2 grade
   // is served only from the offline build, so the headline carries the measured letter with its "Measured score" label.
   await expect(page.getByTestId('score-v1-label')).toContainText(/Rule-based score, grade [A-F]/, { timeout: 30_000 })
-  await expect(page.getByTestId('score-v1-label')).toContainText(/published grade of the earlier demo data/)
+  // design v3.1: the v1 details are in the line's pen margin note
+  await page.getByRole('button', { name: 'Note: the rule-based score' }).click()
+  await expect(page.getByTestId('score-v1-detail')).toContainText(/published grade of the earlier demo data/)
   const headline = page.getByTestId('headline')
   await expect(headline).toBeVisible()
   const text = await headline.innerText()

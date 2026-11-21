@@ -69,6 +69,25 @@ export function totalsByType(orders: OrderLike[], measurements: MeasurementLike[
     return { all: termTotals(measured.map(x => x.shortfall as Record<string, any>)), market: of('market'), limit: of('limit'), other: of('other') };
 }
 
+type TermT = { usd: number; bps: number; n: number } | null | undefined;
+
+/**
+ * Design v3.1 (2026-11-21, second): the overview's cost strip. Two parts of the total: `market` = total - fees (what
+ * was measured against market prices: execution and unfilled orders) and `fees`; each part's share is its dollars over
+ * the sum of the positive parts, so a negative part (a price improvement or a rebate) has no width and is named apart.
+ * null without a total or without fees. Computed on read from the same totals as the headline.
+ */
+export function costStrip(t: { total?: TermT; fees?: TermT } | null | undefined) {
+    const total = t?.total?.usd, fees = t?.fees?.usd;
+    if (typeof total !== 'number' || !Number.isFinite(total) || typeof fees !== 'number' || !Number.isFinite(fees)) return null;
+    const parts: Array<['market' | 'fees', number]> = [['market', total - fees], ['fees', fees]];
+    const pos = parts.reduce((s, [, v]) => s + Math.max(0, v), 0);
+    return {
+        totalUsd: total,
+        segments: parts.map(([key, usd]) => ({ key, usd, share: pos > 0 && usd > 0 ? usd / pos : 0 })),
+    };
+}
+
 export function summariseOrders(orders: OrderLike[], measurements: MeasurementLike[]) {
     const counts = { total: orders.length, filled: 0, partial: 0, unfilled: 0, open: 0 };
     const unfilledIds = new Set<string>();

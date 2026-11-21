@@ -32,6 +32,38 @@ const STATES: State[] = [
     await p.locator('.fs-end').scrollIntoViewIfNeeded(); await p.waitForTimeout(1600)
   } },
   { name: 'overview', path: '/dashboard?userId=demo-moderate', prepare: async (p) => { await p.getByText('Where the').first().waitFor({ timeout: 30000 }); await p.waitForTimeout(1200) } },
+  // design v3.1: each overview chapter scrolled to the top of the viewport (the first entry's motion has finished)
+  ...[2, 3, 4, 5].map((n) => ({ name: `overview-ch${n}`, path: '/dashboard?userId=demo-moderate', prepare: async (p: Page) => {
+    await p.getByTestId('headline').waitFor({ timeout: 30000 }); await p.waitForTimeout(800)
+    // below the sticky top bar and section tabs (about 110 px on a desktop, 80 on a phone)
+    await p.evaluate((k) => { const el = document.querySelector(`[data-chapter="${k}"]`); if (el) window.scrollTo(0, el.getBoundingClientRect().top + scrollY - (innerWidth < 600 ? 92 : 120)) }, n)
+    await p.waitForTimeout(1600)
+  } })),
+  // design v3.1: the receipt opened from the month tape (the bar grows into it) and from the ledger
+  { name: 'receipt-from-tape', path: '/dashboard?userId=demo-moderate', prepare: async (p) => {
+    await p.getByTestId('headline').waitFor({ timeout: 30000 })
+    const tape = p.getByRole('listbox').first(); await tape.scrollIntoViewIfNeeded(); await p.waitForTimeout(1600)
+    // the bar the pen circles (the largest order; its replay is in the fixtures). On a phone the tape is wider than the
+    // screen: drag it (Draggable) until the circle is in view
+    const t = await tape.boundingBox(); if (!t) throw new Error('no tape')
+    // the circled bar's x on the screen: the printed tape's left edge (it may be dragged) + the bar's x on it
+    const barX = () => p.evaluate(() => {
+      const g = document.querySelector('.fs-tape-pen') as SVGGElement | null
+      const svg = g?.ownerSVGElement
+      return g && svg ? svg.getBoundingClientRect().left + Number(g.dataset.x) : -1
+    })
+    let bx = await barX(); if (bx < 0) throw new Error('no pen circle')
+    if (bx > t.x + t.width - 20) {
+      const dx = bx - (t.x + t.width / 2)
+      await p.mouse.move(t.x + t.width - 30, t.y + t.height / 2); await p.mouse.down()
+      // hold still before letting go, so the inertia has no speed to carry
+      await p.mouse.move(t.x + t.width - 30 - dx, t.y + t.height / 2, { steps: 24 }); await p.waitForTimeout(400); await p.mouse.up(); await p.waitForTimeout(1500)
+      bx = await barX()
+    }
+    await p.mouse.move(bx, t.y + t.height * 0.6); await p.waitForTimeout(300)
+    await p.mouse.click(bx, t.y + t.height * 0.6)
+    await p.getByTestId('explain-replay').getByText('COSTS').waitFor({ timeout: 15000 }); await p.waitForTimeout(1200)
+  } },
   { name: 'orders-receipt', path: '/dashboard?userId=demo-moderate&view=orders', prepare: async (p) => {
     await p.locator('[data-testid=orders-row]').nth(2).click()
     await p.getByTestId('explain-replay').getByText('COSTS').waitFor({ timeout: 15000 }); await p.waitForTimeout(1200)

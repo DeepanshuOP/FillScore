@@ -66,7 +66,23 @@
 .fs-r-slot { position: absolute; top: 0; left: -10px; right: -10px; height: 12px; background: var(--ui-ink); border-radius: 0 0 6px 6px; z-index: 2; }
 .fs-r-clip { overflow: hidden; padding: 0 0 40px; max-height: 100dvh; }
 .fs-r-shell .fs-receipt { max-height: calc(100dvh - 52px); overflow-y: auto; box-shadow: var(--ui-shadow-float); scrollbar-width: thin; scrollbar-color: var(--ui-rule) transparent; }
-.fs-r-shell[data-state='open'] .fs-r-paper { animation: fs-print-in 560ms var(--ui-ease-drawer) both; }
+/* design v3.1: three entries (OrderReplay `Enter`). plain: 300 ms out of the slot. feed (first open of the session): the
+   paper advances in three steps, as a printer feeds it. flip: GSAP Flip grows it out of the clicked bar or row; until
+   the script starts, the paper is not shown (no flash at rest), and the lines appear as it lands. */
+.fs-r-shell[data-state='open'] .fs-r-paper { animation: fs-print-in 300ms var(--ui-ease-drawer) both; }
+.fs-r-shell[data-enter='feed'][data-state='open'] .fs-r-paper { animation: fs-print-feed 420ms linear both; }
+@keyframes fs-print-feed {
+  0% { transform: translateY(-100%); animation-timing-function: var(--ui-ease-out); }
+  24%, 30% { transform: translateY(-68%); animation-timing-function: var(--ui-ease-out); }
+  54%, 60% { transform: translateY(-36%); animation-timing-function: var(--ui-ease-out); }
+  100% { transform: translateY(0); }
+}
+.fs-r-shell[data-enter='flip'] .fs-r-clip { overflow: visible; }
+.fs-r-shell[data-enter='flip'][data-state='open'] .fs-r-paper { animation: none; visibility: hidden; transform-origin: 0 0; }
+.fs-r-shell[data-enter='flip'][data-state='open'] .fs-r-paper[data-flip] { visibility: visible; }
+.fs-r-shell[data-enter='flip'] .fs-r-paper[data-flip='run'] .fs-receipt > * { animation: fs-fade-in 140ms var(--ui-ease-out) 170ms both; }
+.fs-r-fold { display: inline-flex; gap: 6px; align-items: center; background: none; border: 0; padding: 4px 0; font-family: var(--ui-mono); font-size: 12px; letter-spacing: 0.04em; color: var(--ui-ink); text-decoration: underline dashed; text-underline-offset: 4px; cursor: pointer; }
+@media (pointer: coarse) { .fs-r-fold { min-height: 44px; } }
 .fs-r-shell[data-state='closed'] .fs-r-paper { animation: fs-print-out 220ms var(--ui-ease-out) both; }
 @keyframes fs-print-in { from { transform: translateY(-100%); } }
 @keyframes fs-print-out { to { transform: translateY(-100%); } }
@@ -174,4 +190,59 @@
 
 @media (prefers-reduced-motion: reduce) {
   .fs-stamp[data-in='true'], .fs-word-stamp[data-in='true'], .fs-tick[data-in='true'] { animation: none !important; }
+}
+
+/* ---------- design v3.1: the stamp's border drawn on first entry (the overview), the ruler's bracket ---------- */
+.fs-stamp[data-drawing='true'] { border-color: transparent; outline-color: transparent; }
+.fs-stamp-ink { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); overflow: visible; pointer-events: none; }
+
+/* ---------- design v3.1: the month tape's time loupe and the pen circle on its largest order ---------- */
+.fs-lens { background: var(--ui-raised); border: 1px solid var(--ui-edge); border-radius: 10px; box-shadow: var(--ui-shadow-float); overflow: hidden; }
+.fs-tape-pen[data-play='true'] path { stroke-dasharray: 1; animation: fs-draw 560ms var(--ui-ease-out) 200ms both; }
+.fs-tape-pen[data-play='true'] text { animation: fs-fade-in 200ms var(--ui-ease-out) 700ms both; }
+@media (prefers-reduced-motion: reduce) { .fs-tape-pen[data-play='true'] path, .fs-tape-pen[data-play='true'] text { animation: none; } }
+
+/* ---------- design v3.1: the overview's torn cost strip (chapter 3) ---------- */
+.fs-cost-strip { position: relative; }
+.fs-cost-strip-paper {
+  display: flex; height: 64px; padding: 10px 14px; gap: 3px; background: var(--ui-raised); box-shadow: var(--ui-shadow);
+  /* torn ends: a zigzag on the left and right edges */
+  -webkit-mask: conic-gradient(from -45deg at left, #0000 25%, #000 0) left / 8px 10px repeat-y, conic-gradient(from 135deg at right, #0000 25%, #000 0) right / 8px 10px repeat-y, linear-gradient(#000 0 0) center / calc(100% - 14px) 100% no-repeat;
+  mask: conic-gradient(from -45deg at left, #0000 25%, #000 0) left / 8px 10px repeat-y, conic-gradient(from 135deg at right, #0000 25%, #000 0) right / 8px 10px repeat-y, linear-gradient(#000 0 0) center / calc(100% - 14px) 100% no-repeat;
+}
+.fs-seg, .fs-seg-key { display: block; background: var(--ui-ink); }
+.fs-seg { height: 100%; min-width: 3px; }
+.fs-seg[data-key='fees'], .fs-seg-key[data-key='fees'] { background: color-mix(in srgb, var(--ui-ink) 65%, var(--ui-raised)); }
+.fs-seg[data-dashed='true'], .fs-seg-key[data-dashed='true'] {
+  background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ui-ink) 55%, transparent) 0 1.5px, transparent 1.5px 7px);
+  outline: 1.5px dashed var(--ui-ink); outline-offset: -1.5px;
+}
+.fs-seg-key { width: 14px; height: 14px; flex: none; }
+.fs-cost-strip[data-play='true'] .fs-cost-strip-paper { animation: fs-strip-feed 640ms var(--ui-ease-out) both; }
+@keyframes fs-strip-feed { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+@media (prefers-reduced-motion: reduce) { .fs-cost-strip[data-play='true'] .fs-cost-strip-paper { animation: none; } }
+.fs-stamp-ink rect { fill: none; stroke: currentColor; }
+.fs-ruler[data-draw='true'] .fs-pen { stroke-dasharray: 1; animation: fs-draw 520ms var(--ui-ease-out) 160ms both; }
+@keyframes fs-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@media (prefers-reduced-motion: reduce) { .fs-ruler[data-draw='true'] .fs-pen { animation: none; } }
+
+/* ---------- design v3.1: the pen margin note ---------- */
+.fs-note-mark { cursor: pointer; transition: transform 140ms var(--ui-ease-out); }
+.fs-note-mark:active { transform: translateY(3px) scale(0.92); }
+.fs-note-mark:focus-visible { outline: 2px solid var(--ui-pen-ink); outline-offset: 1px; }
+.fs-note {
+  z-index: 60; max-width: min(340px, calc(100vw - 32px)); background: var(--ui-raised); color: var(--ui-ink);
+  padding: 12px 14px 14px; border-top: 2px solid var(--ui-pen); box-shadow: var(--ui-shadow-float);
+  transform-origin: var(--radix-popover-content-transform-origin);
+}
+.fs-note-body { font-family: var(--ui-font); font-size: 14px; line-height: 1.45; color: var(--ui-ink); }
+.fs-note-body p + p { margin-top: 6px; }
+.fs-note-body .fs-note-field { margin-top: 8px; font-family: var(--ui-mono); font-size: 11.5px; color: var(--ui-graphite); overflow-wrap: anywhere; }
+.fs-note[data-state='open'] { animation: fs-note-in 160ms var(--ui-ease-out) both; }
+.fs-note[data-state='closed'] { animation: fs-note-out 110ms var(--ui-ease-out) both; }
+@keyframes fs-note-in { from { opacity: 0; transform: translateY(-4px) scale(0.98); } }
+@keyframes fs-note-out { to { opacity: 0; transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) {
+  .fs-note[data-state='open'] { animation: fs-fade-in 120ms linear both; }
+  .fs-note[data-state='closed'] { animation: fs-fade-out 90ms linear both; }
 }

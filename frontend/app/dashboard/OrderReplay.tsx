@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import { Dialog } from 'radix-ui';
 import { Drawer } from 'vaul';
 import { track } from '../lib/track';
@@ -31,6 +31,8 @@ interface Props {
   /** Link of the account's Evidence section (the signed packs). */
   evidenceHref?: string;
   onCloseAutoFocus?: (e: Event) => void;
+  /** Design v3.1: the clicked bar's or row's rectangle; on a desktop the receipt grows out of it (shared-element transition). */
+  origin?: DOMRect | null;
 }
 
 /** True when the viewport is at least `minWidth` px wide. The server and the first client render assume a desktop. */
@@ -57,6 +59,19 @@ const cell = (v: number | null | undefined, f: (n: number) => string) => (typeof
 function PrintsNote({ body }: { body: ReplayBody }) {
   if (!body.fills.length) return <p className="g">{NO_FILLS}</p>;
   return <p className="g mt-1 text-[11px]" data-testid="receipt-prints-note">{CHART_NOTE}</p>;
+}
+
+/** The receipt's printed NOTES fold (design v3.1): a mono button with aria-expanded; the lines stay in the document. */
+function ReceiptNotes({ count, children }: { count: number; children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="mt-3 border-t border-dashed border-ui-ink pt-2" data-testid="receipt-notes">
+      <button type="button" aria-expanded={open} onClick={() => setOpen((v) => !v)} className="fs-r-fold">
+        <span aria-hidden="true">{open ? '−' : '+'}</span> NOTES ({count})
+      </button>
+      <div hidden={!open}>{children}</div>
+    </div>
+  );
 }
 
 function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref, onClose, Title, Description }: Omit<Props, 'open' | 'onOpenChange' | 'onCloseAutoFocus'> & {
@@ -132,7 +147,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
               ))}
             </div>
           ) : null}
-          <PrintsNote body={body} />
+          {body.fills.length ? null : <PrintsNote body={body} />}
           <p className="sec">COSTS</p>
           {lines.length ? (
             <div className="fs-lines">
@@ -149,25 +164,27 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
           {typeof total?.usd !== 'number' || !Number.isFinite(total.usd) ? (
             <div className="fs-totalline"><span className="k">TOTAL</span><span className="nc">NOT COMPUTED</span></div>
           ) : <div className="fs-totalline"><span className="k">TOTAL</span><span className="b"><Fig text={cell(total?.bps, formatSignedBps)} exact={exactTitle(total?.bps, 'bps')} /></span><span className="u"><Fig text={cell(total?.usd, formatUsd)} exact={exactTitle(total?.usd, 'usd')} /></span></div>}
-          {ec ? (
-            <p className="g mt-1.5">{expectedLine(ec)}</p>
-          ) : null}
-          {view.notes.map((n) => <p key={n} className="g mt-1">{n}</p>)}
-          <hr />
-          {view.sources.map((s) => (
-            <p key={s.hash + s.label} className="g text-[11.5px]">
-              SOURCE {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-ui-ink">{s.label}</a> : s.label}, SHA-256 {s.hash}
-            </p>
-          ))}
-          {/* below 400 px the hash and the stamp stack, so neither squeezes the other (break-ui, 2026-11-21) */}
-          <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 max-[400px]:grid-cols-1">
+          {/* design v3.1: the footnotes (prints, expected cost, notes, sources, the record's hash) fold into NOTES; the
+              total, NOT COMPUTED and the signature stamp are never folded */}
+          <ReceiptNotes count={(body.fills.length ? 1 : 0) + (ec ? 1 : 0) + view.notes.length + view.sources.length + 1}>
+            {body.fills.length ? <PrintsNote body={body} /> : null}
+            {ec ? <p className="g mt-1.5">{expectedLine(ec)}</p> : null}
+            {view.notes.map((n) => <p key={n} className="g mt-1">{n}</p>)}
+            {view.sources.map((s) => (
+              <p key={s.hash + s.label} className="g mt-1 text-[11.5px] [overflow-wrap:anywhere]">
+                SOURCE {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-ui-ink">{s.label}</a> : s.label}, SHA-256 {s.hash}
+              </p>
+            ))}
+            <p className="g mt-1 text-[10.5px] leading-[1.35] [overflow-wrap:anywhere]">{hex ?? (o ? 'HASHING' : 'NO ORDER RECORD')}<br />{BARS_NOTE}</p>
+          </ReceiptNotes>
+          {/* below 400 px the bars and the stamp stack, so neither squeezes the other (break-ui, 2026-11-21) */}
+          <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 max-[400px]:grid-cols-1">
             <div className="min-w-0">
               {b.length ? (
                 <svg className="fs-bars" viewBox={`0 0 ${barsWidth(b) || 1} 10`} preserveAspectRatio="none" aria-hidden="true">
                   {b.map((r, i) => <rect key={i} x={r.x} y={0} width={r.w} height={10} />)}
                 </svg>
               ) : null}
-              <p className="g text-[10.5px] leading-[1.35] [overflow-wrap:anywhere]">{hex ?? (o ? 'HASHING' : 'NO ORDER RECORD')}<br />{BARS_NOTE}</p>
             </div>
             <div className="c">
               {/* only a real account has signed evidence packs; a demo receipt says why there is no signature */}
@@ -186,18 +203,67 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
  * The order's thermal receipt (design v3). On a desktop it prints down out of a slot at the top of the screen (Radix
  * Dialog); on a phone it rises as a Vaul drawer with its torn edge on top. Every figure comes from the replay API.
  */
-export function OrderReplay({ open, onOpenChange, onCloseAutoFocus, ...rest }: Props) {
+/**
+ * How the receipt enters (design v3.1): `flip` grows the paper out of the clicked bar or ledger row (GSAP Flip, 300 ms
+ * on the drawer curve; the lines appear as it lands); `feed` is the first open of the session, the paper advancing out
+ * of the slot in steps; `plain` every later open. Reduced motion: plain (the CSS fades it).
+ */
+type Enter = 'flip' | 'feed' | 'plain';
+const FED = 'fs-receipt-fed';
+function chooseEnter(origin: DOMRect | null | undefined): Enter {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return 'plain';
+  let fed = false;
+  try { fed = !!sessionStorage.getItem(FED); sessionStorage.setItem(FED, '1'); } catch { fed = true; }
+  if (origin && origin.width > 0) return 'flip';
+  return fed ? 'plain' : 'feed';
+}
+
+/** Grow the paper from `origin` to where it rests (FLIP via GSAP Flip.fit + Flip.from). Resolves false when GSAP is unavailable. */
+async function flipFrom(paper: HTMLElement, origin: DOMRect): Promise<boolean> {
+  try {
+    const [{ gsap }, { Flip }] = await Promise.all([import('gsap'), import('gsap/Flip')]);
+    gsap.registerPlugin(Flip);
+    const ghost = document.createElement('div');
+    Object.assign(ghost.style, { position: 'fixed', left: `${origin.left}px`, top: `${origin.top}px`, width: `${origin.width}px`, height: `${origin.height}px`, pointerEvents: 'none' });
+    document.body.append(ghost);
+    Flip.fit(paper, ghost, { scale: true });
+    const state = Flip.getState(paper);
+    ghost.remove();
+    gsap.set(paper, { clearProps: 'transform,width,height' });
+    paper.dataset.flip = 'run';
+    await new Promise<void>((done) => {
+      Flip.from(state, { duration: 0.3, ease: 'expo.out', scale: true, onComplete: () => { gsap.set(paper, { clearProps: 'all' }); done(); } });
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function OrderReplay({ open, onOpenChange, onCloseAutoFocus, origin, ...rest }: Props) {
   const desktop = useMediaQuery(768);
   const close = () => onOpenChange(false);
+  const [enter, setEnter] = useState<Enter>('plain');
+  const [paper, setPaper] = useState<HTMLDivElement | null>(null);
+  // decide once per opening, before the paper paints (layout effect: the first frame already wears the mode). Not in
+  // render: the choice records the session's first open in sessionStorage, a side effect.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useLayoutEffect(() => { if (open) setEnter(chooseEnter(desktop ? origin : null)); }, [open, origin, desktop]);
+  useEffect(() => {
+    if (!open || enter !== 'flip' || !paper || !origin) return;
+    // whatever happens (done, or GSAP unavailable), the paper ends visible and at rest
+    void flipFrom(paper, origin).then(() => { paper.dataset.flip = 'done'; });
+    return () => { paper.dataset.flip = 'done'; };
+  }, [open, enter, paper, origin]);
   if (desktop) {
     return (
       <Dialog.Root open={open} onOpenChange={onOpenChange}>
         <Dialog.Portal>
           <Dialog.Overlay className="fs-r-overlay" />
-          <Dialog.Content className="fs-r-shell" onCloseAutoFocus={onCloseAutoFocus}>
+          <Dialog.Content className="fs-r-shell" data-enter={enter} onCloseAutoFocus={onCloseAutoFocus}>
             <div className="fs-r-slot" aria-hidden="true" />
             <div className="fs-r-clip">
-              <div className="fs-r-paper">
+              <div className="fs-r-paper" ref={setPaper}>
                 <div className="fs-receipt">{open ? <ReceiptBody {...rest} onClose={close} Title={Dialog.Title} Description={Dialog.Description} /> : null}</div>
                 <div className="fs-torn-bottom" aria-hidden="true" />
               </div>

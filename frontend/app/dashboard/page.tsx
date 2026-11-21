@@ -29,11 +29,14 @@ import { type CurrentFigures } from './headerStats';
 import { describeHeadline, gradeView, scopeFacts } from './headline';
 import { DEMO_NOTE, type V2Response } from './scoreV2';
 import { Overview } from './Overview';
+import type { OrderRow } from './ordersTable';
 import SyncFreshness from './SyncFreshness';
 
 // Design v2: only the overview ships with the page; each other section (and its table, chart or drawer code) loads when opened.
 const section = () => <div className="panel h-64 opacity-60" aria-hidden="true" />;
 const OrdersView = dynamic(() => import('./OrdersView'), { loading: section });
+// design v3.1: a bar of the overview's month tape opens its receipt in place (the same receipt as the Orders ledger)
+const OrderReplay = dynamic(() => import('./OrderReplay').then((m) => m.OrderReplay));
 const RulesView = dynamic(() => import('./RulesView'), { loading: section });
 const RankingsView = dynamic(() => import('./RankingsView'), { loading: section });
 const AgentCouncil = dynamic(() => import('../components/AgentCouncil'), { loading: section });
@@ -108,6 +111,8 @@ function DashboardContent() {
   const [dashboardMode, setDashboardMode] = useState<'demo' | 'real' | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [tapeReceipt, setTapeReceipt] = useState<{ row: OrderRow; origin: DOMRect | null; focus: HTMLElement | null } | null>(null);
+  const [tapeOpen, setTapeOpen] = useState(false);
 
   const { accessToken, isLoading: authLoading, refreshAccessToken } = useAuth();
   const searchParams = useSearchParams();
@@ -249,12 +254,7 @@ function DashboardContent() {
         const skipped = skippedNotice(audit.skippedTrades);
         return (
           <div className="flex flex-col gap-5" data-view-body="">
-            {dashboardMode === 'demo' && view === 'overview' && (
-              <Banner kind="demo" title="Sample data: real prices, synthetic trader"
-                action={<Link href="/signup" className="text-[13px] text-ui-ink">Connect your exchange</Link>}>
-                {DEMO_NOTE}
-              </Banner>
-            )}
+            {/* design v3.1: on the overview the sample-data notice is one slim printed line in chapter 1 (Overview, sampleNote) */}
             {downloadError && <Banner kind="refused" title="The report was not downloaded">{downloadError}</Banner>}
 
             {view === 'overview' && (
@@ -264,6 +264,7 @@ function DashboardContent() {
                 costVs={v2Body?.costVsExpected}
                 ordersBody={ordersSummary}
                 isDemo={isDemoData}
+                sampleNote={dashboardMode === 'demo' ? DEMO_NOTE : null}
                 facts={scopeFacts(audit, audit.current)}
                 v1={{ grade: audit.fillGrade, score: audit.avgFillScore, basis: isDemoData ? undefined : 'rule-based, scoring v1' }}
                 v1Note={v2Body?.demo ? 'Kept unchanged. The measured grade is the one that describes the orders shown now.' : null}
@@ -273,8 +274,18 @@ function DashboardContent() {
                 periodLabel={monthLabel(audit.period.start, audit.period.end)}
                 query={query}
                 request={explainRequest}
-                onOpenOrder={(row) => router.push(viewHref('orders', shellUser, !!accessToken, { order: row.orderId }))}
+                onOpenOrder={(row, origin) => {
+                  if (!row.orderId) return
+                  setTapeReceipt({ row, origin, focus: document.activeElement instanceof HTMLElement ? document.activeElement : null })
+                  setTapeOpen(true)
+                }}
               />
+            )}
+            {view === 'overview' && tapeReceipt && dashboardMode !== null && (
+              <OrderReplay open={tapeOpen} onOpenChange={setTapeOpen} orderId={tapeReceipt.row.orderId} symbol={tapeReceipt.row.symbol}
+                query={query} request={explainRequest} row={tapeReceipt.row} origin={tapeReceipt.origin} demo={dashboardMode === 'demo'}
+                evidenceHref={dashboardMode === 'real' ? viewHref('evidence', shellUser, !!accessToken) : undefined}
+                onCloseAutoFocus={(e) => { const el = tapeReceipt.focus; if (el?.isConnected) { e.preventDefault(); el.focus() } }} />
             )}
 
             {view === 'orders' && dashboardMode !== null && (

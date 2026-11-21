@@ -71,7 +71,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
   const [sorting, setSorting] = useState<SortingState>([{ id: 'when', desc: true }]);
   const [visibility, setVisibility] = useState<VisibilityState>({});
   const [shown, setShown] = useState(PAGE);
-  const [selected, setSelected] = useState<{ orderId: string; symbol: string; row?: OrderRow } | null>(null);
+  const [selected, setSelected] = useState<{ orderId: string; symbol: string; row?: OrderRow; origin?: DOMRect | null } | null>(null);
   const [open, setOpen] = useState(false);
   const returnFocus = useRef<HTMLElement | null>(null);
   const opened = useRef(false);
@@ -112,10 +112,11 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
   const sortedRows = table.getRowModel().rows;
   const visible = sortedRows.slice(0, shown);
 
-  const pick = (r: OrderRow) => {
+  const pick = (r: OrderRow, el?: HTMLElement) => {
     if (!r.orderId) return;   // a trade without an order id has no replay
     returnFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    setSelected({ orderId: r.orderId, symbol: r.symbol, row: r });
+    // design v3.1: the row is the receipt's origin (the shared-element transition)
+    setSelected({ orderId: r.orderId, symbol: r.symbol, row: r, origin: el ? el.getBoundingClientRect() : null });
     setOpen(true);
   };
   /** The sheet has no trigger, so hand focus back to the row that opened it (keyboard users keep their place). */
@@ -180,7 +181,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
                       <tbody>
                         {visible.map((row) => (
                           <tr key={row.id} data-testid="orders-row" tabIndex={row.original.orderId ? 0 : undefined}
-                            onClick={() => pick(row.original)}
+                            onClick={(e) => pick(row.original, e.currentTarget)}
                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(row.original); } }}
                             className={cn('border-t border-dashed border-ui-rule focus-visible:outline-2 focus-visible:-outline-offset-2', row.original.orderId && 'cursor-pointer hover:bg-ui-raised')}>
                             {row.getVisibleCells().map((cell) => (
@@ -206,7 +207,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
       </Panel>
 
       {selected && (
-        <OrderReplay open={open} onOpenChange={setOpen} onCloseAutoFocus={restoreFocus} orderId={selected.orderId} symbol={selected.symbol} query={query} request={request} row={selected.row}
+        <OrderReplay open={open} onOpenChange={setOpen} onCloseAutoFocus={restoreFocus} orderId={selected.orderId} symbol={selected.symbol} query={query} request={request} row={selected.row} origin={selected.origin}
           demo={mode === 'demo'} evidenceHref={mode === 'real' ? withParams('/dashboard', query, { view: 'evidence' }) : undefined} />
       )}
     </div>

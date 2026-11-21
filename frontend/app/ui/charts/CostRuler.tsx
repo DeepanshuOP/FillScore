@@ -9,8 +9,10 @@ import { bracketPath } from '../pen'
  * and the pen brackets the 90% interval of the difference above the ruler. Every value is also printed as text: the pen
  * bracket doubles the penInk label, it never states the interval alone.
  */
-export function CostRuler({ diff, low, high, labels, n }: {
+export function CostRuler({ diff, low, high, labels, n, draw = false }: {
   diff: number; low: number | null; high: number | null; n: number
+  /** Design v3.1: draw the pen's bracket once (the overview chapter's first entry); otherwise it is simply there. */
+  draw?: boolean
   labels: { diff: string; low: string; high: string; level: string }
 }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -33,7 +35,7 @@ export function CostRuler({ diff, low, high, labels, n }: {
   for (let v = Math.ceil(lo / step) * step; v <= hi + 1e-9; v += step) ticks.push(Number(v.toFixed(10)))
   const paidLeft = diff < 0
   return (
-    <figure className="m-0">
+    <figure className="fs-ruler m-0" data-draw={draw}>
       <div ref={ref} className="relative w-full" style={{ height: H }}>
         {w > 0 ? (
           <svg width={w} height={H} className="block overflow-visible" role="img"
@@ -47,7 +49,7 @@ export function CostRuler({ diff, low, high, labels, n }: {
             ))}
             {hasRange ? (
               <>
-                <path className="fs-pen" d={bracketPath(x(low!), x(high!), Y - 22, -9, 5)} fill="none" stroke="var(--ui-pen)" strokeWidth={2.2} strokeLinecap="round" />
+                <path className="fs-pen" pathLength={1} d={bracketPath(x(low!), x(high!), Y - 22, -9, 5)} fill="none" stroke="var(--ui-pen)" strokeWidth={2.2} strokeLinecap="round" />
                 <text x={(x(low!) + x(high!)) / 2} y={Y - 32} textAnchor="middle" className="fill-ui-pen-ink text-[13px] font-bold">{labels.level} range {labels.low} to {labels.high}</text>
               </>
             ) : null}

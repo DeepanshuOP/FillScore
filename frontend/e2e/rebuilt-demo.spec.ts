@@ -38,6 +38,8 @@ test('dashboard of a rebuilt demo: v1-only views say "not computed", measured vi
   await expect(orders).toContainText(/Orders\s*5(?!\d)/)
   await expect(orders).toContainText(/Filled\s*3(?!\d)/)
   await expect(orders).toContainText(/Unfilled\s*1(?!\d)/)
+  // design v3.1: resting times and the unfilled note are in the outcomes fold, the medians in the "Lines" fold
+  await page.getByRole('button', { name: 'Timing and unfilled orders' }).click(); await page.getByRole('button', { name: 'Lines' }).click()
   await expect(page.getByTestId('orders-resting')).toContainText('Median 3.0 s')
   await expect(page.getByTestId('orders-shortfall')).toContainText(/Execution cost\s*2\.0 bps/)
   await expect(page.getByTestId('orders-unfilled')).toContainText('7.0 bps')
@@ -63,6 +65,7 @@ test('no negative zero; totals per term in USD and bps; grammar of the unfilled 
   await expect(orders).toBeVisible({ timeout: 30_000 })
   const text = await orders.innerText()
   expect(text).not.toMatch(/-0\.0 bps|−0\.0 bps|-\$0\.00|−\$0\.00/)
+  await page.getByRole('button', { name: 'Lines' }).click(); await page.getByRole('button', { name: 'Timing and unfilled orders' }).click()   // design v3.1 folds
   await expect(page.getByTestId('orders-shortfall')).toContainText(/Impact and timing\s*−0\.00 bps/)   // true minus sign; A3 (ordered): a tiny negative reads −0.00
   // hand values (see reshapeDemoAsRebuilt): execution $2 + $8 + $0 = $10 over $35,000 = 2.9 bps; fees $30 = 8.6 bps;
   // unfilled orders 7 bps x $5,000 = $3.50 over $35,000 = 1.0 bps; total $2.50 + $9 + $3.50 = $15 = 4.3 bps
@@ -93,8 +96,12 @@ test('headline and record: dollar total, the cost sentence, components named aft
   const headline = page.getByTestId('headline')
   await expect(headline).toBeVisible({ timeout: 30_000 })
   await expect(headline).toContainText('The 3 orders paid $15.00 in total.')
-  await expect(headline).toContainText('The total is 4.3 bps of the value ordered. 1 order was not measured and is not in it.')
+  // design v3.1: the bps of the total is in the sentence's pen margin note; the unmeasured order stays printed
+  await expect(page.getByTestId('unmeasured-line')).toHaveText('1 order was not measured and is not in it.')
+  await page.getByRole('button', { name: 'Note: the total in basis points' }).click()
+  await expect(page.getByTestId('total-bps')).toHaveText('The total is 4.3 bps of the value ordered.')
   // M3 §2: cost against expected, one past-tense sentence with its interval (numbers come from the offline build; the pattern is checked, not the values)
+  await page.keyboard.press('Escape'); await page.getByRole('button', { name: 'Note: cost against expected' }).click()   // design v3.1: in the note
   await expect(page.getByTestId('cost-sentence')).toHaveText(
     /^Market orders cost [<>]?[−\d.]+ bps against [<>]?[−\d.]+ bps expected: difference [<>]?[+−]?[\d.]+ bps, 90% interval [<>]?[+−]?[\d.]+ bps to [<>]?[+−]?[\d.]+ bps, \d+ orders\.$/)
   // the record behind the grade, inside its disclosure (design v2: in the Evidence section)

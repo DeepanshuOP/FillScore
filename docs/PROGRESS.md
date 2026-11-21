@@ -7,10 +7,25 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 "Tape & Receipt" stays; the problem is sensory overload. Research first, then rebuild the landing page, the
 overview and the receipt-opening flow with less text, designed visuals and better motion; then stop for review.
 
-- **Next concrete action: step 3, overview as five chapters. First the margin-note component (`app/ui/MarginNote.tsx`,
-  Radix Popover + Vaul on touch), then the server `strip` shares on `/audit/orders-summary` (hand-computed test), then
-  the chapters (plan: `docs/design/v31-plan.md`).**
-- Status: steps 1-2 done; steps 3-6 not started.
+- **Next concrete action: step 5, the landing page (pinned horizontal chapter of three printed objects, masked line
+  reveals, words cut by half; plan `docs/design/v31-plan.md` "Landing page").**
+- Status: steps 1-4 done; steps 5-6 not started.
+- **Steps 3 and 4, done (one commit: the receipt's entry and the tape share files).** Overview in five chapters
+  (`Overview.tsx`, `chapter.tsx`): 01 total (slim "Sample data: synthetic trader, real prices" line replaces the demo
+  banner; bps in a note), 02 grade (stamp pressed on the chapter's first entry, its border drawn with DrawSVG, loaded on
+  demand; band and the frozen v1 details in notes), 03 where it went (torn strip from the server's new `strip` shares,
+  fees at the published rate dashed with "not independently measured" printed; the B2 term table and switch kept in a
+  "Lines" fold), 04 the month (tape draggable with Draggable + Inertia when bars are under 4 px, keys unchanged, time
+  loupe, pen circle on the largest order, a click opens the receipt in place), 05 against expected (ruler with the
+  bracket drawn once, one sentence; outcomes as a tally). Margin notes: `app/ui/MarginNote.tsx` (Radix Popover on a
+  fine pointer: hover 250 ms / focus / click, warm window 400 ms, Escape; Vaul sheet on touch). Server:
+  `costStrip()` in `orderSummary.ts`, `strip` on `/audit/orders-summary` (test `costStrip.test.ts`, hand values: red
+  then green); fixtures re-cut offline (only `strip` added, checked). Receipt (step 4): Flip from the clicked bar or
+  ledger row on a desktop (`flipFrom`, GSAP Flip.fit + Flip.from, 300 ms; keyboard opens plainly), the footnotes in a
+  printed "NOTES (n)" fold, a stepped print feed on the first open of the session only (`fs-receipt-fed`). Fixed on
+  the way: the screen-reader options layer took the tape's pointer (Draggable never started); a click now opens the bar
+  the preview shows. e2e selectors: `score-versions.spec.ts` (opens the v1 note), `rebuilt-demo.spec.ts` (opens the
+  folds and the two notes). Checks: frontend vitest 690 passed, tsc 0, lint 0 errors; backend 1041 passed, tsc 0.
 - **Step 2, done.** `docs/design/v31-plan.md`: rules, motion budget, and a keep/shorten/note/delete decision for every
   text block. Before (visible words, `frontend/e2e-shots/words.ts`, 1440): landing 381, overview 378, receipt 113;
   type sizes 18, 15, 8.
