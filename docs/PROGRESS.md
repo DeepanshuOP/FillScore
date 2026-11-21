@@ -7,7 +7,21 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: A7 (Council notes: verbatim finding and cited values as ledger lines).**
+- **Next concrete action: A8 (onboarding refusal in plain words; the last correction matches the form).**
+- **A7, done.** Each specialist note prints its recorded finding verbatim (the explanation field and its flag sentences;
+  tags stay chips) and its cited values as ledger lines (audit field, value as the audit rendered it, unit). The run
+  records only a count, so the server traces them on read: `ml-service/agents/cited_values.py` renders every leaf of
+  the specialist's packet namespace exactly as the placeholder renderer does and finds those strings in the text, whole
+  tokens, in reading order; a rendering shared by several fields lists all of them. Shown only when every numeral in the
+  note lies inside a traced value (the grounding guarantee); otherwise "could not be traced" (ValueState). The recorded
+  count is not the gate: the claim check can replace an explanation with a fallback after it was counted
+  (demo-disciplined liquidity: recorded 3, text "Liquidity verdict: GOOD."). Sent as a `cited_values` stream event just
+  before `complete` (`complete` stays equal to the HTTP body, an invariant test), for demo, cached and live runs; the
+  recorded run and the database are unchanged. Notes are receipt-white paper with a torn edge, no shadow, at natural
+  height in two balanced columns. Tests: `tests/test_cited_values.py` (hand values, a served demo run),
+  `councilStatus.test.ts`. QA fixture: `scripts/cut_cited_fixture.py` (offline build; on demo-moderate all four notes
+  trace: liquidity 3, risk 4, fee 3, alpha none). Checks: ml-service pytest 1784 passed, 1 skipped; evals offline 0
+  violations; ablation --check exit 0; frontend vitest 674.
 - **A6, done.** Phone: each fee mark is a squarish pen loop (`loopPath`, superellipse) round the whole 128 x 104 fill
   tile, centred on its text and stopping short of the neighbouring prints' text; the fee note's leader starts on the
   second fill's mark (also on the desktop, where it ended in the gap). Bounds measured in the browser

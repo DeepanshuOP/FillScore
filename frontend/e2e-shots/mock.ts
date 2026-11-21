@@ -12,6 +12,8 @@ type Fx = { ordersBody: unknown; v2Body: unknown; v1: { grade: string; score: nu
 export const fx: Record<string, Fx> = Object.fromEntries(['demo-moderate', 'demo-disciplined', 'demo-aggressive']
   .map((id) => [id, JSON.parse(readFileSync(resolve(__dirname, 'fixtures', `${id}.json`), 'utf8'))]))
 const COUNCIL = JSON.parse(readFileSync(resolve(__dirname, '../../ml-service/demo_runs/demo-moderate.json'), 'utf8')).council_result
+// the cited_values event the stream sends before `complete` (ml-service/scripts/cut_cited_fixture.py, offline build)
+const CITED = JSON.parse(readFileSync(resolve(__dirname, 'fixtures', 'cited-demo-moderate.json'), 'utf8'))
 const json = (body: unknown, status = 200) => ({ status, contentType: 'application/json', body: JSON.stringify(body) })
 
 export async function mock(page: Page, signedIn: boolean, over: (p: string, url: URL) => unknown = () => undefined) {
@@ -48,7 +50,7 @@ export async function mock(page: Page, signedIn: boolean, over: (p: string, url:
   })
   await page.route('**/health', (r) => r.fulfill(json({ status: 'ok' })))
   await page.route('**/ml/agents/council/stream', (r) => r.fulfill({ status: 200, contentType: 'text/event-stream',
-    body: `event: complete\ndata: ${JSON.stringify({ ...COUNCIL, cached: true })}\n\n` }))
+    body: `event: cited_values\ndata: ${JSON.stringify({ citedValues: CITED })}\n\nevent: complete\ndata: ${JSON.stringify({ ...COUNCIL, cached: true })}\n\n` }))
   await page.route('**/ml/agents/council/budget**', (r) => r.fulfill(json({ remaining: 20, limit: 20 })))
 }
 

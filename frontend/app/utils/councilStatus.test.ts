@@ -149,12 +149,36 @@ describe('verdictCardsFromResult', () => {
         expect(Object.keys(cards)).toEqual(['liquidity_scout', 'alpha_architect', 'risk_auditor', 'fee_optimizer']);
         expect(cards.liquidity_scout).toEqual({
             agent: 'liquidity_scout', rating: 'GOOD', severity: 'LOW',
-            valuesCited: 3, flags: [], status: 'done', failed: false,
+            valuesCited: 3, flags: [], status: 'done', failed: false, finding: null, sentences: [], cited: null,
         });
         expect(cards.liquidity_scout).not.toHaveProperty('confidence');   // an LLM number is never shown
         expect(cards.risk_auditor.valuesCited).toBe(0);
         expect(cards.alpha_architect.valuesCited).toBeNull();             // older runs: not recorded, not "0"
         expect(cards.fee_optimizer.failed).toBe(true);
+    });
+
+    it('design v3 fixes A7: the recorded finding verbatim, flag sentences apart from tags, cited values from the server', () => {
+        const text = 'The trader executed 77.9% of orders as maker, keeping total fee cost at $23.96 with a drag of 10.0 bps.';
+        const lines = [{ value: '77.9%', unit: '%', fields: ['fee.maker_ratio'] }, { value: '$23.96', unit: 'USD', fields: ['fee.total_fee_paid_usd'] }];
+        const result = {
+            fee: { feeRating: 'OPTIMAL', severity: 'LOW', recommendedAction: text, flags: ['high_maker_participation'] },
+            risk: { riskLevel: 'MEDIUM', severity: 'MEDIUM', flags: ['Adverse selection rate was 0.0% across 344 trades.', 'single_asset'] },
+            liquidity: { liquidityRating: 'GOOD', slippageRoot: 'Liquidity verdict: GOOD.', flags: [] },
+            alpha: { alphaRating: 'NEGATIVE', bestAlternative: 'Alpha verdict: NEGATIVE.', flags: [] },
+            citedValues: {
+                fee_optimizer: { recorded: 3, lines, complete: true },
+                risk_auditor: { recorded: 4, lines: [], complete: false },
+                liquidity_scout: { recorded: 3, lines: [], complete: true },
+            },
+        };
+        const cards = verdictCardsFromResult(result);
+        expect(cards.fee_optimizer.finding).toBe(text);                      // verbatim, never edited
+        expect(cards.fee_optimizer.cited).toEqual({ complete: true, lines });
+        expect(cards.risk_auditor.finding).toBeNull();                       // the risk auditor writes flags only
+        expect(cards.risk_auditor.sentences).toEqual(['Adverse selection rate was 0.0% across 344 trades.']);
+        expect(cards.risk_auditor.flags).toEqual(['single_asset']);          // tags stay chips
+        expect(cards.risk_auditor.cited).toEqual({ complete: false, lines: [] });
+        expect(cards.alpha_architect.cited).toBeNull();                      // not sent: the card falls back to the count
     });
 });
 

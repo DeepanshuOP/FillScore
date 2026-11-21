@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { waitForHealthy } from "../utils/serviceWarmup";
@@ -86,6 +86,35 @@ const AGENT_ORDER = ["liquidity_scout", "alpha_architect", "risk_auditor", "fee_
 const ASSESSMENT_HEADING = "Explanation (language model; every number was checked against the audit)";
 
 
+const UNIT_WORD: Record<string, string> = { bps: "bps", "%": "percent", USD: "USD", count: "count" };
+
+/**
+ * The values a note cites, as ledger lines: the audit field, the value as the audit rendered it, its unit. The server
+ * traces them (citedValues, ml-service agents/cited_values.py); the browser only prints them. A run that predates the
+ * trace keeps the recorded count; a note whose numerals could not all be traced says so instead of listing a part.
+ */
+function CitedValues({ card }: { card: AgentCard }) {
+  const c = card.cited;
+  if (!c) return card.valuesCited === null ? null : <p className="text-[12px]">{`${card.valuesCited} ${card.valuesCited === 1 ? "value" : "values"} cited`}</p>;
+  if (!c.complete) return <ValueState state="not-computed" label="Cited values" reason="the values in this note could not be traced to the audit fields" />;
+  if (c.lines.length === 0) return <p className="text-[12px]">No values cited.</p>;
+  return (
+    <div data-testid="council-cited">
+      <p className="text-[11px] leading-4 text-ui-graphite">CITED FROM THE AUDIT</p>
+      <dl className="mt-1 border-t border-ui-ink">
+        {c.lines.map((ln, i) => (
+          <div key={`${ln.value}:${i}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 border-b border-dashed border-ui-rule py-1">
+            <dt className="min-w-0 text-[11.5px] text-ui-graphite [overflow-wrap:anywhere]" title={ln.fields.join(", ")}>
+              {ln.fields[0]}{ln.fields.length > 1 ? <span>{` and ${ln.fields.length - 1} more with this value`}</span> : null}
+            </dt>
+            <dd className="text-right whitespace-nowrap text-ui-ink">{ln.value}{UNIT_WORD[ln.unit] && !ln.value.includes(ln.unit) && !(ln.unit === "USD" && ln.value.includes("$")) ? <span className="text-ui-graphite"> {UNIT_WORD[ln.unit]}</span> : null}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
 // Design v2 segmented control (same pattern as the Rankings view), with a disabled state for a running audit.
 function Segmented<T extends string>({ value, options, onChange, label, disabled }: { value: T; options: Array<[T, string]>; onChange: (v: T) => void; label: string; disabled?: boolean }) {
   return (
@@ -138,7 +167,9 @@ export default function AgentCouncil({
     fetch(`${mlBaseUrl}/health`).catch(() => {});
   }, [mlBaseUrl]);
 
+  const cited = useRef<unknown>(null);
   const reset = useCallback(() => {
+    cited.current = null;
     setResultMode(null);
     setModeLabel(null);
     setOfferQuick(false);
@@ -197,10 +228,13 @@ export default function AgentCouncil({
     } else if (eventType === "gate_done") {
       setVerification(payload.verification ?? null);
       setGrounding(payload.grounding ?? null);
+    } else if (eventType === "cited_values") {
+      // Design v3 fixes A7: the server's trace of each note's cited values, sent just before `complete`.
+      cited.current = (payload as { citedValues?: unknown }).citedValues ?? null;
     } else if (eventType === "complete") {
       // The final event carries the whole result, identical to the non-stream endpoint. It is
       // the source of truth: every number on the panel is re-read from it.
-      setCards(verdictCardsFromResult(payload));
+      setCards(verdictCardsFromResult(cited.current ? { ...payload, citedValues: cited.current } : payload));
       setResultMode(payload.mode === "quick" ? "quick" : "deep");
       setModeLabel(userId ? null : auditModeLabel(payload));
       setSynthesis({
@@ -378,8 +412,9 @@ export default function AgentCouncil({
         </div>
       </Panel>
 
-      {/* 2x2 specialist grid: a Quick audit has no specialists to show */}
-      <div className={cn("grid grid-cols-1 gap-6 sm:grid-cols-2", !showSpecialists && "hidden")}>
+      {/* The four specialists as printed notes at their natural height, in two balanced columns (design v3 fixes A7).
+          A Quick audit has no specialists to show. */}
+      <div className={cn("gap-6 sm:columns-2", !showSpecialists && "hidden")} data-testid="council-notes">
         {AGENT_ORDER.map((agent, idx) => {
           const card = cards[agent];
           const isRunning = card?.status === "running" || activeAgent === agent;
@@ -389,7 +424,8 @@ export default function AgentCouncil({
           const status = isRunning ? "Streaming" : card?.status === "done" ? (card.failed ? "Unavailable" : "Done") : "Idle";
 
           return (
-            <div key={agent} className="sheet flex min-w-0 flex-col gap-3 p-5 font-mono text-[12.5px]">
+            <article key={agent} aria-label={`Note ${idx + 1} of 4: ${agentLabel(agent)}`} className="mb-6 min-w-0 break-inside-avoid">
+            <div className="flex min-w-0 flex-col gap-3 bg-ui-raised px-5 pt-4 pb-5 font-mono text-[12.5px]">
               <p className="flex items-center justify-between gap-3 border-b border-dashed border-ui-edge pb-2 text-[11px] text-ui-graphite">
                 <span>NOTE {idx + 1} OF 4</span>
                 <span className={isRunning ? "text-ui-ink" : undefined}>{status.toUpperCase()}</span>
@@ -416,10 +452,16 @@ export default function AgentCouncil({
                       </p>
                     )}
                     {benchmarkNote && <p>{benchmarkNote}</p>}
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <span>{card.valuesCited === null ? "" : `${card.valuesCited} ${card.valuesCited === 1 ? "value" : "values"} cited`}</span>
-                      <span>Severity: {ratingWords(card.severity)}</span>
-                    </div>
+                    {/* the recorded finding, verbatim (recorded output is never edited) */}
+                    {!card.failed && (card.finding || (card.sentences?.length ?? 0) > 0) ? (
+                      <div data-testid="council-finding" className="space-y-1.5 font-ui text-[14px] leading-[1.45] text-ui-ink [overflow-wrap:anywhere]">
+                        <p className="font-mono text-[11px] leading-4 text-ui-graphite">FINDING, AS RECORDED</p>
+                        {card.finding ? <p>{card.finding}</p> : null}
+                        {card.sentences?.map((s) => <p key={s}>{s}</p>)}
+                      </div>
+                    ) : null}
+                    {!card.failed ? <CitedValues card={card} /> : null}
+                    <p className="text-[12px]">Severity: {ratingWords(card.severity)}</p>
 
                     {card.flags.length > 0 && (
                       <ul className="flex flex-wrap gap-1.5">
@@ -434,6 +476,8 @@ export default function AgentCouncil({
                 ) : null}
               </AnimatePresence>
             </div>
+            <div aria-hidden="true" className="fs-torn-bottom" />
+            </article>
           );
         })}
       </div>

@@ -151,32 +151,46 @@ export interface CouncilAgentCard {
     flags: string[];
     status: 'waiting' | 'running' | 'done';
     failed: boolean;
+    /** Design v3 fixes A7: the specialist's recorded explanation, verbatim (null if it writes none). */
+    finding?: string | null;
+    /** Its flags that are sentences (shown verbatim as text); `flags` keeps the snake_case tags. */
+    sentences?: string[];
+    /** The values its text cites, traced by the server to the audit fields (citedValues); null when not sent. */
+    cited?: { complete: boolean; lines: CitedLine[] } | null;
 }
 
-const RESULT_FIELDS: [agent: string, key: string, ratingField: string][] = [
-    ['liquidity_scout', 'liquidity', 'liquidityRating'],
-    ['alpha_architect', 'alpha', 'alphaRating'],
-    ['risk_auditor', 'risk', 'riskLevel'],
-    ['fee_optimizer', 'fee', 'feeRating'],
+export interface CitedLine { value: string; unit: string; fields: string[] }
+
+const RESULT_FIELDS: [agent: string, key: string, ratingField: string, textField: string | null][] = [
+    ['liquidity_scout', 'liquidity', 'liquidityRating', 'slippageRoot'],
+    ['alpha_architect', 'alpha', 'alphaRating', 'bestAlternative'],
+    ['risk_auditor', 'risk', 'riskLevel', null],
+    ['fee_optimizer', 'fee', 'feeRating', 'recommendedAction'],
 ];
+
+const isSentence = (f: string) => /\s/.test(f.trim());
 
 /** The four specialist cards rebuilt from the final Council result (the `complete` event). */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the Council result is wide JSON from the ml-service; each field is read defensively below
 export function verdictCardsFromResult(result: Record<string, any>): Record<string, CouncilAgentCard> {
     const cards: Record<string, CouncilAgentCard> = {};
     if (result?.mode === 'quick') return cards;          // a Quick audit has no specialists: no empty "done" cards
-    for (const [agent, key, ratingField] of RESULT_FIELDS) {
+    for (const [agent, key, ratingField, textField] of RESULT_FIELDS) {
         const v = result?.[key] ?? {};
-        const flags: string[] = Array.isArray(v.flags) ? v.flags : [];
+        const all: string[] = Array.isArray(v.flags) ? v.flags.filter((f: unknown) => typeof f === 'string') : [];
+        const c = result?.citedValues?.[agent];
         cards[agent] = {
             agent,
             rating: v[ratingField] ?? '',
             valuesCited: typeof result?.grounding?.per_agent?.[agent]?.values_cited === 'number'
                 ? result.grounding.per_agent[agent].values_cited : null,
             severity: v.severity ?? 'MEDIUM',
-            flags,
+            flags: all.filter((f) => !isSentence(f)),
             status: 'done',
-            failed: flags.includes('agent_failed'),
+            failed: all.includes('agent_failed'),
+            finding: textField && typeof v[textField] === 'string' && v[textField].trim() ? v[textField] : null,
+            sentences: all.filter(isSentence),
+            cited: c && typeof c.complete === 'boolean' && Array.isArray(c.lines) ? { complete: c.complete, lines: c.lines } : null,
         };
     }
     return cards;

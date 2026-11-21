@@ -172,7 +172,7 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/ready` | Mongo reachable and `GROQ_API_KEY` set |
 | GET | `/version` | Service version |
 | POST | `/ml/agents/council` | One audit, return the full result. Body `mode`: `quick` (one model call, no specialists; the dashboard default) or `deep` (the 9-call Council; the API default). Deep costs 9 budget units, Quick 1; a refused Deep run answers 429 with `quick_available` |
-| POST | `/ml/agents/council/stream` | Same run, streamed as server-sent events (Quick: `synthesis_done`, `gate_done`, `complete`) |
+| POST | `/ml/agents/council/stream` | Same run, streamed as server-sent events (Quick: `synthesis_done`, `gate_done`, `complete`; Deep adds `cited_values` just before `complete`: each specialist's cited values traced to packet fields, `agents/cited_values.py`, computed on read, not stored) |
 | POST | `/ml/agents/ask` | Ask your execution: a question about the caller's own past executions, answered from deterministic tools only (planner call, tools, answerer call, code checks). 2 budget units; demo accounts refused |
 | GET | `/ml/agents/council/budget` | What is left of the account's and the day's audit budget, in units, and whether one more Deep or Quick audit is allowed |
 | GET | `/ml/agents/council/runs` | Past runs for the account |

@@ -51,6 +51,11 @@ const STATES: State[] = [
     await p.getByRole('button', { name: 'Run analysis' }).click()
     await p.getByRole('heading', { name: /^Explanation/ }).waitFor({ timeout: 30000 }); await p.waitForTimeout(1000)
   } },
+  { name: 'council-notes', path: '/dashboard?userId=demo-moderate&view=council', prepare: async (p) => {
+    await p.getByRole('button', { name: 'Run analysis' }).click()
+    await p.getByRole('heading', { name: /^Explanation/ }).waitFor({ timeout: 30000 }); await p.waitForTimeout(800)
+    await p.getByTestId('council-notes').scrollIntoViewIfNeeded(); await p.evaluate(() => document.querySelector('[data-testid=council-notes]')?.scrollIntoView({ block: 'start' })); await p.waitForTimeout(600)
+  } },
   { name: 'verify-checked', path: '/verify', prepare: async (p) => {
     await p.locator('#pack').setInputFiles(PACK); await p.locator('#trusted').fill('993a80b17c57a4ad')
     await p.getByText('Verification receipt').waitFor({ timeout: 15000 }); await p.locator('#trusted').blur(); await p.waitForTimeout(1500)

@@ -24,6 +24,8 @@ from agents.errors import (
     RATE_LIMIT_EXHAUSTED,
     CouncilError,
 )
+from agents.cited_values import trace_result
+from agents.render import packet_ctx
 from agents.schemas import CouncilResult
 from config.demo_users import VALID_DEMO_USERS
 
@@ -36,10 +38,15 @@ def _router():
     return llm_router.get_default_router()
 
 
-async def _replay(result: CouncilResult, on_event: EventSink) -> None:
+async def _replay(result: CouncilResult, on_event: EventSink, ctx: Optional[dict] = None) -> None:
+    """The events of a stored result. With the packet context of the data the run describes, a `cited_values` event
+    (agents.cited_values) comes just before `complete`: computed on read, beside the recorded result, which stays
+    unchanged (`complete` stays equal to the HTTP body)."""
     if on_event is None:
         return
     for name, data in result_events(result):
+        if name == "complete" and ctx is not None:
+            await on_event("cited_values", {"citedValues": trace_result(data, ctx)})
         await on_event(name, data)
 
 
@@ -85,19 +92,26 @@ def recorded_hashes(result: dict) -> dict:
     return {k: tc.get(f"{k}_packet_hash") for k in _PACKET_KEYS}
 
 
-async def current_demo_hashes(account_id: str, symbol: str) -> Optional[dict]:
-    """Hashes of the packets built from the demo account's CURRENT data; None when they cannot be built or there is
-    no trade (then nothing recorded can be shown to describe this data)."""
+async def current_demo_inputs(account_id: str, symbol: str) -> Optional[tuple[dict, dict]]:
+    """(hashes, packet context) of the packets built from the demo account's CURRENT data; None when they cannot be
+    built or there is no trade (then nothing recorded can be shown to describe this data)."""
     from agents.council import load_packets
 
     try:
-        (fee, risk, liquidity, alpha), _ = await load_packets(account_id, symbol)
+        (fee, risk, liquidity, alpha), trades = await load_packets(account_id, symbol)
     except Exception as exc:
         print(f"[demo] current packets unavailable: {type(exc).__name__}")
         return None
     if fee.trade_count == 0:
         return None
-    return {"fee": fee.content_hash, "risk": risk.content_hash, "liquidity": liquidity.content_hash, "alpha": alpha.content_hash}
+    hashes = {"fee": fee.content_hash, "risk": risk.content_hash, "liquidity": liquidity.content_hash, "alpha": alpha.content_hash}
+    return hashes, packet_ctx(fee, risk, liquidity, alpha, trades)
+
+
+async def current_demo_hashes(account_id: str, symbol: str) -> Optional[dict]:
+    """Hashes of the packets built from the demo account's CURRENT data (see current_demo_inputs)."""
+    inputs = await current_demo_inputs(account_id, symbol)
+    return inputs[0] if inputs else None
 
 
 def load_demo_fixture(account_id: str, symbol: str, directory: pathlib.Path | None = None,
@@ -114,13 +128,13 @@ def load_demo_fixture(account_id: str, symbol: str, directory: pathlib.Path | No
     return _as_cached(data["council_result"], data["council_result"].get("run_id"), demo=True)
 
 
-async def serve_demo_run(account_id: str, symbol: str) -> CouncilResult:
+async def serve_demo_run(account_id: str, symbol: str, hashes: Optional[dict] = None) -> CouncilResult:
     """Newest non-degraded stored run of a demo account, else its committed fixture, else DEMO_NOT_GENERATED. Never a
     live run. A recorded run is served only if its packet hashes equal those of the packets built from the account's
     current data: a run that describes earlier (replaced) demo trades is not shown as if it described these."""
     from agents import persistence
 
-    hashes = await current_demo_hashes(account_id, symbol)
+    hashes = hashes if hashes is not None else await current_demo_hashes(account_id, symbol)
     if hashes is None:
         raise CouncilError(DEMO_NOT_GENERATED)
     result = None
@@ -191,8 +205,11 @@ async def council_flow(account_id: str, symbol: str, on_event: EventSink = None,
     if mode not in MODES:
         raise ValueError(f"unknown audit mode {mode!r}; expected one of {MODES}")
     if account_id in VALID_DEMO_USERS:
-        result = await serve_demo_run(account_id, symbol)
-        await _replay(result, on_event)
+        inputs = await current_demo_inputs(account_id, symbol)
+        if inputs is None:
+            raise CouncilError(DEMO_NOT_GENERATED)
+        result = await serve_demo_run(account_id, symbol, hashes=inputs[0])
+        await _replay(result, on_event, ctx=inputs[1])   # the served run's hashes equal these packets'
         return result
 
     packets, trades = await load_packets(account_id, symbol)
@@ -221,7 +238,7 @@ async def council_flow(account_id: str, symbol: str, on_event: EventSink = None,
         else:
             cached = _as_cached(doc["council_result"], doc.get("run_id"))
             if cached is not None:
-                await _replay(cached, on_event)
+                await _replay(cached, on_event, ctx=packet_ctx(fee_pkt, risk_pkt, liquidity_pkt, alpha_pkt, trades))
                 return cached
 
     # Checked before the per-account quota, so a refused run costs the user nothing.

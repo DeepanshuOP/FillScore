@@ -742,7 +742,12 @@ async def _run_council_pipeline(
             result.run_id = None
 
     tracing.finish_run("degraded" if result.degraded else "ok")
-    await run.event("complete", result.model_dump(mode="json"))
+    # cited_values: the values each specialist's text cites, traced to the packet fields (design v3 fixes A7); an event
+    # of its own just before `complete`, not part of the result or the persisted run
+    done = result.model_dump(mode="json")
+    from agents.cited_values import trace_result
+    await run.event("cited_values", {"citedValues": trace_result(done, run.ctx)})
+    await run.event("complete", done)
     return result
 
 
