@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ledgerRows, orderCountsOf, countsLine, statusLabel } from './ordersTable';
+import { ledgerRows, orderCountsOf, countsLine, fillsLine, statusLabel } from './ordersTable';
 
 /*
  * Design v3 fixes A1 (2026-11-21): the orders ledger copies the server's rows (GET /api/audit/orders-ledger); the sums
@@ -52,6 +52,14 @@ describe('countsLine (the ledger header, from the server counts)', () => {
   it('names the fill groups without a stored order', () => {
     expect(countsLine({ orders: 2, withFills: 1, fills: 2, unrecorded: 1 })).toBe('2 orders, 1 with fills, 2 fills; 1 group of fills has no stored order.');
     expect(countsLine({ orders: 2, withFills: 1, fills: 5, unrecorded: 3 })).toBe('2 orders, 1 with fills, 5 fills; 3 groups of fills have no stored order.');
+  });
+});
+
+describe('fillsLine (under the overview\'s order count, which already says the orders)', () => {
+  it('orders with fills and fills, from the same counts', () => {
+    expect(fillsLine({ orders: 245, withFills: 234, fills: 607, unrecorded: 0 })).toBe('234 with fills, 607 fills.');
+    expect(fillsLine({ orders: 1, withFills: 1, fills: 1, unrecorded: 0 })).toBe('1 with fills, 1 fill.');
+    expect(fillsLine({ orders: 2, withFills: 1, fills: 5, unrecorded: 3 })).toBe('1 with fills, 5 fills; 3 groups of fills have no stored order.');
   });
 });
 

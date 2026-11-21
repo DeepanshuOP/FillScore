@@ -131,7 +131,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
                 </div>
               ))}
             </div>
-          ) : <p className="g">NONE</p>}
+          ) : null}
           <PrintsNote body={body} />
           <p className="sec">COSTS</p>
           {lines.length ? (
@@ -146,7 +146,9 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
             </div>
           ) : <p className="g">{NO_COST_TERMS}</p>}
           <div className="fs-perf" aria-hidden="true" />
-          <div className="fs-totalline"><span className="k">TOTAL</span><span className="b"><Fig text={cell(total?.bps, formatSignedBps)} exact={exactTitle(total?.bps, 'bps')} /></span><span className="u"><Fig text={cell(total?.usd, formatUsd)} exact={exactTitle(total?.usd, 'usd')} /></span></div>
+          {typeof total?.usd !== 'number' || !Number.isFinite(total.usd) ? (
+            <div className="fs-totalline"><span className="k">TOTAL</span><span className="nc">NOT COMPUTED</span></div>
+          ) : <div className="fs-totalline"><span className="k">TOTAL</span><span className="b"><Fig text={cell(total?.bps, formatSignedBps)} exact={exactTitle(total?.bps, 'bps')} /></span><span className="u"><Fig text={cell(total?.usd, formatUsd)} exact={exactTitle(total?.usd, 'usd')} /></span></div>}
           {ec ? (
             <p className="g mt-1.5">{expectedLine(ec)}</p>
           ) : null}
@@ -157,7 +159,8 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
               SOURCE {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-ui-ink">{s.label}</a> : s.label}, SHA-256 {s.hash}
             </p>
           ))}
-          <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+          {/* below 400 px the hash and the stamp stack, so neither squeezes the other (break-ui, 2026-11-21) */}
+          <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 max-[400px]:grid-cols-1">
             <div className="min-w-0">
               {b.length ? (
                 <svg className="fs-bars" viewBox={`0 0 ${barsWidth(b) || 1} 10`} preserveAspectRatio="none" aria-hidden="true">

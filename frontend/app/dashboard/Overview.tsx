@@ -12,7 +12,7 @@ import { CostRuler } from '../ui/charts/CostRuler'
 import { costSentence, costInsufficientReason, unmeasuredNote, type GradeView, type Headline } from './headline'
 import { describeOrders, describeTotals, hasTypeTotals, totalsFor, type OrderKind, type OrdersBody } from './ordersView'
 import { MonthTape } from './MonthTape'
-import { countsLine, orderCountsOf, type OrderRow } from './ordersTable'
+import { fillsLine, orderCountsOf, type OrderRow } from './ordersTable'
 import type { CostVsExpected } from './scoreV2'
 
 type Request = (path: string, init?: { method?: string; body?: unknown }) => Promise<{ status: number; body: unknown }>
@@ -243,7 +243,7 @@ function Outcomes({ ordersBody }: { ordersBody: unknown }) {
         <div className="mt-4 flex flex-col gap-4">
           <p className="text-[2rem] leading-none font-black tracking-[-0.04em] text-ui-ink"><span className="sr-only">Orders </span>{(counts?.orders ?? o.total).toLocaleString('en-US')} <span className="text-sm font-normal tracking-normal text-ui-graphite">orders</span></p>
           {/* the same server counts the Orders ledger prints (backend orderCounts) */}
-          {counts ? <p data-testid="orders-counts" className="-mt-2 text-[13px] text-ui-graphite">{countsLine(counts)}</p> : null}
+          {counts ? <p data-testid="orders-counts" className="-mt-2 text-[13px] text-ui-graphite">{fillsLine(counts)}</p> : null}
           <div aria-hidden="true" className="flex flex-wrap items-end gap-x-3 gap-y-2">
             {groups.filter(([, n]) => n > 0).map(([label, n, kind]) => (
               <span key={label} className="flex flex-wrap items-end gap-x-[2px] gap-y-1.5 [&>span]:h-6">

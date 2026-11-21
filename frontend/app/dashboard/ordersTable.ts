@@ -61,11 +61,17 @@ export function orderCountsOf(body: unknown): OrderCounts | null {
 const int = new Intl.NumberFormat('en-US');
 const n = (v: number, one: string, many: string) => `${int.format(v)} ${v === 1 ? one : many}`;
 
+const tail = (head: string, c: OrderCounts) =>
+  c.unrecorded > 0 ? `${head}; ${c.unrecorded === 1 ? '1 group of fills has' : `${int.format(c.unrecorded)} groups of fills have`} no stored order.` : `${head}.`;
+
 /** "245 orders, 234 with fills, 607 fills." from the server counts. */
 export function countsLine(c: OrderCounts): string {
-  const head = `${n(c.orders, 'order', 'orders')}, ${int.format(c.withFills)} with fills, ${n(c.fills, 'fill', 'fills')}`;
-  if (c.unrecorded > 0) return `${head}; ${c.unrecorded === 1 ? '1 group of fills has' : `${int.format(c.unrecorded)} groups of fills have`} no stored order.`;
-  return `${head}.`;
+  return tail(`${n(c.orders, 'order', 'orders')}, ${int.format(c.withFills)} with fills, ${n(c.fills, 'fill', 'fills')}`, c);
+}
+
+/** "234 with fills, 607 fills." from the same counts, under a figure that already gives the orders. */
+export function fillsLine(c: OrderCounts): string {
+  return tail(`${int.format(c.withFills)} with fills, ${n(c.fills, 'fill', 'fills')}`, c);
 }
 
 const STATUS: Record<string, string> = {
