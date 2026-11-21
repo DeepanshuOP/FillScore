@@ -22,8 +22,13 @@ test('sample dashboard Council: assessment without a letter, values cited, no ad
   await expect(panel).toHaveCount(1)
   await expect(panel.locator('span', { hasText: /^[A-F][+-]?$/ })).toHaveCount(0)
 
-  // each of the four specialist cards states how many values it cited
-  await expect(page.getByText(/^\d+ values? cited$/)).toHaveCount(4)
+  // each of the four specialist notes states its cited values (design v3 fixes A7, ordered: ledger lines traced by the
+  // server instead of "N values cited"): the ledger, "No values cited.", or "could not be traced"
+  const notes = page.locator('[data-testid=council-notes] article')
+  await expect(notes).toHaveCount(4)
+  for (let i = 0; i < 4; i++) {
+    await expect(notes.nth(i)).toContainText(/CITED FROM THE AUDIT|No values cited\.|could not be traced/)
+  }
 
   const text = await page.evaluate(() => document.body.innerText)
   // The exemption for "Unfilled Opportunity Cost Assessed" (item 27) is gone: the run was re-recorded and the claim

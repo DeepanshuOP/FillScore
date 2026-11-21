@@ -63,7 +63,7 @@ test('no negative zero; totals per term in USD and bps; grammar of the unfilled 
   await expect(orders).toBeVisible({ timeout: 30_000 })
   const text = await orders.innerText()
   expect(text).not.toMatch(/-0\.0 bps|−0\.0 bps|-\$0\.00|−\$0\.00/)
-  await expect(page.getByTestId('orders-shortfall')).toContainText(/Impact and timing\s*>−0\.01 bps/)   // true minus sign
+  await expect(page.getByTestId('orders-shortfall')).toContainText(/Impact and timing\s*−0\.00 bps/)   // true minus sign; A3 (ordered): a tiny negative reads −0.00
   // hand values (see reshapeDemoAsRebuilt): execution $2 + $8 + $0 = $10 over $35,000 = 2.9 bps; fees $30 = 8.6 bps;
   // unfilled orders 7 bps x $5,000 = $3.50 over $35,000 = 1.0 bps; total $2.50 + $9 + $3.50 = $15 = 4.3 bps
   // design v3: the totals table is the always-visible receipt "Where the $X went" (the v2 Chart/Table toggle is gone)

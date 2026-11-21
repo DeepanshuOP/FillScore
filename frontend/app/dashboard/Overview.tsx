@@ -10,7 +10,7 @@ import { exactTitle, formatScore, formatSignedBps, formatUsd } from '../ui/forma
 import { Fig } from '../ui/Fig'
 import { CostRuler } from '../ui/charts/CostRuler'
 import { costSentence, costInsufficientReason, unmeasuredNote, type GradeView, type Headline } from './headline'
-import { describeOrders, describeTotals, hasTypeTotals, totalsFor, type OrderKind, type OrdersBody } from './ordersView'
+import { describeOrders, describeTotals, hasTypeTotals, otherTypeOrders, totalsFor, type OrderKind, type OrdersBody } from './ordersView'
 import { MonthTape } from './MonthTape'
 import { fillsLine, orderCountsOf, type OrderRow } from './ordersTable'
 import type { CostVsExpected } from './scoreV2'
@@ -138,6 +138,9 @@ function CostReceipt({ ordersBody, isDemo, headline }: { ordersBody: unknown; is
                   className={cn('h-7 rounded-full px-3 font-medium', kind === k ? 'bg-ui-ink text-ui-surface' : 'text-ui-graphite hover:text-ui-ink')}>{label}</button>
               ))}
             </div>
+          ) : null}
+          {typed && otherTypeOrders(ordersBody) > 0 ? (
+            <p className="c g mt-2 text-[11px]">{`${otherTypeOrders(ordersBody)} measured ${otherTypeOrders(ordersBody) === 1 ? 'order of another type is' : 'orders of other types are'} in All only.`}</p>
           ) : null}
           <hr />
           {kind !== 'all' && !t ? (

@@ -76,4 +76,8 @@ describe('exactTitle (design v3 fixes A3: the exact value of a figure below disp
     expect(exactTitle(-0.0042137, 'usd')).toBe('Exactly −$0.004214')
     expect(exactTitle(0.0003, 'usd')).toBe('Exactly $0.0003000')
   })
+  it('below one millionth it says so in words, never in exponent form', () => {
+    expect(exactTitle(-1.11e-15, 'bps')).toBe('A negative value smaller than 0.000001 bps')
+    expect(exactTitle(1e-7, 'usd')).toBe('A positive value smaller than $0.000001')
+  })
 })

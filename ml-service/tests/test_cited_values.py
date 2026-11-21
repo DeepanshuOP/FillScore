@@ -2,10 +2,12 @@
 
 A specialist writes numbers only as {{ns.key}} placeholders and the renderer fills them from the packet (agents.render);
 the recorded run keeps the rendered text and a code-counted `values_cited`, not which keys were used. The trace renders
-every packet value as the renderer would and finds those strings in the text. It is shown only when the number of traced
-values equals the recorded count; otherwise the card says the values could not be traced. Nothing here comes from a
-language model: each value is the packet's, formatted by agents.render.format_value.
+every packet value as the renderer would and finds those strings in the text. It is shown only when every numeral in
+the shown text lies inside a traced value; otherwise the card says the values could not be traced (the recorded count
+is information only). Nothing here comes from a language model: each value is the packet's, formatted by
+agents.render.format_value.
 """
+from agents.cited_values import safe_trace
 import asyncio
 import json
 from unittest.mock import MagicMock, patch
@@ -107,3 +109,8 @@ def test_a_served_demo_run_carries_cited_values_beside_the_unchanged_recorded_re
     assert "fee.total_fee_paid_usd" in fee["lines"][0]["fields"]
     assert "citedValues" not in result.model_dump()            # the recorded result itself is not changed
     assert provider.calls == []
+
+
+def test_the_trace_can_never_break_a_run():
+    # a result whose shape makes the trace raise (grounding is not a dict) gives {} instead of an exception
+    assert safe_trace({"grounding": "not a dict", "fee": {"recommendedAction": "x"}}, {"fee": FEE}) == {}

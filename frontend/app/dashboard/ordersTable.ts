@@ -38,7 +38,8 @@ interface ServerRow {
 
 const typeOf = (raw: string | null | undefined): OrderType => {
   const t = (raw ?? '').toUpperCase();
-  return t === 'MARKET' ? 'Market' : t === 'LIMIT' ? 'Limit' : 'Not recorded';
+  // LIMIT_MAKER (post-only) is a limit order, as the server's per-type totals count it (orderSummary.typeFamily)
+  return t === 'MARKET' ? 'Market' : t === 'LIMIT' || t === 'LIMIT_MAKER' ? 'Limit' : 'Not recorded';
 };
 
 export function ledgerRows(body: unknown): OrderRow[] | null {

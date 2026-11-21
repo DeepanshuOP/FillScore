@@ -37,6 +37,9 @@ describe('ledgerRows', () => {
     expect(rows[1]).toMatchObject({ status: 'CANCELED', fills: 0, feesUsd: null, makerShare: null, firstFill: null });
     expect(rows[2]).toMatchObject({ status: null, when: '2024-01-15T09:00:00.000Z' });
   });
+  it('a LIMIT_MAKER order is a limit order, as the per-type totals count it', () => {
+    expect(ledgerRows({ available: true, orders: [{ ...body.orders[0], type: 'LIMIT_MAKER' }] })![0].type).toBe('Limit');
+  });
   it('is null for a body that is not available', () => {
     expect(ledgerRows({ available: false })).toBeNull();
     expect(ledgerRows(null)).toBeNull();

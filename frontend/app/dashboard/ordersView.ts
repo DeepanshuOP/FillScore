@@ -70,6 +70,12 @@ export function totalsFor(body: unknown, kind: OrderKind): Totals | null {
   return b.byType?.[kind] ?? null;
 }
 
+/** Measured orders of other types (neither market nor limit), from the server: they are in All only. */
+export function otherTypeOrders(body: unknown): number {
+  const n = (body as { byType?: { other?: Totals | null } } | null)?.byType?.other?.total?.n;
+  return typeof n === 'number' ? n : 0;
+}
+
 /** Rows (and the exact values of tiny figures) for a set of totals, in the receipt's term order. */
 export function describeTotals(t: Totals | null): { rows: NonNullable<OrdersView['totals']>; exact: NonNullable<OrdersView['totalsExact']> } | null {
   if (!t) return null;

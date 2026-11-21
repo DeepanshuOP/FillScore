@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { describeOrders, describeTotals, hasTypeTotals, leadBreakdown, totalsFor } from './ordersView';
+import { describeOrders, describeTotals, hasTypeTotals, leadBreakdown, otherTypeOrders, totalsFor } from './ordersView';
 
 // The API gives, per term, the total over all measured orders in USD and in bps of the intended notional
 // (backend orderSummary.termTotals). The view copies them; it never computes a market value.
@@ -85,5 +85,9 @@ describe('totalsFor (the overview\'s All / Market / Limit switch)', () => {
     expect(hasTypeTotals(typed)).toBe(true);
     expect(hasTypeTotals(base)).toBe(false);
     expect(totalsFor(base, 'market')).toBeNull();
+  });
+  it('counts the measured orders of other types, which are in All only (Market + Limit then fall short of All)', () => {
+    expect(otherTypeOrders(typed)).toBe(0);
+    expect(otherTypeOrders({ ...typed, byType: { ...typed.byType, other: { total: T(0.2, 20, 3) } } })).toBe(3);
   });
 });

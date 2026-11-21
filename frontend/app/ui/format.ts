@@ -29,6 +29,7 @@ function belowPrecision(v: number, unit: 'usd' | 'bps'): boolean {
  */
 export function exactTitle(v: number | null | undefined, unit: 'usd' | 'bps'): string | null {
   if (typeof v !== 'number' || !Number.isFinite(v) || !belowPrecision(v, unit)) return null
+  if (Math.abs(v) < 1e-6) return `A ${v < 0 ? 'negative' : 'positive'} value smaller than ${unit === 'usd' ? '$0.000001' : '0.000001 bps'}`
   const digits = Math.abs(v).toPrecision(4)
   const sign = v < 0 ? '−' : ''
   return unit === 'usd' ? `Exactly ${sign}$${digits}` : `Exactly ${sign}${digits} bps`

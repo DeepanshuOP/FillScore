@@ -77,6 +77,16 @@ def trace_agent(texts: list[str], ctx: dict[str, dict], namespace: str, recorded
     return {"recorded": recorded, "lines": lines if not untraced else [], "complete": not untraced}
 
 
+def safe_trace(result: dict, ctx: dict[str, dict]) -> dict[str, dict[str, Any]]:
+    """trace_result that can never break a run: the trace is an extra beside the result. On any error it returns {}
+    (every card then keeps its recorded count, as for a run that predates the trace)."""
+    try:
+        return trace_result(result, ctx)
+    except Exception as exc:  # noqa: BLE001
+        print(f"[cited_values] trace failed: {type(exc).__name__}")
+        return {}
+
+
 def trace_result(result: dict, ctx: dict[str, dict]) -> dict[str, dict[str, Any]]:
     """The trace for each of the four specialists of a Council result (a dict, as `model_dump` gives it)."""
     per_agent = ((result or {}).get("grounding") or {}).get("per_agent") or {}
