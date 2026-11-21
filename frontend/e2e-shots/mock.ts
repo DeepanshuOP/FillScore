@@ -7,7 +7,7 @@ import AxeBuilder from '@axe-core/playwright'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-type Fx = { ordersBody: unknown; v2Body: unknown; v1: { grade: string; score: number }; current: unknown; trades: unknown; replays: Record<string, unknown>
+type Fx = { ordersBody: unknown; v2Body: unknown; v1: { grade: string; score: number }; current: unknown; trades: unknown; ledger: unknown; replays: Record<string, unknown>
   explain: { exceptions: unknown; rankings: unknown; venues: unknown } }
 export const fx: Record<string, Fx> = Object.fromEntries(['demo-moderate', 'demo-disciplined', 'demo-aggressive']
   .map((id) => [id, JSON.parse(readFileSync(resolve(__dirname, 'fixtures', `${id}.json`), 'utf8'))]))
@@ -35,6 +35,7 @@ export async function mock(page: Page, signedIn: boolean, over: (p: string, url:
     if (p === '/audit/v2') return route.fulfill(json(f.v2Body))
     if (p === '/audit/orders-summary') return route.fulfill(json(f.ordersBody))
     if (p === '/audit/trades') return route.fulfill(json(f.trades))
+    if (p === '/audit/orders-ledger') return route.fulfill(json(f.ledger))
     if (p === '/audit/exceptions') return route.fulfill(json(f.explain.exceptions))
     if (p === '/audit/rankings') return route.fulfill(json(f.explain.rankings))
     if (p === '/audit/venue-comparison') return route.fulfill(json(f.explain.venues))

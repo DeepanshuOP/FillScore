@@ -24,6 +24,7 @@ import { ScoreV2 } from '../models/ScoreV2';
 import { Order } from '../models/Order';
 import { OrderMeasurement } from '../models/OrderMeasurement';
 import { summariseOrders } from '../services/orderSummary';
+import { buildOrderLedger, orderCounts } from '../services/orderLedger';
 import { buildMeasuredReport } from '../services/reportMeasured';
 import { summariseTrades } from '../services/tradeSummary';
 import { DEMO_V2_GRADES } from '../data/demoV2Grades';
@@ -289,10 +290,35 @@ auditRouter.get('/orders-summary', resolveAccount, async (req: Request, res: Res
         const accountId = req.accountId!;
         const orders = await Order.find({ accountId }).lean();
         if (orders.length === 0) return res.status(200).json({ available: false, reason: 'no_orders' });
-        const measurements = await OrderMeasurement.find({ accountId }).lean();
-        return res.status(200).json({ available: true, ...summariseOrders(orders as any, measurements as any) });
+        const [measurements, fills] = await Promise.all([
+            OrderMeasurement.find({ accountId }).lean(),
+            Trade.find({ accountId }, LEDGER_FILL_FIELDS).lean(),
+        ]);
+        // counts: the same function the orders ledger returns (orderLedger.ts), so the overview and the ledger agree.
+        return res.status(200).json({ available: true, ...summariseOrders(orders as any, measurements as any), counts: orderCounts(orders as any, fills as any) });
     } catch (error: any) {
         console.error('Error fetching orders summary:', error?.name);
+        return res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+const LEDGER_FILL_FIELDS = { exchange: 1, tradeId: 1, symbol: 1, orderId: 1, side: 1, orderType: 1, quantity: 1, executionPrice: 1, notional: 1, feeUsd: 1, isMaker: 1, executedAt: 1 };
+
+/**
+ * The orders ledger (design v3 fixes A1): every stored order, filled or not, with its fills summed on the server, and
+ * the counts the overview also reads. Computed on read from `orders` and `trades` (orderLedger.ts).
+ */
+auditRouter.get('/orders-ledger', resolveAccount, async (req: Request, res: Response) => {
+    try {
+        const accountId = req.accountId!;
+        const [orders, fills] = await Promise.all([
+            Order.find({ accountId }, { exchange: 1, symbol: 1, orderId: 1, type: 1, side: 1, status: 1, createdAt: 1 }).lean(),
+            Trade.find({ accountId }, LEDGER_FILL_FIELDS).lean(),
+        ]);
+        if (orders.length === 0 && fills.length === 0) return res.status(200).json({ available: false, reason: 'no_orders' });
+        return res.status(200).json({ available: true, ...buildOrderLedger(orders as any, fills as any) });
+    } catch (error: any) {
+        console.error('Error fetching orders ledger:', error?.name);
         return res.status(500).json({ error: 'Internal Server Error' });
     }
 });

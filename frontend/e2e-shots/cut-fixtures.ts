@@ -14,6 +14,7 @@ import { summariseOrders } from '../../backend/src/services/orderSummary'
 // fills and order replays are added so the order drawer can be reviewed offline (buildOrderReplay, as the route maps them).
 import { rankWithNoise } from '../../backend/src/services/rankWithNoise'
 import { buildOrderReplay } from '../../backend/src/services/orderReplay'
+import { buildOrderLedger, orderCounts } from '../../backend/src/services/orderLedger'
 
 const OUT = resolve(__dirname, 'fixtures')
 const BUILD = resolve(__dirname, '../../ml-service/demo_v2/out')
@@ -68,6 +69,8 @@ for (const id of Object.keys(V1)) {
   // Only the orders a reviewer can reach: the 60 newest (the first page of the orders table) and the queued ones (keeps the file small).
   const reach = new Set([...(orders as unknown as RawOrder[])].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1)).slice(0, 60).map((o) => o.orderId))
   for (const r of top) reach.add(r.orderId)
+  // Design v3 fixes A1: the ledger lists unfilled orders too; their receipts must open offline.
+  for (const o of orders as unknown as RawOrder[]) if (!(o.executedQty > 0)) reach.add(o.orderId)
   for (const o of (orders as unknown as RawOrder[]).filter((x) => reach.has(x.orderId))) {
     const m = (measurements as unknown as Array<Record<string, unknown> & { orderId: string }>).find((x) => x.orderId === o.orderId)
     if (!m) continue
@@ -91,7 +94,11 @@ for (const id of Object.keys(V1)) {
     explain,
     trades: { v1Computed: false, trades: apiTrades, total: apiTrades.length, page: 1, pages: 1 },
     replays,
-    ordersBody: { available: true, ...summariseOrders(orders, measurements) },
+    // counts and the ledger: the production functions GET /audit/orders-summary and GET /audit/orders-ledger call.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ordersBody: { available: true, ...summariseOrders(orders, measurements), counts: orderCounts(orders as any, fills as any) },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ledger: { available: true, ...buildOrderLedger(orders as any, fills as any) },
     v2Body: {
       label: 'v2 (measured)', scoringVersion: g.scoringVersion, versionFileSha256: g.versionFileSha256, measureVersion: g.measureVersion,
       integrityHash: g.integrityHash, computedAt: null, result: g.result, costVsExpected: g.costVsExpected,

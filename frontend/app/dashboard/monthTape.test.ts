@@ -3,7 +3,7 @@ import { dayMarks, monthTicks, nearestTick } from './monthTape'
 import type { OrderRow } from './ordersTable'
 
 const row = (key: string, firstFill: string, notionalUsd: number, type: OrderRow['type'] = 'Market'): OrderRow =>
-  ({ key, orderId: key, symbol: 'BTCUSDT', side: 'BUY', type, firstFill, fills: 1, quantity: 1, notionalUsd, feesUsd: 0.1, makerShare: 0 })
+  ({ key, orderId: key, symbol: 'BTCUSDT', side: 'BUY', type, status: 'FILLED', placedAt: firstFill, firstFill, when: firstFill, fills: 1, quantity: 1, notionalUsd, feesUsd: 0.1, makerShare: 0 })
 
 const START = '2024-01-01T00:00:00.000Z'
 const END = '2024-02-01T00:00:00.000Z'

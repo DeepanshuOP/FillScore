@@ -11,7 +11,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { Button, buttonClass } from '../ui/Button';
 import { formatUsd } from '../ui/format';
 import { OrderReplay } from './OrderReplay';
-import { formatUtc, groupOrders, withParams, type AuditTrade, type OrderRow } from './ordersTable';
+import { countsLine, formatUtc, ledgerRows, orderCountsOf, statusLabel, withParams, type OrderCounts, type OrderRow } from './ordersTable';
 
 type Json = { status: number; body: unknown };
 interface Props {
@@ -30,10 +30,12 @@ const NUM = 'text-right tabular-nums';
 const fmtQty = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 8 });
 
 const COLUMNS = [
-  col.accessor((r) => Date.parse(r.firstFill), { id: 'firstFill', header: 'First fill (UTC)', meta: { label: 'First fill' }, cell: (c) => <span className="tabular-nums">{formatUtc(c.row.original.firstFill)}</span> }),
+  col.accessor((r) => Date.parse(r.when) || 0, { id: 'when', header: 'Placed (UTC)', meta: { label: 'Placed' }, cell: (c) => <span className="tabular-nums">{formatUtc(c.row.original.when)}</span> }),
   col.accessor('symbol', { header: 'Symbol', meta: { label: 'Symbol' }, cell: (c) => <span className="text-ui-ink">{c.getValue()}</span> }),
   col.accessor('side', { header: 'Side', meta: { label: 'Side' }, cell: (c) => (c.getValue() === 'BUY' ? 'Buy' : 'Sell') }),
   col.accessor('type', { header: 'Type', meta: { label: 'Type' }, cell: (c) => (c.getValue() === 'Not recorded' ? <span className="text-ui-graphite">Not recorded</span> : c.getValue()) }),
+  col.accessor((r) => statusLabel(r.status), { id: 'status', header: 'Status', meta: { label: 'Status' },
+    cell: (c) => (c.row.original.fills === 0 || c.row.original.status === null ? <span className="text-ui-graphite">{c.getValue()}</span> : c.getValue()) }),
   col.accessor((r) => r.orderId || r.key, { id: 'orderId', header: 'Order id', meta: { label: 'Order id' },
     cell: (c) => <span className="font-ui-mono text-[12px]">{c.row.original.orderId || 'not recorded'}</span> }),
   col.accessor('fills', { header: 'Fills', meta: { label: 'Fills', numeric: true }, cell: (c) => c.getValue() }),
@@ -63,10 +65,10 @@ function Segmented<T extends string>({ value, options, onChange, label }: { valu
 
 /** Orders: the fills of the account grouped into orders, sortable and filterable. A row opens the order replay. */
 export default function OrdersView({ query, mode, request, openOrderId }: Props) {
-  const [load, setLoad] = useState<{ query: string; rows: OrderRow[]; fills: number } | 'error' | null>(null);
+  const [load, setLoad] = useState<{ query: string; rows: OrderRow[]; counts: OrderCounts } | 'error' | null>(null);
   const [text, setText] = useState('');
   const [side, setSide] = useState<'all' | 'BUY' | 'SELL'>('all');
-  const [sorting, setSorting] = useState<SortingState>([{ id: 'firstFill', desc: true }]);
+  const [sorting, setSorting] = useState<SortingState>([{ id: 'when', desc: true }]);
   const [visibility, setVisibility] = useState<VisibilityState>({});
   const [shown, setShown] = useState(PAGE);
   const [selected, setSelected] = useState<{ orderId: string; symbol: string; row?: OrderRow } | null>(null);
@@ -77,13 +79,13 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
   // State is set only in the answer of the request. The order named in the address opens once, when the rows arrive.
   useEffect(() => {
     let live = true;
-    request(withParams('/audit/trades', query, { limit: '1000' }))
+    request(withParams('/audit/orders-ledger', query))
       .then((res) => {
         if (!live) return;
         if (res.status !== 200 || !res.body) { setLoad('error'); return; }
-        const trades = ((res.body as { trades?: AuditTrade[] }).trades ?? []);
-        const rows = groupOrders(trades);
-        setLoad({ query, rows, fills: trades.length });
+        // every stored order, filled or not, and the counts, as the server sent them (GET /audit/orders-ledger)
+        const rows = ledgerRows(res.body) ?? [];
+        setLoad({ query, rows, counts: orderCountsOf(res.body) ?? { orders: 0, withFills: 0, fills: 0, unrecorded: 0 } });
         if (openOrderId && !opened.current) {
           opened.current = true;
           const hit = rows.find((r) => r.orderId === openOrderId);
@@ -123,14 +125,14 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
   return (
     <div data-testid="orders-view" className="flex flex-col gap-5">
       <Panel title="Orders"
-        description={loaded ? `${loaded.rows.length} order${loaded.rows.length === 1 ? '' : 's'} from ${loaded.fills} fill${loaded.fills === 1 ? '' : 's'}. Select a row to print its receipt.` : 'Loading the orders.'}
+        description={loaded ? `${countsLine(loaded.counts)} Select a row to print its receipt.` : 'Loading the orders.'}
         actions={mode === 'demo' ? <span className="text-[12px] text-ui-graphite">Synthetic trader, real prices</span> : null}>
         {load === 'error' ? <Banner kind="refused" title="The orders could not be loaded" />
           : !loaded ? (
             <div className="flex flex-col gap-2" aria-hidden="true">
               {[0, 1, 2, 3, 4, 5].map((n) => <div key={n} className="h-9 rounded-[8px] bg-ui-overlay" />)}
             </div>
-          ) : loaded.rows.length === 0 ? <EmptyState title="No orders yet">No fills were stored for this account.</EmptyState>
+          ) : loaded.rows.length === 0 ? <EmptyState title="No orders yet">No orders or fills were stored for this account.</EmptyState>
             : (
               <div className="flex flex-col gap-3">
                 <div className="flex flex-wrap items-center gap-2">

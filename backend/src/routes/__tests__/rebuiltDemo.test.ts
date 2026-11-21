@@ -138,6 +138,23 @@ describe('rebuilt demo (no per-trade v1 fields)', () => {
         expect(res.body.unfilled).toEqual({ n: 1, medianOpportunityBps: 7 });
     });
 
+    it('/orders-summary and /orders-ledger return the same counts (one server source, design v3 fixes A1)', async () => {
+        // 5 stored orders ('1' to '5'); the 3 fills r1 to r3 belong to orders o-r1 to o-r3, which are not stored:
+        // orders 5, withFills 0, fills 3, unrecorded 3 fill groups. The ledger lists 5 orders and 3 fill groups = 8 rows.
+        const summary = await request(app).get(`/api/audit/orders-summary?userId=${REBUILT}`);
+        const ledger = await request(app).get(`/api/audit/orders-ledger?userId=${REBUILT}`);
+        expect(ledger.status).toBe(200);
+        expect(summary.body.counts).toEqual({ orders: 5, withFills: 0, fills: 3, unrecorded: 3 });
+        expect(ledger.body.counts).toEqual(summary.body.counts);
+        expect(ledger.body.orders).toHaveLength(8);
+        expect(ledger.body.orders.filter((r: any) => r.status === 'CANCELED').map((r: any) => r.orderId).sort()).toEqual(['4', '5']);
+    });
+
+    it('/orders-ledger: available false for an account with no orders and no fills; needs an identity', async () => {
+        expect((await request(app).get('/api/audit/orders-ledger?userId=demo-disciplined')).body.available).toBe(false);
+        expect((await request(app).get('/api/audit/orders-ledger')).status).toBe(401);
+    });
+
     it('/orders-summary: an account with no orders gets available false, never zeros', async () => {
         const res = await request(app).get(`/api/audit/orders-summary?userId=${ENRICHED}`);
         expect(res.status).toBe(200);

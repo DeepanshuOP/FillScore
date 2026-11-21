@@ -1,32 +1,26 @@
 /**
- * View model of the orders table: fills grouped into orders. Pure. Sums come from the stored fills; a fee that one fill
- * does not have makes the order's fee total null (never zero), and an unknown maker flag makes the maker share null.
+ * View model of the orders ledger (design v3 fixes A1, 2026-11-21). Pure. Every row and count comes from GET
+ * /api/audit/orders-ledger, which lists every stored order (filled or not) and sums the fills on the server
+ * (backend/src/services/orderLedger.ts). This file maps fields to words; it adds nothing up. A value the server sent as
+ * null (an unknown fee, an unknown maker flag, an order with no fills) stays null, never zero.
  */
-export interface AuditTrade {
-  tradeId?: string;
-  orderId?: string | null;
-  symbol: string;
-  side: 'BUY' | 'SELL' | string;
-  orderType?: string | null;
-  isMaker?: boolean | null;
-  executedAt: string;
-  executionPrice?: number;
-  quantity: number;
-  notionalValue?: number | null;
-  notional?: number | null;
-  feePaid?: number | null;
-}
-
 export type OrderType = 'Market' | 'Limit' | 'Not recorded';
+
+export interface OrderCounts { orders: number; withFills: number; fills: number; unrecorded: number }
 
 export interface OrderRow {
   key: string;
-  /** Empty for a trade without an order id: it has no replay. */
+  /** Empty for a fill without an order id: it has no replay. */
   orderId: string;
   symbol: string;
   side: 'BUY' | 'SELL';
   type: OrderType;
-  firstFill: string;
+  /** The stored order status; null for fills whose order is not stored. */
+  status: string | null;
+  placedAt: string | null;
+  firstFill: string | null;
+  /** The time the ledger sorts and the tape places the row by: placed, else the first fill. */
+  when: string;
   fills: number;
   quantity: number;
   notionalUsd: number;
@@ -34,38 +28,49 @@ export interface OrderRow {
   makerShare: number | null;
 }
 
+interface ServerRow {
+  key: string; orderId: string; symbol: string; side: string; type: string | null; status: string | null; placedAt: string | null;
+  firstFill: string | null; fills: number; quantity: number; notionalUsd: number; feesUsd: number | null; makerShare: number | null;
+}
+
 const typeOf = (raw: string | null | undefined): OrderType => {
   const t = (raw ?? '').toUpperCase();
   return t === 'MARKET' ? 'Market' : t === 'LIMIT' ? 'Limit' : 'Not recorded';
 };
 
-const notionalOf = (t: AuditTrade): number => t.notionalValue ?? t.notional ?? (t.executionPrice ?? 0) * t.quantity;
+export function ledgerRows(body: unknown): OrderRow[] | null {
+  const b = body as { available?: boolean; orders?: ServerRow[] } | null;
+  if (!b || b.available !== true || !Array.isArray(b.orders)) return null;
+  return b.orders.map((r) => ({
+    key: r.key, orderId: r.orderId ?? '', symbol: r.symbol, side: r.side === 'SELL' ? 'SELL' : 'BUY', type: typeOf(r.type),
+    status: r.status ?? null, placedAt: r.placedAt ?? null, firstFill: r.firstFill ?? null, when: r.placedAt ?? r.firstFill ?? '',
+    fills: r.fills, quantity: r.quantity, notionalUsd: r.notionalUsd, feesUsd: r.feesUsd ?? null, makerShare: r.makerShare ?? null,
+  }));
+}
 
-export function groupOrders(trades: AuditTrade[]): OrderRow[] {
-  const groups = new Map<string, { orderId: string; fills: AuditTrade[] }>();
-  for (const t of trades) {
-    const orderId = t.orderId ? String(t.orderId) : '';
-    const key = orderId ? `${t.symbol}:${orderId}` : String(t.tradeId ?? `${t.symbol}:${t.executedAt}`);
-    const g = groups.get(key);
-    if (g) g.fills.push(t); else groups.set(key, { orderId, fills: [t] });
-  }
-  const rows: OrderRow[] = [];
-  for (const [key, { orderId, fills }] of groups) {
-    const first = fills.reduce((a, b) => (Date.parse(b.executedAt) < Date.parse(a.executedAt) ? b : a));
-    const notionalUsd = fills.reduce((s, f) => s + notionalOf(f), 0);
-    const makerKnown = fills.every((f) => typeof f.isMaker === 'boolean');
-    const makerNotional = fills.reduce((s, f) => s + (f.isMaker === true ? notionalOf(f) : 0), 0);
-    const typed = fills.find((f) => typeOf(f.orderType) !== 'Not recorded');
-    rows.push({
-      key, orderId, symbol: first.symbol, side: first.side === 'SELL' ? 'SELL' : 'BUY',
-      type: typed ? typeOf(typed.orderType) : 'Not recorded',
-      firstFill: first.executedAt, fills: fills.length,
-      quantity: fills.reduce((s, f) => s + f.quantity, 0), notionalUsd,
-      feesUsd: fills.every((f) => typeof f.feePaid === 'number') ? fills.reduce((s, f) => s + (f.feePaid as number), 0) : null,
-      makerShare: makerKnown && notionalUsd > 0 ? makerNotional / notionalUsd : null,
-    });
-  }
-  return rows.sort((a, b) => Date.parse(b.firstFill) - Date.parse(a.firstFill));
+/** The order counts the server sent beside the summary or the ledger (backend orderCounts), or null. */
+export function orderCountsOf(body: unknown): OrderCounts | null {
+  const c = (body as { available?: boolean; counts?: OrderCounts } | null)?.counts;
+  return c && typeof c.orders === 'number' ? c : null;
+}
+
+const int = new Intl.NumberFormat('en-US');
+const n = (v: number, one: string, many: string) => `${int.format(v)} ${v === 1 ? one : many}`;
+
+/** "245 orders, 234 with fills, 607 fills." from the server counts. */
+export function countsLine(c: OrderCounts): string {
+  const head = `${n(c.orders, 'order', 'orders')}, ${int.format(c.withFills)} with fills, ${n(c.fills, 'fill', 'fills')}`;
+  if (c.unrecorded > 0) return `${head}; ${c.unrecorded === 1 ? '1 group of fills has' : `${int.format(c.unrecorded)} groups of fills have`} no stored order.`;
+  return `${head}.`;
+}
+
+const STATUS: Record<string, string> = {
+  FILLED: 'Filled', PARTIALLY_FILLED: 'Partly filled', CANCELED: 'Cancelled', CANCELLED: 'Cancelled', EXPIRED: 'Expired',
+  EXPIRED_IN_MATCH: 'Expired', REJECTED: 'Rejected', NEW: 'Open', PENDING_CANCEL: 'Open',
+};
+export function statusLabel(s: string | null): string {
+  if (s === null) return 'No stored order';
+  return STATUS[s.toUpperCase()] ?? s;
 }
 
 /** `YYYY-MM-DD HH:MM:SS` in UTC; "not recorded" for a value that is not a date. */

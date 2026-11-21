@@ -128,7 +128,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
       <dl className="kv">
         <dt className="g">ORDER</dt><dd>{orderId}</dd>
         <dt className="g">MARKET</dt><dd>{symbol} {side} {type}</dd>
-        <dt className="g">PLACED</dt><dd>{o?.createdAt ? `${formatUtc(o.createdAt)} UTC` : row ? `${formatUtc(row.firstFill)} UTC (first fill)` : 'not recorded'}</dd>
+        <dt className="g">PLACED</dt><dd>{o?.createdAt ? `${formatUtc(o.createdAt)} UTC` : row?.placedAt ? `${formatUtc(row.placedAt)} UTC` : row?.firstFill ? `${formatUtc(row.firstFill)} UTC (first fill)` : 'not recorded'}</dd>
         {o ? <><dt className="g">STATUS</dt><dd>{o.status ?? 'not recorded'}, {fmtNum(o.executedQuantity)} of {fmtNum(o.quantity)}</dd></> : null}
       </dl>
       {!view ? (

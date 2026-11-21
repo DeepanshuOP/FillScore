@@ -1,56 +1,73 @@
 import { describe, it, expect } from 'vitest';
-import { groupOrders, type AuditTrade } from './ordersTable';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { ledgerRows, orderCountsOf, countsLine, statusLabel } from './ordersTable';
 
 /*
- * Hand-computed fixture: 3 orders from 5 fills.
- *
- *  BTCUSDT:o1, BUY, MARKET, two taker fills
- *    0.5 at 100, notional 50.00, fee 0.05 (10:00:05)   |  0.25 at 102, notional 25.50, fee 0.03 (10:00:09)
- *    quantity 0.5 + 0.25 = 0.75; notional 50 + 25.5 = 75.5; fees 0.05 + 0.03 = 0.08; maker share = 0 / 75.5 = 0
- *  ETHUSDT:o2, SELL, LIMIT, one maker fill and one taker fill, one fee unknown
- *    2 at 10, notional 20, fee null, maker (11:00:00)  |  1 at 11, notional 11, fee 0.01, taker (11:00:02)
- *    quantity 2 + 1 = 3; notional 20 + 11 = 31; fees null (one fill has none, never counted as 0); maker share = 20 / 31
- *  t9, a trade without an order id, SELL, type not recorded, isMaker unknown
- *    1 at 50, notional 50, fee 0.02 (09:00:00); fills 1; maker share null (unknown, never 0)
- *  Newest first by first fill: o2 (11:00:00), o1 (10:00:05), t9 (09:00:00).
+ * Design v3 fixes A1 (2026-11-21): the orders ledger copies the server's rows (GET /api/audit/orders-ledger); the sums
+ * of the fills of an order are computed on the server (backend/src/services/orderLedger.ts, tested there with hand
+ * values). This file only maps the fields; nothing is added up in the browser.
  */
-const trades: AuditTrade[] = [
-  { tradeId: 'a1', orderId: 'o1', symbol: 'BTCUSDT', side: 'BUY', orderType: 'MARKET', isMaker: false, executedAt: '2026-11-01T10:00:05.000Z', executionPrice: 100, quantity: 0.5, notionalValue: 50, feePaid: 0.05 },
-  { tradeId: 'a2', orderId: 'o1', symbol: 'BTCUSDT', side: 'BUY', orderType: 'MARKET', isMaker: false, executedAt: '2026-11-01T10:00:09.000Z', executionPrice: 102, quantity: 0.25, notionalValue: 25.5, feePaid: 0.03 },
-  { tradeId: 'b1', orderId: 'o2', symbol: 'ETHUSDT', side: 'SELL', orderType: 'LIMIT', isMaker: true, executedAt: '2026-11-01T11:00:00.000Z', executionPrice: 10, quantity: 2, notionalValue: 20, feePaid: null },
-  { tradeId: 'b2', orderId: 'o2', symbol: 'ETHUSDT', side: 'SELL', orderType: 'LIMIT', isMaker: false, executedAt: '2026-11-01T11:00:02.000Z', executionPrice: 11, quantity: 1, notionalValue: 11, feePaid: 0.01 },
-  { tradeId: 't9', symbol: 'BTCUSDT', side: 'SELL', isMaker: null, executedAt: '2026-11-01T09:00:00.000Z', executionPrice: 50, quantity: 1, notionalValue: 50, feePaid: 0.02 },
-];
+const body = {
+  available: true,
+  counts: { orders: 2, withFills: 1, fills: 2, unrecorded: 1 },
+  orders: [
+    { key: 'binance|BTCUSDT|1', orderId: '1', symbol: 'BTCUSDT', side: 'BUY', type: 'LIMIT', status: 'FILLED', placedAt: '2024-01-15T10:00:00.000Z',
+      firstFill: '2024-01-15T10:00:01.000Z', lastFill: '2024-01-15T10:00:03.000Z', fills: 1, quantity: 1, notionalUsd: 101, feesUsd: 0.1, makerShare: 1 },
+    { key: 'binance|ETHUSDT|2', orderId: '2', symbol: 'ETHUSDT', side: 'SELL', type: 'MARKET', status: 'CANCELED', placedAt: '2024-01-15T12:00:00.000Z',
+      firstFill: null, lastFill: null, fills: 0, quantity: 0, notionalUsd: 0, feesUsd: null, makerShare: null },
+    { key: 'binance|ETHUSDT|9', orderId: '9', symbol: 'ETHUSDT', side: 'BUY', type: null, status: null, placedAt: null,
+      firstFill: '2024-01-15T09:00:00.000Z', lastFill: '2024-01-15T09:00:00.000Z', fills: 1, quantity: 2, notionalUsd: 20, feesUsd: null, makerShare: 0 },
+  ],
+};
 
-describe('groupOrders', () => {
-  const rows = groupOrders(trades);
+describe('ledgerRows', () => {
+  const rows = ledgerRows(body)!;
+  it('keeps every server row, in the server order, with the type in words', () => {
+    expect(rows.map((r) => r.key)).toEqual(['binance|BTCUSDT|1', 'binance|ETHUSDT|2', 'binance|ETHUSDT|9']);
+    expect(rows.map((r) => r.type)).toEqual(['Limit', 'Market', 'Not recorded']);
+  });
+  it('copies the server figures unchanged (no arithmetic in the browser)', () => {
+    expect(rows[0]).toMatchObject({ fills: 1, quantity: 1, notionalUsd: 101, feesUsd: 0.1, makerShare: 1, status: 'FILLED', when: '2024-01-15T10:00:00.000Z' });
+  });
+  it('an unfilled order keeps its status and nulls; a fill group without a stored order is dated by its first fill', () => {
+    expect(rows[1]).toMatchObject({ status: 'CANCELED', fills: 0, feesUsd: null, makerShare: null, firstFill: null });
+    expect(rows[2]).toMatchObject({ status: null, when: '2024-01-15T09:00:00.000Z' });
+  });
+  it('is null for a body that is not available', () => {
+    expect(ledgerRows({ available: false })).toBeNull();
+    expect(ledgerRows(null)).toBeNull();
+  });
+});
 
-  it('groups 5 fills into 3 orders, newest first', () => {
-    expect(rows.map((r) => r.key)).toEqual(['ETHUSDT:o2', 'BTCUSDT:o1', 't9']);
+describe('countsLine (the ledger header, from the server counts)', () => {
+  it('orders, orders with fills and fills, with separators and number agreement', () => {
+    expect(countsLine({ orders: 245, withFills: 234, fills: 607, unrecorded: 0 })).toBe('245 orders, 234 with fills, 607 fills.');
+    expect(countsLine({ orders: 1, withFills: 1, fills: 1, unrecorded: 0 })).toBe('1 order, 1 with fills, 1 fill.');
+    expect(countsLine({ orders: 12000, withFills: 11000, fills: 30500, unrecorded: 0 })).toBe('12,000 orders, 11,000 with fills, 30,500 fills.');
   });
-  it('sums a market order', () => {
-    const r = rows[1];
-    expect(r).toMatchObject({ orderId: 'o1', symbol: 'BTCUSDT', side: 'BUY', type: 'Market', firstFill: '2026-11-01T10:00:05.000Z', fills: 2 });
-    expect(r.quantity).toBeCloseTo(0.75, 10);
-    expect(r.notionalUsd).toBeCloseTo(75.5, 10);
-    expect(r.feesUsd).toBeCloseTo(0.08, 10);
-    expect(r.makerShare).toBe(0);
+  it('names the fill groups without a stored order', () => {
+    expect(countsLine({ orders: 2, withFills: 1, fills: 2, unrecorded: 1 })).toBe('2 orders, 1 with fills, 2 fills; 1 group of fills has no stored order.');
+    expect(countsLine({ orders: 2, withFills: 1, fills: 5, unrecorded: 3 })).toBe('2 orders, 1 with fills, 5 fills; 3 groups of fills have no stored order.');
   });
-  it('keeps a missing fee as null and the maker share by notional', () => {
-    const r = rows[0];
-    expect(r).toMatchObject({ type: 'Limit', side: 'SELL', fills: 2, quantity: 3, notionalUsd: 31, feesUsd: null });
-    expect(r.makerShare).toBeCloseTo(20 / 31, 10);
+});
+
+describe('statusLabel', () => {
+  it('prints the stored status in words; a missing order says so', () => {
+    expect(['FILLED', 'PARTIALLY_FILLED', 'CANCELED', 'EXPIRED', 'EXPIRED_IN_MATCH', 'REJECTED', 'NEW', null].map(statusLabel))
+      .toEqual(['Filled', 'Partly filled', 'Cancelled', 'Expired', 'Expired', 'Rejected', 'Open', 'No stored order']);
   });
-  it('gives a trade without an order id its own row', () => {
-    expect(rows[2]).toMatchObject({ orderId: '', type: 'Not recorded', fills: 1, quantity: 1, notionalUsd: 50, feesUsd: 0.02, makerShare: null });
-  });
-  it('does not merge the same order id on two symbols', () => {
-    const two = groupOrders([
-      { ...trades[0], symbol: 'AAA', orderId: 'x' }, { ...trades[1], symbol: 'BBB', orderId: 'x' },
-    ]);
-    expect(two).toHaveLength(2);
-  });
-  it('returns no rows for no trades', () => {
-    expect(groupOrders([])).toEqual([]);
+});
+
+describe('the overview and the ledger take their counts from one server source', () => {
+  // The fixtures are cut from the offline demo build by the production functions (e2e-shots/cut-fixtures.ts):
+  // GET /audit/orders-summary (the overview) and GET /audit/orders-ledger (the Orders page) both carry `counts`
+  // from backend orderCounts(). demo-moderate: 245 stored orders, 234 of them with fills, 607 fills.
+  const fx = JSON.parse(readFileSync(resolve(__dirname, '../../e2e-shots/fixtures/demo-moderate.json'), 'utf8'));
+  it('both bodies carry the same counts, and the ledger lists every order', () => {
+    expect(orderCountsOf(fx.ordersBody)).toEqual({ orders: 245, withFills: 234, fills: 607, unrecorded: 0 });
+    expect(orderCountsOf(fx.ledger)).toEqual(orderCountsOf(fx.ordersBody));
+    expect(ledgerRows(fx.ledger)!.filter((r) => r.status !== null)).toHaveLength(245);
+    expect(countsLine(orderCountsOf(fx.ledger)!)).toBe('245 orders, 234 with fills, 607 fills.');
   });
 });

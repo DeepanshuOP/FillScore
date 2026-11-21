@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUsd } from '../ui/format'
 import { ValueState } from '../ui/ValueState'
 import { dayMarks, monthTicks, nearestTick } from './monthTape'
-import { formatUtc, groupOrders, withParams, type AuditTrade, type OrderRow } from './ordersTable'
+import { formatUtc, ledgerRows, withParams, type OrderRow } from './ordersTable'
 
 type ExplainRequest = (path: string, init?: { method?: string; body?: unknown }) => Promise<{ status: number; body: unknown }>
 
@@ -31,11 +31,11 @@ export function MonthTape({ query, request, period, periodLabel, onOpen }: {
 
   useEffect(() => {
     let live = true
-    request(withParams('/audit/trades', query, { limit: '1000' }))
+    request(withParams('/audit/orders-ledger', query))
       .then((res) => {
         if (!live) return
         if (res.status !== 200) { setFailed(true); return }
-        setRows(groupOrders(((res.body as { trades?: AuditTrade[] } | null)?.trades ?? [])))
+        setRows(ledgerRows(res.body) ?? [])
       })
       .catch(() => { if (live) setFailed(true) })
     return () => { live = false }
@@ -102,7 +102,7 @@ export function MonthTape({ query, request, period, periodLabel, onOpen }: {
         <div className="absolute inset-0 overflow-hidden">
           {ticks.map((t, i) => (
             <span key={t.key} id={`tk-${t.key}`} role="option" aria-selected={active === i} className="sr-only">
-              {`${t.row.symbol} ${t.row.side} ${t.row.type}, ${formatUtc(t.row.firstFill)} UTC, value ${formatUsd(t.row.notionalUsd)}`}
+              {`${t.row.symbol} ${t.row.side} ${t.row.type}, ${formatUtc(t.row.when)} UTC, value ${formatUsd(t.row.notionalUsd)}`}
             </span>
           ))}
         </div>
@@ -110,7 +110,7 @@ export function MonthTape({ query, request, period, periodLabel, onOpen }: {
           <div aria-hidden="true" className="pointer-events-none absolute bottom-[calc(100%+10px)] z-10 w-[250px] bg-ui-raised px-3.5 pt-3 pb-4 font-mono text-[12px] leading-normal text-ui-ink shadow-ui-float"
             style={{ left: Math.max(0, Math.min(w - 250, x(a.t) - 125)) }}>
             <div className="flex justify-between gap-2"><span>{a.row.symbol} {a.row.side}</span><span>{a.row.type.toUpperCase()}</span></div>
-            <div className="text-ui-graphite">{formatUtc(a.row.firstFill)} UTC</div>
+            <div className="text-ui-graphite">{formatUtc(a.row.when)} UTC</div>
             <div className="mt-1.5 flex justify-between"><span>VALUE</span><span>{formatUsd(a.row.notionalUsd)}</span></div>
             <div className="flex justify-between"><span>FILLS</span><span>{a.row.fills}</span></div>
             <div className="flex justify-between"><span>FEES</span><span>{a.row.feesUsd === null ? 'not recorded' : formatUsd(a.row.feesUsd)}</span></div>

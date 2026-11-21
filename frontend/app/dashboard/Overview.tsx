@@ -11,7 +11,7 @@ import { CostRuler } from '../ui/charts/CostRuler'
 import { costSentence, costInsufficientReason, unmeasuredNote, type GradeView, type Headline } from './headline'
 import { describeOrders, type OrdersBody } from './ordersView'
 import { MonthTape } from './MonthTape'
-import type { OrderRow } from './ordersTable'
+import { countsLine, orderCountsOf, type OrderRow } from './ordersTable'
 import type { CostVsExpected } from './scoreV2'
 
 type Request = (path: string, init?: { method?: string; body?: unknown }) => Promise<{ status: number; body: unknown }>
@@ -210,6 +210,7 @@ function Outcomes({ ordersBody }: { ordersBody: unknown }) {
   const b = ordersBody as OrdersBody | null
   const v = describeOrders(ordersBody)
   const o = b?.orders
+  const counts = orderCountsOf(ordersBody)
   const groups = o ? ([['Filled', o.filled, 'solid'], ['Partly filled', o.partial, 'solid'], ['Unfilled', o.unfilled, 'pen'], ['Still open', o.open, 'dashed']] as const) : []
   const per = o ? Math.max(1, Math.ceil(o.total / TALLY_CAP)) : 1
   return (
@@ -220,7 +221,9 @@ function Outcomes({ ordersBody }: { ordersBody: unknown }) {
         <div className="mt-4"><ValueState state="not-computed" label="Order outcomes" reason="No orders were recorded for these fills." /></div>
       ) : (
         <div className="mt-4 flex flex-col gap-4">
-          <p className="text-[2rem] leading-none font-black tracking-[-0.04em] text-ui-ink"><span className="sr-only">Orders </span>{o.total} <span className="text-sm font-normal tracking-normal text-ui-graphite">orders</span></p>
+          <p className="text-[2rem] leading-none font-black tracking-[-0.04em] text-ui-ink"><span className="sr-only">Orders </span>{(counts?.orders ?? o.total).toLocaleString('en-US')} <span className="text-sm font-normal tracking-normal text-ui-graphite">orders</span></p>
+          {/* the same server counts the Orders ledger prints (backend orderCounts) */}
+          {counts ? <p data-testid="orders-counts" className="-mt-2 text-[13px] text-ui-graphite">{countsLine(counts)}</p> : null}
           <div aria-hidden="true" className="flex flex-wrap items-end gap-x-3 gap-y-2">
             {groups.filter(([, n]) => n > 0).map(([label, n, kind]) => (
               <span key={label} className="flex flex-wrap items-end gap-x-[2px] gap-y-1.5 [&>span]:h-6">

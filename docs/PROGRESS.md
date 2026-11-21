@@ -2,6 +2,24 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-21, design v3 fixes (A1-A10, B1-B3, QA; local commits, not pushed)
+
+Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
+design needs (part B), then QA. One local commit per numbered item.
+
+- **Next concrete action: A2 (trace the v1 grade on the overview).**
+- **A1, done.** Cause: the Orders page built its rows in the browser by grouping the fills from `GET /audit/trades`, so
+  the 11 demo-moderate orders that never filled (cancelled, no fills) had no row: 245 stored orders, 234 with fills, 607
+  fills (`ml-service/demo_v2/out/demo-moderate`). The overview counted the stored orders (`/audit/orders-summary`).
+  Fix: `GET /api/audit/orders-ledger` (`backend/src/services/orderLedger.ts`, computed on read from `orders` and `trades`)
+  lists every stored order with its status and its fills summed on the server; `orderCounts()` is returned by both the
+  ledger and `/audit/orders-summary` (`counts`), the summary's other fields and `summariseOrders` (used by the evidence
+  pack) are unchanged. The ledger header prints "245 orders, 234 with fills, 607 fills." from those counts; an unfilled
+  order shows its status and its receipt prints the audit's unfilled-order cost. The month tape reads the same ledger.
+  Tests: `orderLedger.test.ts` (hand values), `rebuiltDemo.test.ts` (both routes return equal counts), frontend
+  `ordersTable.test.ts` (the overview and the ledger counts come from one source, on the cut demo fixture). The browser's
+  `groupOrders` and its test are gone (the sums moved to the server and are tested there).
+
 ## Orders of 2026-11-20 (second), design v3 conversion: "Tape & Receipt" chosen (local commits, not pushed)
 
 Deepanshu chose direction 1 with four fixes (hero composition with connected pen notes; the story ends on a giant

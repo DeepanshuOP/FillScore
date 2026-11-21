@@ -126,6 +126,7 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/api/audit/trades/export` |
 | GET | `/api/audit/v2` |
 | GET | `/api/audit/orders-summary` |
+| GET | `/api/audit/orders-ledger` |
 | GET | `/api/audit/verify` |
 | GET | `/api/audit/exceptions` |
 | PATCH | `/api/audit/exceptions/:orderId` |

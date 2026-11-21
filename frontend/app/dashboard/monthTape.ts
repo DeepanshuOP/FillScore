@@ -12,7 +12,7 @@ export function monthTicks(rows: OrderRow[], start: string, end: string): MonthT
   const t0 = Date.parse(start), t1 = Date.parse(end)
   if (!Number.isFinite(t0) || !Number.isFinite(t1) || t1 <= t0) return []
   const inside = rows
-    .map((row) => ({ row, ms: Date.parse(row.firstFill) }))
+    .map((row) => ({ row, ms: Date.parse(row.when) }))
     .filter(({ ms }) => Number.isFinite(ms) && ms >= t0 && ms < t1)
     .sort((a, b) => a.ms - b.ms)
   const root = (n: number) => (Number.isFinite(n) && n > 0 ? Math.sqrt(n) : 0)
