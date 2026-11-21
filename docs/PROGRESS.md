@@ -7,7 +7,18 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: A2 (trace the v1 grade on the overview).**
+- **Next concrete action: A3 (tiny-value display in the frontend formatter).**
+- **A2, kept (nothing changed; for Deepanshu).** The overview shows 84.8 for demo-moderate's v1 grade. Chain: Atlas
+  `audits` (latest document of `demo-moderate`, `avgFillScore`; not read here, Atlas is off limits) → `GET
+  /api/audit/score` (`backend/src/routes/audit.ts`, serves the stored audit unchanged; `rebuiltDemo.test.ts` checks it
+  for a rebuilt demo) → `app/dashboard/page.tsx` (`v1={{ score: audit.avgFillScore }}`) → `GradeBadge` → `formatScore`
+  (`toFixed(1)`) → "84.8". The committed record of the locked grade is 84.80888516669383 in all three places that hold
+  it: CLAUDE.md rule 5, `backend/src/scoring/__tests__/gradeInvariance.test.ts` and `frontend/app/utils/demoProfiles.ts`
+  (tested in `demoProfiles.test.ts`); the QA fixture (`e2e-shots/cut-fixtures.ts`, `V1`) uses the same value. 84.570 is
+  in the repository only as a **retired** grade set (`demoProfiles.test.ts`, "never carries a retired grade set":
+  95.675, 84.570, 60.771; added in commit 164a8bf, audit follow-up 1/14). So the display equals its committed source and
+  the source is not 84.57; the "84.57 on record" in the order is the retired value. If Deepanshu holds a record that
+  says 84.57 is the locked grade, that record and CLAUDE.md disagree and he decides which stands; nothing was moved.
 - **A1, done.** Cause: the Orders page built its rows in the browser by grouping the fills from `GET /audit/trades`, so
   the 11 demo-moderate orders that never filled (cancelled, no fills) had no row: 245 stored orders, 234 with fills, 607
   fills (`ml-service/demo_v2/out/demo-moderate`). The overview counted the stored orders (`/audit/orders-summary`).
