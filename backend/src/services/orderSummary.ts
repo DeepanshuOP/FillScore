@@ -50,6 +50,25 @@ export function termTotals(sf: Array<Record<string, any>>) {
     return any ? out as Record<string, { usd: number; bps: number; n: number }> : null;
 }
 
+/** The order type's family: MARKET; LIMIT and LIMIT_MAKER (limit orders); anything else is "other". */
+export function typeFamily(type: string | undefined): 'market' | 'limit' | 'other' {
+    const t = (type ?? '').toUpperCase();
+    return t === 'MARKET' ? 'market' : t === 'LIMIT' || t === 'LIMIT_MAKER' ? 'limit' : 'other';
+}
+
+/**
+ * Design v3 fixes B2: the shortfall totals (termTotals) per order type family, and over all measured orders, from the
+ * same measurements. The families partition the measured orders, so their dollars and order counts add up to `all`
+ * term by term (bps do not add: each is its own dollars over its own notional). A family with nothing measured is null.
+ * Computed on read beside `summariseOrders`, whose output (also used by the evidence pack) is unchanged.
+ */
+export function totalsByType(orders: OrderLike[], measurements: MeasurementLike[]) {
+    const fam = new Map(orders.map(o => [keyOf(o), typeFamily(o.type)]));
+    const measured = measurements.filter(x => x.shortfall && !x.unmeasuredReason);
+    const of = (f: string) => termTotals(measured.filter(x => (fam.get(keyOf(x)) ?? 'other') === f).map(x => x.shortfall as Record<string, any>));
+    return { all: termTotals(measured.map(x => x.shortfall as Record<string, any>)), market: of('market'), limit: of('limit'), other: of('other') };
+}
+
 export function summariseOrders(orders: OrderLike[], measurements: MeasurementLike[]) {
     const counts = { total: orders.length, filled: 0, partial: 0, unfilled: 0, open: 0 };
     const unfilledIds = new Set<string>();

@@ -154,5 +154,7 @@ floating annotations.
   on one dollar scale with improvements below the line; the next line is superseded.
 - (Superseded.) The overview's month tape sizes ticks by order value, not cost: the overview has no per-order cost without fetching
   every replay. The prototype's All/Market/Limit switch is left out: the served summary has no per-type totals.
+- 2026-11-21 (design v3 fixes B2): the All / Market / Limit switch is back on the overview's cost receipt; it reads the
+  server's `byType` totals (GET /audit/orders-summary), which add up to the all-orders totals.
 - The receipt draws fills only: the replay payload carries the source file of the public prints, not the prints, and the
   receipt says so.

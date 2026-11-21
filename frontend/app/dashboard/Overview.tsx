@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { cn } from '../../lib/utils'
 import { ValueState } from '../ui/ValueState'
 import { GradeBadge } from '../ui/GradeBadge'
@@ -10,7 +10,7 @@ import { exactTitle, formatScore, formatSignedBps, formatUsd } from '../ui/forma
 import { Fig } from '../ui/Fig'
 import { CostRuler } from '../ui/charts/CostRuler'
 import { costSentence, costInsufficientReason, unmeasuredNote, type GradeView, type Headline } from './headline'
-import { describeOrders, type OrdersBody } from './ordersView'
+import { describeOrders, describeTotals, hasTypeTotals, totalsFor, type OrderKind, type OrdersBody } from './ordersView'
 import { MonthTape } from './MonthTape'
 import { countsLine, orderCountsOf, type OrderRow } from './ordersTable'
 import type { CostVsExpected } from './scoreV2'
@@ -119,22 +119,38 @@ function Top({ headline, grade, band, v1, v1Note, periodLabel, isDemo }: Pick<Ov
 /** Where the money went, as receipt lines: each term with its dollars, basis points and orders, then the heavy total. */
 function CostReceipt({ ordersBody, isDemo, headline }: { ordersBody: unknown; isDemo: boolean; headline: Headline | null }) {
   const v = describeOrders(ordersBody)
+  // design v3 fixes B2: All / Market / Limit, each read from the server's totals (byType); nothing is added up here
+  const [kind, setKind] = useState<OrderKind>('all')
+  const typed = hasTypeTotals(ordersBody)
+  const sel = totalsFor(ordersBody, typed ? kind : 'all')
+  const t = describeTotals(sel)
+  const shownTotal = kind === 'all' ? headline?.totalUsd : sel?.total?.usd
   return (
     <section aria-labelledby="where-money-went-t" id="where-money-went" className="grid gap-x-10 gap-y-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
       <div className="min-w-0">
         <div className="fs-receipt shadow-ui">
-          <h2 id="where-money-went-t" className="fs-r-title !text-[1.5rem]">Where {headline ? `the ${formatUsd(headline.totalUsd)}` : 'the money'} went</h2>
-          <p className="c g mt-1">COST BY TERM, IN USD AND BPS OF THE VALUE ORDERED</p>
+          <h2 id="where-money-went-t" className="fs-r-title !text-[1.5rem]">Where {typeof shownTotal === 'number' ? `the ${formatUsd(shownTotal)}` : 'the money'} went</h2>
+          <p className="c g mt-1">{kind === 'all' ? 'COST BY TERM' : `${kind.toUpperCase()} ORDERS, COST BY TERM`}, IN USD AND BPS OF THE VALUE ORDERED</p>
+          {typed ? (
+            <div role="group" aria-label="Orders shown" className="mx-auto mt-3 flex w-fit gap-0.5 rounded-full border border-ui-edge p-[3px] font-ui text-[13px]">
+              {([['all', 'All'], ['market', 'Market'], ['limit', 'Limit']] as const).map(([k, label]) => (
+                <button key={k} type="button" aria-pressed={kind === k} onClick={() => setKind(k)}
+                  className={cn('h-7 rounded-full px-3 font-medium', kind === k ? 'bg-ui-ink text-ui-surface' : 'text-ui-graphite hover:text-ui-ink')}>{label}</button>
+              ))}
+            </div>
+          ) : null}
           <hr />
-          {v?.totals ? (
+          {kind !== 'all' && !t ? (
+            <ValueState state="not-computed" label={`Cost by term, ${kind} orders`} reason={`no ${kind} order was measured`} />
+          ) : t ? (
             // on a narrow phone with very large figures the lines scroll sideways inside the receipt rather than widen the page
             <div className="relative overflow-x-auto" role="region" aria-label="Cost by term" tabIndex={0}>
             <table data-testid="orders-totals" className="w-full border-collapse max-sm:text-[11.5px]">
               <caption className="sr-only">Totals over the measured orders, in US dollars and basis points of the intended value</caption>
-              <thead><tr className="g text-[11px]"><th scope="col" className="pb-1 text-left font-normal">TERM</th><th scope="col" className="text-right font-normal">BPS</th><th scope="col" className="text-right font-normal">USD</th><th scope="col" className="hidden text-right font-normal sm:table-cell">ORDERS</th></tr></thead>
+              <thead><tr className="g text-[11px]"><th scope="col" className="pb-1 text-left font-normal">TERM</th><th scope="col" className="text-right font-normal">BPS</th><th scope="col" className="pl-3 text-right font-normal">USD</th><th scope="col" className="hidden pl-3 text-right font-normal sm:table-cell">ORDERS</th></tr></thead>
               <tbody>
-                {v.totals.map((r, ri) => {
-                  const ex = v.totalsExact?.[ri]
+                {t.rows.map((r, ri) => {
+                  const ex = t.exact[ri]
                   const total = r.label === 'Total'
                   const stated = isDemo && r.label === 'Fees'
                   return (
@@ -153,7 +169,7 @@ function CostReceipt({ ordersBody, isDemo, headline }: { ordersBody: unknown; is
             </table>
             </div>
           ) : <ValueState state="not-computed" label="Cost by term" reason="The orders were not measured, so there is no cost by term." />}
-          {isDemo && v?.totals ? <p className="g mt-3 text-[11px]">* FEES AT THE PUBLISHED RATE, NOT INDEPENDENTLY MEASURED</p> : null}
+          {isDemo && t ? <p className="g mt-3 text-[11px]">* FEES AT THE PUBLISHED RATE, NOT INDEPENDENTLY MEASURED</p> : null}
         </div>
         <div aria-hidden="true" className="fs-torn-bottom" />
       </div>

@@ -281,7 +281,9 @@ read from `orders`, `trades` and `order_measurements`) returns `counts` {orders,
 then per group of fills without a stored order: status, placed time, first and last fill, fills, quantity, notional,
 fees, maker share and `cost` {usd, bps} (totalBps x intendedNotional / 10,000, the receipt's formula; null if not
 measured). The Orders ledger and the overview's month tape read it. Size for demo-moderate's 245 orders: 109,678 bytes,
-20,482 gzip.
+20,482 gzip. `/api/audit/orders-summary` also returns `byType` {all, market, limit, other} (`totalsByType()`, the
+shortfall totals per order type family; LIMIT_MAKER counts as limit; the families add up to `all` in dollars and
+orders), read by the overview's All / Market / Limit switch. `summariseOrders()` (also in the evidence pack) is unchanged.
 
 Canonical v1 demo scores (the frozen, published audits): `demo-disciplined` 95.885 (A), `demo-moderate` 84.809 (B),
 `demo-aggressive` 60.675 (C).

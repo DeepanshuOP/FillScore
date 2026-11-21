@@ -7,7 +7,14 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: B2 (totals per order type on the server; the overview's All / Market / Limit switch).**
+- **Next concrete action: B3 (investigate the public prints for the receipt; build only if possible without storage).**
+- **B2, done.** `totalsByType(orders, measurements)` (`backend/src/services/orderSummary.ts`) gives the shortfall totals
+  per order type family (market; limit incl. LIMIT_MAKER; other) and over all measured orders, by the existing
+  `termTotals`; `/audit/orders-summary` returns it as `byType` (computed on read; `summariseOrders` and the evidence
+  pack unchanged). Test `orderTypeTotals.test.ts` (hand values) checks the families add up to `all` term by term in
+  dollars and orders. demo-moderate: market $14.70 (84 orders) + limit $37.38 (161) = $52.08 (245). The overview's
+  cost receipt has the All / Market / Limit switch again (`totalsFor`, `describeTotals`, tested in
+  `ordersTotals.test.ts`); a type with nothing measured says "not computed". Backend 1037 passed, frontend 680.
 - **B1, done.** Each ledger row carries `cost` {usd, bps}: `orderTotalCost()` = shortfall.totalBps x intendedNotional /
   10,000, the formula the receipt uses (`orderReplay.ts`), null when unmeasured; computed on read, no stored data
   changed. On demo-moderate the 245 per-order costs sum to $52.0785604695634, the overview's total. The month tape's bar

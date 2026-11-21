@@ -23,7 +23,7 @@ import { auditRunLimiter } from '../middleware/security';
 import { ScoreV2 } from '../models/ScoreV2';
 import { Order } from '../models/Order';
 import { OrderMeasurement } from '../models/OrderMeasurement';
-import { summariseOrders } from '../services/orderSummary';
+import { summariseOrders, totalsByType } from '../services/orderSummary';
 import { buildOrderLedger, orderCounts } from '../services/orderLedger';
 import { buildMeasuredReport } from '../services/reportMeasured';
 import { summariseTrades } from '../services/tradeSummary';
@@ -295,7 +295,9 @@ auditRouter.get('/orders-summary', resolveAccount, async (req: Request, res: Res
             Trade.find({ accountId }, LEDGER_FILL_FIELDS).lean(),
         ]);
         // counts: the same function the orders ledger returns (orderLedger.ts), so the overview and the ledger agree.
-        return res.status(200).json({ available: true, ...summariseOrders(orders as any, measurements as any), counts: orderCounts(orders as any, fills as any) });
+        // byType (design v3 fixes B2): the totals per order type, from the same measurements; summariseOrders is unchanged
+        return res.status(200).json({ available: true, ...summariseOrders(orders as any, measurements as any), counts: orderCounts(orders as any, fills as any),
+            byType: totalsByType(orders as any, measurements as any) });
     } catch (error: any) {
         console.error('Error fetching orders summary:', error?.name);
         return res.status(500).json({ error: 'Internal Server Error' });

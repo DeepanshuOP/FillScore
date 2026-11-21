@@ -71,6 +71,8 @@ describe('rebuilt demo (no per-trade v1 fields)', () => {
     it('/orders-summary: totals per term stay null when the measurements state no notional', async () => {
         const res = await request(app).get(`/api/audit/orders-summary?userId=${REBUILT}`);
         expect(res.body.shortfall.totals).toBeNull();
+        // B2: the per-type totals come beside them, null for the same reason
+        expect(res.body.byType).toEqual({ all: null, market: null, limit: null, other: null });
     });
 
     it('/trades: slippage is null (not 0) and the response says v1 is not computed', async () => {

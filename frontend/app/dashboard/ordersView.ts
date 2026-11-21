@@ -54,6 +54,34 @@ export function leadBreakdown(body: unknown): Array<{ label: string; usd: string
   return LEAD.map(l => t.find(r => r.label === l)!);
 }
 
+export type OrderKind = 'all' | 'market' | 'limit';
+
+/** True when the server sent the per-type totals (design v3 fixes B2), so the overview can offer the switch. */
+export function hasTypeTotals(body: unknown): boolean {
+  const t = (body as { byType?: Record<string, unknown> } | null)?.byType;
+  return !!t && (t.market != null || t.limit != null);
+}
+
+/** The totals the overview shows for a kind: the all-orders totals, or the server's byType entry (null if none). */
+export function totalsFor(body: unknown, kind: OrderKind): Totals | null {
+  const b = body as (OrdersBody & { byType?: { market?: Totals | null; limit?: Totals | null } }) | null;
+  if (!b || b.available !== true) return null;
+  if (kind === 'all') return b.shortfall?.totals ?? null;
+  return b.byType?.[kind] ?? null;
+}
+
+/** Rows (and the exact values of tiny figures) for a set of totals, in the receipt's term order. */
+export function describeTotals(t: Totals | null): { rows: NonNullable<OrdersView['totals']>; exact: NonNullable<OrdersView['totalsExact']> } | null {
+  if (!t) return null;
+  return {
+    rows: TERM_LABELS.map(([k, label]) => {
+      const x = t[k];
+      return x ? { label, usd: formatUsd(x.usd), bps: bps(x.bps), n: plural(x.n, 'order', 'orders') } : { label, usd: 'not computed', bps: 'not computed', n: '' };
+    }),
+    exact: TERM_LABELS.map(([k]) => ({ usd: exactTitle(t[k]?.usd, 'usd'), bps: exactTitle(t[k]?.bps, 'bps') })),
+  };
+}
+
 export function describeOrders(body: unknown): OrdersView | null {
   const b = body as OrdersBody | null;
   if (!b || b.available !== true || !b.orders) return null;

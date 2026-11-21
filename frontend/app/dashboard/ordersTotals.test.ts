@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { describeOrders, leadBreakdown } from './ordersView';
+import { describeOrders, describeTotals, hasTypeTotals, leadBreakdown, totalsFor } from './ordersView';
 
 // The API gives, per term, the total over all measured orders in USD and in bps of the intended notional
 // (backend orderSummary.termTotals). The view copies them; it never computes a market value.
@@ -59,5 +59,31 @@ describe('orders panel: totals beside medians', () => {
     expect(v.unfilledNote).toBe('11 unfilled orders; their median cost of not filling: 50.0 bps.');
     const one = describeOrders({ ...base, unfilled: { n: 1, medianOpportunityBps: 7 } })!;
     expect(one.unfilledNote).toBe('1 unfilled order; its median cost of not filling: 7.0 bps.');
+  });
+});
+
+// Design v3 fixes B2: the switch reads the server's per-type totals (byType); the browser adds nothing up.
+describe('totalsFor (the overview\'s All / Market / Limit switch)', () => {
+  const T = (usd: number, bps: number, n: number) => ({ usd, bps, n });
+  const typed = {
+    ...base,
+    byType: {
+      all: base.shortfall.totals,
+      market: { execution: T(4, 2, 5), spread: T(1, 0.5, 5), impactTiming: T(3, 1.5, 5), opportunity: null, fees: T(10, 5, 5), total: T(14, 7, 5) },
+      limit: null,
+      other: null,
+    },
+  };
+  it('All is the all-orders totals; Market is byType.market, copied', () => {
+    expect(totalsFor(typed, 'all')!.total).toEqual(base.shortfall.totals.total);
+    expect(totalsFor(typed, 'market')!.total).toEqual(T(14, 7, 5));
+    expect(describeTotals(totalsFor(typed, 'market'))!.rows.find((r) => r.label === 'Total')).toEqual({ label: 'Total', usd: '$14.00', bps: '7.0 bps', n: '5 orders' });
+    expect(describeTotals(totalsFor(typed, 'market'))!.rows.find((r) => r.label === 'Unfilled orders')).toEqual({ label: 'Unfilled orders', usd: 'not computed', bps: 'not computed', n: '' });
+  });
+  it('a type with nothing measured is null (the receipt says so), and a body without byType offers no switch', () => {
+    expect(totalsFor(typed, 'limit')).toBeNull();
+    expect(hasTypeTotals(typed)).toBe(true);
+    expect(hasTypeTotals(base)).toBe(false);
+    expect(totalsFor(base, 'market')).toBeNull();
   });
 });
