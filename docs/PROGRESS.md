@@ -2,6 +2,16 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-22, design v3.1 fixes, all screens, status (step 0, A1-A7, Part B, QA; local commits)
+
+v3.1 is approved and live. This order: STATUS.md, fix the review findings, bring every other screen to DESIGN.md
+section 11, QA, then stop for review.
+
+- **Next concrete action: A1 (unfilled-order share on `/audit/orders-summary`, "cost" not "paid").**
+- Step 0 done: `docs/STATUS.md` written. Dependabot: 0 open alerts by API, `npm audit` 0 in frontend, backend and
+  mcp-server, `pip-audit` clean; nothing to patch (recorded in STATUS.md).
+- A1-A7, Part B, QA: not started.
+
 ## Orders of 2026-11-21 (second), design v3.1 "Quiet audit" (steps 1-6; local commits, not pushed)
 
 Design v3 "Tape & Receipt" stays; the problem is sensory overload. Research first, then rebuild the landing page, the
