@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { EVIDENCE_KEY_FINGERPRINT } from '../../lib/evidenceKey'
+import { MarginNote } from '../../ui/MarginNote'
 import replay from '../../lib/landing/fixtures/landing-order.replay.json'
 
 /**
@@ -17,8 +18,6 @@ const ROWS = [
 ]
 const LINKS = [
   { href: '/verify', title: 'Verify a pack', text: 'Drop a pack in; each hash and the signature are checked in the browser.' },
-  { href: '/methodology', title: 'Read the method', text: 'Generated from the same registry the code runs.' },
-  { href: 'https://github.com/DeepanshuOP/FillScore/tree/main/packages/fillscore-metrics', title: 'fillscore-metrics', text: 'The open measurement package.' },
 ]
 
 export function CheckIt() {
@@ -37,14 +36,18 @@ export function CheckIt() {
         <div>
           <h2 id="check-title" data-split className="display-lg text-ui-ink">Check it yourself.</h2>
           <p className="mt-4 max-w-[52ch] text-[17px] leading-7 text-ui-graphite">
-            An evidence pack lists every file behind an audit with its SHA-256 and signs the list with Ed25519. Anyone can check a pack in the browser; the file never leaves it.
+            Every audit ships signed.{' '}
+            <MarginNote label="the evidence pack">
+              <p>An evidence pack lists every file behind an audit with its SHA-256 and signs the list with Ed25519. Anyone can check a pack in the browser; the file never leaves it.</p>
+              <p>The signature covers the list, not each file: each file is checked against its hash.</p>
+            </MarginNote>
           </p>
           <ul className="mt-8 border-t border-ui-ink">
             {LINKS.map((l) => (
               <li key={l.href} className="border-b border-dashed border-ui-rule">
                 <Link href={l.href} className="group flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 py-3 no-underline">
                   <span className="text-[17px] font-bold text-ui-ink underline decoration-ui-edge underline-offset-[0.25em] group-hover:decoration-ui-ink">{l.title}</span>
-                  <span className="text-sm text-ui-graphite">{l.text}</span>
+                  <span className="sr-only">{l.text}</span>
                 </Link>
               </li>
             ))}
@@ -53,7 +56,7 @@ export function CheckIt() {
 
         <div ref={ref} className="fs-envelope" data-open={seen} aria-label="A manifest of file hashes and its signature">
           <div className="fs-env-sheet">
-            <p className="font-mono text-[11px] tracking-[0.06em] text-ui-graphite uppercase">manifest.json, the sources of the order above</p>
+            <p className="font-mono text-[11px] tracking-[0.06em] text-ui-graphite uppercase">manifest.json</p>
             <ul className="mt-3 border-t border-dashed border-ui-ink font-mono text-[12px]">
               {ROWS.map((r, i) => (
                 <li key={r.hash} className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-2 border-b border-dashed border-ui-rule py-2.5">
@@ -66,8 +69,8 @@ export function CheckIt() {
               ))}
             </ul>
             <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
-              <p className="font-mono text-[12px] text-ui-graphite">SIGNED WITH ED25519<br /><span className="text-[15px] text-ui-ink">KEY {EVIDENCE_KEY_FINGERPRINT}</span></p>
-              <span className="fs-word-stamp" data-in={seen} style={{ animationDelay: '1200ms' }}>SIGNED<small>the list, not each file</small></span>
+              <p className="font-mono text-[12px] text-ui-graphite">ED25519<br /><span className="text-[15px] text-ui-ink">KEY {EVIDENCE_KEY_FINGERPRINT}</span></p>
+              <span className="fs-word-stamp" data-in={seen} style={{ animationDelay: '1200ms' }}>SIGNED</span>
             </div>
           </div>
         </div>

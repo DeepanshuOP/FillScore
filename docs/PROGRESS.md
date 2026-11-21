@@ -7,9 +7,20 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 "Tape & Receipt" stays; the problem is sensory overload. Research first, then rebuild the landing page, the
 overview and the receipt-opening flow with less text, designed visuals and better motion; then stop for review.
 
-- **Next concrete action: step 5, the landing page (pinned horizontal chapter of three printed objects, masked line
-  reveals, words cut by half; plan `docs/design/v31-plan.md` "Landing page").**
-- Status: steps 1-4 done; steps 5-6 not started.
+- **Next concrete action: step 6, QA (full qa3 run at 1440 and 390 + Carbon copy, keyboard and reduced-motion
+  captures, break-ui, motion checklists, one reviewer subagent on the images, full suites, First Load JS, DESIGN.md
+  v3.1 rules, `docs/design/v31/` images + README, M8.md "Design v3.1" section).**
+- Status: steps 1-5 done; step 6 not started.
+- **Step 5, done.** Landing: hero and the giant $0.25 kept; the hero's proof paragraph moved into a pen note on
+  "public prints"; the prints' B/S letters became up/down tape ticks (legend in that note); a visible "SYNTHETIC
+  TRADER, REAL PRICES" line under the hero's buttons on a desktop (the phone prints it under the tape). New
+  `HowItReads.tsx`: a pinned horizontal row of three printed objects (the tape: the hero's real prints; the receipt:
+  the hero order's real terms; the stamp: demo-moderate's served grade, read live, no letter while loading), each with
+  a masked SplitText title and one sentence, a "1 / 3" counter and one chapter provenance line; stacked and still on a
+  phone, with reduced motion or without script. Demos, envelope, "never" line and close shortened (the "never" line
+  keeps "language model": the expected cost is itself a fitted model). Visible words (`words.ts`): **1440: 381 to 180
+  (−53%); 390: 358 to 179 (−50%)**. Landing CLS 0 at both widths; axe 0. e2e: `removed-demos.spec.ts` reads the
+  picker's heading (its lede was cut).
 - **Steps 3 and 4, done (one commit: the receipt's entry and the tape share files).** Overview in five chapters
   (`Overview.tsx`, `chapter.tsx`): 01 total (slim "Sample data: synthetic trader, real prices" line replaces the demo
   banner; bps in a note), 02 grade (stamp pressed on the chapter's first entry, its border drawn with DrawSVG, loaded on

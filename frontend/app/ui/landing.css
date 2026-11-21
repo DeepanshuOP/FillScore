@@ -72,3 +72,28 @@
 .fs-end-line { position: relative; display: inline-block; margin-top: 1em; font-weight: 700; font-size: clamp(22px, 2.6vw, 38px); letter-spacing: -0.02em; color: var(--ui-ink); }
 .fs-end-line svg { position: absolute; left: -2%; width: 104%; top: 100%; height: 22px; overflow: visible; }
 .fs-end-line svg path { fill: none; stroke: var(--ui-pen); stroke-width: 2.6; stroke-linecap: round; }
+
+/* design v3.1: a print's aggressor side as a tape tick (filled up: buyer-initiated; hollow down: seller-initiated) */
+.fs-side { display: inline-block; width: 0; height: 0; margin-left: 3px; vertical-align: 1px; border-left: 4px solid transparent; border-right: 4px solid transparent; }
+.fs-side[data-buy='true'] { border-bottom: 6px solid var(--ui-ink); }
+.fs-side[data-buy='false'] { border-top: 6px solid var(--ui-graphite); }
+
+/* design v3.1: the three printed objects (HowItReads). Stacked by default (no script, reduced motion, a phone); on a
+   desktop with motion, [data-row] makes them one row that the pinned section slides sideways. */
+.fs-reads { position: relative; padding: clamp(64px, 10vh, 120px) var(--ui-gutter); border-top: 1px solid var(--ui-ink); }
+.fs-reads-count { display: none; }
+.fs-reads-row { display: grid; gap: 64px; }
+@media (min-width: 768px) { .fs-reads-row { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; } }
+.fs-reads-panel { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.fs-reads-tape { display: flex; height: 104px; overflow: hidden; margin-top: 12px; }
+.fs-reads-tape .fs-e { width: 118px; padding-top: 22px; }
+.fs-reads-receipt { margin-top: 12px; max-width: 380px; }
+.fs-reads[data-row='on'] { height: 100vh; padding-block: 0; display: flex; align-items: center; overflow: hidden; }
+.fs-reads[data-row='on'] .fs-reads-row { display: flex; gap: 9vw; width: max-content; padding-right: 12vw; }
+.fs-reads[data-row='on'] .fs-reads-panel { width: min(640px, 58vw); gap: 18px; }
+.fs-reads[data-row='on'] .fs-reads-panel h3 { font-size: clamp(44px, 4.8vw, 76px); }
+.fs-reads[data-row='on'] .fs-reads-tape, .fs-reads[data-row='on'] .fs-reads-receipt { zoom: 1.3; }
+.fs-reads[data-row='on'] .fs-reads-panel .fs-stamp { zoom: 1.15; }
+.fs-reads[data-row='on'] .fs-reads-count { display: block; position: absolute; top: 104px; left: var(--ui-gutter); }
+.fs-reads-prov { margin-bottom: 40px; }
+.fs-reads[data-row='on'] .fs-reads-prov { position: absolute; bottom: 40px; left: var(--ui-gutter); margin: 0; }

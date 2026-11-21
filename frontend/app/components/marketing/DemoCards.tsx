@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react'
 import { apiBase } from '../../lib/apiBase'
 import { GradeStamp } from '../../ui/GradeStamp'
 import { ValueState } from '../../ui/ValueState'
-import { formatSignedBps, formatUsd } from '../../ui/format'
+import { formatUsd } from '../../ui/format'
 import { describeHeadline, gradeView, type GradeView, type Headline } from '../../dashboard/headline'
 
 const DEMOS = [
@@ -39,8 +39,7 @@ export function DemoCards() {
   return (
     <section aria-labelledby="demos-title" className="px-[var(--ui-gutter)] py-24 lg:py-36">
       <div className="max-w-3xl">
-        <h2 id="demos-title" data-split className="display-lg text-ui-ink">Open a finished audit.</h2>
-        <p className="mt-4 text-[17px] leading-7 text-ui-graphite">Or explore with synthetic demo data: three traders who never existed, filled against the real public prints of January 2024.</p>
+        <h2 id="demos-title" data-split className="display-lg text-ui-ink">Finished audits.</h2>
       </div>
       <ul className="mt-16 grid gap-12 md:grid-cols-3 md:gap-8 lg:gap-14">
         {DEMOS.map((d) => {
@@ -65,13 +64,12 @@ export function DemoCards() {
                     : v?.headline ? (
                       <div className="fs-totalline">
                         <span className="k">TOTAL</span>
-                        <span className="b">{formatSignedBps(v.headline.totalBps)}</span>
+                        <span className="b" />
                         <span className="u">{formatUsd(v.headline.totalUsd)}</span>
                       </div>
                     ) : v ? <ValueState state="not-computed" label="Total cost" reason="The orders were not measured." size="cell" />
                       : <p className="g">PRINTING</p>}
-                  {v && v !== 'error' && v.headline ? <p className="g mt-3">{v.headline.orders} ORDERS</p> : null}
-                  <p className="c mt-4 underline underline-offset-[3px] group-hover:text-ui-ink">Open the audit</p>
+                  {/* design v3.1: the whole receipt is the link (named by the trader); no extra caption */}
                 </div>
                 <div aria-hidden="true" className="fs-torn-bottom" />
               </Link>

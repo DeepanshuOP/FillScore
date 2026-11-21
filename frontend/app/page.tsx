@@ -5,6 +5,7 @@ import { LandingMotion } from './components/marketing/LandingMotion'
 import { StoryEnd, TapeHero } from './components/marketing/TapeHero'
 import { DemoCards } from './components/marketing/DemoCards'
 import { CheckIt } from './components/marketing/CheckIt'
+import { HowItReads } from './components/marketing/HowItReads'
 import SiteFooter from './components/SiteFooter'
 
 /**
@@ -21,26 +22,24 @@ export default function Home() {
       <main id="main">
         <TapeHero />
         <StoryEnd />
+        <HowItReads />
         <DemoCards />
         <CheckIt />
 
         <section aria-labelledby="never-title" className="px-[var(--ui-gutter)] py-28 lg:py-40">
           <h2 id="never-title" className="sr-only">What FillScore never does</h2>
           <p data-split className="max-w-[22ch] text-[clamp(2rem,4.6vw,4rem)] leading-[1.02] font-black tracking-[-0.04em] text-ui-ink">
-            FillScore never tells you what to trade, never predicts a price, and never lets a language model write a number.
+            No trade calls. No predictions. No numbers from a language model.
           </p>
         </section>
 
         <section aria-labelledby="cta-title" className="border-t border-ui-ink px-[var(--ui-gutter)] py-24 lg:py-32">
           <div className="flex flex-col items-start gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <h2 id="cta-title" data-split className="display-lg text-ui-ink">See what your own orders cost.</h2>
-              <p className="mt-4 text-[17px] leading-7 text-ui-graphite">Connect a key that can only read. FillScore refuses anything more.</p>
+              <h2 id="cta-title" data-split className="display-lg text-ui-ink">Audit your own orders.</h2>
             </div>
             <div className="flex flex-wrap gap-3">
-              <Link href="/signup" className={buttonClass('primary', 'lg', 'no-underline')}>Connect a read-only key</Link>
-              <Link href="/dashboard?userId=demo-moderate" className={buttonClass('secondary', 'lg', 'no-underline')}>Open a demo</Link>
-            </div>
+              <Link href="/signup" className={buttonClass('primary', 'lg', 'no-underline')}>Connect a read-only key</Link>            </div>
           </div>
         </section>
       </main>

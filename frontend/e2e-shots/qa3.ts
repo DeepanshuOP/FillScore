@@ -32,6 +32,22 @@ const STATES: State[] = [
     await p.locator('.fs-end').scrollIntoViewIfNeeded(); await p.waitForTimeout(1600)
   } },
   { name: 'overview', path: '/dashboard?userId=demo-moderate', prepare: async (p) => { await p.getByText('Where the').first().waitFor({ timeout: 30000 }); await p.waitForTimeout(1200) } },
+  // design v3.1: the landing page's chapters (the pinned row of three objects at its start and half-way, the demo
+  // receipts, the envelope, the close)
+  ...([['landing-reads', '.fs-reads', 0], ['landing-reads-mid', '.fs-reads', 0.5], ['landing-demos', '#demos-title', 0], ['landing-check', '#check-title', 0], ['landing-close', '#cta-title', 0]] as const)
+    .map(([name, sel, frac]) => ({ name, path: '/', prepare: async (p: Page) => {
+      await p.waitForTimeout(800)
+      await p.evaluate(([s, f]) => {
+        const el = document.querySelector(s as string) as HTMLElement | null
+        if (!el) return
+        const sec = el.closest('section') ?? el
+        // a pinned section's scroll distance is its spacer's extra height; f = 0.5 lands half-way through the pin
+        const spacer = sec.parentElement?.classList.contains('pin-spacer') ? sec.parentElement : null
+        const extra = spacer ? spacer.offsetHeight - sec.offsetHeight : 0
+        window.scrollTo(0, sec.getBoundingClientRect().top + scrollY - (spacer ? 0 : 140) + extra * (f as number))
+      }, [sel, frac])
+      await p.waitForTimeout(2200)
+    } })),
   // design v3.1: each overview chapter scrolled to the top of the viewport (the first entry's motion has finished)
   ...[2, 3, 4, 5].map((n) => ({ name: `overview-ch${n}`, path: '/dashboard?userId=demo-moderate', prepare: async (p: Page) => {
     await p.getByTestId('headline').waitFor({ timeout: 30000 }); await p.waitForTimeout(800)

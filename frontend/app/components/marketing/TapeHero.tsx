@@ -3,6 +3,7 @@
 import { useEffect, useRef, type CSSProperties } from 'react'
 import Link from 'next/link'
 import { buttonClass } from '../../ui/buttonClass'
+import { MarginNote } from '../../ui/MarginNote'
 import { formatPct, formatPrice, formatQty, formatSignedBps, formatUsd, heroCosts, heroEntries, heroTape, utcTime } from '../../lib/landing/heroData'
 import { heroGeometry, type HeroGeo, type LayoutName } from './heroGeometry'
 import { startPinnedStory } from './v3/pinnedStory'
@@ -96,9 +97,9 @@ export function TapeHero() {
             aria-label={`Ticker tape: ${PRINTS} public ${heroTape.symbol} prints from Binance, 28 January 2024, with the order's arrival quote and its two fills. Spread ${formatUsd(heroCosts.spread.usd)}, impact and timing ${formatUsd(heroCosts.impactTiming.usd)}, fees ${formatUsd(heroCosts.fees.usd)}. The order is a synthetic trader's; the prices are real.`}>
             {ENTRIES.map((e, i) => (
               <div key={i} className="fs-e" data-kind={e.kind} data-dim={e.kind === 'print'} aria-hidden="true">
-                {e.kind === 'print' && (<><div className="p">{formatPrice(e.price)}</div><div className="q">{formatQty(e.qty)} {e.buyerInitiated ? 'B' : 'S'}</div><div className="t">{utcTime(e.ts)}</div></>)}
+                {e.kind === 'print' && (<><div className="p">{formatPrice(e.price)}</div><div className="q">{formatQty(e.qty)} <span className="fs-side" data-buy={e.buyerInitiated} /></div><div className="t">{utcTime(e.ts)}</div></>)}
                 {e.kind === 'quote' && (<><span className="tag">ARRIVAL</span><div className="p">{formatPrice(e.bid)} / {formatPrice(e.ask)}</div><div className="t">{utcTime(e.ts)}</div></>)}
-                {e.kind === 'fill' && (<><span className="tag">FILL {e.n} OF {e.of}</span><div className="p">{formatPrice(e.price)}</div><div className="q">{formatQty(e.qty)} {heroTape.side}</div><div className="t">{utcTime(e.ts)}</div></>)}
+                {e.kind === 'fill' && (<><span className="tag">FILL {e.n}</span><div className="p">{formatPrice(e.price)}</div><div className="q">{formatQty(e.qty)} {heroTape.side}</div><div className="t">{utcTime(e.ts)}</div></>)}
               </div>
             ))}
             <Annotations g={GEO.desk} name="desk" />
@@ -111,22 +112,27 @@ export function TapeHero() {
           <dt>FEES</dt><dd>{formatUsd(heroCosts.fees.usd)}</dd>
           <dt className="col-span-2 mt-1">SYNTHETIC TRADER, REAL PRICES</dt>
         </dl>
-        <p className="fs-hero-proof">
-          {heroTape.symbol} on Binance, 28 January 2024, {utcTime(ENTRIES[0].ts).slice(0, 8)} to {utcTime(ENTRIES[ENTRIES.length - 1].ts).slice(0, 8)} UTC.
-          {' '}{PRINTS} public prints from the daily trades file (sha256 {heroTape.sourceSha256.slice(0, 12)}).
-          {' '}The {heroTape.side.toLowerCase()} order is a synthetic trader&apos;s; the prices are real.
-        </p>
       </div>
       <div className="fs-hero-copy">
         <h1 id="hero-title" className="fs-hero-h1">Every fill, held to the tape.</h1>
         <div>
+          {/* design v3.1: one sentence; where the prints come from is in the pen margin note */}
           <p className="mb-5 max-w-[42ch] text-[17px] leading-normal text-ui-ink max-sm:text-[15px]">
-            FillScore reads your exchange history with a read-only key, holds each fill against the exchange&apos;s own public prints, and writes down what it cost. It grades the past. It does not predict or advise.
+            FillScore writes down what each fill cost against the exchange&apos;s public prints.{' '}
+            <MarginNote label="the prints on this tape">
+              <p>{heroTape.symbol} on Binance, 28 January 2024, {utcTime(ENTRIES[0].ts).slice(0, 8)} to {utcTime(ENTRIES[ENTRIES.length - 1].ts).slice(0, 8)} UTC: {PRINTS} public prints from the daily trades file.</p>
+              <p className="fs-note-field">sha256 {heroTape.sourceSha256}</p>
+              <p>A filled triangle marks a buyer-initiated print, a hollow one a seller-initiated print.</p>
+              <p>The {heroTape.side.toLowerCase()} order is a synthetic trader&apos;s; the prices are real.</p>
+            </MarginNote>
+            {' '}Past only, never advice.
           </p>
           <div className="flex flex-wrap gap-2.5">
-            <Link href="/dashboard?userId=demo-moderate" className={buttonClass('primary', 'lg', 'no-underline')}>Open the demo audit</Link>
-            <Link href="/verify" className={buttonClass('secondary', 'lg', 'no-underline')}>Check a signed pack</Link>
+            <Link href="/dashboard?userId=demo-moderate" className={buttonClass('primary', 'lg', 'no-underline')}>Open the demo</Link>
+            <Link href="/verify" className={buttonClass('secondary', 'lg', 'no-underline')}>Check a pack</Link>
           </div>
+          {/* the tape's order is a synthetic trader's (DESIGN.md invariant 4); a phone prints it under the tape */}
+          <p className="mt-4 font-mono text-[13px] tracking-[0.04em] text-ui-graphite max-md:hidden">SYNTHETIC TRADER, REAL PRICES</p>
         </div>
       </div>
     </section>
@@ -159,7 +165,7 @@ export function StoryEnd() {
   return (
     <section ref={root} className="fs-end" aria-labelledby="end-title">
       <h2 id="end-title" className="sr-only">What the order cost</h2>
-      <p className="font-mono text-[12px] tracking-[0.04em] text-ui-graphite uppercase">The order above, in total</p>
+      <p className="font-mono text-[13px] tracking-[0.04em] text-ui-graphite uppercase">Total</p>
       <p className="fs-end-figure" data-story data-end="figure">{formatUsd(total.usd)}</p>
       <p className="fs-end-line" data-story data-end="line">
         {formatSignedBps(total.bps)}; fees were {formatPct(heroCosts.feeShare)} of it
@@ -167,10 +173,8 @@ export function StoryEnd() {
           <path data-story data-end="underline" d="M2 6 C 90 4, 220 9, 398 6 M10 15 C 120 13, 260 17, 390 14" vectorEffect="non-scaling-stroke" />
         </svg>
       </p>
-      <p className="mt-12 max-w-[60ch] text-[15px] leading-6 text-ui-graphite">
-        Spread {formatUsd(heroCosts.spread.usd)}, impact and timing {formatUsd(heroCosts.impactTiming.usd)}, fees {formatUsd(heroCosts.fees.usd)}.
-        {' '}A {heroTape.symbol} market {heroTape.side.toLowerCase()} of 28 January 2024, measured against the public prints of the same seconds. Synthetic trader, real prices.
-      </p>
+      {/* design v3.1: the three amounts are on the tape above; one slim printed line keeps the provenance */}
+      <p className="mt-12 font-mono text-[13px] tracking-[0.04em] text-ui-graphite">SYNTHETIC TRADER, REAL PRICES</p>
     </section>
   )
 }

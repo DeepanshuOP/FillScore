@@ -54,6 +54,10 @@ async function main() {
     await mock(page, false)
     await page.goto(BASE + '/', { waitUntil: 'networkidle' }); await page.waitForTimeout(1500)
     out[`landing-${width}`] = await count(page, 'main')
+    if (process.env.WORDS_SECTIONS) {
+      const n = await page.locator('main > section').count()
+      for (let i = 0; i < n; i++) out[`landing-${width}-s${i}`] = await count(page, `main > section:nth-of-type(${i + 1})`)
+    }
     await page.goto(BASE + '/dashboard?userId=demo-moderate', { waitUntil: 'networkidle' })
     await page.getByTestId('headline').waitFor({ timeout: 30000 }); await page.waitForTimeout(2500)
     out[`overview-${width}`] = await count(page, '[data-view-body]')

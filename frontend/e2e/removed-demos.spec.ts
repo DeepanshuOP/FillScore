@@ -11,7 +11,7 @@ test('/share/demo-bybit shows the "no longer available" state', async ({ page })
 test('demo picker lists only the three remaining demos', async ({ page }) => {
   await page.goto('/')
   // the picker sits in a card that fades in on scroll, so assert on attached DOM text, not visibility
-  await expect(page.getByText('Or explore with synthetic demo data')).toHaveCount(1)
+  await expect(page.getByRole('heading', { name: 'Finished audits.' })).toHaveCount(1)   // design v3.1: the picker's heading (its lede was cut)
   const text = await page.evaluate(() => document.body.textContent ?? '')
   for (const id of REMOVED) expect(text).not.toContain(id)
   await expect(page.getByText('The Bybit Trader')).toHaveCount(0)
