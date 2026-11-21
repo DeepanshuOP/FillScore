@@ -7,7 +7,11 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: A10 (overview at 390: the grade stamp inside the page margin).**
+- **Next concrete action: B1 (each order's total cost in the ledger payload; the month tape's bars become the cost).**
+- **A10, done.** Cause: below the desktop layout the stamp sits on the left margin and its -7° turn (about its left edge
+  on phones, where it is scaled from there) swings the top-left corner and its outline 12 to 15 px left of its box,
+  past the 16 px gutter. Fix: a 20 px left inset on the stamp's wrapper below 1024 px (`Overview.tsx`). Measured
+  (outline's left edge against the gutter): 320 px 22/16, 390 px 22/16, 640 px 20/16.6, 900 px 27/23.4; 1440 unchanged.
 - **A9, done.** /verify: the native "Choose File" is replaced by a secondary pill button ("Choose a pack file", then
   "Choose another pack file") that is the `<label>` of the real `<input type="file" id="pack">`; the input is visually
   hidden but stays in the tab order and shows its focus ring on the button (`peer-focus-visible`). Checked in the

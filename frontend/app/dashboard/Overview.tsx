@@ -92,7 +92,9 @@ function Top({ headline, grade, band, v1, v1Note, periodLabel, isDemo }: Pick<Ov
       <section aria-labelledby="grade-t" className="flex flex-col items-center gap-5 max-lg:items-start max-lg:border-t max-lg:border-ui-ink max-lg:pt-4">
         <h2 id="grade-t" className="sr-only">Measured grade</h2>
         {grade?.kind === 'graded' ? (
-          <div className="py-4 lg:py-8"><GradeStamp grade={grade.letter} score={grade.score} period={periodLabel} version={grade.scoringVersion} className="max-sm:origin-left max-sm:scale-[0.72]" /></div>
+          // design v3 fixes A10: below the desktop layout the stamp sits at the left margin, and its -7° turn swings the
+          // top-left corner and outline 12 to 15 px left of its box; the inset keeps the whole stamp inside the margin
+          <div className="py-4 max-lg:pl-5 lg:py-8"><GradeStamp grade={grade.letter} score={grade.score} period={periodLabel} version={grade.scoringVersion} className="max-sm:origin-left max-sm:scale-[0.72]" /></div>
         ) : grade ? (
           <ValueState state="insufficient" label="Measured grade" reason={grade.text} size="md" />
         ) : <div className="h-[230px] w-[280px]" aria-label="Loading the measured grade" />}
