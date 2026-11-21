@@ -7,7 +7,16 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: A8 (onboarding refusal in plain words; the last correction matches the form).**
+- **Next concrete action: A9 (verify: the file input as a button in the design language).**
+- **A8, done.** The refusal sentence is built from the same API data in plain words: "This key can do more than read
+  your trades. Turned on: Spot & Margin Trading, Withdrawals. Needed: Reading only." (the exchange's "Enable " prefix
+  dropped; `errorMapping.ts`). `refusalFollowUp(code, exchange)` decides the last correction and the form from the
+  existing refusal map: Binance's corrections edit the same key, so the fields stay filled and the last line is "Press
+  Connect again. Nothing from this attempt was stored."; Bybit and OKX ask for a new read-only key, and a key the
+  exchange did not accept is pasted again, so key, secret (and passphrase) are cleared and the key field takes focus
+  ("Paste the new key and its secret here. ..."); no answer keeps the fields. Tests: `errorMapping.test.ts` (each
+  exchange); browser check `e2e-shots/refusal-form.ts`: Binance, Bybit and OKX all pass (plain words, last line,
+  fields, focus).
 - **A7, done.** Each specialist note prints its recorded finding verbatim (the explanation field and its flag sentences;
   tags stay chips) and its cited values as ledger lines (audit field, value as the audit rendered it, unit). The run
   records only a count, so the server traces them on read: `ml-service/agents/cited_values.py` renders every leaf of

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { mapOnboardingError } from './errorMapping';
+import { mapOnboardingError, refusalFollowUp } from './errorMapping';
 
 describe('mapOnboardingError', () => {
   it('maps key_not_read_only correctly', () => {
@@ -87,14 +87,36 @@ describe('mapOnboardingError', () => {
     );
   });
 
-  it('names the permissions to disable, per exchange', () => {
+  // Design v3 fixes A8 (2026-11-21): plain words from the same data ("Turned on: ... Needed: ... only."), the exchange's
+  // "Enable " prefix dropped from its toggle names.
+  it('names the permissions that were on and the one needed, per exchange, in plain words', () => {
+    expect(mapOnboardingError('key_not_read_only', 400, 'Binance', { disable: ['Enable Spot & Margin Trading', 'Enable Withdrawals'], enable: ['Enable Reading'] }))
+      .toBe('This key can do more than read your trades. Turned on: Spot & Margin Trading, Withdrawals. Needed: Reading only.');
     expect(mapOnboardingError('key_not_read_only', 400, 'Binance', { disable: ['Spot & Margin Trading', 'Withdrawals'] }))
-      .toContain('Disable: Spot & Margin Trading, Withdrawals.');
+      .toContain('Turned on: Spot & Margin Trading, Withdrawals.');
     expect(mapOnboardingError('key_not_read_only', 400, 'Bybit', { disable: ['Spot Trading', 'Withdrawals', 'Transfers'] }))
-      .toContain('Disable: Spot Trading, Withdrawals, Transfers.');
+      .toContain('Turned on: Spot Trading, Withdrawals, Transfers.');
     expect(mapOnboardingError('key_not_read_only', 400, 'OKX', { disable: ['Trade', 'Withdraw'] }))
-      .toContain('Disable: Trade, Withdraw.');
+      .toContain('Turned on: Trade, Withdraw.');
     expect(mapOnboardingError('key_not_read_only', 400, 'Binance', { disable: [], enable: ['Reading'] }))
-      .toContain('Enable: Reading.');
+      .toContain('Needed: Reading only.');
+    expect(mapOnboardingError('key_not_read_only', 400, 'Binance', { disable: ['Enable Withdrawals'] })).not.toMatch(/Disable:|Enable:/);
+  });
+});
+
+describe('refusalFollowUp (design v3 fixes A8: the last correction matches what the form does)', () => {
+  it('Binance: the corrections edit the same key, so the fields stay filled', () => {
+    expect(refusalFollowUp('key_not_read_only', 'Binance')).toEqual({ keepFields: true, last: 'Press Connect again. Nothing from this attempt was stored.' });
+  });
+  it('Bybit and OKX: the corrections ask for a new key, so both fields are cleared and the key field takes focus', () => {
+    for (const ex of ['Bybit', 'OKX']) {
+      expect(refusalFollowUp('key_not_read_only', ex)).toEqual({ keepFields: false, last: 'Paste the new key and its secret here. Nothing from this attempt was stored.' });
+    }
+  });
+  it('a key the exchange did not accept is pasted again on every exchange; no answer keeps the fields', () => {
+    for (const ex of ['Binance', 'Bybit', 'OKX']) {
+      expect(refusalFollowUp('invalid_key', ex)).toEqual({ keepFields: false, last: 'Paste the key and its secret again. Nothing from this attempt was stored.' });
+      expect(refusalFollowUp('network_error', ex)).toEqual({ keepFields: true, last: 'Press Connect again. Nothing from this attempt was stored.' });
+    }
   });
 });

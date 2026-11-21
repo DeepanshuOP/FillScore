@@ -1,3 +1,21 @@
+/** An exchange toggle's name without its "Enable " prefix: "Enable Spot & Margin Trading" reads "Spot & Margin Trading". */
+const toggleName = (s: string) => s.replace(/^enable\s+/i, '');
+
+/**
+ * What the form does after a refusal, and the last correction that says so (design v3 fixes A8). From the refusal map:
+ * on Binance the corrections edit the key that was pasted (its restrictions change, the key and secret stay the same), so
+ * the fields stay filled; on Bybit and OKX the refusal asks for a new read-only key, and a key the exchange did not accept
+ * is pasted again, so both fields are cleared and the key field takes focus. Nothing from a refused attempt is stored.
+ */
+export function refusalFollowUp(code: string, exchange: string): { keepFields: boolean; last: string } {
+  const again = { keepFields: true, last: 'Press Connect again. Nothing from this attempt was stored.' };
+  if (code === 'network_error') return again;
+  if (code === 'key_not_read_only') {
+    return exchange === 'Binance' ? again : { keepFields: false, last: 'Paste the new key and its secret here. Nothing from this attempt was stored.' };
+  }
+  return { keepFields: false, last: 'Paste the key and its secret again. Nothing from this attempt was stored.' };
+}
+
 export function mapOnboardingError(code: string, status?: number, exchange: string = 'Binance', permissions?: { disable?: string[]; enable?: string[] }): string {
   if (status === 429) {
     return "Too many attempts. Please wait a few minutes and try again.";
@@ -5,10 +23,11 @@ export function mapOnboardingError(code: string, status?: number, exchange: stri
 
   switch (code) {
     case 'key_not_read_only': {
+      // design v3 fixes A8: plain words from the same data, the exchange's "Enable " prefix dropped
       const parts: string[] = [];
-      if (permissions?.disable?.length) parts.push(`Disable: ${permissions.disable.join(', ')}.`);
-      if (permissions?.enable?.length) parts.push(`Enable: ${permissions.enable.join(', ')}.`);
-      if (parts.length) return `This key can do more than read your trades. ${parts.join(' ')} Create a read-only key and nothing else.`;
+      if (permissions?.disable?.length) parts.push(`Turned on: ${permissions.disable.map(toggleName).join(', ')}.`);
+      if (permissions?.enable?.length) parts.push(`Needed: ${permissions.enable.map(toggleName).join(', ')} only.`);
+      if (parts.length) return `This key can do more than read your trades. ${parts.join(' ')}`;
     }
     // falls through to the generic wording when the API did not name the permissions
     case 'key_not_read_only_generic':

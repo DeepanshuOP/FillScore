@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Check, ChevronLeft, Loader2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/authFetch';
-import { mapOnboardingError } from '../utils/errorMapping';
+import { mapOnboardingError, refusalFollowUp } from '../utils/errorMapping';
 import { EXCHANGES, getExchange, ExchangeId } from '../utils/exchanges';
 import { apiBase } from '../lib/apiBase';
 import { skippedNotice } from '../dashboard/skipped';
@@ -51,23 +51,26 @@ function StepIndicator({ current }: { current: 1 | 2 | 3 }) {
 /** A refusal says exactly what to change on the exchange (or, for a network error, that nothing was stored). */
 function RefusalBanner({ refusal, exchange, message }: { refusal: Refusal; exchange: string; message: string }) {
   const isBinance = exchange === 'Binance';
+  // the last correction says what the form now holds (design v3 fixes A8, errorMapping.refusalFollowUp)
+  const follow = refusalFollowUp(refusal.code, exchange);
   let steps: string[];
   let title: string;
   if (refusal.code === 'key_not_read_only') {
     title = 'The key was refused: it can do more than read';
-    steps = [
+    steps = isBinance ? [
       `Open API management on ${exchange}.`,
       'Edit the key you pasted.',
       refusal.disable?.length
         ? `Turn off ${refusal.disable.map((d) => `"${d}"`).join(', ')}, and any futures or transfer permission.`
-        : isBinance
-          ? 'Turn off "Enable Spot & Margin Trading", "Enable Withdrawals" and any futures or transfer permission.'
-          : 'Turn off every trading, withdrawal, futures and transfer permission.',
-      refusal.enable?.length
-        ? `Keep ${refusal.enable.map((d) => `"${d}"`).join(', ')} only.`
-        : isBinance ? 'Keep "Enable Reading" only.' : 'Keep read-only permission only.',
+        : 'Turn off "Enable Spot & Margin Trading", "Enable Withdrawals" and any futures or transfer permission.',
+      refusal.enable?.length ? `Keep ${refusal.enable.map((d) => `"${d}"`).join(', ')} only.` : 'Keep "Enable Reading" only.',
       'Save the key.',
-      'Paste the key again here.',
+      follow.last,
+    ] : [
+      `Open API management on ${exchange}.`,
+      exchange === 'OKX' ? 'Create a new key with the "Read" permission only.' : exchange === 'Bybit'
+        ? 'Create a new key with the permission set to "Read-Only".' : 'Create a new key with read-only permission and nothing else.',
+      follow.last,
     ];
   } else if (refusal.code === 'invalid_key') {
     title = `${exchange} did not accept the key`;
@@ -75,10 +78,11 @@ function RefusalBanner({ refusal, exchange, message }: { refusal: Refusal; excha
       'Check that the key and the secret were copied whole, without spaces before or after.',
       'Check that the key is not deleted or expired.',
       'Check that the IP restriction on the key, if there is one, allows FillScore.',
+      follow.last,
     ];
   } else {
     title = `${exchange} did not answer`;
-    steps = ['Nothing was stored.', 'Try again in a moment.'];
+    steps = [follow.last];
   }
   // Design v3: a refusal is the key handed back as a returned receipt, with the corrections printed in the pen's ink.
   const network = refusal.code === 'network_error';
@@ -219,7 +223,13 @@ export default function OnboardingPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        fail(data.error || 'unknown', res.status, selected?.name, { disable: data.disable, enable: data.enable });
+        const code = data.error || 'unknown';
+        fail(code, res.status, selected?.name, { disable: data.disable, enable: data.enable });
+        // design v3 fixes A8: where the corrections need a new key (or a fresh paste), clear the fields and focus the key
+        if (res.status !== 429 && REFUSAL_CODES.includes(code) && !refusalFollowUp(code, selected?.name ?? 'Binance').keepFields) {
+          setApiKey(''); setApiSecret(''); setApiPassphrase('');
+          requestAnimationFrame(() => document.getElementById('onb-api-key')?.focus());
+        }
       } else {
         setIsSuccess(true);
         // Clear secrets from state immediately
