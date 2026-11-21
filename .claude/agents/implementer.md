@@ -1,6 +1,6 @@
 ---
 name: implementer
-description: Implements one fully specified change from a FillScore brief (code plus tests) and returns evidence. Use for every code change the orchestrator has specified with files, behaviour and expected values.
+description: Implements one fully specified change from a FillScore brief (code plus tests) and returns evidence. Use when the orchestrator can give files, behaviour and expected values for a self-contained change.
 model: sonnet
 effort: medium
 tools: Read, Edit, Write, Glob, Grep, Bash

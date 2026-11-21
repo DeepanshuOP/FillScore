@@ -26,8 +26,7 @@ the next action in PROGRESS. Never rely on memory of an earlier session that is 
    approval first. New scoring is a separate, versioned score beside v1. The locked v1 demo grades,
    checked by `gradeInvariance.test.ts`:
    `demo-disciplined` 95.88542572161496 (A), `demo-moderate` 84.80888516669383 (B),
-   `demo-aggressive` 60.67469266790485 (C). (`demo-bybit`, `demo-okx` and `demo-multi` were removed from the
-   product on 2026-11-13 by Deepanshu's decision; they are no longer published.)
+   `demo-aggressive` 60.67469266790485 (C). No other demo account has a locked grade.
 6. **No fabricated data.** A value that cannot be measured is shown as "insufficient data". Recorded
    LLM output is never edited.
 7. **Correlation, never causation.** Copy says "coincided with", never "caused" or "due to".
@@ -60,7 +59,7 @@ brief ("Verify before claiming done"). Run the whole tier and read the summary l
   only. No credential in any script, even temporarily. Reason: the repo is public and logs are shared.
 - **Atlas and the demo dataset.** No write to MongoDB Atlas outside the test suite, no `--apply`, and
   no run of the seed, index, purge or backfill scripts in `backend/src/scripts`,
-  `ml-service/whale/enrich.py` or `regen_fills.py` without Deepanshu's written permission. Reason: such
+  `ml-service/whale/enrich.py` or `ml-service/whale/regen_fills.py` without Deepanshu's written permission. Reason: such
   runs have corrupted the locked demo dataset before. Reading these files is allowed.
 - **Guard hook.** `.claude/hooks/guard.sh` enforces the three rules above. When it blocks a command,
   do not reach the same effect another way: use the tool it names, or record the block in

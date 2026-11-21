@@ -7,7 +7,6 @@ description: Prove that an Agent Council or eval run actually executed rather th
 
 **A council run that returns a plausible result proves nothing.** On Groq 429 exhaustion the pipeline
 falls back to typed `_default_*()` verdicts and still returns a well-formed, sensible-looking object.
-Every eval number produced before this check was invented turned out to be invalid at least once.
 
 Run all four checks. Report each one's raw result. If any fails, the run is void — say so and do not
 report its numbers.
@@ -49,8 +48,7 @@ nothing about the pipeline, so say so and don't count it as a fresh run.
 ## 3. Freshness
 
 Print `user_id` and `created_at` from the persisted document. Confirm `created_at` is from this run,
-not a replay of an older one. Remember `created_at` is an ISO-8601 **string** — query by prefix, not
-by date object. A stale document narrated as fresh output has happened before.
+not a replay of an older one. `created_at` is an ISO-8601 **string**: query by prefix, not by date object.
 
 ## 4. Read the actual text
 

@@ -17,7 +17,7 @@ You are the orchestrator. You plan, write specs, compute expected values, verify
   1. Goal (one sentence)
   2. Files to touch, and files not to touch
   3. Exact behaviour, including edge cases
-  4. Hand-computed fixtures with the arithmetic shown. You compute these; this is where Opus earns its cost.
+  4. Hand-computed fixtures with the arithmetic shown. You compute these, not the worker.
   5. The test command(s) to run
   6. Constraints from the brief's hard rules that apply
   7. The report format (the implementer's standard report)

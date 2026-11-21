@@ -25,13 +25,13 @@ This skill ensures all code follows security best practices and identifies poten
 
 ### 1. Secrets Management
 
-#### FAIL: NEVER Do This
+#### Avoid
 ```typescript
 const apiKey = "sk-proj-xxxxx"  // Hardcoded secret
 const dbPassword = "password123" // In source code
 ```
 
-#### PASS: ALWAYS Do This
+#### Instead
 ```typescript
 const apiKey = process.env.OPENAI_API_KEY
 const dbUrl = process.env.DATABASE_URL
@@ -47,7 +47,7 @@ if (!apiKey) {
 - [ ] All secrets in environment variables
 - [ ] `.env.local` in .gitignore
 - [ ] No secrets in git history
-- [ ] Production secrets in hosting platform (Vercel, Railway)
+- [ ] Production secrets in the hosting platform's secret store
 
 ### 2. Input Validation
 
@@ -109,42 +109,12 @@ function validateFileUpload(file: File) {
 - [ ] Whitelist validation (not blacklist)
 - [ ] Error messages don't leak sensitive info
 
-### 3. SQL Injection Prevention
+### 3. Query Injection Prevention
 
-#### FAIL: NEVER Concatenate SQL
-```typescript
-// DANGEROUS - SQL Injection vulnerability
-const query = `SELECT * FROM users WHERE email = '${userEmail}'`
-await db.query(query)
-```
-
-#### PASS: ALWAYS Use Parameterized Queries
-```typescript
-// Safe - parameterized query
-const { data } = await supabase
-  .from('users')
-  .select('*')
-  .eq('email', userEmail)
-
-// Or with raw SQL -- the value goes in the params array, never in the
-// string. Use your driver's placeholder syntax (Postgres numbers its
-// placeholders, MySQL uses "?").
-await db.query(
-  'SELECT * FROM users WHERE email = ?',
-  [userEmail]
-)
-```
-
-<!-- Do not write a literal dollar-sign-N placeholder anywhere in this file.
-     Invoking this skill with arguments substitutes it away, and the example
-     above then renders as concatenated SQL -- the exact anti-pattern this
-     section warns against. Use "?" and name the Postgres form in prose. -->
+Build database filters from validated scalar fields. Never pass a request body or query object straight into a query: Mongo operators such as `$ne` and `$gt` arrive as nested objects.
 
 #### Verification Steps
-- [ ] All database queries use parameterized queries
-- [ ] No string concatenation in SQL
-- [ ] ORM/query builder used correctly
-- [ ] Supabase queries properly sanitized
+- [ ] Filters built from schema-validated fields only
 
 ### 4. Authentication & Authorization
 
@@ -178,26 +148,9 @@ export async function deleteUser(userId: string, requesterId: string) {
 }
 ```
 
-#### Row Level Security (Supabase)
-```sql
--- Enable RLS on all tables
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-
--- Users can only view their own data
-CREATE POLICY "Users view own data"
-  ON users FOR SELECT
-  USING (auth.uid() = id);
-
--- Users can only update their own data
-CREATE POLICY "Users update own data"
-  ON users FOR UPDATE
-  USING (auth.uid() = id);
-```
-
 #### Verification Steps
 - [ ] Tokens stored in httpOnly cookies (not localStorage)
 - [ ] Authorization checks before sensitive operations
-- [ ] Row Level Security enabled in Supabase
 - [ ] Role-based access control implemented
 - [ ] Session management secure
 
@@ -353,60 +306,7 @@ catch (error) {
 - [ ] Detailed errors only in server logs
 - [ ] No stack traces exposed to users
 
-### 9. Blockchain Security (Solana)
-
-#### Wallet Verification
-```typescript
-import { verify } from '@solana/web3.js'
-
-async function verifyWalletOwnership(
-  publicKey: string,
-  signature: string,
-  message: string
-) {
-  try {
-    const isValid = verify(
-      Buffer.from(message),
-      Buffer.from(signature, 'base64'),
-      Buffer.from(publicKey, 'base64')
-    )
-    return isValid
-  } catch (error) {
-    return false
-  }
-}
-```
-
-#### Transaction Verification
-```typescript
-async function verifyTransaction(transaction: Transaction) {
-  // Verify recipient
-  if (transaction.to !== expectedRecipient) {
-    throw new Error('Invalid recipient')
-  }
-
-  // Verify amount
-  if (transaction.amount > maxAmount) {
-    throw new Error('Amount exceeds limit')
-  }
-
-  // Verify user has sufficient balance
-  const balance = await getBalance(transaction.from)
-  if (balance < transaction.amount) {
-    throw new Error('Insufficient balance')
-  }
-
-  return true
-}
-```
-
-#### Verification Steps
-- [ ] Wallet signatures verified
-- [ ] Transaction details validated
-- [ ] Balance checks before transactions
-- [ ] No blind transaction signing
-
-### 10. Dependency Security
+### 9. Dependency Security
 
 #### Regular Updates
 ```bash
@@ -425,7 +325,7 @@ npm outdated
 
 #### Lock Files
 ```bash
-# ALWAYS commit lock files
+# Commit lock files
 git add package-lock.json
 
 # Use in CI/CD for reproducible builds
@@ -485,7 +385,7 @@ Before ANY production deployment:
 
 - [ ] **Secrets**: No hardcoded secrets, all in env vars
 - [ ] **Input Validation**: All user inputs validated
-- [ ] **SQL Injection**: All queries parameterized
+- [ ] **Query Injection**: Filters built from validated fields
 - [ ] **XSS**: User content sanitized
 - [ ] **CSRF**: Protection enabled
 - [ ] **Authentication**: Proper token handling
@@ -496,16 +396,24 @@ Before ANY production deployment:
 - [ ] **Error Handling**: No sensitive data in errors
 - [ ] **Logging**: No sensitive data logged
 - [ ] **Dependencies**: Up to date, no vulnerabilities
-- [ ] **Row Level Security**: Enabled in Supabase
 - [ ] **CORS**: Properly configured
 - [ ] **File Uploads**: Validated (size, type)
-- [ ] **Wallet Signatures**: Verified (if blockchain)
+
+## FillScore specifics
+
+- [ ] Mongo filters are built only from validated scalar fields; request objects are never passed into a query (operators like `$ne`/`$gt`).
+- [ ] Every read and write is scoped to the authenticated account; the cross-user isolation tests stay green.
+- [ ] Exchange keys are read-only and validated fail-closed, stored with AES-256-GCM and AAD (envelope v2); key material is never logged.
+- [ ] JWT secrets come from env only and are length-checked; refresh-token rotation and reuse detection stay intact.
+- [ ] CORS allows only the frontend origin; rate limits cover auth, sync, Council and MCP routes.
+- [ ] User text (notes, CSV fields, Ask questions) is wrapped as untrusted data and never placed in system prompts; the red-team suite stays in CI.
+- [ ] No `.env` values, connection strings or keys appear in logs, errors, PDFs or evidence packs.
+- [ ] Dependency audit (`npm audit --omit=dev` for backend, frontend and mcp-server; `pip-audit`) is run, with open highs recorded.
 
 ## Resources
 
 - [OWASP Top 10](https://owasp.org/www-project-top-ten/)
 - [Next.js Security](https://nextjs.org/docs/security)
-- [Supabase Security](https://supabase.com/docs/guides/auth)
 - [Web Security Academy](https://portswigger.net/web-security)
 
 ---
