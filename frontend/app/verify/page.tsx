@@ -96,10 +96,16 @@ export default function VerifyPage() {
                 className={cn('fs-envelope flex flex-col items-start gap-2 transition-shadow', over && 'outline-2 outline-dashed outline-offset-4 outline-ui-ink')}
               >
                 <p className="font-mono text-[11px] tracking-[0.06em] text-ui-graphite uppercase">Drop a pack here</p>
-                <label htmlFor="pack" className="cursor-pointer text-[1.375rem] font-black tracking-[-0.02em] text-ui-ink">Drop a pack or choose a file</label>
+                <p className="text-[1.375rem] font-black tracking-[-0.02em] text-ui-ink">Drop a pack or choose a file</p>
                 <p className="text-sm text-ui-graphite">A .json pack file. {name ? <span className={MONO}>{name}</span> : 'The file stays on this device.'}</p>
-                <input id="pack" type="file" accept="application/json,.json" onChange={(e) => onFile(e.target.files?.[0])}
-                  className="mt-1 max-w-full text-[13px] text-ui-graphite file:mr-3 file:cursor-pointer file:rounded-full file:border file:border-ui-edge file:bg-transparent file:px-3.5 file:py-1.5 file:text-[13px] file:font-bold file:text-ui-ink" />
+                {/* design v3 fixes A9: the real file input stays in the tab order (visually hidden), named by the label
+                    drawn as a pill button; its focus ring shows on the button */}
+                <span className="relative mt-1 inline-flex">
+                  <input id="pack" type="file" accept="application/json,.json" onChange={(e) => onFile(e.target.files?.[0])} className="peer sr-only" />
+                  <label htmlFor="pack" className={buttonClass('secondary', 'sm', 'cursor-pointer peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ui-ink')}>
+                    {name ? 'Choose another pack file' : 'Choose a pack file'}
+                  </label>
+                </span>
               </div>
 
               <section aria-labelledby="trusted-t" className="panel pt-4">

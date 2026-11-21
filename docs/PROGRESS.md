@@ -7,7 +7,12 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: A9 (verify: the file input as a button in the design language).**
+- **Next concrete action: A10 (overview at 390: the grade stamp inside the page margin).**
+- **A9, done.** /verify: the native "Choose File" is replaced by a secondary pill button ("Choose a pack file", then
+  "Choose another pack file") that is the `<label>` of the real `<input type="file" id="pack">`; the input is visually
+  hidden but stays in the tab order and shows its focus ring on the button (`peer-focus-visible`). Checked in the
+  browser: 9 Tabs reach `#pack`, the label outline is drawn, its accessible name is "Choose a pack file"; the e2e and
+  QA selectors (`#pack`) are unchanged. Not changed: the CSV check panel's file input (not in the order).
 - **A8, done.** The refusal sentence is built from the same API data in plain words: "This key can do more than read
   your trades. Turned on: Spot & Margin Trading, Withdrawals. Needed: Reading only." (the exchange's "Enable " prefix
   dropped; `errorMapping.ts`). `refusalFollowUp(code, exchange)` decides the last correction and the form from the
