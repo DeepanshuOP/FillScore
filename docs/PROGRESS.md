@@ -7,7 +7,12 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: A6 (landing hero at 390: pen circles and the fee leader).**
+- **Next concrete action: A7 (Council notes: verbatim finding and cited values as ledger lines).**
+- **A6, done.** Phone: each fee mark is a squarish pen loop (`loopPath`, superellipse) round the whole 128 x 104 fill
+  tile, centred on its text and stopping short of the neighbouring prints' text; the fee note's leader starts on the
+  second fill's mark (also on the desktop, where it ended in the gap). Bounds measured in the browser
+  (`e2e-shots/probe-tiles.ts`: fill text x 9..119, y 23..97; neighbours' text from 9 px in) and checked in
+  `heroGeometry.test.ts`. The desktop circles are unchanged. Hero end frames at 390 and 1440: no overlap, axe 0, CLS 0.
 - **A5, done.** The receipt's sentences (expected cost or its insufficient-data reason, the chart legend, "no fills",
   "no cost terms", the bars note, errors) are sentence case in `app/dashboard/receiptCopy.ts` (tested); the stored
   notes (delay) were already. Capitals stay only on printed labels (ORDER, MARKET, PLACED, STATUS, FILLS, COSTS, TOTAL,

@@ -30,6 +30,29 @@ export function circlePath(x: number, y: number, w: number, h: number, seed = 1)
   return smooth(pts)
 }
 
+/**
+ * A pen loop that hugs a box (design v3 fixes A6): a squarish loop (superellipse, exponent 4) whose half-axes are half
+ * the box, so it can go round a whole tile with a few pixels to spare and still not reach its neighbours. About 1.12
+ * turns that do not close, with a smaller wobble than `circlePath`. The caller passes the loop's own box.
+ */
+export function loopPath(x: number, y: number, w: number, h: number, seed = 1): string {
+  const r = rng(seed)
+  const cx = x + w / 2, cy = y + h / 2
+  const rx = w / 2, ry = h / 2
+  const start = -Math.PI * 0.62 + r() * 0.3
+  const turns = 1.1 + r() * 0.04
+  const steps = 48
+  const sq = (v: number) => Math.sign(v) * Math.sqrt(Math.abs(v))   // |cos|^(2/4): the superellipse's squarer sides
+  const pts: Array<[number, number]> = []
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps
+    const a = start + t * turns * Math.PI * 2
+    const wob = 1 + (r() - 0.5) * 0.02 + t * 0.012
+    pts.push([cx + sq(Math.cos(a)) * rx * wob, cy + sq(Math.sin(a)) * ry * wob])
+  }
+  return smooth(pts)
+}
+
 /** A square bracket under a span (x0..x1) at height y, ticks pointing up, with a slight hand wobble. */
 export function bracketPath(x0: number, x1: number, y: number, depth = 10, seed = 2): string {
   const r = rng(seed)
