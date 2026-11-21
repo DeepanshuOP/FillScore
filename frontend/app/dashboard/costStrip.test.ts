@@ -16,11 +16,14 @@ describe('describeStrip', () => {
       ['Measured against market prices', '$10.10', '19.398%', false, true],   // 0.19398113757 x 100 = 19.398
       ['Fees, at the published rate', '$41.98', '80.602%', true, true],      // 0.80601886243 x 100 = 80.602
     ])
-    expect(v.sentence).toBe('Fees were $41.98 of the $52.08.')
+    // the unmeasured fee names its basis in the sentence too (design v3.1 review)
+    expect(v.sentence).toBe('Fees, at the published rate, were $41.98 of the $52.08.')
   })
 
   it('a real account: fees are measured, so not dashed', () => {
-    expect(describeStrip(BODY, false)!.parts[1]).toMatchObject({ label: 'Fees', dashed: false })
+    const v = describeStrip(BODY, false)!
+    expect(v.parts[1]).toMatchObject({ label: 'Fees', dashed: false })
+    expect(v.sentence).toBe('Fees were $41.98 of the $52.08.')
   })
 
   it('a negative part has no width', () => {
@@ -28,6 +31,8 @@ describe('describeStrip', () => {
     const v = describeStrip({ available: true, strip: { totalUsd: 5, segments: [{ key: 'market', usd: -3, share: 0 }, { key: 'fees', usd: 8, share: 1 }] } }, false)!
     expect(v.parts[0]).toMatchObject({ amount: '−$3.00', drawn: false, width: '0.000%' })
     expect(v.parts[1]).toMatchObject({ width: '100.000%', drawn: true })
+    // fees ($8) exceed the total ($5): the sentence states all three figures as served, never "fees were $8 of the $5"
+    expect(v.sentence).toBe('Fees were $8.00; measured against market prices the cost was −$3.00, a price improvement; $5.00 in total.')
   })
 
   it('is null when the server sent no strip or a malformed one', () => {

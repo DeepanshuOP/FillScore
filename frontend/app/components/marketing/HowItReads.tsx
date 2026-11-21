@@ -72,7 +72,7 @@ export function HowItReads() {
       <p className="fs-reads-prov font-mono text-[13px] tracking-[0.04em] text-ui-graphite">SYNTHETIC TRADER, REAL PRICES</p>
       <div ref={track} className="fs-reads-row">
         <article className="fs-reads-panel">
-          <p className="font-mono text-[13px] tracking-[0.04em] text-ui-graphite">01</p>
+          <p className="fs-reads-num font-mono text-[13px] tracking-[0.04em] text-ui-graphite">01</p>
           <h3 data-panel-title className="display-md text-ui-ink">What we read.</h3>
           <p className="max-w-[30ch] text-[18px] leading-snug text-ui-ink">Every print, to the second.</p>
           <div className="fs-strip fs-sprockets fs-reads-tape" role="img" aria-label={`Seven public ${heroTape.symbol} prints from the order above, Binance, 28 January 2024`}>
@@ -82,10 +82,13 @@ export function HowItReads() {
           </div>
         </article>
         <article className="fs-reads-panel">
-          <p className="font-mono text-[13px] tracking-[0.04em] text-ui-graphite">02</p>
+          <p className="fs-reads-num font-mono text-[13px] tracking-[0.04em] text-ui-graphite">02</p>
           <h3 data-panel-title className="display-md text-ui-ink">What it cost.</h3>
           <p className="max-w-[30ch] text-[18px] leading-snug text-ui-ink">Each order, in dollars.</p>
           <div className="fs-receipt fs-reads-receipt shadow-ui">
+            {/* invariant 4: a demo receipt carries its own provenance line (design v3.1 review) */}
+            <p className="c g">SYNTHETIC TRADER, REAL PRICES</p>
+            <hr />
             <div className="fs-lines">
               <span className="g">01</span><span className="lab">Spread</span><span className="num" /><span className="num">{formatUsd(heroCosts.spread.usd)}</span>
               <span className="g">02</span><span className="lab">Impact and timing</span><span className="num" /><span className="num">{formatUsd(heroCosts.impactTiming.usd)}</span>
@@ -96,7 +99,7 @@ export function HowItReads() {
           </div>
         </article>
         <article className="fs-reads-panel">
-          <p className="font-mono text-[13px] tracking-[0.04em] text-ui-graphite">03</p>
+          <p className="fs-reads-num font-mono text-[13px] tracking-[0.04em] text-ui-graphite">03</p>
           <h3 data-panel-title className="display-md text-ui-ink">The grade.</h3>
           <p className="max-w-[30ch] text-[18px] leading-snug text-ui-ink">One letter, stamped once.</p>
           <div className="flex min-h-[220px] items-center pl-4">

@@ -29,7 +29,7 @@ export default function Home() {
         <section aria-labelledby="never-title" className="px-[var(--ui-gutter)] py-28 lg:py-40">
           <h2 id="never-title" className="sr-only">What FillScore never does</h2>
           <p data-split className="max-w-[22ch] text-[clamp(2rem,4.6vw,4rem)] leading-[1.02] font-black tracking-[-0.04em] text-ui-ink">
-            No trade calls. No predictions. No numbers from a language model.
+            No trade calls. No predictions. No language-model numbers.
           </p>
         </section>
 

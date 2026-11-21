@@ -31,6 +31,13 @@ export function describeStrip(body: unknown, feesNotMeasured: boolean): StripVie
     })
   }
   const fees = parts.find((p) => p.key === 'fees')
-  const sentence = fees && fees.usd > 0 ? `Fees were ${fees.amount} of the ${formatUsd(s.strip.totalUsd)}.` : `The orders paid ${formatUsd(s.strip.totalUsd)}.`
+  const market = parts.find((p) => p.key === 'market')
+  const total = formatUsd(s.strip.totalUsd)
+  // the fee figure names its basis when it was not measured (design v3.1 review); when the market part is a price
+  // improvement larger than the other costs, fees exceed the total, so the sentence states all three as served
+  const feesName = fees?.dashed ? 'Fees, at the published rate,' : 'Fees'
+  const sentence = fees && market && market.usd < 0
+    ? `${feesName} were ${fees.amount}; measured against market prices the cost was ${market.amount}, a price improvement; ${total} in total.`
+    : fees && fees.usd > 0 ? `${feesName} were ${fees.amount} of the ${total}.` : `The orders paid ${total}.`
   return { parts, sentence }
 }

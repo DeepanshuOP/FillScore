@@ -48,7 +48,7 @@ function Total({ headline, periodLabel, sampleNote }: Pick<OverviewProps, 'headl
   return (
     <Chapter n={1} label="Total" title={`What the orders paid, ${periodLabel}`} id="total" testId="headline" className="border-t-0 pt-0">
       {sampleNote ? (
-        <p data-testid="sample-line" className="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-[13px] tracking-[0.04em] text-ui-ink uppercase">
+        <p data-testid="sample-line" className="mb-8 font-mono text-[13px] tracking-[0.04em] text-ui-ink uppercase">
           <span>Sample data: synthetic trader, real prices</span>
           <MarginNote label="sample data">
             <p>{sampleNote}</p>
@@ -63,7 +63,7 @@ function Total({ headline, periodLabel, sampleNote }: Pick<OverviewProps, 'headl
             style={{ fontSize: `min(15rem, calc(100cqi / ${(formatUsd(headline.totalUsd).length * 0.6).toFixed(2)}))` }}>
             <SplitFigure value={headline.totalUsd} text={formatUsd(headline.totalUsd)} format={USD_FORMAT} />
           </p>
-          <p className="mt-7 flex flex-wrap items-baseline gap-x-2 text-[clamp(1.25rem,1.9vw,1.625rem)] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
+          <p className="mt-7 text-[clamp(1.25rem,1.9vw,1.625rem)] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
             <span>The {headline.orders.toLocaleString('en-US')} {headline.orders === 1 ? 'order' : 'orders'} paid{' '}
               <Figure value={headline.totalUsd} text={formatUsd(headline.totalUsd)} format={USD_FORMAT} /> in total.</span>
             <MarginNote label="the total in basis points">
@@ -113,7 +113,7 @@ function Grade({ grade, band, v1, v1Note, periodLabel, account }: Pick<OverviewP
   }, [play, ref])
   return (
     <Chapter n={2} label="Grade" title="Measured grade" id="grade">
-      <div ref={ref} className="flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:gap-12">
+      <div ref={ref} className="flex flex-col items-start gap-6 pt-6 sm:flex-row sm:items-center sm:gap-12">
         {grade?.kind === 'graded' ? (
           // below the desktop layout the stamp's -7° turn swings its top-left corner past its box (design v3 fixes A10)
           <div className="py-4 pl-5 sm:pl-2">
@@ -126,7 +126,7 @@ function Grade({ grade, band, v1, v1Note, periodLabel, account }: Pick<OverviewP
         ) : <div className="h-[230px] w-[280px]" aria-label="Loading the measured grade" />}
         <div className="flex max-w-[34ch] flex-col gap-3">
           {grade?.kind === 'graded' ? (
-            <p className="flex flex-wrap items-baseline gap-x-2 text-[20px] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
+            <p className="text-[20px] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
               <span>Graded {grade.letter}, {formatScore(grade.score)} of 100.</span>
               <MarginNote label="the measured score">
                 <p>Measured score, scoring {grade.scoringVersion}{band ? `; band ${formatScore(band[0])} to ${formatScore(band[1])}` : ''}.</p>
@@ -134,8 +134,9 @@ function Grade({ grade, band, v1, v1Note, periodLabel, account }: Pick<OverviewP
               </MarginNote>
             </p>
           ) : null}
-          <p data-testid="score-v1-label" className="flex flex-wrap items-baseline gap-x-2 text-[16px] text-ui-graphite">
-            {v1 ? <span>Rule-based score, grade {v1.grade}</span> : <span>Rule-based score (v1): not computed for this data.</span>}
+          <p data-testid="score-v1-label" className="text-[16px] text-ui-graphite">
+            {/* design v3.1 review: the visible line says it is the frozen v1 grade, so A beside B reads as two scorings */}
+            {v1 ? <span>Rule-based score, grade {v1.grade} (v1, frozen)</span> : <span>Rule-based score (v1): not computed for this data.</span>}
             {v1 ? (
               <MarginNote label="the rule-based score">
                 <p data-testid="score-v1-detail">{formatScore(v1.score)} of 100, {v1.basis ?? 'published grade of the earlier demo data, scoring v1'}.</p>
@@ -300,7 +301,7 @@ function Expected({ c, account }: { c: CostVsExpected | undefined; account: stri
       <h3 id="cost-vs-expected-t" className="sr-only">Cost against expected</h3>
       {sentence && c && !c.insufficient ? (
         <div ref={ref} className="flex flex-col gap-3">
-          <p className="flex flex-wrap items-baseline gap-x-2 text-[20px] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
+          <p className="text-[20px] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
             <span>Market orders paid <Fig text={formatSignedBps(c.paidBps)} exact={exactTitle(c.paidBps, 'bps')} /> against <Fig text={formatSignedBps(c.expectedBps)} exact={exactTitle(c.expectedBps, 'bps')} /> expected.</span>
             <MarginNote label="cost against expected">
               <p data-testid="cost-sentence">{sentence}</p>
@@ -337,8 +338,9 @@ function Outcomes({ ordersBody }: { ordersBody: unknown }) {
         <ValueState state="not-computed" label="Order outcomes" reason="No orders were recorded for these fills." />
       ) : (
         <div className="flex flex-col gap-4">
-          <p className="flex flex-wrap items-baseline gap-x-2 text-[20px] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
-            <span>Orders {(counts?.orders ?? o.total).toLocaleString('en-US')}</span>
+          {/* demoted (design v3.1 review): the ruler carries chapter 05; the outcomes are its second, quieter line */}
+          <p className="text-[16px] text-ui-graphite">
+            <span>How the {(counts?.orders ?? o.total).toLocaleString('en-US')} orders ended</span>
             <MarginNote label="order outcomes">
               {counts ? <p data-testid="orders-counts">{fillsLine(counts)}</p> : null}
               <p>How each order ended, from the exchange&rsquo;s order records.{per > 1 ? ` One stroke stands for ${per} orders.` : ''}</p>

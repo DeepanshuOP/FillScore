@@ -44,7 +44,7 @@ export function CostRuler({ diff, low, high, labels, n, draw = false }: {
             {ticks.map((v) => (
               <g key={v}>
                 <line x1={x(v)} x2={x(v)} y1={Y} y2={Y + (Math.abs(v) < 1e-9 ? 10 : 6)} stroke="var(--ui-graphite)" />
-                <text x={x(v)} y={Y + 22} textAnchor="middle" className="fill-ui-graphite font-mono text-[10px]">{fmt(v)}</text>
+                <text x={x(v)} y={Y + 22} textAnchor="middle" className="fill-ui-graphite font-mono text-[11px]">{fmt(v)}</text>
               </g>
             ))}
             {hasRange ? (
@@ -55,12 +55,13 @@ export function CostRuler({ diff, low, high, labels, n, draw = false }: {
             ) : null}
             <circle cx={x(0)} cy={Y} r={5.5} fill="var(--ui-raised)" stroke="var(--ui-ink)" strokeWidth={1.5} />
             <circle cx={x(diff)} cy={Y} r={5} fill="var(--ui-ink)" />
-            <text x={x(diff) + (paidLeft ? -8 : 8)} y={Y + 40} textAnchor={paidLeft ? 'end' : 'start'} className="fill-ui-ink text-[13px] font-bold">paid {labels.diff}</text>
+            <text x={x(diff) + (paidLeft ? -8 : 8)} y={Y + 40} textAnchor={paidLeft ? 'end' : 'start'} className="fill-ui-ink text-[13px] font-bold">difference {labels.diff}</text>
             <text x={x(0) + (paidLeft ? 8 : -8)} y={Y + 40} textAnchor={paidLeft ? 'start' : 'end'} className="fill-ui-graphite text-[13px]">expected 0</text>
           </svg>
         ) : null}
       </div>
-      <figcaption className="font-mono text-[11px] text-ui-graphite">PAID MINUS EXPECTED, BPS. n = {n} market orders</figcaption>
+      {/* design v3.1 review: a caption is set in the sans; the dot is the difference, not the paid cost */}
+      <figcaption className="text-[13px] text-ui-graphite">Paid minus expected, in bps, over {n} market orders. Zero is the expected cost.</figcaption>
     </figure>
   )
 }

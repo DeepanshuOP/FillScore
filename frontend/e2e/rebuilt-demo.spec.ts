@@ -35,7 +35,7 @@ test('dashboard of a rebuilt demo: v1-only views say "not computed", measured vi
   // measured views
   const orders = page.getByTestId('orders-panel')
   await expect(orders).toBeVisible()
-  await expect(orders).toContainText(/Orders\s*5(?!\d)/)
+  await expect(orders).toContainText(/How the 5 orders ended/)   // design v3.1 review wording
   await expect(orders).toContainText(/Filled\s*3(?!\d)/)
   await expect(orders).toContainText(/Unfilled\s*1(?!\d)/)
   // design v3.1: resting times and the unfilled note are in the outcomes fold, the medians in the "Lines" fold

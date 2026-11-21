@@ -18,6 +18,7 @@ const ROWS = [
 ]
 const LINKS = [
   { href: '/verify', title: 'Verify a pack', text: 'Drop a pack in; each hash and the signature are checked in the browser.' },
+  { href: 'https://github.com/DeepanshuOP/FillScore/tree/main/packages/fillscore-metrics', title: 'fillscore-metrics', text: 'The open measurement package.' },
 ]
 
 export function CheckIt() {
@@ -36,9 +37,10 @@ export function CheckIt() {
         <div>
           <h2 id="check-title" data-split className="display-lg text-ui-ink">Check it yourself.</h2>
           <p className="mt-4 max-w-[52ch] text-[17px] leading-7 text-ui-graphite">
-            Every audit ships signed.{' '}
+            Real audits can ship signed.
             <MarginNote label="the evidence pack">
               <p>An evidence pack lists every file behind an audit with its SHA-256 and signs the list with Ed25519. Anyone can check a pack in the browser; the file never leaves it.</p>
+              <p>Demo audits have no pack: nothing of a synthetic trader is signed. The sample beside lists the real sources of the order above.</p>
               <p>The signature covers the list, not each file: each file is checked against its hash.</p>
             </MarginNote>
           </p>
@@ -56,7 +58,7 @@ export function CheckIt() {
 
         <div ref={ref} className="fs-envelope" data-open={seen} aria-label="A manifest of file hashes and its signature">
           <div className="fs-env-sheet">
-            <p className="font-mono text-[11px] tracking-[0.06em] text-ui-graphite uppercase">manifest.json</p>
+            <p className="font-mono text-[11px] tracking-[0.06em] text-ui-graphite uppercase">sample manifest.json</p>
             <ul className="mt-3 border-t border-dashed border-ui-ink font-mono text-[12px]">
               {ROWS.map((r, i) => (
                 <li key={r.hash} className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-2 border-b border-dashed border-ui-rule py-2.5">

@@ -96,4 +96,5 @@
 .fs-reads[data-row='on'] .fs-reads-panel .fs-stamp { zoom: 1.15; }
 .fs-reads[data-row='on'] .fs-reads-count { display: block; position: absolute; top: 104px; left: var(--ui-gutter); }
 .fs-reads-prov { margin-bottom: 40px; }
+.fs-reads[data-row='on'] .fs-reads-num { display: none; }   /* the "1 / 3" counter numbers the row */
 .fs-reads[data-row='on'] .fs-reads-prov { position: absolute; bottom: 40px; left: var(--ui-gutter); margin: 0; }

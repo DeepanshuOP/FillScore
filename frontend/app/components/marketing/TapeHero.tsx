@@ -118,14 +118,14 @@ export function TapeHero() {
         <div>
           {/* design v3.1: one sentence; where the prints come from is in the pen margin note */}
           <p className="mb-5 max-w-[42ch] text-[17px] leading-normal text-ui-ink max-sm:text-[15px]">
-            FillScore writes down what each fill cost against the exchange&apos;s public prints.{' '}
+            FillScore writes down what each fill cost against the exchange&apos;s public prints.
             <MarginNote label="the prints on this tape">
               <p>{heroTape.symbol} on Binance, 28 January 2024, {utcTime(ENTRIES[0].ts).slice(0, 8)} to {utcTime(ENTRIES[ENTRIES.length - 1].ts).slice(0, 8)} UTC: {PRINTS} public prints from the daily trades file.</p>
               <p className="fs-note-field">sha256 {heroTape.sourceSha256}</p>
               <p>A filled triangle marks a buyer-initiated print, a hollow one a seller-initiated print.</p>
               <p>The {heroTape.side.toLowerCase()} order is a synthetic trader&apos;s; the prices are real.</p>
             </MarginNote>
-            {' '}Past only, never advice.
+            {' '}It never advises.
           </p>
           <div className="flex flex-wrap gap-2.5">
             <Link href="/dashboard?userId=demo-moderate" className={buttonClass('primary', 'lg', 'no-underline')}>Open the demo</Link>

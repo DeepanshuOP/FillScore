@@ -184,8 +184,8 @@ The objects, tokens, fonts and invariants above stay. v3.1 removes overload (pla
 
 ## 12. Decisions log
 
-- 2026-11-21 (design v3.1): "Quiet audit" rules (section 11). Visible words: landing 381 to 180, overview 378 to 107,
-  receipt 113 to 52 (1440). The overview's demo banner became one slim always-visible line; the B2 term table and
+- 2026-11-21 (design v3.1): "Quiet audit" rules (section 11). Visible words: landing 381 to 179, overview 378 to 122,
+  receipt 113 to 52 (1440). The small stamp (landing demo receipts) prints the period without the scoring line. The overview's demo banner became one slim always-visible line; the B2 term table and
   switch moved into the "Lines" fold under the strip; the overview's tape opens the receipt in place instead of
   switching to the Orders section.
 

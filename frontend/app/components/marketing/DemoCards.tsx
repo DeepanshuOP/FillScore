@@ -39,7 +39,7 @@ export function DemoCards() {
   return (
     <section aria-labelledby="demos-title" className="px-[var(--ui-gutter)] py-24 lg:py-36">
       <div className="max-w-3xl">
-        <h2 id="demos-title" data-split className="display-lg text-ui-ink">Finished audits.</h2>
+        <h2 id="demos-title" data-split className="display-lg text-ui-ink">Open a finished audit.</h2>
       </div>
       <ul className="mt-16 grid gap-12 md:grid-cols-3 md:gap-8 lg:gap-14">
         {DEMOS.map((d) => {

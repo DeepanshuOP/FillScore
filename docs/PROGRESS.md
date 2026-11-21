@@ -7,10 +7,23 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 "Tape & Receipt" stays; the problem is sensory overload. Research first, then rebuild the landing page, the
 overview and the receipt-opening flow with less text, designed visuals and better motion; then stop for review.
 
-- **Next concrete action: step 6, QA (full qa3 run at 1440 and 390 + Carbon copy, keyboard and reduced-motion
-  captures, break-ui, motion checklists, one reviewer subagent on the images, full suites, First Load JS, DESIGN.md
-  v3.1 rules, `docs/design/v31/` images + README, M8.md "Design v3.1" section).**
-- Status: steps 1-5 done; step 6 not started.
+- **Next concrete action: Design v3.1 ready for Deepanshu's review (`docs/design/v31/`).** Reason: steps 1-6 are done
+  (below; report `docs/milestones/M8.md` "Design v3.1"); local commits only, the push is his. The other screens follow
+  later with the same rules (DESIGN.md section 11).
+- Status: steps 1-6 done.
+- **Step 6, done.** qa3 `v31-2` and `v31-3` (48 states each, 1440 and 390, Carbon copy): no overflow, axe 0 serious or
+  critical, one transient overlap (the closing heading mid line-reveal at 390; clean with reduced motion), landing CLS
+  0 at both widths; reduced-motion captures clean; keyboard `keys31.ts` 11/11; break-ui `break31.ts` 60/60 after one
+  fix (2 px at 320); impeccable detector no findings, audit fixes (44 px touch target, memoised tape bars); margin-note
+  popups load on use (First Load JS `/` 323.6 to 325.2, `/dashboard` 384.3 to 387.9, `/login` 313.2 unchanged).
+  Reviewer subagent on the images: 15 findings, one fix pass (2 high fixed: two "paid" figures on the ruler, "every
+  audit ships signed"; 13 of the rest fixed or kept with reasons in M8.md). Final words (1440 / 390): landing 381 to
+  179 / 358 to 178, overview 378 to 122, receipt 113 to 52. Checks: frontend vitest 690, tsc 0, lint 0 errors
+  (17 warnings, unchanged), build ok, e2e 39 passed; backend 1041 passed, tsc 0 (payload changed in step 3 only).
+  DESIGN.md section 11, `docs/design/v31/` (14 images + README), M8.md section, LOG §AF.
+- **Open for Deepanshu:** the demo v2 grades read A for all three synthetic traders (served v2.3.0 values; the landing
+  shows them without the frozen v1 letters); the landing's type-size count did not fall (printed objects keep their
+  scale); motion was judged in headless Chromium only (no Safari, Firefox or real phone; drag tested with a mouse).
 - **Step 5, done.** Landing: hero and the giant $0.25 kept; the hero's proof paragraph moved into a pen note on
   "public prints"; the prints' B/S letters became up/down tape ticks (legend in that note); a visible "SYNTHETIC
   TRADER, REAL PRICES" line under the hero's buttons on a desktop (the phone prints it under the tape). New

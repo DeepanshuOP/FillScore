@@ -5,7 +5,7 @@ small captions at once) on the landing page, the overview and the receipt-openin
 plan and the keep / shorten / note / delete decision for every text block: `docs/design/v31-plan.md`; research:
 `docs/design/REFERENCES-v31.md`. Local commits only, not pushed.
 
-Captured by `frontend/e2e-shots/qa3.ts` (pass `v31-2`) from a local production build, headless Chromium, viewport only,
+Captured by `frontend/e2e-shots/qa3.ts` (pass `v31-3`, after the reviewer's fix pass) from a local production build, headless Chromium, viewport only,
 JPEG quality 60. Every API call is answered from fixtures cut from the offline demo build (demo-moderate, January 2024:
 synthetic trader, real prices); no database, no network.
 
@@ -13,8 +13,8 @@ synthetic trader, real prices); no database, no network.
 
 | Screen | 1440 before | 1440 after | 390 before | 390 after | Type sizes 1440, before to after |
 |---|---|---|---|---|---|
-| Landing page | 381 | 180 (−53%) | 358 | 179 (−50%) | 18 to 19 |
-| Overview | 378 | 107 (−72%) | 377 | 107 (−72%) | 15 to 10 |
+| Landing page | 381 | 179 (−53%) | 358 | 178 (−50%) | 18 to 19 |
+| Overview | 378 | 122 (−68%) | 377 | 122 (−68%) | 15 to 9 |
 | Receipt | 113 | 52 (−54%) | 113 | 52 (−54%) | 8 to 7 |
 
 A word is a token with a letter; figures are counted apart. Explanations moved behind pen margin notes and printed
@@ -40,7 +40,7 @@ the giant figures each keep their own printed scale.
 
 ## Checks behind these images
 
-- qa3 `v31-2`: 48 states (1440 and 390, Carbon copy at 1440): no overflow, axe 0 serious or critical; one overlap
+- qa3 `v31-3`: 48 states (1440 and 390, Carbon copy at 1440): no overflow, axe 0 serious or critical; one overlap
   reported at 390 on the landing "check" state, the closing heading still rising in its line mask when captured (the
   same state with reduced motion is clean); landing CLS 0 at 1440 and 390.
 - Reduced motion (`QA_REDUCED=1`, files `-rm` in `.work/qa3/`): landing, overview chapters and both receipts show the

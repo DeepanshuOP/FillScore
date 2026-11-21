@@ -30,7 +30,8 @@ export function GradeStamp({ grade, score, period, version, size = 'lg', classNa
       aria-label={`Graded ${grade}, ${formatScore(score)} of 100, ${period}, scoring ${version}`}>
       <div className="top" aria-hidden="true">GRADED</div>
       <div className="mid" aria-hidden="true"><span className="g">{grade}</span><span className="s">{formatScore(score)}</span></div>
-      <div className="bot" aria-hidden="true">{period.toUpperCase()}<br />SCORING {version}</div>
+      {/* design v3.1: the small stamp (landing demo receipts) prints the period only; the version stays in its label */}
+      <div className="bot" aria-hidden="true">{period.toUpperCase()}{size === 'sm' ? null : <><br />SCORING {version}</>}</div>
       {children}
     </div>
   )

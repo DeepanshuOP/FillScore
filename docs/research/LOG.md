@@ -370,3 +370,21 @@ Facts gathered by the docs-researcher subagent from official pages only; pages t
   PROGRESS; none built.
 - **Rotation about a scaled edge moves the corner.** `origin-left` for the phone's scale also moves the stamp's -7°
   pivot, swinging its top-left corner 12 to 15 px past its box.
+
+## AF. Design v3.1 "Quiet audit" (orders of 2026-11-21, second)
+
+Report: `docs/milestones/M8.md` ("Design v3.1"); references `docs/design/REFERENCES-v31.md`.
+- **Quiet award sites hold 14 to 40 visible words per viewport** (Hark hero 14, Factura 26, 1984 31, A24 36, counted
+  in the page); the loud ones 188 to 436 (CRL, Town, Grail's later sections). The v3 overview held 378 words.
+- **Radix HoverCard is unfit for explanations**: it ignores touch (`excludeTouch` in the source) and its docs say
+  screen readers ignore it. Margin notes are buttons opening a non-modal popover (fine pointer) or a sheet (touch).
+- **Lazy popups need an Escape path of their own.** With the popover code loaded on first use, an Escape pressed
+  before the code arrives reaches no dismiss layer; the mark handles Escape itself, and the code is prefetched on idle.
+- **A guard against "Escape refocuses and reopens" broke tabbing between notes** (the blur of one note set the
+  timestamp that blocked the next); once the popup takes no focus the guard is unnecessary.
+- **An overlay of screen-reader options above a drag surface swallows the press**: Draggable never started until the
+  layer got `pointer-events: none`.
+- **Click and pointer coordinates differ**: `MouseEvent.clientX` is whole pixels, `PointerEvent.clientX` fractional;
+  with 245 bars two orders 4 minutes apart sit 0.1 px apart, so a click must open the bar the preview shows, not
+  re-resolve the nearest.
+- **The expected cost is itself a model**: the landing's "never" line must say "language model", not "model".

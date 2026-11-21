@@ -140,7 +140,7 @@ export function MonthTape({ query, request, period, periodLabel, onOpen, account
   }
 
   const head = (
-    <p className="mb-4 flex flex-wrap items-baseline gap-x-2 text-[20px] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
+    <p className="mb-4 text-[20px] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
       <span>Each mark is one order; its height is what it cost.</span>
       <MarginNote label="reading the tape">
         <p>Height: the order&rsquo;s total cost in dollars, on one scale; a price improvement is drawn below the line; a short dashed mark is an order with no measured cost.</p>
@@ -243,7 +243,8 @@ const Bars = memo(function Bars({ ticks, days, x, base, zero, D, active, wideLab
       {days.map((d) => (
         <g key={d.t}>
           <line x1={x(d.t)} x2={x(d.t)} y1={base + 2} y2={base + 7} stroke="var(--ui-rule)" />
-          {(d.day % 2 === 1 && wideLabels) || d.day % 5 === 1 ? <text x={x(d.t) + 3} y={base + 18} className="fill-ui-graphite font-mono text-[10px]">{d.day}</text> : null}
+          {/* evenly stepped day labels: every odd day on a wide tape, else 1, 6, 11, ... (design v3.1 review) */}
+          {(wideLabels ? d.day % 2 === 1 : d.day % 5 === 1) ? <text x={x(d.t) + 3} y={base + 18} className="fill-ui-graphite font-mono text-[11px]">{d.day}</text> : null}
         </g>
       ))}
       <line x1={x(0)} x2={x(1)} y1={zero} y2={zero} stroke="var(--ui-rule)" vectorEffect={ve} />

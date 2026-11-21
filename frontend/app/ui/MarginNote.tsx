@@ -67,8 +67,10 @@ export function MarginNote({ label, children, className }: { label: string; chil
   const hoverOut = () => { clear(); timer.current = setTimeout(() => set(false), CLOSE_DELAY) }
   const isMark = useCallback((t: EventTarget | null) => !!btn.current && t instanceof Node && btn.current.contains(t), [])
 
+  // a no-break space glues the mark to the word before it, so it never wraps onto a line of its own (place the note
+  // straight after the text, with no space of its own)
   return (
-    <span className="relative inline-flex align-baseline">
+    <span className="whitespace-nowrap">{' '}<span className="relative inline-flex align-baseline">
       <button ref={btn} type="button" aria-label={`Note: ${label}`} data-margin-note="" aria-expanded={open} aria-haspopup="dialog" aria-controls={open ? id : undefined}
         className={cn('fs-note-mark inline-flex size-6 shrink-0 translate-y-[3px] items-center justify-center rounded-full text-ui-pen-ink', className)}
         onPointerEnter={(e) => { if (e.pointerType === 'mouse' && fine) hoverIn() }}
@@ -87,6 +89,6 @@ export function MarginNote({ label, children, className }: { label: string; chil
           <Popup fine={fine} open={open} onOpenChange={set} label={label} id={id} isMark={isMark} onPointerEnter={clear} onPointerLeave={hoverOut}>{children}</Popup>
         </Suspense>
       ) : null}
-    </span>
+    </span></span>
   )
 }
