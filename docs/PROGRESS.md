@@ -2,6 +2,20 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-21 (second), design v3.1 "Quiet audit" (steps 1-6; local commits, not pushed)
+
+Design v3 "Tape & Receipt" stays; the problem is sensory overload. Research first, then rebuild the landing page, the
+overview and the receipt-opening flow with less text, designed visuals and better motion; then stop for review.
+
+- **Next concrete action: step 2, write `docs/design/v31-plan.md` (rules + keep/shorten/move/delete for every text
+  block of the landing page, overview and receipt).**
+- Status: step 1 done; steps 2-6 not started.
+- **Step 1, done.** GSAP agent skills installed user-wide (`~/.claude/skills/gsap-*`, nothing in the repo) and read;
+  gsap.com docs and the libraries read through two docs-researcher digests; 11 sites opened and measured (5 Awwwards:
+  Hark, Equator, Grail, A24, CRL; 3 SiteInspire: Atalanta, 1984, Town; gsap.com showcase + Factura; 6 Osmo demos from
+  their preview videos, the code being members-only). Skipped with reasons: Cyera, two Peachworlds sites (WebGL),
+  Cafeteria (capture timeout). `docs/design/REFERENCES-v31.md`, 8 JPEGs in `docs/design/v31-refs/` (344 KB).
+
 ## Orders of 2026-11-21, design v3 fixes (A1-A10, B1-B3, QA; local commits, not pushed)
 
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
