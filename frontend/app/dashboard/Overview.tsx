@@ -6,7 +6,8 @@ import { ValueState } from '../ui/ValueState'
 import { GradeBadge } from '../ui/GradeBadge'
 import { GradeStamp } from '../ui/GradeStamp'
 import { Figure, SplitFigure, USD_FORMAT } from '../ui/Figure'
-import { formatScore, formatSignedBps, formatUsd } from '../ui/format'
+import { exactTitle, formatScore, formatSignedBps, formatUsd } from '../ui/format'
+import { Fig } from '../ui/Fig'
 import { CostRuler } from '../ui/charts/CostRuler'
 import { costSentence, costInsufficientReason, unmeasuredNote, type GradeView, type Headline } from './headline'
 import { describeOrders, type OrdersBody } from './ordersView'
@@ -130,7 +131,8 @@ function CostReceipt({ ordersBody, isDemo, headline }: { ordersBody: unknown; is
               <caption className="sr-only">Totals over the measured orders, in US dollars and basis points of the intended value</caption>
               <thead><tr className="g text-[11px]"><th scope="col" className="pb-1 text-left font-normal">TERM</th><th scope="col" className="text-right font-normal">BPS</th><th scope="col" className="text-right font-normal">USD</th><th scope="col" className="hidden text-right font-normal sm:table-cell">ORDERS</th></tr></thead>
               <tbody>
-                {v.totals.map((r) => {
+                {v.totals.map((r, ri) => {
+                  const ex = v.totalsExact?.[ri]
                   const total = r.label === 'Total'
                   const stated = isDemo && r.label === 'Fees'
                   return (
@@ -139,8 +141,8 @@ function CostReceipt({ ordersBody, isDemo, headline }: { ordersBody: unknown; is
                         {r.label}{stated ? <span className="g">*</span> : null}
                         {total ? null : <span aria-hidden="true" className="text-ui-rule max-sm:hidden"> ..................................................</span>}
                       </th>
-                      <td className={cn('pl-2 text-right whitespace-nowrap', total ? 'pt-2 font-ui text-[18px] font-bold text-ui-graphite' : 'text-ui-graphite')}>{r.bps}</td>
-                      <td className={cn('pl-3 text-right whitespace-nowrap', total ? 'pt-2 font-ui text-[2rem] leading-none font-black tracking-[-0.04em] max-sm:text-[1.5rem]' : '')}>{r.usd}</td>
+                      <td className={cn('pl-2 text-right whitespace-nowrap', total ? 'pt-2 font-ui text-[18px] font-bold text-ui-graphite' : 'text-ui-graphite')}><Fig text={r.bps} exact={ex?.bps} /></td>
+                      <td className={cn('pl-3 text-right whitespace-nowrap', total ? 'pt-2 font-ui text-[2rem] leading-none font-black tracking-[-0.04em] max-sm:text-[1.5rem]' : '')}><Fig text={r.usd} exact={ex?.usd} /></td>
                       <td className="hidden pl-3 text-right whitespace-nowrap text-ui-graphite sm:table-cell">{total ? '' : r.n.split(' ')[0]}</td>
                     </tr>
                   )
@@ -157,9 +159,9 @@ function CostReceipt({ ordersBody, isDemo, headline }: { ordersBody: unknown; is
         <div data-testid="orders-shortfall" className="min-w-0 self-start">
           <h3 className="text-[1.125rem] font-bold tracking-[-0.02em] text-ui-ink">Median per order</h3>
           <dl className="mt-2 border-t border-ui-ink font-mono text-[13px]">
-            {v.shortfall.map(([label, value]) => (
+            {v.shortfall.map(([label, value], si) => (
               <div key={label} className="flex items-baseline justify-between gap-4 border-b border-dashed border-ui-rule py-1.5">
-                <dt className="text-ui-graphite">{label}</dt><dd className="text-ui-ink">{value}</dd>
+                <dt className="text-ui-graphite">{label}</dt><dd className="text-ui-ink"><Fig text={value} exact={v.shortfallExact?.[si]} /></dd>
               </div>
             ))}
           </dl>
@@ -184,8 +186,8 @@ function Expected({ c }: { c: CostVsExpected | undefined }) {
       {sentence && c && !c.insufficient ? (
         <div className="mt-4 flex flex-col gap-3">
           <dl className="grid grid-cols-3 gap-3 font-mono text-[13px]">
-            <div><dt className="text-ui-graphite">PAID</dt><dd className="font-ui text-[1.375rem] font-bold tracking-[-0.02em] text-ui-ink">{formatSignedBps(c.paidBps)}</dd></div>
-            <div><dt className="text-ui-graphite">EXPECTED</dt><dd className="font-ui text-[1.375rem] font-bold tracking-[-0.02em] text-ui-ink">{formatSignedBps(c.expectedBps)}</dd></div>
+            <div><dt className="text-ui-graphite">PAID</dt><dd className="font-ui text-[1.375rem] font-bold tracking-[-0.02em] text-ui-ink"><Fig text={formatSignedBps(c.paidBps)} exact={exactTitle(c.paidBps, 'bps')} /></dd></div>
+            <div><dt className="text-ui-graphite">EXPECTED</dt><dd className="font-ui text-[1.375rem] font-bold tracking-[-0.02em] text-ui-ink"><Fig text={formatSignedBps(c.expectedBps)} exact={exactTitle(c.expectedBps, 'bps')} /></dd></div>
             <div><dt className="text-ui-graphite">DIFFERENCE</dt><dd className="font-ui"><ValueState state="measured" label="Difference" value={formatSignedBps(c.excessBps)} size="md" /></dd></div>
           </dl>
           <CostRuler diff={c.excessBps} low={c.lowBps} high={c.highBps} n={c.n}

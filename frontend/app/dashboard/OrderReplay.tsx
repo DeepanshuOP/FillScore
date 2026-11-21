@@ -5,7 +5,8 @@ import { Dialog } from 'radix-ui';
 import { Drawer } from 'vaul';
 import { track } from '../lib/track';
 import { useToast } from '../ui/Toast';
-import { formatSignedBps, formatUsd } from '../ui/format';
+import { exactTitle, formatSignedBps, formatUsd } from '../ui/format';
+import { Fig } from '../ui/Fig';
 import { bars, barsWidth, canonicalJson, sha256Hex } from '../ui/hash';
 import { describeReplay, type ReplayApi } from './explainView';
 import { formatUtc, withParams, type OrderRow } from './ordersTable';
@@ -156,13 +157,13 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
                 <div key={`${d.label}:${d.source.field}`} className="contents">
                   <span className="g">{String(i + 1).padStart(2, '0')}</span>
                   <span className="lab" title={`Source field: ${String(d.source.field)}`}>{d.partOf ? '  ' : ''}{d.label}</span>
-                  <span className="num g">{cell(d.bps, formatSignedBps)}</span><span className="num">{cell(d.usd, formatUsd)}</span>
+                  <span className="num g"><Fig text={cell(d.bps, formatSignedBps)} exact={exactTitle(d.bps, 'bps')} /></span><span className="num"><Fig text={cell(d.usd, formatUsd)} exact={exactTitle(d.usd, 'usd')} /></span>
                 </div>
               ))}
             </div>
           ) : <p className="g">INSUFFICIENT DATA: NO COST TERMS WERE STORED</p>}
           <div className="fs-perf" aria-hidden="true" />
-          <div className="fs-totalline"><span className="k">TOTAL</span><span className="b">{cell(total?.bps, formatSignedBps)}</span><span className="u">{cell(total?.usd, formatUsd)}</span></div>
+          <div className="fs-totalline"><span className="k">TOTAL</span><span className="b"><Fig text={cell(total?.bps, formatSignedBps)} exact={exactTitle(total?.bps, 'bps')} /></span><span className="u"><Fig text={cell(total?.usd, formatUsd)} exact={exactTitle(total?.usd, 'usd')} /></span></div>
           {ec ? (
             <p className="g mt-1.5">{ec.expectedBps === null ? `EXPECTED COST: INSUFFICIENT DATA (${(ec.reason ?? 'no reason was stored').toUpperCase()})`
               : `ORDERS LIKE IT: MODELLED ${formatSignedBps(ec.expectedBps)}${ec.lowBps !== null && ec.highBps !== null ? `, ${Math.round(ec.level * 100)}% RANGE ${formatSignedBps(ec.lowBps)} TO ${formatSignedBps(ec.highBps)}` : ''}`}</p>

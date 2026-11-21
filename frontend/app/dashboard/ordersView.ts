@@ -3,7 +3,7 @@
  * rested, the implementation shortfall and the cost of unfilled orders. Pure: every number is copied from the API,
  * which computed it from stored documents. A block that was not measured is null, never zero.
  */
-import { formatSignedBps, formatUsd } from '../ui/format';
+import { exactTitle, formatSignedBps, formatUsd } from '../ui/format';
 
 interface Median { execution: number | null; spread: number | null; impactTiming: number | null; opportunity: number | null; total: number | null }
 /** Total over all measured orders for one term: USD, bps of the intended notional of the orders that have it, their count. */
@@ -21,6 +21,9 @@ export interface OrdersView {
   resting: { median: string; p90: string; n: string } | null;
   shortfall: Array<[string, string]> | null;
   totals: Array<{ label: string; usd: string; bps: string; n: string }> | null;
+  /** Beside `totals` and `shortfall`, row for row: the exact value of a figure shown below its precision (A3), or null. */
+  totalsExact: Array<{ usd: string | null; bps: string | null }> | null;
+  shortfallExact: Array<string | null> | null;
   shortfallNote: string | null;
   unfilledNote: string | null;
 }
@@ -70,6 +73,10 @@ export function describeOrders(body: unknown): OrdersView | null {
           : { label, usd: 'not computed', bps: 'not computed', n: '' };
       })
       : null,
+    totalsExact: b.shortfall?.totals
+      ? TERM_LABELS.map(([k]) => { const t = b.shortfall!.totals![k]; return { usd: exactTitle(t?.usd, 'usd'), bps: exactTitle(t?.bps, 'bps') }; })
+      : null,
+    shortfallExact: m ? [m.execution, m.spread, m.impactTiming, m.opportunity, m.total].map((v) => exactTitle(v, 'bps')) : null,
     shortfallNote: b.shortfall
       ? `Median of ${plural(b.shortfall.n, 'measured order', 'measured orders')}${b.shortfall.unmeasured > 0
         ? `; ${plural(b.shortfall.unmeasured, 'order was', 'orders were')} not measured` : ''}.`

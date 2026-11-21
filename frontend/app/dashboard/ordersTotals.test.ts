@@ -44,7 +44,9 @@ describe('orders panel: totals beside medians', () => {
   });
   it('medians use the shared formatter: no "-0.0 bps"', () => {
     // 2026-11-20: rebuilt screens print a true minus sign (U+2212), formatSignedBps; the value and the rule are unchanged.
-    expect(v.shortfall![0]).toEqual(['Execution cost', '>−0.01 bps']);
+    expect(v.shortfall![0]).toEqual(['Execution cost', '−0.00 bps']);
+    expect(v.shortfallExact![0]).toBe('Exactly −0.0004000 bps');   // A3: the exact value for the title
+    expect(v.shortfallExact![4]).toBeNull();                       // 10 bps is shown in full
     expect(JSON.stringify(v)).not.toMatch(/-0\.0 bps|−0\.0 bps/);
   });
   it('totals the API did not send are absent, not zero', () => {

@@ -3,10 +3,10 @@
  *
  * The rule of formatUsd (M8 part 1, 2026-11-20, replacing the lab's formatMoney): two decimals everywhere, with
  * thousands separators; a negative value takes a true minus sign (U+2212); a value that is not zero but would read
- * "$0.00" reads "<$0.01" (or ">−$0.01" if negative); a value that is not a finite number reads "not computed", never zero.
+ * "$0.00" reads "<$0.01" (or "−$0.00" if negative, design v3 fixes A3); a value that is not a finite number reads "not computed", never zero.
  */
 import { describe, expect, it } from 'vitest'
-import { formatScore, formatSignedBps, formatUsd } from './format'
+import { exactTitle, formatScore, formatSignedBps, formatUsd } from './format'
 
 describe('formatUsd', () => {
   it('two decimals at one dollar and above', () => {
@@ -25,7 +25,7 @@ describe('formatUsd', () => {
     expect(formatUsd(0.004)).toBe('<$0.01')
     expect(formatUsd(0.007739437838871307)).toBe('$0.01')   // 0.0077 rounds to 0.01
     expect(formatUsd(0.0003)).toBe('<$0.01')
-    expect(formatUsd(-0.004)).toBe('>−$0.01')
+    expect(formatUsd(-0.004)).toBe('−$0.00')     // design v3 fixes A3: a tiny negative reads −$0.00; the exact value goes in the title
     expect(formatUsd(0)).toBe('$0.00')
     expect(formatUsd(-0)).toBe('$0.00')
   })
@@ -55,8 +55,25 @@ describe('formatSignedBps', () => {
     expect(formatSignedBps(-0.2053004272161476)).toBe('−0.21 bps')
     expect(formatSignedBps(0.1104242840781983)).toBe('0.11 bps')
     expect(formatSignedBps(0)).toBe('0.0 bps')
-    expect(formatSignedBps(-0.004)).toBe('>−0.01 bps')
+    expect(formatSignedBps(-0.004)).toBe('−0.00 bps')   // A3: tiny negative
+    expect(formatSignedBps(0.004)).toBe('<0.01 bps')    // A3: tiny positive keeps "<0.01"
     expect(formatSignedBps(4.7885075818029454)).toBe('4.8 bps')
     expect(formatSignedBps(-12.34)).toBe('−12.3 bps')
+  })
+})
+
+describe('exactTitle (design v3 fixes A3: the exact value of a figure below display precision)', () => {
+  it('is null for a figure the display shows in full, and for zero or a missing value', () => {
+    expect(exactTitle(12.34, 'bps')).toBeNull()
+    expect(exactTitle(0.01, 'usd')).toBeNull()       // reads $0.01
+    expect(exactTitle(0.005, 'usd')).toBeNull()      // rounds to $0.01 at two decimals
+    expect(exactTitle(0, 'bps')).toBeNull()
+    expect(exactTitle(null, 'usd')).toBeNull()
+  })
+  it('gives the value to four significant figures with its unit and a true minus sign', () => {
+    expect(exactTitle(-0.004, 'bps')).toBe('Exactly −0.004000 bps')
+    expect(exactTitle(0.0006, 'bps')).toBe('Exactly 0.0006000 bps')
+    expect(exactTitle(-0.0042137, 'usd')).toBe('Exactly −$0.004214')
+    expect(exactTitle(0.0003, 'usd')).toBe('Exactly $0.0003000')
   })
 })

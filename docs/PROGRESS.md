@@ -7,7 +7,14 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: A3 (tiny-value display in the frontend formatter).**
+- **Next concrete action: A4 (empty band and doubled rule under the section tabs).**
+- **A3, done.** `app/ui/format.ts` only: a negative value below display precision prints "−0.00 bps" / "−$0.00", a
+  positive one keeps "<0.01 bps" / "<$0.01"; `exactTitle()` gives "Exactly −0.004000 bps" for the title and the
+  screen-reader text (`app/ui/Fig.tsx`), used on the order receipt's cost lines and total, the overview's cost receipt,
+  medians and cost against expected. `utils/formatBps.ts` (shared with the backend PDF, parity-tested) is unchanged.
+  `git diff --stat -- backend ml-service evals golden frontend/app/utils/formatBps.ts frontend/app/lib/downloads.ts` is
+  empty: no evidence pack, PDF, CSV or golden output changes. Tests updated to the new strings (`format.test.ts`,
+  `ordersTotals.test.ts`); e2e `rebuilt-demo.spec.ts` expects the new strings and the title (the ordered change).
 - **A2, kept (nothing changed; for Deepanshu).** The overview shows 84.8 for demo-moderate's v1 grade. Chain: Atlas
   `audits` (latest document of `demo-moderate`, `avgFillScore`; not read here, Atlas is off limits) → `GET
   /api/audit/score` (`backend/src/routes/audit.ts`, serves the stored audit unchanged; `rebuiltDemo.test.ts` checks it

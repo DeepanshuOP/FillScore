@@ -79,7 +79,7 @@ export async function reshapeDemoAsRebuilt(accountId: string, uri = process.env.
     })
     await db.collection('order_measurements').insertMany([
       // Intended notional and fees are stated, so the totals per term can be shown. Impact is a tiny negative on purpose
-      // (-0.0004 and -0.0006 bps): the page must show ">-0.01 bps", never "-0.0 bps".
+      // (-0.0004 and -0.0006 bps): the page must show "−0.00 bps" with the exact value in the title (design v3 fixes A3), never "-0.0 bps".
       m('1', { intendedNotional: 10000, executionBps: 2, spreadBps: 1, impactTimingBps: -0.0004, opportunityBps: 0, feesBps: 10, totalBps: 2.5 }),
       m('2', { intendedNotional: 20000, executionBps: 4, spreadBps: 1, impactTimingBps: -0.0006, opportunityBps: 0, feesBps: 10, totalBps: 4.5 }),
       m('4', { intendedNotional: 5000, executionBps: 0, spreadBps: null, impactTimingBps: null, opportunityBps: 7, feesBps: 0, totalBps: 7 }),

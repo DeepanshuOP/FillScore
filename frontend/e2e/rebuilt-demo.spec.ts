@@ -79,8 +79,10 @@ test('no negative zero; totals per term in USD and bps; grammar of the unfilled 
   await expect(row('Unfilled orders')).toContainText('1.0 bps')
   await expect(row('Total')).toContainText('$15.00')
   await expect(row('Total')).toContainText('4.3 bps')
-  await expect(row('Impact and timing')).toContainText('>−$0.01')
-  await expect(row('Impact and timing')).toContainText('>−0.01 bps')
+  // design v3 fixes A3 (ordered): a tiny negative reads "−$0.00" / "−0.00 bps", the exact value in the title
+  await expect(row('Impact and timing')).toContainText('−$0.00')
+  await expect(row('Impact and timing')).toContainText('−0.00 bps')
+  await expect(row('Impact and timing').locator('[title^="Exactly −"]').first()).toBeAttached()
   // one unfilled order in this fixture: "its"
   await expect(page.getByTestId('orders-unfilled')).toContainText('its median cost')
 })
