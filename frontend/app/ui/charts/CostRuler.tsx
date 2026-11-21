@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { bracketPath } from '../pen'
 
 /**
@@ -9,8 +9,10 @@ import { bracketPath } from '../pen'
  * and the pen brackets the 90% interval of the difference above the ruler. Every value is also printed as text: the pen
  * bracket doubles the penInk label, it never states the interval alone.
  */
-export function CostRuler({ diff, low, high, labels, n, draw = false }: {
+export function CostRuler({ diff, low, high, labels, n, draw = false, note }: {
   diff: number; low: number | null; high: number | null; n: number
+  /** Design v3.1 fixes A6: the pen margin note on the dot (paid, expected, difference, as served). */
+  note?: ReactNode
   /** Design v3.1: draw the pen's bracket once (the overview chapter's first entry); otherwise it is simply there. */
   draw?: boolean
   labels: { diff: string; low: string; high: string; level: string }
@@ -61,7 +63,7 @@ export function CostRuler({ diff, low, high, labels, n, draw = false }: {
         ) : null}
       </div>
       {/* design v3.1 review: a caption is set in the sans; the dot is the difference, not the paid cost */}
-      <figcaption className="text-[13px] text-ui-graphite">Paid minus expected, in bps, over {n} market orders. Zero is the expected cost.</figcaption>
+      <figcaption className="text-[13px] text-ui-graphite">Paid minus expected, in bps, over {n} market orders. Zero is the expected cost.{note}</figcaption>
     </figure>
   )
 }

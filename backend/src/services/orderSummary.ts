@@ -88,6 +88,21 @@ export function costStrip(t: { total?: TermT; fees?: TermT } | null | undefined)
     };
 }
 
+/**
+ * Design v3.1 fixes A1: the part of the headline total that sits in orders that never filled (a final status other than
+ * FILLED, nothing executed). Nobody paid it: it is the modelled cost of the missed fill, so a copy line that names it
+ * must say "cost", never "paid". `usd` is the unfilled orders' total cost summed the same way as the headline (termTotals);
+ * `count` is every unfilled order, `measured` those with a measurement. null dollars (never zero) when unfilled orders
+ * exist and none was measured. Computed on read; `summariseOrders` is unchanged.
+ */
+export function unfilledCost(orders: OrderLike[], measurements: MeasurementLike[]) {
+    const ids = new Set<string>();
+    for (const o of orders) if (FINAL.has(o.status) && o.status !== 'FILLED' && o.executedQty <= o.origQty * QTY_TOL) ids.add(keyOf(o));
+    const sf = measurements.filter(m => m.shortfall && !m.unmeasuredReason && ids.has(keyOf(m))).map(m => m.shortfall as Record<string, any>);
+    if (ids.size === 0) return { usd: 0, count: 0, measured: 0 };
+    return { usd: termTotals(sf)?.total?.usd ?? null, count: ids.size, measured: sf.length };
+}
+
 export function summariseOrders(orders: OrderLike[], measurements: MeasurementLike[]) {
     const counts = { total: orders.length, filled: 0, partial: 0, unfilled: 0, open: 0 };
     const unfilledIds = new Set<string>();

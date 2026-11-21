@@ -32,7 +32,7 @@ export function CheckIt() {
     return () => io.disconnect()
   }, [])
   return (
-    <section aria-labelledby="check-title" className="border-y border-ui-ink px-[var(--ui-gutter)] py-24 lg:py-36">
+    <section aria-labelledby="check-title" className="border-y border-ui-ink px-[var(--ui-gutter)] py-24 lg:pt-20 lg:pb-36">
       <div className="grid gap-16 lg:grid-cols-[1fr_1.1fr] lg:items-center">
         <div>
           <h2 id="check-title" data-split className="display-lg text-ui-ink">Check it yourself.</h2>

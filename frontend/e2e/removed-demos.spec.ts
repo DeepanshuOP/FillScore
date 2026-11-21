@@ -17,5 +17,6 @@ test('demo picker lists only the three remaining demos', async ({ page }) => {
   await expect(page.getByText('The Bybit Trader')).toHaveCount(0)
   await expect(page.getByText('The OKX Trader')).toHaveCount(0)
   await expect(page.getByText('The Multi-Exchange Trader')).toHaveCount(0)
-  await expect(page.getByText('The Disciplined Trader')).toHaveCount(1)
+  // A3: the demo is named by what it does (selector text only)
+  await expect(page.getByText('Limit orders, daytime')).toHaveCount(1)
 })

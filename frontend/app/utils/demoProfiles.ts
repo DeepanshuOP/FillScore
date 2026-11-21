@@ -25,8 +25,10 @@ export const DEMO_PROFILES: DemoProfile[] = [
     exchange: 'binance',
     exchangeLabel: 'BINANCE',
     exchangeColor: '#F0B90B',
-    archetype: 'The Disciplined Trader',
-    tagline: 'Limit orders. Trades 8–16 UTC. Minimal slippage.',
+    // Design v3.1 fixes A3 (2026-11-22): the names state what differs between the three generated traders, read from
+    // ml-service/demo_v2/decisions.py and the built orders (all 144 orders limit, 88% of fills 08-15 UTC), and imply no ranking.
+    archetype: 'Limit orders, daytime',
+    tagline: 'Every order a limit order, placed in the UTC daytime.',
     score: 95.88542572161496,
   },
   {
@@ -34,8 +36,9 @@ export const DEMO_PROFILES: DemoProfile[] = [
     exchange: 'binance',
     exchangeLabel: 'BINANCE',
     exchangeColor: '#F0B90B',
-    archetype: 'The Moderate Trader',
-    tagline: 'Mixed strategy. Average execution quality.',
+    // built orders: 161 limit and 84 market of 245; 54% of fills 08-15 UTC, the rest across the evening
+    archetype: 'Mixed orders, mixed hours',
+    tagline: 'Limit and market orders, placed by day and in the evening (UTC).',
     score: 84.80888516669383,
   },
   {
@@ -43,8 +46,9 @@ export const DEMO_PROFILES: DemoProfile[] = [
     exchange: 'binance',
     exchangeLabel: 'BINANCE',
     exchangeColor: '#F0B90B',
-    archetype: 'The Aggressive Trader',
-    tagline: 'Market orders. Night trading. High fee drag.',
+    // built orders: 242 market and 69 limit of 311; 6% of fills 08-15 UTC (generator hours 21:00 to 03:59 UTC)
+    archetype: 'Market orders, night',
+    tagline: 'Mostly market orders, placed at night (UTC).',
     score: 60.67469266790485,
   },
 ];

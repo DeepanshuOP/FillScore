@@ -7,10 +7,48 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 v3.1 is approved and live. This order: STATUS.md, fix the review findings, bring every other screen to DESIGN.md
 section 11, QA, then stop for review.
 
-- **Next concrete action: A1 (unfilled-order share on `/audit/orders-summary`, "cost" not "paid").**
-- Step 0 done: `docs/STATUS.md` written. Dependabot: 0 open alerts by API, `npm audit` 0 in frontend, backend and
-  mcp-server, `pip-audit` clean; nothing to patch (recorded in STATUS.md).
-- A1-A7, Part B, QA: not started.
+- **Next concrete action: Waiting for Deepanshu.** Reason: this run reached its 60-turn limit after step 0 and A1-A7.
+  Part B (all other screens to the v3.1 rules) and QA are **BLOCKED: turn limit, not started** (no screen of Part B was
+  touched; nothing is half done). To continue: Part B in at most 6 commits (Orders, Rules, Rankings, Council, Evidence |
+  Verify, Onboarding, Settings, Auth | Trades, Analytics, Methodology, Check | Share card, OG image, Legal, 404, Error),
+  recording `e2e-shots/words.ts` words and type sizes before and after; then qa3, the one reviewer, the checks and
+  `docs/milestones/M8.md` "Design v3.1 complete". The ordered final next-action text is not yet true.
+- **Step 0: done.** `docs/STATUS.md` (commit `334ec74`). Dependabot: 0 open alerts by API (`gh api ...dependabot/alerts`),
+  `npm audit` 0 in frontend, backend and mcp-server, `pip-audit` clean; nothing to patch. The "1 high" banner is not
+  reproduced; cause unknown (STATUS.md).
+- **A1-A7: done, in ONE commit** (not one each: the items share `headline.ts`, `Overview.tsx` and the e2e specs, and
+  staging by hunk is interactive, which is not available here).
+  - A1 `unfilledCost()` in `orderSummary.ts`, `unfilledCost` on `/audit/orders-summary` (usd, count, measured; null
+    dollars when unfilled orders exist and none was measured). Tests `unfilledCost.test.ts` (hand: A 25 bps x $1,000 =
+    2.50, B 40 x 500 = 2.00, sum 4.50 over 2 orders; also the partly filled, open, unmeasured and per-symbol cases) and a
+    route assertion in `rebuiltDemo.test.ts`. Copy: `totalSentence` in `headline.ts` (test `totalSentence`): before "The
+    245 orders paid $52.08 in total."; after "The 245 orders cost $52.08, $10.63 of it in orders that never filled."
+    (demo-moderate, served `unfilledCost.usd` 10.631536). Also the chapter title ("What the orders cost") and the strip's
+    fallback sentence. No other surface said "paid" for such a total: landing, receipt, share card, OG image and PDF were
+    grepped (the ruler's "Paid minus expected" and the Fees rows are filled market orders and fees, kept).
+  - A2 `isUnfilled` / `circledLabel` in `ordersTable.ts` (test `unfilled outcome of a ledger row`): "$3.31, unfilled" from
+    the ledger row's stored status and fill count.
+  - A3 Names (decided by the generator `demo_v2/decisions.py` and the built orders: 144/144 limit; 161 limit and 84
+    market; 242 market and 69 limit; 88%, 54%, 6% of fills 08-15 UTC): "Limit orders, daytime", "Mixed orders, mixed
+    hours", "Market orders, night" (ids, locks and grades unchanged). Total cost printed on the landing receipts and in the
+    demo picker from the server's `shortfall.totals.total.bps`: 11.2, 11.7, 10.2 bps (test `totalBpsLabel`, hand values
+    20.39256/18174.007 = 11.2207, 52.07856/44411.78 = 11.7263, 62.35832/61261.90 = 10.1790).
+  - A4 Chapter 02 reads "Graded A, 93.4 of 100."; the v1 line is in the stamp's note ("The earlier rule-based grade, B
+    84.8, scoring v1, kept unchanged"). With no measured grade the v1 line and its note stay.
+  - A5 Footer "Fills 607, in 234 orders" from `orderCounts` (withFills + unrecorded; test `scopeFacts`).
+  - A6 `dotNote` (test): "Paid −0.095 bps, expected 0.110 bps, difference −0.205 bps." in a note on the ruler.
+  - A7 Landing: the tape is centred in the stage (`landing.css`); the gap between the tape and the headline at 1440 fell
+    from about 270 px to about 175 px, but the space above the tape grew from about 150 px to about 245 px, so the band
+    moved more than it vanished (open: judge the image `.work/look/a7-after-1440.jpg`). The band above "Check it
+    yourself" went from about 288 px of padding to about 144 px (set in CSS; not captured as an image). CLS was not
+    re-measured.
+  - e2e selector changes (text only): `rebuilt-demo.spec.ts` (two: "cost" not "paid"; "3, in 3 orders"),
+    `removed-demos.spec.ts` (demo name), `score-versions.spec.ts` (measured-grade line and note). `nav.test.ts`: the
+    account label.
+  - Checks: backend 1047 passed, tsc 0 (run after A1; no backend file changed after); frontend vitest 707 passed, tsc 0,
+    lint 0 errors (17 warnings, unchanged), `npm run build` ok; e2e: 37 passed and 2 failed, then the 2 failures fixed
+    and `rebuilt-demo` + `score-versions` rerun 9 passed (the full e2e was not rerun after that fix).
+- Part B, QA: **BLOCKED (turn limit), not started.**
 
 ## Orders of 2026-11-21 (second), design v3.1 "Quiet audit" (steps 1-6; local commits, not pushed)
 

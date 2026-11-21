@@ -138,6 +138,8 @@ describe('rebuilt demo (no per-trade v1 fields)', () => {
         expect(res.body.shortfall).toEqual({ n: 3, unmeasured: 1,
             medianBps: { execution: 2, spread: 1, impactTiming: 2, opportunity: 0, total: 4.5 }, totals: null });
         expect(res.body.unfilled).toEqual({ n: 1, medianOpportunityBps: 7 });
+        // A1: one unfilled order, measured, but these measurements state no notional, so no dollars: null, never 0
+        expect(res.body.unfilledCost).toEqual({ usd: null, count: 1, measured: 1 });
     });
 
     it('/orders-summary and /orders-ledger return the same counts (one server source, design v3 fixes A1)', async () => {

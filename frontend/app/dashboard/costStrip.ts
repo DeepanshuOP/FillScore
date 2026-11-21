@@ -38,6 +38,6 @@ export function describeStrip(body: unknown, feesNotMeasured: boolean): StripVie
   const feesName = fees?.dashed ? 'Fees, at the published rate,' : 'Fees'
   const sentence = fees && market && market.usd < 0
     ? `${feesName} were ${fees.amount}; measured against market prices the cost was ${market.amount}, a price improvement; ${total} in total.`
-    : fees && fees.usd > 0 ? `${feesName} were ${fees.amount} of the ${total}.` : `The orders paid ${total}.`
+    : fees && fees.usd > 0 ? `${feesName} were ${fees.amount} of the ${total}.` : `The orders cost ${total}.`
   return { parts, sentence }
 }

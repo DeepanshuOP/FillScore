@@ -24,7 +24,7 @@ describe('parseView, accountLabel, looksLikeOrderId', () => {
     expect(parseView(null)).toBe('overview')
   })
   it('labels', () => {
-    expect(accountLabel('demo-disciplined')).toBe('Disciplined demo')
+    expect(accountLabel('demo-disciplined')).toBe('Demo: limit orders, daytime') // A3: the name states what differs, not a quality
     expect(accountLabel(null)).toBe('Your account')
   })
   it('order ids', () => {

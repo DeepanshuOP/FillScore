@@ -7,9 +7,13 @@ test('dashboard: v1 is labelled rule-based and the v2 panel states its demo stat
   await page.goto('/dashboard?userId=demo-moderate')
   // 2026-11-20 (dashboard rebuilt): the v1 grade is a labelled secondary line, "Rule-based score, grade X"; a demo's v2 grade
   // is served only from the offline build, so the headline carries the measured letter with its "Measured score" label.
-  await expect(page.getByTestId('score-v1-label')).toContainText(/Rule-based score, grade [A-F]/, { timeout: 30_000 })
-  // design v3.1: the v1 details are in the line's pen margin note
-  await page.getByRole('button', { name: 'Note: the rule-based score' }).click()
+  // A4: with a measured grade the visible line is only "Graded A, 93.4 of 100." and the v1 grade is in the stamp's pen margin
+  // note; without one (this e2e database has no v2 score for the demo) the v1 line and its own note stay (selectors only)
+  const label = page.getByTestId('score-v1-label')
+  await expect(label).toContainText(/Graded [A-F], \d+\.\d of 100\.|Rule-based score, grade [A-F]/, { timeout: 30_000 })
+  const graded = /^Graded/.test(await label.innerText())
+  await page.getByRole('button', { name: graded ? 'Note: the measured score' : 'Note: the rule-based score' }).click()
+  if (graded) await expect(page.getByTestId('score-v1-detail')).toContainText(/The earlier rule-based grade, [A-F] \d+\.\d, scoring v1, kept unchanged/)
   await expect(page.getByTestId('score-v1-detail')).toContainText(/published grade of the earlier demo data/)
   const headline = page.getByTestId('headline')
   await expect(headline).toBeVisible()

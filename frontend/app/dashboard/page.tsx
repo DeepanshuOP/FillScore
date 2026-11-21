@@ -29,7 +29,7 @@ import { type CurrentFigures } from './headerStats';
 import { describeHeadline, gradeView, scopeFacts } from './headline';
 import { DEMO_NOTE, type V2Response } from './scoreV2';
 import { Overview } from './Overview';
-import type { OrderRow } from './ordersTable';
+import { orderCountsOf, type OrderRow } from './ordersTable';
 import SyncFreshness from './SyncFreshness';
 
 // Design v2: only the overview ships with the page; each other section (and its table, chart or drawer code) loads when opened.
@@ -265,7 +265,7 @@ function DashboardContent() {
                 ordersBody={ordersSummary}
                 isDemo={isDemoData}
                 sampleNote={dashboardMode === 'demo' ? DEMO_NOTE : null}
-                facts={scopeFacts(audit, audit.current)}
+                facts={scopeFacts(audit, audit.current, orderCountsOf(ordersSummary))}
                 v1={{ grade: audit.fillGrade, score: audit.avgFillScore, basis: isDemoData ? undefined : 'rule-based, scoring v1' }}
                 v1Note={v2Body?.demo ? 'Kept unchanged. The measured grade is the one that describes the orders shown now.' : null}
                 freshness={dashboardMode === 'real' ? <SyncFreshness accessToken={accessToken} refreshAccessToken={refreshAccessToken} /> : undefined}

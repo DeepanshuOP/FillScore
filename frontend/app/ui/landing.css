@@ -7,7 +7,9 @@
  */
 .fs-hero { position: relative; height: 100svh; min-height: 640px; overflow: hidden; display: grid; grid-template-rows: 64px 1fr auto; }
 .fs-hero-stage { position: relative; }
-.fs-hero-viewport { position: absolute; left: 0; right: 0; top: clamp(96px, 17vh, 170px); height: 260px; }
+/* design v3.1 fixes A7: the tape sits at the middle of the stage (not a fixed 17vh), so no dead band opens between it and the
+   headline at 1440; the pen notes need 86 px above the strip and about 110 px below it, which this keeps clear */
+.fs-hero-viewport { position: absolute; left: 0; right: 0; top: max(96px, calc(50% - 30px)); height: 260px; }
 /* at rest on the order: --stop-d / --stop-p are the order's centre in tape px, computed on the server (heroGeometry.ts) */
 .fs-hero-strip { position: relative; display: flex; width: max-content; height: 134px; will-change: transform; transform: translate3d(calc(44vw - var(--stop-d)), 0, 0); }
 @media (max-width: 767px) { .fs-hero-strip { transform: translate3d(calc(50vw - var(--stop-p)), 0, 0); } }

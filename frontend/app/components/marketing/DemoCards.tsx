@@ -6,12 +6,12 @@ import { apiBase } from '../../lib/apiBase'
 import { GradeStamp } from '../../ui/GradeStamp'
 import { ValueState } from '../../ui/ValueState'
 import { formatUsd } from '../../ui/format'
-import { describeHeadline, gradeView, type GradeView, type Headline } from '../../dashboard/headline'
+import { describeHeadline, gradeView, totalBpsLabel, type GradeView, type Headline } from '../../dashboard/headline'
 
 const DEMOS = [
-  { id: 'demo-disciplined', name: 'The Disciplined Trader', tilt: '-rotate-[1.4deg]' },
-  { id: 'demo-moderate', name: 'The Moderate Trader', tilt: 'rotate-[0.8deg] md:translate-y-6' },
-  { id: 'demo-aggressive', name: 'The Aggressive Trader', tilt: '-rotate-[0.6deg]' },
+  { id: 'demo-disciplined', name: 'Limit orders, daytime', tilt: '-rotate-[1.4deg]' },
+  { id: 'demo-moderate', name: 'Mixed orders, mixed hours', tilt: 'rotate-[0.8deg] md:translate-y-6' },
+  { id: 'demo-aggressive', name: 'Market orders, night', tilt: '-rotate-[0.6deg]' },
 ] as const
 
 type Loaded = { grade: GradeView | null; headline: Headline | null } | 'error' | null
@@ -37,7 +37,7 @@ export function DemoCards() {
   }, [])
 
   return (
-    <section aria-labelledby="demos-title" className="px-[var(--ui-gutter)] py-24 lg:py-36">
+    <section aria-labelledby="demos-title" className="px-[var(--ui-gutter)] py-24 lg:pt-36 lg:pb-16">
       <div className="max-w-3xl">
         <h2 id="demos-title" data-split className="display-lg text-ui-ink">Open a finished audit.</h2>
       </div>
@@ -62,11 +62,15 @@ export function DemoCards() {
                   <div className="fs-perf" aria-hidden="true" />
                   {v === 'error' ? <ValueState state="not-computed" label="Total cost" reason="The demo audit could not be loaded." size="cell" />
                     : v?.headline ? (
-                      <div className="fs-totalline">
-                        <span className="k">TOTAL</span>
-                        <span className="b" />
-                        <span className="u">{formatUsd(v.headline.totalUsd)}</span>
-                      </div>
+                      <>
+                        <div className="fs-totalline">
+                          <span className="k">TOTAL</span>
+                          <span className="b" />
+                          <span className="u">{formatUsd(v.headline.totalUsd)}</span>
+                        </div>
+                        {/* A3: the server's total cost in bps, so the three traders can be compared on cost */}
+                        <p data-testid="demo-bps" className="mt-1.5 text-right font-mono text-[12.5px] text-ui-graphite">{totalBpsLabel(v.headline)} of the value ordered</p>
+                      </>
                     ) : v ? <ValueState state="not-computed" label="Total cost" reason="The orders were not measured." size="cell" />
                       : <p className="g">PRINTING</p>}
                   {/* design v3.1: the whole receipt is the link (named by the trader); no extra caption */}

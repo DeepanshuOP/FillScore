@@ -8,7 +8,7 @@
  */
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { costStrip, summariseOrders, totalsByType } from '../../backend/src/services/orderSummary'
+import { costStrip, summariseOrders, totalsByType, unfilledCost } from '../../backend/src/services/orderSummary'
 // Design v2 (2026-11-20): the rankings come from the production rankWithNoise (the part 1 fixture numbered groups i + 1 with a
 // min-max interval and wrote status "too_few", which is why its screenshots showed ranks 2, 3, 4 and no rank 1), and the
 // fills and order replays are added so the order drawer can be reviewed offline (buildOrderReplay, as the route maps them).
@@ -97,6 +97,7 @@ for (const id of Object.keys(V1)) {
     // counts and the ledger: the production functions GET /audit/orders-summary and GET /audit/orders-ledger call.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersBody: { available: true, ...summariseOrders(orders, measurements), counts: orderCounts(orders as any, fills as any), byType: totalsByType(orders, measurements),
+      unfilledCost: unfilledCost(orders, measurements),
       strip: costStrip(summariseOrders(orders, measurements).shortfall?.totals) },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ledger: { available: true, ...buildOrderLedger(orders as any, fills as any, measurements as any) },

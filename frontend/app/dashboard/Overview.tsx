@@ -6,11 +6,11 @@ import { cn } from '../../lib/utils'
 import { ValueState } from '../ui/ValueState'
 import { GradeStamp } from '../ui/GradeStamp'
 import { MarginNote } from '../ui/MarginNote'
-import { Figure, SplitFigure, USD_FORMAT } from '../ui/Figure'
+import { SplitFigure, USD_FORMAT } from '../ui/Figure'
 import { exactTitle, formatScore, formatSignedBps, formatUsd } from '../ui/format'
 import { Fig } from '../ui/Fig'
 import { CostRuler } from '../ui/charts/CostRuler'
-import { costSentence, costInsufficientReason, unmeasuredNote, type GradeView, type Headline } from './headline'
+import { costSentence, costInsufficientReason, dotNote, totalSentence, unmeasuredNote, type GradeView, type Headline } from './headline'
 import { describeOrders, describeTotals, hasTypeTotals, otherTypeOrders, totalsFor, type OrderKind, type OrdersBody } from './ordersView'
 import { describeStrip } from './costStrip'
 import { MonthTape } from './MonthTape'
@@ -46,7 +46,7 @@ export interface OverviewProps {
 /** Chapter 1: the period's total as the image, one sentence, and the sample-data line (always visible on a demo). */
 function Total({ headline, periodLabel, sampleNote }: Pick<OverviewProps, 'headline' | 'periodLabel' | 'sampleNote'>) {
   return (
-    <Chapter n={1} label="Total" title={`What the orders paid, ${periodLabel}`} id="total" testId="headline" className="border-t-0 pt-0">
+    <Chapter n={1} label="Total" title={`What the orders cost, ${periodLabel}`} id="total" testId="headline" className="border-t-0 pt-0">
       {sampleNote ? (
         <p data-testid="sample-line" className="mb-8 font-mono text-[13px] tracking-[0.04em] text-ui-ink uppercase">
           <span>Sample data: synthetic trader, real prices</span>
@@ -64,8 +64,7 @@ function Total({ headline, periodLabel, sampleNote }: Pick<OverviewProps, 'headl
             <SplitFigure value={headline.totalUsd} text={formatUsd(headline.totalUsd)} format={USD_FORMAT} />
           </p>
           <p className="mt-7 text-[clamp(1.25rem,1.9vw,1.625rem)] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
-            <span>The {headline.orders.toLocaleString('en-US')} {headline.orders === 1 ? 'order' : 'orders'} paid{' '}
-              <Figure value={headline.totalUsd} text={formatUsd(headline.totalUsd)} format={USD_FORMAT} /> in total.</span>
+            <span data-testid="total-sentence">{totalSentence(headline)}</span>
             <MarginNote label="the total in basis points">
               <p data-testid="total-bps">The total is {formatSignedBps(headline.totalBps)} of the value ordered.</p>
               <p>Implementation shortfall: spread, impact and timing, unfilled orders and fees, against the market at each order&rsquo;s arrival.</p>
@@ -126,25 +125,36 @@ function Grade({ grade, band, v1, v1Note, periodLabel, account }: Pick<OverviewP
         ) : <div className="h-[230px] w-[280px]" aria-label="Loading the measured grade" />}
         <div className="flex max-w-[34ch] flex-col gap-3">
           {grade?.kind === 'graded' ? (
-            <p className="text-[20px] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
+            <p data-testid="score-v1-label" className="text-[20px] leading-snug font-bold tracking-[-0.02em] text-ui-ink">
               <span>Graded {grade.letter}, {formatScore(grade.score)} of 100.</span>
               <MarginNote label="the measured score">
                 <p>Measured score, scoring {grade.scoringVersion}{band ? `; band ${formatScore(band[0])} to ${formatScore(band[1])}` : ''}.</p>
                 <p>Each order&rsquo;s execution cost, fees and unfilled orders, scored under the committed version file.</p>
+                {/* design v3.1 fixes A4: the earlier grade is named here, in the stamp's note, not beside the stamp */}
+                {v1 ? (
+                  <>
+                    <p data-testid="score-v1-detail">The earlier rule-based grade, {v1.grade} {formatScore(v1.score)}, scoring v1, kept unchanged. Basis: {v1.basis ?? 'published grade of the earlier demo data, scoring v1'}.</p>
+                    {v1Note ? <p data-testid="score-v1-demo-note">{v1Note}</p> : null}
+                    <p>Scoring v1 is frozen: its weights and its published grades do not change.</p>
+                  </>
+                ) : null}
               </MarginNote>
             </p>
           ) : null}
-          <p data-testid="score-v1-label" className="text-[16px] text-ui-graphite">
-            {/* design v3.1 review: the visible line says it is the frozen v1 grade, so A beside B reads as two scorings */}
-            {v1 ? <span>Rule-based score, grade {v1.grade} (v1, frozen)</span> : <span>Rule-based score (v1): not computed for this data.</span>}
-            {v1 ? (
-              <MarginNote label="the rule-based score">
-                <p data-testid="score-v1-detail">{formatScore(v1.score)} of 100, {v1.basis ?? 'published grade of the earlier demo data, scoring v1'}.</p>
-                {v1Note ? <p data-testid="score-v1-demo-note">{v1Note}</p> : null}
-                <p>Scoring v1 is frozen: its weights and its published grades do not change.</p>
-              </MarginNote>
-            ) : null}
-          </p>
+          {/* a rule-based score that was not computed is a ValueState reason: never only in a note */}
+          {grade?.kind === 'graded' && v1 ? null : (
+            // no measured grade to carry the note (or no v1 grade): the earlier score is printed here, in words
+            <p data-testid={grade?.kind === 'graded' ? 'score-v1-none' : 'score-v1-label'} className="text-[16px] text-ui-graphite">
+              {v1 ? <span>Rule-based score, grade {v1.grade} (v1, frozen)</span> : <span>Rule-based score (v1): not computed for this data.</span>}
+              {v1 ? (
+                <MarginNote label="the rule-based score">
+                  <p data-testid="score-v1-detail">{formatScore(v1.score)} of 100, {v1.basis ?? 'published grade of the earlier demo data, scoring v1'}.</p>
+                  {v1Note ? <p data-testid="score-v1-demo-note">{v1Note}</p> : null}
+                  <p>Scoring v1 is frozen: its weights and its published grades do not change.</p>
+                </MarginNote>
+              ) : null}
+            </p>
+          )}
         </div>
       </div>
     </Chapter>
@@ -309,6 +319,7 @@ function Expected({ c, account }: { c: CostVsExpected | undefined; account: stri
             </MarginNote>
           </p>
           <CostRuler diff={c.excessBps} low={c.lowBps} high={c.highBps} n={c.n} draw={play}
+            note={<MarginNote label="the difference"><p data-testid="dot-note">{dotNote(c)}</p></MarginNote>}
             labels={{ diff: formatSignedBps(c.excessBps), low: formatSignedBps(c.lowBps), high: formatSignedBps(c.highBps), level: `${Math.round(c.level * 100)}%` }} />
         </div>
       ) : (

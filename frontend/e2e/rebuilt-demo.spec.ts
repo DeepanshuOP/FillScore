@@ -22,7 +22,8 @@ test('dashboard of a rebuilt demo: v1-only views say "not computed", measured vi
   // the headline never makes up a figure: the total is the measured total of the orders (hand value, see below)
   // (3 of the 5 orders carry a measured total: one was not measured and one did not fill; the sentence says "3 orders")
   // design v2: the total is an animated figure inside the heading, so the text is read from the headline card
-  await expect(page.getByTestId('headline')).toContainText('The 3 orders paid $15.00 in total.')
+  // A1: the total includes unfilled orders' modelled cost, so the sentence says "cost" (selector text only)
+  await expect(page.getByTestId('headline')).toContainText('The 3 orders cost $15.00')
 
   // v1-only views: the rule-based details say so, inside their disclosure (design v2: in the Evidence section)
   await page.goto(`/dashboard?userId=${ID}&view=evidence`)
@@ -53,7 +54,8 @@ test('the scope facts come from the current fills and orders, not from the store
   await expect(page.getByTestId('score-v1-label')).toBeVisible({ timeout: 30_000 })
   // 3 fills of $420 in 5 orders, none a maker fill (reshapeDemoAsRebuilt)
   const facts = page.getByTestId('scope-facts')
-  await expect(facts).toContainText(/Fills\s*3, in 5 orders/)
+  // A5: the orders are those with fills, from the server's orderCounts: the 3 fills are in 3 orders (the 5 stored orders have none)
+  await expect(facts).toContainText(/Fills\s*3, in 3 orders/)
   await expect(facts).toContainText(/Value traded\s*\$1,260\.00/)
   await expect(facts).toContainText(/Maker share of fills\s*0%/)
   await expect(page.getByText('TRADES ANALYSED')).toHaveCount(0)
@@ -95,7 +97,7 @@ test('headline and record: dollar total, the cost sentence, components named aft
   // hand values of reshapeDemoAsRebuilt: total $15.00 (4.3 bps) over the 3 orders that carry a measured total
   const headline = page.getByTestId('headline')
   await expect(headline).toBeVisible({ timeout: 30_000 })
-  await expect(headline).toContainText('The 3 orders paid $15.00 in total.')
+  await expect(headline).toContainText('The 3 orders cost $15.00') // A1: "cost", not "paid" (selector text only)
   // design v3.1: the bps of the total is in the sentence's pen margin note; the unmeasured order stays printed
   await expect(page.getByTestId('unmeasured-line')).toHaveText('1 order was not measured and is not in it.')
   await page.getByRole('button', { name: 'Note: the total in basis points' }).click()

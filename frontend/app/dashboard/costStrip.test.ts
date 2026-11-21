@@ -35,6 +35,12 @@ describe('describeStrip', () => {
     expect(v.sentence).toBe('Fees were $8.00; measured against market prices the cost was −$3.00, a price improvement; $5.00 in total.')
   })
 
+  it('says "cost", not "paid", when the total has no fee part to name (A1: the total can include unfilled orders)', () => {
+    // fees 0 -> no positive fee part; total 3 dollars
+    const v = describeStrip({ available: true, strip: { totalUsd: 3, segments: [{ key: 'market', usd: 3, share: 1 }, { key: 'fees', usd: 0, share: 0 }] } }, false)!
+    expect(v.sentence).toBe('The orders cost $3.00.')
+  })
+
   it('is null when the server sent no strip or a malformed one', () => {
     expect(describeStrip({ available: true }, false)).toBeNull()
     expect(describeStrip({ available: false, strip: BODY.strip }, false)).toBeNull()

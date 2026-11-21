@@ -23,7 +23,7 @@ import { auditRunLimiter } from '../middleware/security';
 import { ScoreV2 } from '../models/ScoreV2';
 import { Order } from '../models/Order';
 import { OrderMeasurement } from '../models/OrderMeasurement';
-import { costStrip, summariseOrders, totalsByType } from '../services/orderSummary';
+import { costStrip, summariseOrders, totalsByType, unfilledCost } from '../services/orderSummary';
 import { buildOrderLedger, orderCounts } from '../services/orderLedger';
 import { buildMeasuredReport } from '../services/reportMeasured';
 import { summariseTrades } from '../services/tradeSummary';
@@ -296,10 +296,11 @@ auditRouter.get('/orders-summary', resolveAccount, async (req: Request, res: Res
         ]);
         // counts: the same function the orders ledger returns (orderLedger.ts), so the overview and the ledger agree.
         // byType (design v3 fixes B2): the totals per order type, from the same measurements; summariseOrders is unchanged
+        // unfilledCost (design v3.1 fixes A1): the part of the total in orders that never filled (cost, not paid)
         // strip (design v3.1): the overview's cost strip, its two parts' shares, from the totals the headline reads
         const summary = summariseOrders(orders as any, measurements as any);
         return res.status(200).json({ available: true, ...summary, counts: orderCounts(orders as any, fills as any),
-            byType: totalsByType(orders as any, measurements as any), strip: costStrip((summary as any).shortfall?.totals) });
+            byType: totalsByType(orders as any, measurements as any), unfilledCost: unfilledCost(orders as any, measurements as any), strip: costStrip((summary as any).shortfall?.totals) });
     } catch (error: any) {
         console.error('Error fetching orders summary:', error?.name);
         return res.status(500).json({ error: 'Internal Server Error' });

@@ -4,13 +4,15 @@
  * A figure that was not measured is null (the screen then shows a ValueState), never zero.
  */
 import { formatSignedBps, formatUsd } from '../ui/format'
+import { formatBps } from '../utils/formatBps'
 import type { BarRow } from '../ui/ChartFrame'
 import type { CostVsExpected } from './scoreV2'
+import type { OrderCounts } from './ordersTable'
 import { formatPeriodLabel } from '../utils/periodLabel'
 
 interface Term { usd: number; bps: number; n: number }
 interface Totals { execution?: Term | null; spread?: Term | null; impactTiming?: Term | null; opportunity?: Term | null; fees?: Term | null; total?: Term | null }
-interface OrdersBody { available?: boolean; shortfall?: { n: number; unmeasured: number; totals?: Totals | null } | null }
+interface OrdersBody { available?: boolean; unfilledCost?: { usd?: number | null; count?: number; measured?: number } | null; shortfall?: { n: number; unmeasured: number; totals?: Totals | null } | null }
 
 const isNum = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
 
@@ -25,6 +27,8 @@ export interface Headline {
   feesUsd: number | null
   feesNotMeasured: boolean
   unmeasuredOrders: number
+  /** The server's dollars of the total that sit in orders that never filled (modelled, not paid); null when not measured. */
+  unfilledUsd: number | null
 }
 
 function totalsOf(body: unknown): Totals | null {
@@ -47,7 +51,30 @@ export function describeHeadline(body: unknown, isDemo: boolean): Headline | nul
     feesUsd: split ? fees : null,
     feesNotMeasured: split,
     unmeasuredOrders: (body as OrdersBody).shortfall?.unmeasured ?? 0,
+    unfilledUsd: isNum((body as OrdersBody).unfilledCost?.usd) ? ((body as OrdersBody).unfilledCost!.usd as number) : null,
   }
+}
+
+const bps3 = (v: number) => `${v < 0 ? '−' : ''}${Math.abs(v).toFixed(3)} bps`
+
+/** The ruler dot's note (design v3.1 fixes A6): paid, expected and the difference as the server sent them, to three decimals. */
+export function dotNote(c: { paidBps: number; expectedBps: number; excessBps: number }): string {
+  return `Paid ${bps3(c.paidBps)}, expected ${bps3(c.expectedBps)}, difference ${bps3(c.excessBps)}.`
+}
+
+/** A demo's total cost as the server sent it, in bps of the value ordered ("11.7 bps"); null without a headline. */
+export function totalBpsLabel(h: Pick<Headline, 'totalBps'> | null): string | null {
+  return h ? formatBps(h.totalBps) : null
+}
+
+/**
+ * The total's one sentence (design v3.1 fixes A1). The total includes the modelled cost of orders that never filled,
+ * which nobody paid, so it says "cost" and names that share as the server sent it. No share (none unfilled, or not
+ * measured) leaves the clause out; it never prints a zero it was not sent.
+ */
+export function totalSentence(h: Pick<Headline, 'orders' | 'totalUsd' | 'unfilledUsd'>): string {
+  const noun = `The ${h.orders.toLocaleString('en-US')} ${h.orders === 1 ? 'order' : 'orders'} cost ${formatUsd(h.totalUsd)}`
+  return h.unfilledUsd !== null && h.unfilledUsd > 0 ? `${noun}, ${formatUsd(h.unfilledUsd)} of it in orders that never filled.` : `${noun} in total.`
 }
 
 export interface Bars {
@@ -113,11 +140,15 @@ const int = new Intl.NumberFormat('en-US')
 const pct = (r: number | null) => (r === null ? 'not computed' : `${Math.round(r * 100)}%`)
 
 /** The facts that say what the headline covers, as label and value. A rebuilt account (`current`) reads its present fills and orders. */
-export function scopeFacts(audit: AuditScope, current: Current | null | undefined): Array<[string, string]> {
+export function scopeFacts(audit: AuditScope, current: Current | null | undefined, counts?: OrderCounts | null): Array<[string, string]> {
   const period = formatPeriodLabel(audit.period.start, audit.period.end)
   const venue = VENUES[audit.exchange?.toLowerCase()] ?? audit.exchange
-  const rest: Array<[string, string]> = current
-    ? [['Fills', `${int.format(current.fills)}, in ${int.format(current.orders)} ${current.orders === 1 ? 'order' : 'orders'}`],
+  // A5: the orders that produced fills, as the server counts them (orderCounts), when it sent the counts
+  const fills = counts ? counts.fills : current?.fills
+  // orders with fills: the stored orders that have a fill, plus the fill groups whose order is not stored (each is one order)
+  const orders = counts ? counts.withFills + counts.unrecorded : current?.orders
+  const rest: Array<[string, string]> = current && typeof fills === 'number' && typeof orders === 'number'
+    ? [['Fills', `${int.format(fills)}, in ${int.format(orders)} ${orders === 1 ? 'order' : 'orders'}`],
       ['Value traded', formatUsd(current.notionalUsd)], ['Maker share of fills', pct(current.makerRatio)]]
     : [['Fills', int.format(audit.totalTrades)], ['Value traded', formatUsd(audit.totalNotional)], ['Maker share of fills', pct(audit.breakdown.makerRatio)]]
   return [['Period', period], ['Venue', venue], ...rest]

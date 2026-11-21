@@ -6,7 +6,7 @@ import { ValueState } from '../ui/ValueState'
 import { MarginNote } from '../ui/MarginNote'
 import { circlePath } from '../ui/pen'
 import { baselineShare, dayMarks, monthTicks, nearestTick } from './monthTape'
-import { formatUtc, ledgerRows, withParams, type OrderRow } from './ordersTable'
+import { circledLabel, formatUtc, ledgerRows, withParams, type OrderRow } from './ordersTable'
 import { useFirstEntry } from './chapter'
 
 type ExplainRequest = (path: string, init?: { method?: string; body?: unknown }) => Promise<{ status: number; body: unknown }>
@@ -188,8 +188,8 @@ export function MonthTape({ query, request, period, periodLabel, onOpen, account
               {big ? (
                 <g className="fs-tape-pen" data-play={play} data-x={x(big.t).toFixed(1)}>
                   <path pathLength={1} d={circlePath(x(big.t) - 7, barEnd(biggest) - 4, 14, 16, 7)} fill="none" stroke="var(--ui-pen)" strokeWidth={2} strokeLinecap="round" />
-                  <text x={x(big.t) + (x(big.t) > cw - 120 ? -20 : 20)} y={barEnd(biggest) + 6} textAnchor={x(big.t) > cw - 120 ? 'end' : 'start'}
-                    className="fill-ui-pen-ink font-mono text-[13px]">{big.row.cost ? formatUsd(big.row.cost.usd) : ''}</text>
+                  <text x={x(big.t) + (x(big.t) > cw - 150 ? -20 : 20)} y={barEnd(biggest) + 6} textAnchor={x(big.t) > cw - 150 ? 'end' : 'start'}
+                    className="fill-ui-pen-ink font-mono text-[13px]">{big.row.cost ? circledLabel(formatUsd(big.row.cost.usd), big.row) : ''}</text>
                 </g>
               ) : null}
             </svg>

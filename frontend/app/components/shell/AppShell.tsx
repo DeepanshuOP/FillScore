@@ -1,7 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, type ReactNode } from 'react'
+import { useRef, useState, type ReactNode } from 'react'
+import { apiBase } from '../../lib/apiBase'
+import { describeHeadline, totalBpsLabel } from '../../dashboard/headline'
 import { ChevronDown, Menu } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from '@/components/ui/drawer'
@@ -44,8 +46,20 @@ function morePages(userId: string | null, signedIn: boolean) {
 }
 
 function AccountSwitcher({ userId, signedIn, className }: { userId: string | null; signedIn: boolean; className?: string }) {
+  // A3: each demo's total cost in bps, as the server sends it; read once, the first time the menu opens
+  const [bps, setBps] = useState<Record<string, string>>({})
+  const asked = useRef(false)
+  const load = (open: boolean) => {
+    if (!open || asked.current) return
+    asked.current = true
+    for (const a of DEMO_ACCOUNTS) {
+      fetch(`${apiBase()}/audit/orders-summary?userId=${a.id}`).then((r) => (r.ok ? r.json() : null))
+        .then((body) => { const l = totalBpsLabel(describeHeadline(body, true)); if (l) setBps((s) => ({ ...s, [a.id]: l })) })
+        .catch(() => undefined)
+    }
+  }
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={load}>
       <DropdownMenuTrigger className={cn('inline-flex h-9 min-w-0 items-center gap-1.5 rounded-[4px] px-1.5 text-[15px] font-bold text-ui-ink hover:bg-ui-overlay', className)}>
         <span className="sr-only">Account: </span><span className="truncate">{accountLabel(userId)}</span>
         <ChevronDown aria-hidden="true" className="size-3.5 shrink-0 text-ui-graphite" />
@@ -53,7 +67,7 @@ function AccountSwitcher({ userId, signedIn, className }: { userId: string | nul
       <DropdownMenuContent align="start" className="w-64">
         <DropdownMenuLabel className="font-mono text-[11px] font-normal tracking-[0.06em] text-ui-graphite uppercase">Demo accounts: synthetic traders, real prices</DropdownMenuLabel>
         {DEMO_ACCOUNTS.map((a) => (
-          <DropdownMenuItem key={a.id} asChild><Link href={viewHref('overview', a.id, signedIn)} className="no-underline">{a.label}</Link></DropdownMenuItem>
+          <DropdownMenuItem key={a.id} asChild><Link href={viewHref('overview', a.id, signedIn)} className="flex w-full items-baseline justify-between gap-3 no-underline"><span>{a.label}</span>{bps[a.id] ? <span data-testid="picker-bps" className="font-mono text-[12px] text-ui-graphite">{bps[a.id]}</span> : null}</Link></DropdownMenuItem>
         ))}
         <DropdownMenuSeparator />
         {signedIn

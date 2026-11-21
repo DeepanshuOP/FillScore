@@ -6,7 +6,9 @@
  * 90% interval -0.3369 to -0.0923, 80 orders.
  */
 import { describe, expect, it } from 'vitest'
-import { barRows, costInsufficientReason, costSentence, describeHeadline, gradeView, scopeFacts, unmeasuredNote } from './headline'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { barRows, costInsufficientReason, costSentence, describeHeadline, dotNote, gradeView, scopeFacts, totalBpsLabel, totalSentence, unmeasuredNote } from './headline'
 import type { CostVsExpected } from './scoreV2'
 
 const term = (usd: number, n = 245) => ({ usd, bps: 1, n })
@@ -38,6 +40,68 @@ describe('describeHeadline', () => {
     expect(describeHeadline({ available: true, orders: BODY.orders, shortfall: { n: 0, unmeasured: 0, medianBps: {}, totals: null } }, true)).toBeNull()
     expect(describeHeadline(null, true)).toBeNull()
     expect(describeHeadline({ available: false }, true)).toBeNull()
+  })
+})
+
+// Design v3.1 fixes A1 (2026-11-22): the total includes the modelled cost of unfilled orders, which nobody paid, so the
+// sentence says "cost" and names that share. Values are the server's `unfilledCost` (hand fixture in the backend test
+// unfilledCost.test.ts: 2.50 + 2.00 = 4.50 over 2 orders); demo-moderate's served share is 10.63 of 52.08.
+describe('totalSentence', () => {
+  const withShare = (unfilledCost: unknown) => describeHeadline({ ...BODY, unfilledCost }, true)!
+  it('says cost, names the unfilled share, and never says paid', () => {
+    const s = totalSentence(withShare({ usd: 10.631536009963167, count: 11, measured: 11 }))
+    expect(s).toBe('The 245 orders cost $52.08, $10.63 of it in orders that never filled.')
+    expect(s).not.toMatch(/paid/i)
+  })
+  it('hand fixture: $4.50 of $9.80', () => {
+    const body = { ...BODY, unfilledCost: { usd: 4.5, count: 2, measured: 2 }, shortfall: { ...BODY.shortfall, totals: { ...BODY.shortfall.totals, total: { usd: 9.8, bps: 1, n: 5 } } } }
+    expect(totalSentence(describeHeadline(body, false)!)).toBe('The 5 orders cost $9.80, $4.50 of it in orders that never filled.')
+  })
+  it('leaves the clause out when no order went unfilled or the share was not measured (never a zero)', () => {
+    expect(totalSentence(withShare({ usd: 0, count: 0, measured: 0 }))).toBe('The 245 orders cost $52.08 in total.')
+    expect(totalSentence(withShare({ usd: null, count: 3, measured: 3 }))).toBe('The 245 orders cost $52.08 in total.')
+    expect(totalSentence(describeHeadline(BODY, true)!)).toBe('The 245 orders cost $52.08 in total.')
+  })
+  it('agrees in number', () => {
+    const one = { ...BODY, shortfall: { ...BODY.shortfall, totals: { ...BODY.shortfall.totals, total: { usd: 1.5, bps: 1, n: 1 } } } }
+    expect(totalSentence(describeHeadline(one, true)!)).toBe('The 1 order cost $1.50 in total.')
+  })
+})
+
+// Design v3.1 fixes A3: each demo's total cost in bps is printed on the landing receipts and in the demo picker. The server
+// sends it (`shortfall.totals.total.bps`, the order shortfall summed over the measured orders); nothing is computed here.
+// Hand values from the offline build (ml-service/demo_v2/out/<id>/order_measurements.json): total bps = sum of
+// (order bps x intended notional / 10,000) over the orders, over their summed intended notional, x 10,000:
+//   demo-disciplined 20.39256125765597 / 18174.00730385158 x 1e4 = 11.2207 bps (144 orders)
+//   demo-moderate    52.0785604695634  / 44411.780706606856 x 1e4 = 11.7263 bps (245 orders)
+//   demo-aggressive  62.358316088748246 / 61261.90143137648 x 1e4 = 10.1790 bps (310 measured orders)
+describe('totalBpsLabel', () => {
+  const fixture = (id: string) => JSON.parse(readFileSync(resolve(__dirname, `../../e2e-shots/fixtures/${id}.json`), 'utf8')).ordersBody
+  it.each([['demo-disciplined', 11.2207, '11.2 bps'], ['demo-moderate', 11.7263, '11.7 bps'], ['demo-aggressive', 10.179, '10.2 bps']])(
+    '%s: the served total is %f bps and prints as %s', (id, bps, label) => {
+      const h = describeHeadline(fixture(id), true)!
+      expect(h.totalBps).toBeCloseTo(bps, 3)
+      expect(totalBpsLabel(h)).toBe(label)
+    })
+  it('prints nothing when there is no headline (never a zero)', () => {
+    expect(totalBpsLabel(null)).toBeNull()
+  })
+})
+
+// A6 (2026-11-22): the note on the ruler's dot prints paid, expected and the difference as the server sent them, to three
+// decimals, so the rounding reads correctly. demo-moderate (served values): paid -0.09487614313794934, expected
+// 0.1104242840781983, difference -0.2053004272161476. To three decimals: -0.095, 0.110, -0.205 (and -0.095 - 0.110 = -0.205).
+// At two decimals the same values print -0.09, 0.11, -0.21, and -0.09 - 0.11 = -0.20 reads as a wrong subtraction.
+describe('dotNote', () => {
+  const c = { paidBps: -0.09487614313794934, expectedBps: 0.1104242840781983, excessBps: -0.2053004272161476 }
+  it('prints the three server values to three decimals, with a true minus sign', () => {
+    expect(dotNote(c)).toBe('Paid −0.095 bps, expected 0.110 bps, difference −0.205 bps.')
+  })
+  it('three decimals keep the subtraction readable: paid minus expected equals the difference as printed', () => {
+    expect((-0.095 - 0.110).toFixed(3)).toBe('-0.205')
+  })
+  it('a positive difference and a zero value', () => {
+    expect(dotNote({ paidBps: 1.2346, expectedBps: 0, excessBps: 1.2346 })).toBe('Paid 1.235 bps, expected 0.000 bps, difference 1.235 bps.')
   })
 })
 
@@ -105,6 +169,18 @@ describe('scopeFacts', () => {
     expect(scopeFacts(audit, { fills: 3, orders: 5, notionalUsd: 1260, makerRatio: 0 })).toEqual([
       ['Period', 'Jan 1 – Jan 31, 2024'], ['Venue', 'Binance'], ['Fills', '3, in 5 orders'], ['Value traded', '$1,260.00'], ['Maker share of fills', '0%'],
     ])
+  })
+  // A5 (2026-11-22): the footer's order count is the orders that produced fills, from the server's orderCounts (the same
+  // source as the Orders ledger). demo-moderate: 245 stored orders, 11 never filled -> 245 - 11 = 234 with fills, 607 fills.
+  it('counts fill groups whose order is not stored as orders too (3 fills of 3 unstored orders: "3, in 3 orders")', () => {
+    // stored orders 5, none with a fill (withFills 0); the 3 fills belong to 3 orders that are not stored (unrecorded 3): 0 + 3 = 3
+    expect(scopeFacts(audit, { fills: 3, orders: 5, notionalUsd: 1260, makerRatio: 0 }, { orders: 5, withFills: 0, fills: 3, unrecorded: 3 }).find(([k]) => k === 'Fills'))
+      .toEqual(['Fills', '3, in 3 orders'])
+  })
+  it('reads the fills and the orders with fills from the server counts: "607, in 234 orders"', () => {
+    const counts = { orders: 245, withFills: 234, fills: 607, unrecorded: 0 }
+    expect(scopeFacts(audit, { fills: 607, orders: 245, notionalUsd: 41976.3, makerRatio: 0.4 }, counts).find(([k]) => k === 'Fills')).toEqual(['Fills', '607, in 234 orders'])
+    expect(scopeFacts(audit, { fills: 1, orders: 3, notionalUsd: 1, makerRatio: 0 }, { orders: 3, withFills: 1, fills: 1, unrecorded: 0 }).find(([k]) => k === 'Fills')).toEqual(['Fills', '1, in 1 order'])
   })
   it('an account with no `current` reads the stored audit; one order reads singular', () => {
     expect(scopeFacts(audit, undefined).slice(2)).toEqual([['Fills', '82'], ['Value traded', '$12,345.60'], ['Maker share of fills', '23%']])   // 0.227 -> 23%

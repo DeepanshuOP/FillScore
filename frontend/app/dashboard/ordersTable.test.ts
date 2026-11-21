@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ledgerRows, orderCountsOf, countsLine, fillsLine, statusLabel } from './ordersTable';
+import { ledgerRows, orderCountsOf, countsLine, fillsLine, statusLabel, isUnfilled, circledLabel } from './ordersTable';
 
 /*
  * Design v3 fixes A1 (2026-11-21): the orders ledger copies the server's rows (GET /api/audit/orders-ledger); the sums
@@ -70,6 +70,23 @@ describe('statusLabel', () => {
   it('prints the stored status in words; a missing order says so', () => {
     expect(['FILLED', 'PARTIALLY_FILLED', 'CANCELED', 'EXPIRED', 'EXPIRED_IN_MATCH', 'REJECTED', 'NEW', null].map(statusLabel))
       .toEqual(['Filled', 'Partly filled', 'Cancelled', 'Expired', 'Expired', 'Rejected', 'Open', 'No stored order']);
+  });
+});
+
+// A2 (2026-11-22): the tape's pen circle names an unfilled order. The outcome is read from the ledger row's stored status
+// and its fill count (the server's), the same rule as the server's order counts: a final status other than FILLED and no fill.
+describe('unfilled outcome of a ledger row', () => {
+  const row = (status: string | null, fills: number) => ({ status, fills }) as Parameters<typeof isUnfilled>[0];
+  it('is unfilled when the order ended without a fill', () => {
+    expect(['CANCELED', 'CANCELLED', 'EXPIRED', 'EXPIRED_IN_MATCH', 'REJECTED'].map((s) => isUnfilled(row(s, 0)))).toEqual([true, true, true, true, true]);
+  });
+  it('is not unfilled when it filled, filled in part, is still open, or has no stored order', () => {
+    expect([row('FILLED', 2), row('CANCELED', 1), row('PARTIALLY_FILLED', 1), row('NEW', 0), row(null, 0)].map(isUnfilled))
+      .toEqual([false, false, false, false, false]);
+  });
+  it('labels the circled amount', () => {
+    expect(circledLabel('$3.31', row('CANCELED', 0))).toBe('$3.31, unfilled');
+    expect(circledLabel('$3.31', row('FILLED', 1))).toBe('$3.31');
   });
 });
 

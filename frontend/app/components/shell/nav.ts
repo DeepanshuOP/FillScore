@@ -7,10 +7,11 @@ export const VIEW_LABEL: Record<View, string> = {
   overview: 'Overview', orders: 'Orders', rules: 'Rules', rankings: 'Rankings', council: 'Council', evidence: 'Evidence',
 }
 
+// Design v3.1 fixes A3: the labels state what the generated trader does (utils/demoProfiles.ts), not a quality.
 export const DEMO_ACCOUNTS = [
-  { id: 'demo-disciplined', label: 'Disciplined demo' },
-  { id: 'demo-moderate', label: 'Moderate demo' },
-  { id: 'demo-aggressive', label: 'Aggressive demo' },
+  { id: 'demo-disciplined', label: 'Demo: limit orders, daytime' },
+  { id: 'demo-moderate', label: 'Demo: mixed orders, mixed hours' },
+  { id: 'demo-aggressive', label: 'Demo: market orders, night' },
 ] as const
 
 export function parseView(v: string | null | undefined): View {

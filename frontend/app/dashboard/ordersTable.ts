@@ -84,6 +84,16 @@ export function statusLabel(s: string | null): string {
   return STATUS[s.toUpperCase()] ?? s;
 }
 
+const ENDED_UNFILLED = new Set(['CANCELED', 'CANCELLED', 'EXPIRED', 'EXPIRED_IN_MATCH', 'REJECTED']);
+/** An order that ended with nothing filled: a final status other than FILLED and no fill (the server's rule in orderSummary). */
+export function isUnfilled(r: Pick<OrderRow, 'status' | 'fills'>): boolean {
+  return r.status !== null && ENDED_UNFILLED.has(r.status.toUpperCase()) && r.fills === 0;
+}
+/** The amount the tape's pen circles, with the outcome when the order never filled (its cost is modelled, not paid). */
+export function circledLabel(amount: string, r: Pick<OrderRow, 'status' | 'fills'>): string {
+  return isUnfilled(r) ? `${amount}, unfilled` : amount;
+}
+
 /** `YYYY-MM-DD HH:MM:SS` in UTC; "not recorded" for a value that is not a date. */
 export function formatUtc(iso: string | null | undefined): string {
   const ms = iso ? Date.parse(iso) : NaN;
