@@ -352,3 +352,21 @@ Facts gathered by the docs-researcher subagent from official pages only; pages t
   switch of the prototype is left out, rather than computing costs in the browser.
 - **Bundle (gzip, `scripts/first-load-js.mjs`):** `/` 332.7 to 323.2 kB, `/dashboard` 380.9 to 383.2, `/login` 309.7 to
   313.2 against design v2.
+
+## AE. Design v3 fixes (orders of 2026-11-21)
+
+- **Counting orders from fills undercounts.** Grouping fills drops every order that never filled (demo-moderate: 245
+  stored, 234 with fills). The server now owns the ledger and its counts (`orderCounts`), shared with the summary.
+- **The recorded Council run cannot say which values it cited.** It keeps rendered text and a count. Rendering every
+  packet leaf as the placeholder renderer does and finding those strings in the text traces them deterministically; the
+  recorded count is not a valid gate (the claim check can replace an explanation with a fallback after counting:
+  demo-disciplined liquidity, recorded 3, text with no number), so the gate is "every numeral lies in a traced value".
+  On the offline build all four demo-moderate notes trace. Offline packets do not hash-equal the stored ones (database
+  ids), so the server traces against the hash-verified packets.
+- **Per-order cost is cheap on read.** totalBps x intendedNotional / 10,000 per order sums exactly to the summary's
+  total ($52.0785604695634); the ledger for 245 orders is 109,678 bytes (20,482 gzip).
+- **Public prints are not readable on request.** Refs name the daily file and its SHA-256; the prints live only in an
+  ephemeral ml-service cache. Options (capped windows committed for demos, or stored at measurement time) are in
+  PROGRESS; none built.
+- **Rotation about a scaled edge moves the corner.** `origin-left` for the phone's scale also moves the stamp's -7°
+  pivot, swinging its top-left corner 12 to 15 px past its box.

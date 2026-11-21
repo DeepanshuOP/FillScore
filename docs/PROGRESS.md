@@ -7,7 +7,33 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: QA (qa3 on the changed states, break-ui, the full checks, images, M8.md).**
+- **Next concrete action: Design v3 fixes ready for Deepanshu's review.** Reason: every item is done, kept or not
+  built with its reason (below and in `docs/milestones/M8.md`, "Design v3 fixes, 2026-11-21"); local commits only, the
+  push is his. Images: `docs/design/v3/` (12 of 14 recaptured). Open for him: A2 (84.57 vs the locked 84.809, if he
+  holds a record that says otherwise), B3 options 1-2 (prints for the receipt), the reviewer's kept items below.
+- **Status of every ordered item:** A1 done, A2 kept (no change; trace below), A3-A10 done, B1 done, B2 done, B3 not
+  built (prints not readable without new storage; receipt chart removed); QA done.
+- **QA, done.** qa3 (26 states incl. the receipt end, an unfilled receipt and the Council notes) two passes: `fix-1`
+  then `fix-2`: no overflow, axe 0 serious or critical, landing CLS 0 at 1440 and 390; one overlap reported on the
+  landing story end at 1440 (the hero copy scrolled under the top bar mid-pin; that screen is unchanged and the item was
+  recorded in the previous QA). break-ui (`e2e-shots/break3.ts`: receipt with a 64-character id, 40 fills, an 8-figure
+  cost and a tiny negative; an unmeasured unfilled order; a Council note with 1,600 characters, a 90-character token and
+  25 cited values, another not traceable; at 1440, 390, 320): one fix pass (a not-computed total printed at display size
+  and clipped; the hash column squeezed by the stamp at 320; a duplicate "NONE"), then clean. Refusal form check: 3 of
+  3. Checks: frontend vitest 684 passed, tsc 0, lint 0 errors (17 warnings, unchanged), build ok, e2e 39 passed (two
+  specs' assertions follow the ordered strings: `council-demo.spec.ts` for A7, `rebuilt-demo.spec.ts` for A3; none
+  deleted), backend 124 files / 1037 passed and tsc 0, ml-service 1785 passed / 1 skipped, evals offline 0 violations,
+  ablation --check exit 0, guard table 214 passed, roadmap ids OK; First Load JS `/` 323.6, `/dashboard` 384.3,
+  `/login` 313.2 kB gzip (was 323.2, 383.2, 313.2).
+- **Independent reviewer: no high or medium findings.** Fixed: LIMIT_MAKER shown as Limit in the ledger (the per-type
+  totals already count it so); a line under the switch when measured orders of other types are in All only; the exact
+  value below 0.000001 in words, not exponent form; `safe_trace` so the trace can never break a Council run (tested); a
+  stale docstring. Kept: (1) `/orders-summary` says unavailable when no order is stored while `/orders-ledger` lists
+  fills without stored orders, so an account with fills but no orders shows fill groups on the Orders page and no counts
+  on the overview (the summary's behaviour is unchanged); (2) `/orders-summary` and `/orders-ledger` load every fill of
+  the account (projected fields) to count them: real cost only from about 100k fills; a `$group` aggregation and one
+  shared ledger fetch for the tape and the Orders page would remove it; (3) `notionalOf` uses 0 only if both notional
+  and price were missing, which the Trade schema forbids.
 - **B3, investigated; prints not built (receipt chart removed).** Where the source comes from today: `GET
   /api/audit/orders/:orderId/replay` (`routes/explain.ts` → `services/orderReplay.ts`) reads the order, its fills and
   its `order_measurements` document; the source is `marketDataRefs` (source `data.binance.vision`, dataset

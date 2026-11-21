@@ -29,7 +29,12 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
-**2026-11-20 (latest): Design v3 ready for Deepanshu's review (`docs/design/v3/`).** Direction 1 "Tape & Receipt" is
+**2026-11-21 (latest): Design v3 fixes ready for Deepanshu's review.** Design v3 was pushed; A1-A10 and B1-B3 are
+committed locally (B3 not built: no readable prints without new storage; A2 kept: the display matches the locked grade).
+New: `GET /api/audit/orders-ledger`, `counts` and `byType` on `/orders-summary`, the Council `cited_values` event.
+Report: `docs/milestones/M8.md` ("Design v3 fixes, 2026-11-21"); status: `docs/PROGRESS.md`. Older text follows.
+
+**2026-11-20: Design v3 ready for Deepanshu's review (`docs/design/v3/`).** Direction 1 "Tape & Receipt" is
 built into every production screen with the four fixes (local commits, not pushed; design v2 stays live until the push).
 Rules: `DESIGN.md`; report: `docs/milestones/M8.md` (design v3 section); status: `docs/PROGRESS.md`. Older text follows.
 
