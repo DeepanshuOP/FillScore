@@ -158,3 +158,7 @@ floating annotations.
   server's `byType` totals (GET /audit/orders-summary), which add up to the all-orders totals.
 - The receipt draws fills only: the replay payload carries the source file of the public prints, not the prints, and the
   receipt says so.
+- 2026-11-21 (design v3 fixes B3): the receipt has no chart at all (a plot of the fills alone was near-empty); it lists
+  the fills and prints "Fills only; the public prints are in the source file." with the file's name and SHA-256. The
+  prints are not served: the server cannot read them without new storage or a download at request time (options in
+  docs/PROGRESS.md).

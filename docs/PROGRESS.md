@@ -7,7 +7,28 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: B3 (investigate the public prints for the receipt; build only if possible without storage).**
+- **Next concrete action: QA (qa3 on the changed states, break-ui, the full checks, images, M8.md).**
+- **B3, investigated; prints not built (receipt chart removed).** Where the source comes from today: `GET
+  /api/audit/orders/:orderId/replay` (`routes/explain.ts` → `services/orderReplay.ts`) reads the order, its fills and
+  its `order_measurements` document; the source is `marketDataRefs` (source `data.binance.vision`, dataset
+  `spot/daily/aggTrades`, symbol, date, SHA-256 of the daily file), written by the measurement job. No print is stored.
+  (a) Demo accounts: the committed build (`ml-service/demo_v2/out/`) holds trades, orders, measurements and fee
+  snapshots, no prints; the only committed prints are the landing hero's 38 for one order. (b) Real accounts: the same
+  refs; the prints are read by ml-service's measurement job from the daily archive into a disposable Parquet cache
+  (`measure/data/cache.py`, `MARKETDATA_CACHE_DIR`, LRU, 2 GB, on Render's ephemeral disk), which the backend cannot
+  read and which may be evicted, so reading it would not be deterministic. Neither case can be served without new
+  storage, an ingestion change or a download or exchange call at request time, all excluded by the order. So the
+  receipt omits the chart entirely (no near-empty plot) and keeps "Fills only; the public prints are in the source
+  file." with the file name and SHA-256 under SOURCE. **Options for Deepanshu (not built):**
+  1. Commit a capped window per demo order (arrival - 5 s to last fill + 5 s, at most 60 prints, cut offline from the
+     daily files whose SHA-256 the refs carry): about 50 bytes a print, at most ~3 KB an order, 700 demo orders, at
+     most ~2.1 MB of JSON in the repository (estimate; not cut). $0. Demo only.
+  2. Store the same capped window in `order_measurements` when the measurement job runs (it already holds the day's
+     prints): at most ~3 KB an order in Atlas (free tier 512 MB); needs an ingestion change, a backfill of existing
+     measurements (an Atlas write, his permission) and a field-registry row. $0 until the tier's cap. Demo and real.
+  3. Read Binance's public REST aggTrades for the window at request time: an exchange call per receipt (rate limits,
+     no file SHA-256 to cite, non-deterministic availability); excluded by the order.
+  4. Download the daily archive at request time: a whole symbol-day per receipt; excluded by the order.
 - **B2, done.** `totalsByType(orders, measurements)` (`backend/src/services/orderSummary.ts`) gives the shortfall totals
   per order type family (market; limit incl. LIMIT_MAKER; other) and over all measured orders, by the existing
   `termTotals`; `/audit/orders-summary` returns it as `byType` (computed on read; `summariseOrders` and the evidence

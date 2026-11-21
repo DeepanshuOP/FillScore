@@ -50,31 +50,13 @@ const hms = (iso: string | number) => new Date(iso).toISOString().slice(11, 19);
 const cell = (v: number | null | undefined, f: (n: number) => string) => (typeof v === 'number' && Number.isFinite(v) ? f(v) : 'NOT COMPUTED');
 
 /**
- * The fills against the price. The replay payload carries the order's fills and the source file of the public prints,
- * not the prints themselves, so the receipt draws the fills only and says where the prints are.
+ * Design v3 fixes B3: no chart. The replay payload carries the order's fills and the source file of the public prints
+ * (name and SHA-256), not the prints, and the server cannot read them without new storage or a download at request
+ * time; a plot of the fills alone would be near-empty, so the receipt lists the fills and says where the prints are.
  */
-function PriceLines({ body }: { body: ReplayBody }) {
-  const W = 400, H = 72;
-  const fills = body.fills.map((f) => ({ t: Date.parse(f.time), p: f.price })).filter((f) => Number.isFinite(f.t) && Number.isFinite(f.p));
-  if (!fills.length) return <p className="g">{NO_FILLS}</p>;
-  const arrival = body.order?.createdAt ? Date.parse(body.order.createdAt) : NaN;
-  const ts = [...fills.map((f) => f.t), ...(Number.isFinite(arrival) ? [arrival] : [])];
-  const t0 = Math.min(...ts), t1 = Math.max(...ts);
-  const lo = Math.min(...fills.map((f) => f.p)), hi = Math.max(...fills.map((f) => f.p));
-  const span = hi - lo || hi * 0.0001 || 1;
-  const x = (t: number) => 8 + ((t - t0) / (t1 - t0 || 1)) * (W - 16);
-  const y = (p: number) => 12 + (1 - (p - lo) / span) * (H - 24);
-  return (
-    <>
-      <svg className="fs-r-chart" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img"
-        aria-label={`The order's ${fills.length} fill${fills.length === 1 ? '' : 's'} between ${hms(t0)} and ${hms(t1)} UTC, at prices from ${fmtNum(lo)} to ${fmtNum(hi)}`}>
-        {Number.isFinite(arrival) ? <line className="arr" x1={x(arrival)} x2={x(arrival)} y1={2} y2={H - 2} /> : null}
-        {fills.map((f, i) => <rect key={i} className="fl" x={x(f.t) - 4} y={y(f.p) - 4} width={8} height={8} />)}
-      </svg>
-      <div className="g flex justify-between text-[11px]"><span>{hms(t0)}</span><span>{hms(t1)} UTC</span></div>
-      <p className="g c text-[11px]">Squares: the fills.{Number.isFinite(arrival) ? ' Dashed line: the order was placed.' : ''} {CHART_NOTE}</p>
-    </>
-  );
+function PrintsNote({ body }: { body: ReplayBody }) {
+  if (!body.fills.length) return <p className="g">{NO_FILLS}</p>;
+  return <p className="g mt-1 text-[11px]" data-testid="receipt-prints-note">{CHART_NOTE}</p>;
 }
 
 function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref, onClose, Title, Description }: Omit<Props, 'open' | 'onOpenChange' | 'onCloseAutoFocus'> & {
@@ -150,7 +132,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
               ))}
             </div>
           ) : <p className="g">NONE</p>}
-          <PriceLines body={body} />
+          <PrintsNote body={body} />
           <p className="sec">COSTS</p>
           {lines.length ? (
             <div className="fs-lines">
