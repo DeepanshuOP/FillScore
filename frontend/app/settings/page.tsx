@@ -113,7 +113,7 @@ export default function SettingsPage() {
 
   return (
     <AppShell userId={null} page="settings" title="Settings">
-      <div className="flex max-w-3xl flex-col gap-6">
+      <div className="flex max-w-3xl flex-col gap-6" data-view-body="">
         {status && <Banner kind="info" title={status} />}
 
         <Panel id="settings-account" title="Account" description="The account you are signed in with.">

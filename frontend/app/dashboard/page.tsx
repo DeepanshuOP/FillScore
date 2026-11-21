@@ -248,7 +248,7 @@ function DashboardContent() {
         const cards = v1Computed ? buildComponentCards(audit.breakdown) : [];
         const skipped = skippedNotice(audit.skippedTrades);
         return (
-          <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5" data-view-body="">
             {dashboardMode === 'demo' && view === 'overview' && (
               <Banner kind="demo" title="Sample data: real prices, synthetic trader"
                 action={<Link href="/signup" className="text-[13px] text-ui-ink">Connect your exchange</Link>}>

@@ -81,6 +81,18 @@
   border-top: 1px solid var(--ui-ink);
 }
 
+/* Design v3 fixes A4: the section tabs already end in an ink rule, so the section that opens a view (reached through
+   first children, or the top of each column of a view laid out as a grid) draws no second rule and no empty band. */
+:where([data-view-body]) > .panel:first-child,
+:where([data-view-body]) > :first-child > .panel:first-child,
+:where([data-view-body]) > :first-child > :first-child > .panel:first-child,
+:where([data-view-body]) > :first-child > :first-child > :first-child > .panel:first-child,
+:where([data-view-body]) > .grid:first-child > * > .panel:first-child,
+:where([data-view-body]) > .grid:first-child > * > :first-child > .panel:first-child {
+  border-top-color: transparent;
+  padding-top: 0;
+}
+
 /* A sheet laid on the paper: receipt white, a paper lift, square corners. For the few things that are objects. */
 @utility sheet {
   background: var(--ui-raised);

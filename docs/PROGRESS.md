@@ -7,7 +7,12 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: A4 (empty band and doubled rule under the section tabs).**
+- **Next concrete action: A5 (receipt sentences in sentence case).**
+- **A4, done.** Cause: the tab row ends in an ink rule, `main` adds 24-32 px, and the view's first `Panel` drew its own
+  ink rule (the `panel` utility) with 16 px more. Fix (`globals.css`, `[data-view-body]` on the dashboard's view column
+  and on Settings): the section that opens a view, or the top of each column of a grid view, draws no rule and no top
+  padding. Probe `e2e-shots/probe-rule.ts` (first ruled element under the tabs): Orders, Rules, Rankings, Council,
+  Evidence and Settings no longer have a panel rule under the tabs; Trades and Analytics had none (content between).
 - **A3, done.** `app/ui/format.ts` only: a negative value below display precision prints "−0.00 bps" / "−$0.00", a
   positive one keeps "<0.01 bps" / "<$0.01"; `exactTitle()` gives "Exactly −0.004000 bps" for the title and the
   screen-reader text (`app/ui/Fig.tsx`), used on the order receipt's cost lines and total, the overview's cost receipt,
