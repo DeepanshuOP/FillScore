@@ -7,9 +7,13 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 "Tape & Receipt" stays; the problem is sensory overload. Research first, then rebuild the landing page, the
 overview and the receipt-opening flow with less text, designed visuals and better motion; then stop for review.
 
-- **Next concrete action: step 2, write `docs/design/v31-plan.md` (rules + keep/shorten/move/delete for every text
-  block of the landing page, overview and receipt).**
-- Status: step 1 done; steps 2-6 not started.
+- **Next concrete action: step 3, overview as five chapters. First the margin-note component (`app/ui/MarginNote.tsx`,
+  Radix Popover + Vaul on touch), then the server `strip` shares on `/audit/orders-summary` (hand-computed test), then
+  the chapters (plan: `docs/design/v31-plan.md`).**
+- Status: steps 1-2 done; steps 3-6 not started.
+- **Step 2, done.** `docs/design/v31-plan.md`: rules, motion budget, and a keep/shorten/note/delete decision for every
+  text block. Before (visible words, `frontend/e2e-shots/words.ts`, 1440): landing 381, overview 378, receipt 113;
+  type sizes 18, 15, 8.
 - **Step 1, done.** GSAP agent skills installed user-wide (`~/.claude/skills/gsap-*`, nothing in the repo) and read;
   gsap.com docs and the libraries read through two docs-researcher digests; 11 sites opened and measured (5 Awwwards:
   Hark, Equator, Grail, A24, CRL; 3 SiteInspire: Atalanta, 1984, Town; gsap.com showcase + Factura; 6 Osmo demos from
