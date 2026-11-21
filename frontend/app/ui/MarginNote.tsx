@@ -1,20 +1,20 @@
 'use client'
 
-import { useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
-import { Popover } from 'radix-ui'
-import { Drawer } from 'vaul'
+import { lazy, Suspense, useCallback, useEffect, useId, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import { cn } from '../../lib/utils'
 
 /**
  * The pen margin note (design v3.1 "Quiet audit", docs/design/v31-plan.md rule 3). A small pen mark right after the
  * value it explains; the explanation lives behind it.
- * - Fine pointer (a mouse): a Radix Popover that opens on hover after 250 ms (at once within 400 ms of another note
- *   closing: the warm window), on keyboard focus and on click; it closes 150 ms after the pointer leaves the mark and the
- *   note, when focus leaves both, and on Escape (focus returns to the mark).
- * - Touch (coarse pointer): a tap opens the note in a Vaul bottom sheet with a Close button.
+ * - Fine pointer (a mouse): opens on hover after 250 ms (at once within 400 ms of another note closing: the warm
+ *   window), on keyboard focus and on click; closes 150 ms after the pointer leaves the mark and the note, when focus
+ *   leaves both, on an outside press and on Escape (focus stays on the mark).
+ * - Touch (coarse pointer): a tap opens the note in a bottom sheet with a Close button.
  * The mark is a real button named "Note: <label>", drawn in pen-ink (4.5:1 on every ground, so the pen rule holds).
- * Never put anything that guards an invariant only in a note: the visible line must stand without it.
+ * The popover and sheet code (Radix Popover, Vaul: MarginNotePopup) loads on the first hover, focus or tap, so it is
+ * not in any page's first load. Never put anything that guards an invariant only in a note.
  */
+const Popup = lazy(() => import('./MarginNotePopup'))
 const OPEN_DELAY = 250, CLOSE_DELAY = 150, WARM = 400
 let lastClosed = 0
 
@@ -39,66 +39,54 @@ function Mark() {
 export function MarginNote({ label, children, className }: { label: string; children: ReactNode; className?: string }) {
   const fine = useFinePointer()
   const [open, setOpen] = useState(false)
+  const [armed, setArmed] = useState(false)
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const btn = useRef<HTMLButtonElement>(null)
   const id = useId()
   const clear = () => { if (timer.current) clearTimeout(timer.current); timer.current = null }
   useEffect(() => clear, [])
+  // fetch the popup code when the browser is idle after load, so the first note opens without waiting for it
+  useEffect(() => {
+    const go = () => { void import('./MarginNotePopup').catch(() => {}) }
+    const w = window as Window & { requestIdleCallback?: (cb: () => void) => number }
+    if (w.requestIdleCallback) w.requestIdleCallback(go); else setTimeout(go, 1500)
+  }, [])
 
   const set = useCallback((v: boolean) => {
     clear()
+    if (v) setArmed(true)
     setOpen((was) => { if (was && !v) lastClosed = Date.now(); return v })
   }, [])
   const hoverIn = () => {
     clear()
+    setArmed(true)   // start loading the popup code while the reader hovers
     if (open) return
     if (Date.now() - lastClosed < WARM) set(true)
     else timer.current = setTimeout(() => set(true), OPEN_DELAY)
   }
   const hoverOut = () => { clear(); timer.current = setTimeout(() => set(false), CLOSE_DELAY) }
-
-  const trigger = (
-    <button type="button" aria-label={`Note: ${label}`} data-margin-note=""
-      className={cn('fs-note-mark inline-flex size-6 shrink-0 translate-y-[3px] items-center justify-center rounded-full align-baseline text-ui-pen-ink', className)}>
-      <Mark />
-    </button>
-  )
-  const body = <div className="fs-note-body">{children}</div>
-
-  if (!fine) {
-    return (
-      <Drawer.Root open={open} onOpenChange={set}>
-        <Drawer.Trigger asChild>{trigger}</Drawer.Trigger>
-        <Drawer.Portal>
-          <Drawer.Overlay className="fs-r-overlay" />
-          <Drawer.Content className="fs-vaul fs-note-sheet" aria-describedby={undefined}>
-            <div className="fs-torn-top" aria-hidden="true" />
-            <div className="fs-receipt">
-              <div className="grip" aria-hidden="true" />
-              <Drawer.Title className="font-mono text-[12px] tracking-[0.04em] text-ui-graphite uppercase">Note: {label}</Drawer.Title>
-              <div className="mt-2">{body}</div>
-              <Drawer.Close className="mt-5 h-10 w-full rounded-full border border-ui-edge font-ui text-[15px] font-medium text-ui-ink">Close</Drawer.Close>
-            </div>
-          </Drawer.Content>
-        </Drawer.Portal>
-      </Drawer.Root>
-    )
-  }
+  const isMark = useCallback((t: EventTarget | null) => !!btn.current && t instanceof Node && btn.current.contains(t), [])
 
   return (
-    <Popover.Root open={open} onOpenChange={set}>
-      {/* focus opens the note only for keyboard focus (a mouse click toggles it), and never in the instant after it
-          closed: Escape returns focus to the mark, which must not reopen it */}
-      <Popover.Trigger asChild onPointerEnter={hoverIn} onPointerLeave={hoverOut}
-        onFocus={(e) => { if (e.currentTarget.matches(':focus-visible') && Date.now() - lastClosed > 200) set(true) }}>{trigger}</Popover.Trigger>
-      <Popover.Portal>
-        <Popover.Content id={id} side="bottom" align="start" sideOffset={8} collisionPadding={16}
-          className="fs-note" onPointerEnter={clear} onPointerLeave={hoverOut}
-          onOpenAutoFocus={(e) => e.preventDefault()}
-          onFocusOutside={(e) => { if ((e.target as HTMLElement | null)?.closest?.('[data-margin-note]')) e.preventDefault() }}>
-          <p className="sr-only">Note: {label}</p>
-          {body}
-        </Popover.Content>
-      </Popover.Portal>
-    </Popover.Root>
+    <span className="relative inline-flex align-baseline">
+      <button ref={btn} type="button" aria-label={`Note: ${label}`} data-margin-note="" aria-expanded={open} aria-haspopup="dialog" aria-controls={open ? id : undefined}
+        className={cn('fs-note-mark inline-flex size-6 shrink-0 translate-y-[3px] items-center justify-center rounded-full text-ui-pen-ink', className)}
+        onPointerEnter={(e) => { if (e.pointerType === 'mouse' && fine) hoverIn() }}
+        onPointerLeave={(e) => { if (e.pointerType === 'mouse' && fine) hoverOut() }}
+        // focus opens the note only for keyboard focus (a click toggles it). Focus never leaves the mark while a note
+        // is open (the popup takes no focus), so closing with Escape cannot refocus and reopen it
+        onFocus={(e) => { if (fine && e.currentTarget.matches(':focus-visible')) set(true) }}
+        onBlur={(e) => { if (fine && !(e.relatedTarget instanceof Node && document.getElementById(id)?.contains(e.relatedTarget))) set(false) }}
+        // Escape on the mark closes the note even before its popup code has loaded
+        onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.preventDefault(); set(false) } }}
+        onClick={() => set(!open)}>
+        <Mark />
+      </button>
+      {armed ? (
+        <Suspense fallback={null}>
+          <Popup fine={fine} open={open} onOpenChange={set} label={label} id={id} isMark={isMark} onPointerEnter={clear} onPointerLeave={hoverOut}>{children}</Popup>
+        </Suspense>
+      ) : null}
+    </span>
   )
 }

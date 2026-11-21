@@ -148,7 +148,8 @@ async function main() {
   for (const width of [1440, 390]) {
     for (const s of STATES) {
       if ((s.only1440 && width !== 1440) || (only && !only.includes(s.name))) continue
-      const ctx = await b.newContext({ viewport: { width, height: width === 390 ? 844 : 900 }, deviceScaleFactor: 1 })
+      // design v3.1: QA_REDUCED=1 captures the same states with prefers-reduced-motion (files end in -rm)
+      const ctx = await b.newContext({ viewport: { width, height: width === 390 ? 844 : 900 }, deviceScaleFactor: 1, reducedMotion: process.env.QA_REDUCED ? 'reduce' : 'no-preference' })
       const page = await ctx.newPage()
       if (s.carbon) await page.addInitScript(() => localStorage.setItem('fs-theme', 'carbon'))
       await mock(page, !!s.signedIn)
@@ -156,7 +157,7 @@ async function main() {
         await page.goto(BASE + s.path, { waitUntil: 'networkidle', timeout: 60000 })
         await page.evaluate(() => document.fonts.ready)
         await s.prepare(page)
-        await page.screenshot({ path: resolve(OUT, `${s.name}-${width}.jpg`), type: 'jpeg', quality: 60 })
+        await page.screenshot({ path: resolve(OUT, `${s.name}-${width}${process.env.QA_REDUCED ? '-rm' : ''}.jpg`), type: 'jpeg', quality: 60 })
         results.push({ width, ...(await checks(page, s.name)) })
       } catch (e) {
         results.push({ width, name: s.name, error: String(e).slice(0, 200) })

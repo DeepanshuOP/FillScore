@@ -145,7 +145,49 @@ icon-in-a-square grids; no gauge; no hero-metric strip of four same-weight numbe
 sparkline standing in for content; no emoji icons; no uppercase tracked eyebrows in the sans; no orange buttons; no
 floating annotations.
 
-## 11. Decisions log
+## 11. Design v3.1 "Quiet audit" (2026-11-21)
+
+The objects, tokens, fonts and invariants above stay. v3.1 removes overload (plan and inventory:
+`docs/design/v31-plan.md`; research: `docs/design/REFERENCES-v31.md`). Measured with `frontend/e2e-shots/words.ts`.
+
+- **One idea per viewport.** A section has one visual, one sentence, at most ~25 visible words. Everything else is
+  behind disclosure. Overview chapters open with a printed rail label (`01 TOTAL` to `05 AGAINST EXPECTED`, mono,
+  left column on a desktop) instead of a heading; the accessible `h2` stays.
+- **Pen margin notes** (`app/ui/MarginNote.tsx`): a pen-ink ring-and-dot button right after the value it explains,
+  named "Note: <what>". Fine pointer: opens on hover after 250 ms (at once within 400 ms of another note), on keyboard
+  focus and on click; closes 150 ms after the pointer leaves, on blur, on an outside press and on Escape; enters in
+  160 ms, leaves in 110 ms. Touch: a Vaul sheet with Close. The popup code loads on first use or when idle.
+  **Never only in a note:** the synthetic line, ValueState words and reasons, NOT SIGNED, "not independently measured",
+  NOT COMPUTED totals, past-tense findings.
+- **Printed folds** (`Fold`, the receipt's `NOTES (n)`): a mono button with `aria-expanded`; content stays in the
+  document; no animation (used often).
+- **Type.** Mono only for figures and printed objects (tape, receipt, stamp, rail labels, the facts table); captions
+  in Cabinet Grotesk. Overview: display, 20 px sentence, 16 px body, 13 px label and note.
+- **Motion budget.** Rich motion only on the landing page and on an overview chapter's first entry, once per browser
+  session per account (`useFirstEntry`, `sessionStorage`): the stamp press with its border drawn (DrawSVG), the strip
+  feeding in (clip-path, 640 ms), the ruler's bracket and the tape's pen circle drawn (520 to 560 ms). None on tables,
+  tabs, filters, folds, the All/Market/Limit switch or ⌘K, and none on keyboard actions (a key opens the receipt
+  plainly). UI 150 to 300 ms; exits faster than entries. Reduced motion and no script: the finished frame.
+- **The month tape.** Wider than its box and dragged (GSAP Draggable + InertiaPlugin, loaded on demand) when bars
+  would be closer than 4 px; arrow keys, Home, End, Enter as before. A time loupe (3x) over the bars under the pointer
+  (off under reduced motion). The largest order circled by the pen with its server amount. A click opens the order
+  that is visibly picked.
+- **Where the money went.** A torn strip of two parts whose widths are the server's shares (`strip` on
+  `/audit/orders-summary`): measured against market prices (ink) and fees (ink 65%; at the published rate: hatched,
+  dashed outline, "not independently measured" printed). A negative part has no width and is named apart.
+- **The receipt's entry.** From a tape bar or a ledger row on a desktop the paper grows out of it (GSAP Flip, 300 ms;
+  lines appear as it lands); the first open of a session feeds out of the slot in steps (420 ms); later opens 300 ms;
+  tearing back 220 ms. Footnotes (prints, expected cost, notes, sources, the record's hash) fold into NOTES.
+- **Landing.** Hero and the $0.25 unchanged; the proof paragraph is a note; print sides are tape ticks (filled up:
+  buyer-initiated, hollow down: seller-initiated). A pinned horizontal row of three printed objects (tape, receipt,
+  stamp) with masked line titles and a "1 / 3" counter on a desktop with motion; stacked otherwise.
+
+## 12. Decisions log
+
+- 2026-11-21 (design v3.1): "Quiet audit" rules (section 11). Visible words: landing 381 to 180, overview 378 to 107,
+  receipt 113 to 52 (1440). The overview's demo banner became one slim always-visible line; the B2 term table and
+  switch moved into the "Lines" fold under the strip; the overview's tape opens the receipt in place instead of
+  switching to the Orders section.
 
 - 2026-11-20: direction 1 "Tape & Receipt" chosen over direction 2 "Grid & Highlighter"; replaces design v2
   "Instrument". Fixes 1 to 4 applied. The v2 rules (navy surfaces, cyan measured, blue action, Geist, the aurora, the

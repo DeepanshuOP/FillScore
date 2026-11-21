@@ -28,8 +28,11 @@ describe('MarginNote', () => {
     const root = createRoot(host)
     await act(async () => root.render(<MarginNote label="the band">Band 92.5 to 94.1.</MarginNote>))
     const btn = host.querySelector('button')!
-    await act(async () => { btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); btn.click() })
+    await act(async () => { btn.click() })
+    // the popup code loads on first use (lazy): wait for it
+    for (let i = 0; i < 50 && !document.body.textContent?.includes('Band 92.5 to 94.1.'); i++) await act(async () => { await new Promise((r) => setTimeout(r, 20)) })
     expect(document.body.textContent).toContain('Band 92.5 to 94.1.')
+    expect(btn.getAttribute('aria-expanded')).toBe('true')
     await act(async () => { document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })) })
     await act(async () => { await new Promise((r) => setTimeout(r, 0)) })
     expect(btn.getAttribute('aria-expanded')).toBe('false')

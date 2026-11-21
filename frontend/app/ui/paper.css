@@ -230,6 +230,8 @@
 .fs-note-mark { cursor: pointer; transition: transform 140ms var(--ui-ease-out); }
 .fs-note-mark:active { transform: translateY(3px) scale(0.92); }
 .fs-note-mark:focus-visible { outline: 2px solid var(--ui-pen-ink); outline-offset: 1px; }
+/* touch: the 24 px mark still gives a 44 px target */
+@media (pointer: coarse) { .fs-note-mark { position: relative; } .fs-note-mark::after { content: ''; position: absolute; inset: -10px; } }
 .fs-note {
   z-index: 60; max-width: min(340px, calc(100vw - 32px)); background: var(--ui-raised); color: var(--ui-ink);
   padding: 12px 14px 14px; border-top: 2px solid var(--ui-pen); box-shadow: var(--ui-shadow-float);

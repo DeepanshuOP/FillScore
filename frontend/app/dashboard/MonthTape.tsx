@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatSignedBps, formatUsd } from '../ui/format'
 import { ValueState } from '../ui/ValueState'
 import { MarginNote } from '../ui/MarginNote'
@@ -232,7 +232,8 @@ export function MonthTape({ query, request, period, periodLabel, onOpen, account
 }
 
 /** The bars and day marks, shared by the tape and its loupe (the loupe stretches them; strokes keep their width). */
-function Bars({ ticks, days, x, base, zero, D, active, wideLabels, lens = false }: {
+// memo: the loupe follows every pointer move; the tape's own bars redraw only when the picked order changes
+const Bars = memo(function Bars({ ticks, days, x, base, zero, D, active, wideLabels, lens = false }: {
   ticks: ReturnType<typeof monthTicks>; days: ReturnType<typeof dayMarks>; x: (t: number) => number
   base: number; zero: number; D: number; active: number | null; wideLabels: boolean; lens?: boolean
 }) {
@@ -256,4 +257,4 @@ function Bars({ ticks, days, x, base, zero, D, active, wideLabels, lens = false 
       ))}
     </>
   )
-}
+})

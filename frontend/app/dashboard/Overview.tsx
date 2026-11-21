@@ -118,7 +118,8 @@ function Grade({ grade, band, v1, v1Note, periodLabel, account }: Pick<OverviewP
           // below the desktop layout the stamp's -7° turn swings its top-left corner past its box (design v3 fixes A10)
           <div className="py-4 pl-5 sm:pl-2">
             <GradeStamp grade={grade.letter} score={grade.score} period={periodLabel} version={grade.scoringVersion} press={play} drawing={drawing}
-              className="max-sm:origin-left max-sm:scale-[0.72]"><StampInk big /></GradeStamp>
+              // scaled to 72% from its left edge on a phone; the negative margin gives back the 28% its box would still take
+              className="max-sm:origin-left max-sm:scale-[0.72] max-sm:-mr-20"><StampInk big /></GradeStamp>
           </div>
         ) : grade ? (
           <ValueState state="insufficient" label="Measured grade" reason={grade.text} size="md" />
