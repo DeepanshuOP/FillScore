@@ -98,7 +98,7 @@ for (const id of Object.keys(V1)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersBody: { available: true, ...summariseOrders(orders, measurements), counts: orderCounts(orders as any, fills as any) },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    ledger: { available: true, ...buildOrderLedger(orders as any, fills as any) },
+    ledger: { available: true, ...buildOrderLedger(orders as any, fills as any, measurements as any) },
     v2Body: {
       label: 'v2 (measured)', scoringVersion: g.scoringVersion, versionFileSha256: g.versionFileSha256, measureVersion: g.measureVersion,
       integrityHash: g.integrityHash, computedAt: null, result: g.result, costVsExpected: g.costVsExpected,

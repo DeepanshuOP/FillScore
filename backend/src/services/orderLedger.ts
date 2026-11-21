@@ -14,6 +14,18 @@ export interface LedgerRow {
     key: string; orderId: string; symbol: string; side: 'BUY' | 'SELL'; type: string | null; status: string | null;
     placedAt: string | null; firstFill: string | null; lastFill: string | null;
     fills: number; quantity: number; notionalUsd: number; feesUsd: number | null; makerShare: number | null;
+    /** Design v3 fixes B1: the order's total cost from its stored measurement (negative = price improvement); null if unmeasured. */
+    cost: { usd: number; bps: number } | null;
+}
+export interface LedgerMeasurementIn { exchange?: string; symbol: string; orderId: string; shortfall?: Record<string, any> | null; unmeasuredReason?: string | null }
+
+const fin = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
+
+/** usd = totalBps x intendedNotional / 10,000: the receipt's formula (orderReplay.ts). null when not measured. */
+export function orderTotalCost(m: LedgerMeasurementIn | undefined): { usd: number; bps: number } | null {
+    const sf = m && !m.unmeasuredReason ? m.shortfall : null;
+    if (!sf || !fin(sf.totalBps) || !fin(sf.intendedNotional) || !(sf.intendedNotional > 0)) return null;
+    return { usd: sf.totalBps * sf.intendedNotional / 1e4, bps: sf.totalBps };
 }
 
 const keyOf = (x: { exchange?: string; symbol: string; orderId?: string | null }) => `${x.exchange ?? ''}|${x.symbol}|${x.orderId ?? ''}`;
@@ -58,21 +70,22 @@ function sums(fs: LedgerFillIn[]) {
     };
 }
 
-export function buildOrderLedger(orders: LedgerOrderIn[], fills: LedgerFillIn[]): { counts: OrderCounts; orders: LedgerRow[] } {
+export function buildOrderLedger(orders: LedgerOrderIn[], fills: LedgerFillIn[], measurements: LedgerMeasurementIn[] = []): { counts: OrderCounts; orders: LedgerRow[] } {
     const groups = groupFills(fills);
+    const measured = new Map(measurements.map(m => [keyOf(m), m]));
     const rows: LedgerRow[] = [];
     const stored = new Set<string>();
     for (const o of orders) {
         const k = keyOf(o);
         stored.add(k);
         rows.push({ key: k, orderId: o.orderId, symbol: o.symbol, side: o.side === 'SELL' ? 'SELL' : 'BUY', type: o.type ?? null,
-            status: o.status, placedAt: iso(o.createdAt), ...sums(groups.get(k) ?? []) });
+            status: o.status, placedAt: iso(o.createdAt), ...sums(groups.get(k) ?? []), cost: orderTotalCost(measured.get(k)) });
     }
     for (const [k, fs] of groups) {
         if (stored.has(k)) continue;
         const f = fs[0];
         rows.push({ key: k, orderId: f.orderId ? String(f.orderId) : '', symbol: f.symbol, side: f.side === 'SELL' ? 'SELL' : 'BUY',
-            type: f.orderType ?? null, status: null, placedAt: null, ...sums(fs) });
+            type: f.orderType ?? null, status: null, placedAt: null, ...sums(fs), cost: null });
     }
     const when = (r: LedgerRow) => Date.parse(r.placedAt ?? r.firstFill ?? '') || 0;
     rows.sort((a, b) => when(b) - when(a) || (a.key < b.key ? -1 : 1));

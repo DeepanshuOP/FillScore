@@ -7,7 +7,16 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 Design v3 is approved and pushed. This order fixes the review's findings (part A), adds three server-side numbers the
 design needs (part B), then QA. One local commit per numbered item.
 
-- **Next concrete action: B1 (each order's total cost in the ledger payload; the month tape's bars become the cost).**
+- **Next concrete action: B2 (totals per order type on the server; the overview's All / Market / Limit switch).**
+- **B1, done.** Each ledger row carries `cost` {usd, bps}: `orderTotalCost()` = shortfall.totalBps x intendedNotional /
+  10,000, the formula the receipt uses (`orderReplay.ts`), null when unmeasured; computed on read, no stored data
+  changed. On demo-moderate the 245 per-order costs sum to $52.0785604695634, the overview's total. The month tape's bar
+  height is now the order's dollar cost on one linear scale; a price improvement hangs below the baseline (none in
+  demo-moderate); an unmeasured order is a short dashed mark; the caption says so; the preview and screen-reader text
+  give the cost. Payload (the ledger, which the tape reads) for 245 orders: 109,678 bytes, 20,482 gzip. Tests:
+  `orderLedger.test.ts` (hand values incl. a negative and an unfilled order), `monthTape.test.ts` (shares, baseline,
+  all-improvement case), `ordersTable.test.ts`. DESIGN.md decision log and ARCHITECTURE.md updated. Backend 1034
+  passed, frontend 678.
 - **A10, done.** Cause: below the desktop layout the stamp sits on the left margin and its -7° turn (about its left edge
   on phones, where it is scaled from there) swings the top-left corner and its outline 12 to 15 px left of its box,
   past the 16 px gutter. Fix: a 20 px left inset on the stamp's wrapper below 1024 px (`Overview.tsx`). Measured

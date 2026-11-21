@@ -275,6 +275,14 @@ view says "not computed for this data" and the measured views (`/api/audit/order
 its place. `demo-bybit`, `demo-okx` and `demo-multi` were removed from the product on 2026-11-13 (their Atlas
 data is kept; `demo-bybit` returns in M6 with Bybit measurement). Whale bursts and markout prices are real public data.
 
+Orders ledger (design v3 fixes, 2026-11-21): `GET /api/audit/orders-ledger` (`services/orderLedger.ts`, computed on
+read from `orders`, `trades` and `order_measurements`) returns `counts` {orders, withFills, fills, unrecorded} (the same
+`orderCounts()` that `/api/audit/orders-summary` now returns as `counts`) and one row per stored order, filled or not,
+then per group of fills without a stored order: status, placed time, first and last fill, fills, quantity, notional,
+fees, maker share and `cost` {usd, bps} (totalBps x intendedNotional / 10,000, the receipt's formula; null if not
+measured). The Orders ledger and the overview's month tape read it. Size for demo-moderate's 245 orders: 109,678 bytes,
+20,482 gzip.
+
 Canonical v1 demo scores (the frozen, published audits): `demo-disciplined` 95.885 (A), `demo-moderate` 84.809 (B),
 `demo-aggressive` 60.675 (C).
 

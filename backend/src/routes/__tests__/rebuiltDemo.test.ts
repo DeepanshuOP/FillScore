@@ -148,6 +148,8 @@ describe('rebuilt demo (no per-trade v1 fields)', () => {
         expect(ledger.body.counts).toEqual(summary.body.counts);
         expect(ledger.body.orders).toHaveLength(8);
         expect(ledger.body.orders.filter((r: any) => r.status === 'CANCELED').map((r: any) => r.orderId).sort()).toEqual(['4', '5']);
+        // B1: these measurements state no intended notional, so no order has a dollar cost (null, never 0)
+        expect(ledger.body.orders.every((r: any) => r.cost === null)).toBe(true);
     });
 
     it('/orders-ledger: available false for an account with no orders and no fills; needs an identity', async () => {

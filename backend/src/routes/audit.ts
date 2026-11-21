@@ -311,12 +311,14 @@ const LEDGER_FILL_FIELDS = { exchange: 1, tradeId: 1, symbol: 1, orderId: 1, sid
 auditRouter.get('/orders-ledger', resolveAccount, async (req: Request, res: Response) => {
     try {
         const accountId = req.accountId!;
-        const [orders, fills] = await Promise.all([
+        const [orders, fills, measurements] = await Promise.all([
             Order.find({ accountId }, { exchange: 1, symbol: 1, orderId: 1, type: 1, side: 1, status: 1, createdAt: 1 }).lean(),
             Trade.find({ accountId }, LEDGER_FILL_FIELDS).lean(),
+            // B1: each order's total cost, from the stored measurement (the receipt's formula)
+            OrderMeasurement.find({ accountId }, { exchange: 1, symbol: 1, orderId: 1, 'shortfall.totalBps': 1, 'shortfall.intendedNotional': 1, unmeasuredReason: 1 }).lean(),
         ]);
         if (orders.length === 0 && fills.length === 0) return res.status(200).json({ available: false, reason: 'no_orders' });
-        return res.status(200).json({ available: true, ...buildOrderLedger(orders as any, fills as any) });
+        return res.status(200).json({ available: true, ...buildOrderLedger(orders as any, fills as any, measurements as any) });
     } catch (error: any) {
         console.error('Error fetching orders ledger:', error?.name);
         return res.status(500).json({ error: 'Internal Server Error' });

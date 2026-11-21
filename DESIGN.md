@@ -88,7 +88,7 @@ audit is light, printed and calm. Carbon copy covers dark rooms.
   (`.fs-word-stamp`): SIGNED, VALID, CONSISTENT (dashed, ink), INVALID and RETURNED (danger), NOT ISSUED, NOT ON FILE.
 - **Tape** (`.fs-strip` + `.fs-sprockets`): receipt white with sprocket holes punched along both edges. The landing hero's
   tape carries the 38 real prints, the arrival quote and the two fills; the overview's month tape carries one tick per
-  order (height = the order's value); the rankings sit on a tape.
+  order (height = the order's total cost in dollars from the server's ledger; a price improvement hangs below the line); the rankings sit on a tape.
 - **Pen** (`app/ui/pen.ts`, seeded, so server and client draw the same stroke): `circlePath`, `bracketPath`,
   `underlinePath`, `leaderPath`; `PenCircle` and `PenBracket` wrap inline content. **A pen note never floats**: each
   note sits beside its mark and is tied to it by a leader.
@@ -150,7 +150,9 @@ floating annotations.
 - 2026-11-20: direction 1 "Tape & Receipt" chosen over direction 2 "Grid & Highlighter"; replaces design v2
   "Instrument". Fixes 1 to 4 applied. The v2 rules (navy surfaces, cyan measured, blue action, Geist, the aurora, the
   gauge, the bento, "no uppercase anywhere") are deleted.
-- The overview's month tape sizes ticks by order value, not cost: the overview has no per-order cost without fetching
+- 2026-11-21 (design v3 fixes B1): the month tape's ticks are each order's total cost from GET /audit/orders-ledger,
+  on one dollar scale with improvements below the line; the next line is superseded.
+- (Superseded.) The overview's month tape sizes ticks by order value, not cost: the overview has no per-order cost without fetching
   every replay. The prototype's All/Market/Limit switch is left out: the served summary has no per-type totals.
 - The receipt draws fills only: the replay payload carries the source file of the public prints, not the prints, and the
   receipt says so.

@@ -35,6 +35,39 @@ const FILLS = [
     fill('d', 'ETHUSDT', '9', 2, 10, null, false, '09:00:00'),
 ];
 
+// Design v3 fixes B1: each order's total cost, from its stored measurement, by the formula the receipt uses
+// (orderReplay.ts): usd = shortfall.totalBps x shortfall.intendedNotional / 10,000.
+//   BTC 1: 2.5 bps of 101   -> 2.5 x 101 / 10,000 = 0.02525
+//   BTC 2: -4 bps of 101    -> -4 x 101 / 10,000 = -0.0404 (price improvement: negative)
+//   ETH 2: 7 bps of 50      -> 7 x 50 / 10,000 = 0.035 (unfilled: its opportunity cost)
+//   BTC 3: not measured     -> null; ETH 9: no stored order, no measurement -> null
+const meas = (symbol: string, orderId: string, shortfall: Record<string, number> | null, unmeasuredReason: string | null = null) =>
+    ({ exchange: 'binance', symbol, orderId, shortfall, unmeasuredReason });
+const MEAS = [
+    meas('BTCUSDT', '1', { totalBps: 2.5, intendedNotional: 101 }),
+    meas('BTCUSDT', '2', { totalBps: -4, intendedNotional: 101 }),
+    meas('ETHUSDT', '2', { totalBps: 7, intendedNotional: 50 }),
+    meas('BTCUSDT', '3', null, 'no_quote_at_arrival'),
+];
+
+describe('buildOrderLedger: each order\'s total cost (B1)', () => {
+    const rows = buildOrderLedger(ORDERS, FILLS, MEAS).orders;
+    const cost = (s: string, id: string) => rows.find(r => r.symbol === s && r.orderId === id)!.cost;
+    it('usd and bps from the stored measurement, by the receipt\'s formula', () => {
+        expect(cost('BTCUSDT', '1')!.bps).toBe(2.5);
+        expect(cost('BTCUSDT', '1')!.usd).toBeCloseTo(0.02525, 12);
+        expect(cost('BTCUSDT', '2')!.usd).toBeCloseTo(-0.0404, 12);
+        expect(cost('ETHUSDT', '2')!.usd).toBeCloseTo(0.035, 12);
+    });
+    it('null, never zero, for an order that was not measured or has no stored order', () => {
+        expect(cost('BTCUSDT', '3')).toBeNull();
+        expect(cost('ETHUSDT', '9')).toBeNull();
+    });
+    it('without measurements every cost is null', () => {
+        expect(buildOrderLedger(ORDERS, FILLS).orders.every(r => r.cost === null)).toBe(true);
+    });
+});
+
 describe('orderCounts', () => {
     it('counts stored orders, orders with a fill, fills, and fill groups without a stored order', () => {
         expect(orderCounts(ORDERS, FILLS)).toEqual({ orders: 4, withFills: 2, fills: 4, unrecorded: 1 });

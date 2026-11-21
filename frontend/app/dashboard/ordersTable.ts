@@ -26,11 +26,14 @@ export interface OrderRow {
   notionalUsd: number;
   feesUsd: number | null;
   makerShare: number | null;
+  /** Design v3 fixes B1: the order's total cost from the server (negative = price improvement); null if not measured. */
+  cost: { usd: number; bps: number } | null;
 }
 
 interface ServerRow {
   key: string; orderId: string; symbol: string; side: string; type: string | null; status: string | null; placedAt: string | null;
   firstFill: string | null; fills: number; quantity: number; notionalUsd: number; feesUsd: number | null; makerShare: number | null;
+  cost?: { usd: number; bps: number } | null;
 }
 
 const typeOf = (raw: string | null | undefined): OrderType => {
@@ -45,6 +48,7 @@ export function ledgerRows(body: unknown): OrderRow[] | null {
     key: r.key, orderId: r.orderId ?? '', symbol: r.symbol, side: r.side === 'SELL' ? 'SELL' : 'BUY', type: typeOf(r.type),
     status: r.status ?? null, placedAt: r.placedAt ?? null, firstFill: r.firstFill ?? null, when: r.placedAt ?? r.firstFill ?? '',
     fills: r.fills, quantity: r.quantity, notionalUsd: r.notionalUsd, feesUsd: r.feesUsd ?? null, makerShare: r.makerShare ?? null,
+    cost: r.cost && Number.isFinite(r.cost.usd) && Number.isFinite(r.cost.bps) ? { usd: r.cost.usd, bps: r.cost.bps } : null,
   }));
 }
 

@@ -13,7 +13,8 @@ const body = {
   counts: { orders: 2, withFills: 1, fills: 2, unrecorded: 1 },
   orders: [
     { key: 'binance|BTCUSDT|1', orderId: '1', symbol: 'BTCUSDT', side: 'BUY', type: 'LIMIT', status: 'FILLED', placedAt: '2024-01-15T10:00:00.000Z',
-      firstFill: '2024-01-15T10:00:01.000Z', lastFill: '2024-01-15T10:00:03.000Z', fills: 1, quantity: 1, notionalUsd: 101, feesUsd: 0.1, makerShare: 1 },
+      firstFill: '2024-01-15T10:00:01.000Z', lastFill: '2024-01-15T10:00:03.000Z', fills: 1, quantity: 1, notionalUsd: 101, feesUsd: 0.1, makerShare: 1,
+      cost: { usd: 0.02525, bps: 2.5 } },
     { key: 'binance|ETHUSDT|2', orderId: '2', symbol: 'ETHUSDT', side: 'SELL', type: 'MARKET', status: 'CANCELED', placedAt: '2024-01-15T12:00:00.000Z',
       firstFill: null, lastFill: null, fills: 0, quantity: 0, notionalUsd: 0, feesUsd: null, makerShare: null },
     { key: 'binance|ETHUSDT|9', orderId: '9', symbol: 'ETHUSDT', side: 'BUY', type: null, status: null, placedAt: null,
@@ -28,7 +29,9 @@ describe('ledgerRows', () => {
     expect(rows.map((r) => r.type)).toEqual(['Limit', 'Market', 'Not recorded']);
   });
   it('copies the server figures unchanged (no arithmetic in the browser)', () => {
-    expect(rows[0]).toMatchObject({ fills: 1, quantity: 1, notionalUsd: 101, feesUsd: 0.1, makerShare: 1, status: 'FILLED', when: '2024-01-15T10:00:00.000Z' });
+    expect(rows[0]).toMatchObject({ fills: 1, quantity: 1, notionalUsd: 101, feesUsd: 0.1, makerShare: 1, status: 'FILLED', when: '2024-01-15T10:00:00.000Z',
+      cost: { usd: 0.02525, bps: 2.5 } });
+    expect(rows[1].cost).toBeNull();   // B1: no cost sent, null (never 0)
   });
   it('an unfilled order keeps its status and nulls; a fill group without a stored order is dated by its first fill', () => {
     expect(rows[1]).toMatchObject({ status: 'CANCELED', fills: 0, feesUsd: null, makerShare: null, firstFill: null });

@@ -1,12 +1,13 @@
 /**
- * View model of the overview's month tape (design v3): one tick per order on the period's time axis. Pure; tested in
- * monthTape.test.ts. The height is the order's value (the square root of its notional, as a share of the largest), the
- * only per-order size the overview has without fetching every replay; the tape says so. The order's cost is on its
- * receipt, one click away.
+ * View model of the overview's month tape (design v3). Pure; tested in monthTape.test.ts. One tick per order on the
+ * period's time axis. Design v3 fixes B1: the height is the order's total cost in dollars, which the server computes
+ * per order (GET /audit/orders-ledger, `cost.usd`, the receipt's formula); a price improvement (negative cost) is drawn
+ * below the baseline on the same scale. This file only places the server's figures; it computes no cost.
  */
 import type { OrderRow } from './ordersTable'
 
-export interface MonthTick { key: string; t: number; v: number; row: OrderRow }
+/** v: the cost as a signed share of the span (largest cost + largest improvement); measured: the order has a cost. */
+export interface MonthTick { key: string; t: number; v: number; measured: boolean; row: OrderRow }
 
 export function monthTicks(rows: OrderRow[], start: string, end: string): MonthTick[] {
   const t0 = Date.parse(start), t1 = Date.parse(end)
@@ -15,9 +16,21 @@ export function monthTicks(rows: OrderRow[], start: string, end: string): MonthT
     .map((row) => ({ row, ms: Date.parse(row.when) }))
     .filter(({ ms }) => Number.isFinite(ms) && ms >= t0 && ms < t1)
     .sort((a, b) => a.ms - b.ms)
-  const root = (n: number) => (Number.isFinite(n) && n > 0 ? Math.sqrt(n) : 0)
-  const max = Math.max(0, ...inside.map(({ row }) => root(row.notionalUsd)))
-  return inside.map(({ row, ms }) => ({ key: row.key, t: (ms - t0) / (t1 - t0), v: max > 0 ? root(row.notionalUsd) / max : 0, row }))
+  const usd = (r: OrderRow) => (r.cost && Number.isFinite(r.cost.usd) ? r.cost.usd : null)
+  const up = Math.max(0, ...inside.map(({ row }) => usd(row) ?? 0))
+  const down = Math.max(0, ...inside.map(({ row }) => -(usd(row) ?? 0)))
+  const span = up + down
+  return inside.map(({ row, ms }) => {
+    const u = usd(row)
+    return { key: row.key, t: (ms - t0) / (t1 - t0), v: u !== null && span > 0 ? u / span : 0, measured: u !== null, row }
+  })
+}
+
+/** Where the baseline sits, as a share of the drawable height from the top: the largest cost's share (1 when none). */
+export function baselineShare(ticks: MonthTick[]): number {
+  const up = Math.max(0, ...ticks.map((t) => t.v))
+  const down = Math.max(0, ...ticks.map((t) => -t.v))
+  return up + down > 0 ? up : 1
 }
 
 /** The start of each UTC day inside the period, as a share of the axis. */
