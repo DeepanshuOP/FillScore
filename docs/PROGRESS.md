@@ -4,8 +4,14 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, fifth: two fixes, the production 418, IA v4 research and proposal (local commits)
 
-- **Next concrete action: Step 1a** (cal.com public site, read-only). Open from 0c: Deepanshu's probe output and Render log lines, to
-  confirm or reject the provisional egress-IP reading (LOG §AK 0c).
+- **Next concrete action: Step 2** (`docs/design/IA-v4/PROPOSAL.md`).
+- **Step 1: done.** `docs/design/IA-v4/REFERENCES.md` (cal.com site and app, 9 references, number rules, interaction shortlist with
+  budgets; 21st.dev grants no copy licence, so nothing is copied from it; no new dependency). Captures in `.work/ia/` (not committed).
+  Wealthsimple served a block page and was not retried. **1b:** the headed Chromium opened on app.cal.com, but cal.com refused the login as an
+  automated browser (email and Google). Not worked around; the browser was closed and `/tmp/fs-calcom-profile` deleted; Deepanshu
+  takes read-only screenshots from his own browser instead (the order's fallback). Open from 0c:
+  Deepanshu's probe output and Render log lines, to confirm or reject the provisional egress-IP reading (LOG §AK 0c).
+- **Step 1a: done** (notes and captures in `.work/ia/calcom/`, not committed; the write-up comes with Step 1's commit).
 - **Step 0c: code done, diagnosis provisional.** At b380669 the probe did not go through the governor, so its 418 was Binance's answer to
   the probe's own request, not stored state. A fresh deploy sends nothing to Binance at boot; the scheduler's first tick (+60 s) sends
   only for a stale real account with a key; the smoke probe sends 1 request of weight 1. Now: the api.binance.com probe consults the
