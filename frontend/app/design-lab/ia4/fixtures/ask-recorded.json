@@ -1,0 +1,247 @@
+{
+ "recorded": true,
+ "label": "Recorded answers of the Ask agent on demo data (synthetic trader, real prices); not a live answer.",
+ "account": "demo-moderate",
+ "recordedAt": "2026-11-22T19:03:02+00:00",
+ "claimRulesVersion": "1.4.0",
+ "scoringVersion": "v2.3.0",
+ "source": "ml-service/scripts/record_ask_fixture.py over ml-service/demo_v2/out (committed demo files)",
+ "runs": [
+  {
+   "question": "Which orders cost the most?",
+   "result": {
+    "mode": "ask",
+    "claim_rules_version": "1.4.0",
+    "tools_used": [
+     "costliest"
+    ],
+    "values": [
+     {
+      "placeholder": "costliest.orders.0.cost_usd",
+      "shown": "$3.31"
+     },
+     {
+      "placeholder": "costliest.orders.0.order_id",
+      "shown": "ord-moderate-BTCUSDT-319184"
+     },
+     {
+      "placeholder": "costliest.orders.0.symbol",
+      "shown": "BTCUSDT"
+     },
+     {
+      "placeholder": "costliest.orders.0.total_bps",
+      "shown": "120.8 bps"
+     },
+     {
+      "placeholder": "costliest.orders.1.cost_usd",
+      "shown": "$1.42"
+     },
+     {
+      "placeholder": "costliest.orders.1.order_id",
+      "shown": "ord-moderate-BTCUSDT-350407"
+     },
+     {
+      "placeholder": "costliest.orders.1.symbol",
+      "shown": "BTCUSDT"
+     },
+     {
+      "placeholder": "costliest.orders.1.total_bps",
+      "shown": "53.8 bps"
+     },
+     {
+      "placeholder": "costliest.orders.2.cost_usd",
+      "shown": "$1.36"
+     },
+     {
+      "placeholder": "costliest.orders.2.order_id",
+      "shown": "ord-moderate-ETHUSDT-687601"
+     },
+     {
+      "placeholder": "costliest.orders.2.symbol",
+      "shown": "ETHUSDT"
+     },
+     {
+      "placeholder": "costliest.orders.2.total_bps",
+      "shown": "61.3 bps"
+     },
+     {
+      "placeholder": "costliest.orders.3.cost_usd",
+      "shown": "$1.01"
+     },
+     {
+      "placeholder": "costliest.orders.3.order_id",
+      "shown": "ord-moderate-ETHUSDT-924212"
+     },
+     {
+      "placeholder": "costliest.orders.3.symbol",
+      "shown": "ETHUSDT"
+     },
+     {
+      "placeholder": "costliest.orders.3.total_bps",
+      "shown": "50.0 bps"
+     },
+     {
+      "placeholder": "costliest.orders.4.cost_usd",
+      "shown": "$0.84"
+     },
+     {
+      "placeholder": "costliest.orders.4.order_id",
+      "shown": "ord-moderate-BTCUSDT-365167"
+     },
+     {
+      "placeholder": "costliest.orders.4.symbol",
+      "shown": "BTCUSDT"
+     },
+     {
+      "placeholder": "costliest.orders.4.total_bps",
+      "shown": "28.6 bps"
+     }
+    ],
+    "n_calls": 2,
+    "degraded": true,
+    "fallback": "the model's answer was empty after the checks",
+    "answer": "The order that cost the most was ord-moderate-BTCUSDT-319184 at $3.31."
+   },
+   "models": [
+    "groq/qwen/qwen3.8-27b",
+    "groq/qwen/qwen3.8-27b"
+   ]
+  },
+  {
+   "question": "What did my orders cost in total?",
+   "result": {
+    "mode": "ask",
+    "claim_rules_version": "1.4.0",
+    "tools_used": [
+     "costs"
+    ],
+    "values": [
+     {
+      "placeholder": "costs.measured_order_count",
+      "shown": "245"
+     },
+     {
+      "placeholder": "costs.median_execution_bps",
+      "shown": ">-0.01 bps"
+     },
+     {
+      "placeholder": "costs.median_total_bps",
+      "shown": "10.0 bps"
+     },
+     {
+      "placeholder": "costs.total_cost_usd",
+      "shown": "$52.08"
+     },
+     {
+      "placeholder": "costs.total_fees_usd",
+      "shown": "$41.98"
+     },
+     {
+      "placeholder": "costs.unmeasured_order_count",
+      "shown": "0"
+     }
+    ],
+    "n_calls": 2,
+    "degraded": false,
+    "fallback": null,
+    "answer": "Your orders cost a total of $52.08."
+   },
+   "models": [
+    "groq/qwen/qwen3.8-27b",
+    "groq/qwen/qwen3.8-27b"
+   ]
+  },
+  {
+   "question": "How did my market orders compare with the modelled cost?",
+   "result": {
+    "mode": "ask",
+    "claim_rules_version": "1.4.0",
+    "tools_used": [
+     "cost_vs_expected"
+    ],
+    "values": [
+     {
+      "placeholder": "expected.excess_bps",
+      "shown": "-0.2 bps"
+     },
+     {
+      "placeholder": "expected.expected_bps",
+      "shown": "0.1 bps"
+     },
+     {
+      "placeholder": "expected.interval_high_bps",
+      "shown": "-0.1 bps"
+     },
+     {
+      "placeholder": "expected.interval_low_bps",
+      "shown": "-0.3 bps"
+     },
+     {
+      "placeholder": "expected.order_count",
+      "shown": "80"
+     },
+     {
+      "placeholder": "expected.paid_bps",
+      "shown": "-0.1 bps"
+     }
+    ],
+    "n_calls": 2,
+    "degraded": false,
+    "fallback": null,
+    "answer": "Your market orders paid -0.1 bps in bps, which was better than the modelled cost of 0.1 bps in bps. The excess performance was -0.2 bps in bps, falling within the interval of -0.3 bps to -0.1 bps in bps."
+   },
+   "models": [
+    "groq/qwen/qwen3.8-27b",
+    "groq/qwen/qwen3.8-27b"
+   ]
+  },
+  {
+   "question": "What score did my execution get?",
+   "result": {
+    "mode": "ask",
+    "claim_rules_version": "1.4.0",
+    "tools_used": [
+     "score"
+    ],
+    "values": [
+     {
+      "placeholder": "score.band_high_score",
+      "shown": "94.1"
+     },
+     {
+      "placeholder": "score.band_low_score",
+      "shown": "92.5"
+     },
+     {
+      "placeholder": "score.composite_score",
+      "shown": "93.4"
+     },
+     {
+      "placeholder": "score.fill_count",
+      "shown": "607"
+     },
+     {
+      "placeholder": "score.grade",
+      "shown": "A"
+     },
+     {
+      "placeholder": "score.order_count",
+      "shown": "245"
+     },
+     {
+      "placeholder": "score.version",
+      "shown": "v2.3.0"
+     }
+    ],
+    "n_calls": 2,
+    "degraded": false,
+    "fallback": null,
+    "answer": "Your execution received a composite score of 93.4 and a grade of A."
+   },
+   "models": [
+    "groq/qwen/qwen3.8-27b",
+    "groq/qwen/qwen3.8-27b"
+   ]
+  }
+ ]
+}

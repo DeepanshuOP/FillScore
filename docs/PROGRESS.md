@@ -4,7 +4,12 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, fifth: two fixes, the production 418, IA v4 research and proposal (local commits)
 
-- **Next concrete action: Step 2** (`docs/design/IA-v4/PROPOSAL.md`).
+- **Next concrete action: Step 3** (prototype in `frontend/app/design-lab/ia4/`).
+- **Step 2: done.** `docs/design/IA-v4/PROPOSAL.md`: sitemap (marketing 5 items; app sidebar of 9 nouns + bottom group), Ask home
+  with 4 chips, page inventory with 308 redirects for every moved route, proposed DESIGN §12 "Numbers", interaction and bundle
+  budgets, phone plan, open questions. The Ask answers for the prototype were recorded from the real `ask_flow` on the committed
+  demo-moderate files (`ml-service/scripts/record_ask_fixture.py`; 4 questions x 2 calls, groq qwen3.8-27b, in-memory usage store,
+  no Atlas): `frontend/app/design-lab/ia4/fixtures/ask-recorded.json`, verbatim (1 of 4 degraded to the code-built answer).
 - **Step 1: done.** `docs/design/IA-v4/REFERENCES.md` (cal.com site and app, 9 references, number rules, interaction shortlist with
   budgets; 21st.dev grants no copy licence, so nothing is copied from it; no new dependency). Captures in `.work/ia/` (not committed).
   Wealthsimple served a block page and was not retried. **1b:** the headed Chromium opened on app.cal.com, but cal.com refused the login as an
