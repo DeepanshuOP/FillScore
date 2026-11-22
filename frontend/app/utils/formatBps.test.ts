@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatBps } from './formatBps';
+import { formatBps, formatBpsDisplay } from './formatBps';
 import { formatBps as formatBpsBackend } from '../../../backend/src/utils/formatBps';
 import { formatBpsOrNotComputed, NOT_COMPUTED } from './notComputed';
 
@@ -21,8 +21,17 @@ describe('formatBps', () => {
       expect(formatBps(v as number)).toBe(formatBpsBackend(v as number));
     }
   });
+  it('formatBpsDisplay is formatBps with a true minus (U+2212), for screens only', () => {
+    // hand: -0.054 -> toFixed(2) "-0.05"; -12.34 -> toFixed(1) "-12.3"; -0.004 -> ">-0.01 bps"
+    expect(formatBpsDisplay(-0.054)).toBe('−0.05 bps');
+    expect(formatBpsDisplay(-12.34)).toBe('−12.3 bps');
+    expect(formatBpsDisplay(-0.004)).toBe('>−0.01 bps');
+    expect(formatBpsDisplay(4.26)).toBe('4.3 bps');
+    expect(formatBps(-12.34)).toBe('-12.3 bps');   // the shared (PDF-equal) text is unchanged
+    expect(formatBpsDisplay(null)).toBe('not computed');
+  });
   it('the number-only helper never prints a negative zero', () => {
-    expect(formatBpsOrNotComputed(-0.0004)).toBe('>-0.01');
+    expect(formatBpsOrNotComputed(-0.0004)).toBe('>−0.01');   // true minus (U+2212) on screen since 2026-11-22; the PDF's formatBps keeps '-'
     expect(formatBpsOrNotComputed(-0)).toBe('0.0');
     expect(formatBpsOrNotComputed(4.26)).toBe('4.3');
     expect(formatBpsOrNotComputed(null)).toBe(NOT_COMPUTED);

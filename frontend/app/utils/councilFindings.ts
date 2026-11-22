@@ -37,16 +37,16 @@ function withCommas(intPart: string): string {
   return intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
 }
 
-/** Deterministic, Intl-free USD formatting: $1,330.00 / -$2.95. */
+/** Deterministic, Intl-free USD formatting: $1,330.00 / −$2.95 (a true minus, U+2212, display only). */
 export function formatEffectUsd(x: number): string {
   const fixed = Math.abs(x).toFixed(2);
   const [i, d] = fixed.split('.');
   const neg = x < 0 && Number(fixed) !== 0;
-  return `${neg ? '-' : ''}$${withCommas(i)}.${d}`;
+  return `${neg ? '−' : ''}$${withCommas(i)}.${d}`;
 }
 
 export function formatEffectBps(x: number): string {
-  return `${x.toFixed(1)} bps`;
+  return `${x.toFixed(1).replace('-', '−')} bps`;
 }
 
 export function groundingLine(g: CouncilGrounding | null | undefined): string {

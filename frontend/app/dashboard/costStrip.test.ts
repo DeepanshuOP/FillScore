@@ -11,6 +11,18 @@ const BODY = { available: true, strip: { totalUsd: 52.0785604695634, segments: [
   { key: 'fees', usd: 41.97630206664916, share: 0.7979096577485117, below: 0 },
 ] } }
 
+import { splitSign } from './costStrip'
+describe('splitSign (the legend sets a true minus in the text face)', () => {
+  it('splits a leading U+2212 from the amount; any other text is left whole', () => {
+    expect(splitSign('−$0.53')).toEqual(['−', '$0.53'])       // U+2212 then "$0.53"
+    expect(splitSign('$10.63')).toEqual(['', '$10.63'])
+    expect(splitSign('-$0.53')).toEqual(['', '-$0.53'])        // an ASCII hyphen is not rewritten here: formatUsd never emits one
+    expect(splitSign('insufficient data')).toEqual(['', 'insufficient data'])
+    // the improvement part of the strip carries the real sign from formatUsd
+    expect(splitSign(describeStrip(BODY, true)!.parts[0].amount)).toEqual(['−', '$0.53'])
+  })
+})
+
 describe('describeStrip', () => {
   it('names the three parts, prints the server dollars and uses its shares as widths', () => {
     const v = describeStrip(BODY, true)!
@@ -28,11 +40,27 @@ describe('describeStrip', () => {
   })
 
   it('the chapter sentence states the parts with the server values (improvement case)', () => {
+    // Two sentences (orders of 2026-11-22): fees, then the orders' execution. 11 and 14 words, counted by hand.
     expect(describeStrip(BODY, true)!.sentence).toBe(
-      'Fees, at the published rate, were $41.98 of the $52.08; the market moved $10.63 away from orders that never filled; filled orders came out $0.53 better than the market.')
+      'Fees, at the published rate, were $41.98 of the $52.08. The modelled cost of unfilled orders was $10.63, and filled orders came out $0.53 better than the market.')
     // a real account: fees measured, so named plainly
     expect(describeStrip(BODY, false)!.sentence).toBe(
-      'Fees were $41.98 of the $52.08; the market moved $10.63 away from orders that never filled; filled orders came out $0.53 better than the market.')
+      'Fees were $41.98 of the $52.08. The modelled cost of unfilled orders was $10.63, and filled orders came out $0.53 better than the market.')
+  })
+
+  it('is two sentences of at most 25 words and does not repeat chapter 1\'s unfilled sentence (improvement and cost cases)', () => {
+    const chapter1 = 'The 245 orders cost $52.08, including $10.63 the market moved away from 11 orders that never filled.'
+    const cost = describeStrip({ available: true, strip: { totalUsd: 12, segments: [
+      { key: 'execution', usd: 3, share: 0.25, below: 0 }, { key: 'missed', usd: 0, share: 0, below: 0 }, { key: 'fees', usd: 9, share: 0.75, below: 0 },
+    ] } }, false)!
+    for (const v of [describeStrip(BODY, true)!, describeStrip(BODY, false)!, cost]) {
+      const sentences = v.sentence.split(/(?<=\.)\s+/)
+      expect(sentences).toHaveLength(2)
+      for (const s of sentences) expect(s.split(/\s+/).length).toBeLessThanOrEqual(25)
+      expect(v.sentence).not.toContain('moved')                 // chapter 1's words for the unfilled share
+      expect(v.sentence).not.toContain('never filled')
+      expect(chapter1).not.toContain(sentences[1])
+    }
   })
 
   it('the chapter sentence in a cost case: filled-order execution cost money, nothing unfilled', () => {
@@ -40,7 +68,7 @@ describe('describeStrip', () => {
     const v = describeStrip({ available: true, strip: { totalUsd: 12, segments: [
       { key: 'execution', usd: 3, share: 0.25, below: 0 }, { key: 'missed', usd: 0, share: 0, below: 0 }, { key: 'fees', usd: 9, share: 0.75, below: 0 },
     ] } }, false)!
-    expect(v.sentence).toBe("Fees were $9.00 of the $12.00; filled orders' execution cost $3.00.")
+    expect(v.sentence).toBe("Fees were $9.00 of the $12.00. Filled orders' execution cost $3.00.")
     expect(v.parts[0]).toMatchObject({ label: "Filled orders' execution", amount: '$3.00', width: '25.000%', drawn: true })
     // a part with no dollars has no caption and no width, and is not listed as drawn
     expect(v.parts[1]).toMatchObject({ amount: '$0.00', drawn: false })
@@ -51,7 +79,7 @@ describe('describeStrip', () => {
     const v = describeStrip({ available: true, strip: { totalUsd: 5, segments: [
       { key: 'execution', usd: -5, share: 0, below: 0.5 }, { key: 'missed', usd: 2, share: 0.2, below: 0 }, { key: 'fees', usd: 8, share: 0.8, below: 0 },
     ] } }, false)!
-    expect(v.sentence).toBe('Fees were $8.00; the market moved $2.00 away from orders that never filled; filled orders came out $5.00 better than the market; $5.00 in total.')
+    expect(v.sentence).toBe('Fees were $8.00, against $5.00 in total. The modelled cost of unfilled orders was $2.00, and filled orders came out $5.00 better than the market.')
     expect(v.parts[0].below).toBe('50.000%')
   })
 

@@ -94,9 +94,38 @@ describe('buildOrderLedger', () => {
         expect(r.feesUsd).toBeCloseTo(0.10, 12);
     });
 
-    it('an unfilled order keeps its status and has no fill figures (null, never zero, where a value is unknown)', () => {
-        const r = l.orders.find(x => x.symbol === 'ETHUSDT' && x.orderId === '2')!;
-        expect(r).toMatchObject({ status: 'CANCELED', fills: 0, quantity: 0, notionalUsd: 0, feesUsd: null, makerShare: null, firstFill: null, lastFill: null });
+    it('an order that ended unfilled has fees of $0 (no fill, no fee; was null before 2026-11-22); the maker share stays null', () => {
+        // ETH 2 CANCELED and BTC 3 EXPIRED: 0 fills, so no fee was charged: feesUsd 0 (a known value). Nothing was executed:
+        // notional 0. No fill, so no maker share (null) and no fill times.
+        for (const [sym, id, status] of [['ETHUSDT', '2', 'CANCELED'], ['BTCUSDT', '3', 'EXPIRED']]) {
+            const r = l.orders.find(x => x.symbol === sym && x.orderId === id)!;
+            expect(r).toMatchObject({ status, fills: 0, quantity: 0, notionalUsd: 0, feesUsd: 0, makerShare: null, firstFill: null, lastFill: null });
+        }
+    });
+
+    it('an order still open with no fill keeps null fees (a fill may come); a rejected one has $0', () => {
+        const open = buildOrderLedger([order('BTCUSDT', '7', 'LIMIT', 'BUY', 'NEW', '14:00:00')], []).orders[0];
+        expect(open).toMatchObject({ status: 'NEW', fills: 0, notionalUsd: 0, feesUsd: null });
+        const rejected = buildOrderLedger([order('BTCUSDT', '8', 'LIMIT', 'BUY', 'REJECTED', '14:00:00')], []).orders[0];
+        expect(rejected).toMatchObject({ status: 'REJECTED', fills: 0, feesUsd: 0 });
+    });
+
+    it('a cancelled order the exchange says was partly filled, with no fill stored here, keeps null fees (not a made-up $0)', () => {
+        // CANCELED, executedQty 2 of 4, no fill stored: the fee is unknown -> null, notional 0 is only what is stored
+        const lagged = buildOrderLedger([order('BTCUSDT', '6', 'LIMIT', 'BUY', 'CANCELED', '14:00:00', 4, 2)], []).orders[0];
+        expect(lagged).toMatchObject({ status: 'CANCELED', fills: 0, feesUsd: null });
+        // no executed quantity on the stored order at all: also unknown
+        const bare = { exchange: 'binance', symbol: 'BTCUSDT', orderId: '7', type: 'LIMIT', side: 'BUY', status: 'CANCELED', createdAt: D('14:00:00') };
+        expect(buildOrderLedger([bare], []).orders[0].feesUsd).toBeNull();
+        // executed 0 of 4: confirmed nothing filled -> $0
+        expect(buildOrderLedger([order('BTCUSDT', '8', 'LIMIT', 'BUY', 'CANCELED', '14:00:00', 4, 0)], []).orders[0].feesUsd).toBe(0);
+    });
+
+    it('a cancelled order that was partly filled keeps its fills and the fee of those fills', () => {
+        // CANCELED, one fill 2 @ 10 with fee 0.02: fills 1, notional 20, fees 0.02 (not forced to 0)
+        const r = buildOrderLedger([order('BTCUSDT', '5', 'LIMIT', 'BUY', 'CANCELED', '14:00:00', 4, 2)],
+            [fill('p', 'BTCUSDT', '5', 2, 10, 0.02, true, '14:00:05')]).orders[0];
+        expect(r).toMatchObject({ status: 'CANCELED', fills: 1, notionalUsd: 20, feesUsd: 0.02 });
     });
 
     it('a fill group without a stored order has a null status and placed time; one unknown fee makes the fee total null', () => {

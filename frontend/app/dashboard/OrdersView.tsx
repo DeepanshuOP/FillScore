@@ -9,9 +9,8 @@ import { Panel } from '../ui/Panel';
 import { Banner } from '../ui/Banner';
 import { EmptyState } from '../ui/EmptyState';
 import { Button, buttonClass } from '../ui/Button';
-import { formatUsd } from '../ui/format';
 import { OrderReplay } from './OrderReplay';
-import { countsLine, formatUtc, ledgerRows, orderCountsOf, statusLabel, withParams, type OrderCounts, type OrderRow } from './ordersTable';
+import { countsLine, feesCell, feesTitle, formatUtc, ledgerRows, notionalCell, orderCountsOf, statusLabel, withParams, type OrderCounts, type OrderRow } from './ordersTable';
 
 type Json = { status: number; body: unknown };
 interface Props {
@@ -40,9 +39,9 @@ const COLUMNS = [
     cell: (c) => <span className="font-ui-mono text-[12px]">{c.row.original.orderId || 'not recorded'}</span> }),
   col.accessor('fills', { header: 'Fills', meta: { label: 'Fills', numeric: true }, cell: (c) => c.getValue() }),
   col.accessor('quantity', { header: 'Quantity', meta: { label: 'Quantity', numeric: true }, cell: (c) => fmtQty(c.getValue()) }),
-  col.accessor('notionalUsd', { header: 'Notional', meta: { label: 'Notional', numeric: true }, cell: (c) => formatUsd(c.getValue()) }),
+  col.accessor('notionalUsd', { header: 'Notional', meta: { label: 'Notional', numeric: true }, cell: (c) => notionalCell(c.row.original) }),
   col.accessor((r) => r.feesUsd ?? undefined, { id: 'feesUsd', header: 'Fees', sortUndefined: 'last', meta: { label: 'Fees', numeric: true },
-    cell: (c) => (c.row.original.feesUsd === null ? <span className="text-ui-graphite">not computed</span> : formatUsd(c.row.original.feesUsd)) }),
+    cell: (c) => { const t = feesCell(c.row.original); return t === null ? <span className="text-ui-graphite">not computed</span> : <span title={feesTitle(c.row.original)}>{t}</span> } }),
   col.accessor((r) => r.makerShare ?? undefined, { id: 'makerShare', header: 'Maker share', sortUndefined: 'last', meta: { label: 'Maker share', numeric: true },
     cell: (c) => (c.row.original.makerShare === null ? <span className="text-ui-graphite">insufficient data</span> : `${Math.round(c.row.original.makerShare * 100)}%`) }),
 ];

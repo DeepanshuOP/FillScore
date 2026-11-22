@@ -56,7 +56,7 @@ describe('formatEffectUsd', () => {
     expect(formatEffectUsd(3.1)).toBe('$3.10');
     expect(formatEffectUsd(0.571429)).toBe('$0.57');
     expect(formatEffectUsd(1234567.891)).toBe('$1,234,567.89');
-    expect(formatEffectUsd(-2.95)).toBe('-$2.95');
+    expect(formatEffectUsd(-2.95)).toBe('−$2.95');   // true minus (U+2212) since 2026-11-22
   });
 });
 
@@ -64,6 +64,7 @@ describe('formatEffectBps', () => {
   it('formats with 1dp', () => {
     expect(formatEffectBps(12.090909)).toBe('12.1 bps');
     expect(formatEffectBps(2.952381)).toBe('3.0 bps');
+    expect(formatEffectBps(-2.952381)).toBe('−3.0 bps');   // -2.952381 to one decimal is -3.0; true minus
   });
 });
 

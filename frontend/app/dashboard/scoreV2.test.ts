@@ -113,7 +113,7 @@ describe('cost vs expected beside the letter', () => {
   it('states paid, expected, the difference and its interval, in past tense', () => {
     const v = scored(200, { ...shortfallBody(), costVsExpected: cve });
     expect(v.costVsExpected).toBe('Market orders cost 0.43 bps against 0.31 bps, the modelled cost of a taker event of the same size in the hour before the order '
-      + "(fitted on January 2024) (difference +0.12 bps; 90% interval -0.05 bps to +0.29 bps, a bootstrap over orders that leaves out the model's own error; 88 orders).");
+      + "(fitted on January 2024) (difference +0.12 bps; 90% interval −0.05 bps to +0.29 bps, a bootstrap over orders that leaves out the model's own error; 88 orders).");
   });
   it('a positive lower bound carries its plus sign too', () => {
     const v = scored(200, { ...shortfallBody(), costVsExpected: { ...cve, excessBps: 0.2, lowBps: 0.05, highBps: 0.35 } });
@@ -121,7 +121,7 @@ describe('cost vs expected beside the letter', () => {
   });
   it('a negative difference carries its own sign, and there is no plus sign on it', () => {
     const v = scored(200, { ...shortfallBody(), costVsExpected: { ...cve, paidBps: 0.2, excessBps: -0.11, lowBps: -0.3, highBps: 0.07 } });
-    expect(v.costVsExpected).toContain('difference -0.11 bps; 90% interval -0.30 bps to +0.07 bps');
+    expect(v.costVsExpected).toContain('difference −0.11 bps; 90% interval −0.30 bps to +0.07 bps');   // true minus (U+2212)
   });
   it('says "insufficient data" with the reason when the audit could not state it', () => {
     const v = scored(200, { ...shortfallBody(), costVsExpected: { insufficient: true, n: 3, reason: 'fewer than 20 market orders have an expected cost (found 3)', excluded: {} } });

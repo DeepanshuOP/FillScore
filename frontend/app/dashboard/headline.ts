@@ -4,7 +4,7 @@
  * A figure that was not measured is null (the screen then shows a ValueState), never zero.
  */
 import { formatSignedBps, formatUsd } from '../ui/format'
-import { formatBps } from '../utils/formatBps'
+import { formatBpsDisplay } from '../utils/formatBps'
 import type { BarRow } from '../ui/ChartFrame'
 import type { CostVsExpected } from './scoreV2'
 import type { OrderCounts } from './ordersTable'
@@ -67,7 +67,7 @@ export function dotNote(c: { paidBps: number; expectedBps: number; excessBps: nu
 
 /** A demo's total cost as the server sent it, in bps of the value ordered ("11.7 bps"); null without a headline. */
 export function totalBpsLabel(h: Pick<Headline, 'totalBps'> | null): string | null {
-  return h ? formatBps(h.totalBps) : null
+  return h ? formatBpsDisplay(h.totalBps) : null
 }
 
 /**

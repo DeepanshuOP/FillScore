@@ -1,6 +1,6 @@
 /** Dashboard COMPONENT SCORES cards. Every score is the engine's notional-weighted component mean from the API
  *  (`breakdown.componentMeans`); nothing is re-derived in the browser. */
-import { formatBps } from '../utils/formatBps'
+import { formatBpsDisplay as formatBps } from '../utils/formatBps'   // display only: a true minus (U+2212)
 
 export interface ComponentMeans { slippage: number | null; fees: number | null; timing: number | null; spread: number | null }
 

@@ -320,7 +320,7 @@ auditRouter.get('/orders-ledger', resolveAccount, async (req: Request, res: Resp
     try {
         const accountId = req.accountId!;
         const [orders, fills, measurements] = await Promise.all([
-            Order.find({ accountId }, { exchange: 1, symbol: 1, orderId: 1, type: 1, side: 1, status: 1, createdAt: 1 }).lean(),
+            Order.find({ accountId }, { exchange: 1, symbol: 1, orderId: 1, type: 1, side: 1, status: 1, createdAt: 1, origQty: 1, executedQty: 1 }).lean(),
             Trade.find({ accountId }, LEDGER_FILL_FIELDS).lean(),
             // B1: each order's total cost, from the stored measurement (the receipt's formula)
             OrderMeasurement.find({ accountId }, { exchange: 1, symbol: 1, orderId: 1, 'shortfall.totalBps': 1, 'shortfall.intendedNotional': 1, unmeasuredReason: 1 }).lean(),

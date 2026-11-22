@@ -4,6 +4,8 @@
  * (backend/src/services/orderLedger.ts). This file maps fields to words; it adds nothing up. A value the server sent as
  * null (an unknown fee, an unknown maker flag, an order with no fills) stays null, never zero.
  */
+import { formatUsd } from '../ui/format';
+
 export type OrderType = 'Market' | 'Limit' | 'Not recorded';
 
 export interface OrderCounts { orders: number; withFills: number; fills: number; unrecorded: number }
@@ -89,6 +91,26 @@ const ENDED_UNFILLED = new Set(['CANCELED', 'CANCELLED', 'EXPIRED', 'EXPIRED_IN_
 export function isUnfilled(r: Pick<OrderRow, 'status' | 'fills'>): boolean {
   return r.status !== null && ENDED_UNFILLED.has(r.status.toUpperCase()) && r.fills === 0;
 }
+/**
+ * The Notional cell. For an order that ended with nothing filled the served notional is what was executed, $0.00: the cell
+ * says so ("$0.00 executed") instead of a bare zero that reads like a missing value. Other rows print the served figure.
+ */
+export function notionalCell(r: Pick<OrderRow, 'status' | 'fills' | 'notionalUsd' | 'feesUsd'>): string {
+  // The server sends fees of exactly 0 only when the exchange's own count says nothing was executed (orderLedger.ts); a
+  // cancelled order with unknown fees may have been partly filled, so it is not labelled "executed".
+  return isUnfilled(r) && r.feesUsd === 0 ? `${formatUsd(r.notionalUsd)} executed` : formatUsd(r.notionalUsd);
+}
+
+/** The Fees cell's text: the served fee, or null when the server sent none (the page then says "not computed"). */
+export function feesCell(r: Pick<OrderRow, 'feesUsd'>): string | null {
+  return r.feesUsd === null ? null : formatUsd(r.feesUsd);
+}
+
+/** Why an unfilled order's fee reads $0.00: it had no fill, so it paid no fee. Undefined for every other row. */
+export function feesTitle(r: Pick<OrderRow, 'status' | 'fills' | 'feesUsd'>): string | undefined {
+  return isUnfilled(r) && r.feesUsd === 0 ? 'No fill, no fee' : undefined;
+}
+
 /**
  * The amount the tape's pen circles. For an order that never filled the amount is the modelled cost of the missed fill,
  * not money that left the account (F2), so it says the market moved away.

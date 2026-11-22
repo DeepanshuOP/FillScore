@@ -12,7 +12,7 @@ import { Fig } from '../ui/Fig'
 import { CostRuler } from '../ui/charts/CostRuler'
 import { costSentence, costInsufficientReason, dotNote, totalSentence, unmeasuredNote, type GradeView, type Headline } from './headline'
 import { describeOrders, describeTotals, hasTypeTotals, otherTypeOrders, totalsFor, type OrderKind, type OrdersBody } from './ordersView'
-import { describeStrip } from './costStrip'
+import { describeStrip, splitSign } from './costStrip'
 import { MonthTape } from './MonthTape'
 import { fillsLine, orderCountsOf, type OrderRow } from './ordersTable'
 import { Chapter, useEntry } from './chapter'
@@ -280,7 +280,7 @@ function WhereItWent({ ordersBody, isDemo, headline, account }: { ordersBody: un
                 <div>
                   <p className="text-[16px] text-ui-ink">{p.label}</p>
                   <p className="flex items-center gap-1.5 font-mono text-[22px] text-ui-ink">
-                    {p.amount}
+                    <span>{splitSign(p.amount)[0] ? <span className="font-sans" data-testid="true-minus">{splitSign(p.amount)[0]}</span> : null}{splitSign(p.amount)[1]}</span>
                     {p.dashed ? (
                       <MarginNote label="fees at the published rate">
                         <p>Not independently measured: the synthetic trader&rsquo;s fees were generated at the exchange&rsquo;s published rate, which no market data checks.</p>

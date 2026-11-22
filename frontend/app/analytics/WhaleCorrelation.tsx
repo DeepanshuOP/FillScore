@@ -280,7 +280,7 @@ export default function WhaleCorrelation({ userId, dashboardMode }: { userId: st
                           <td className="px-2 py-2 text-ui-graphite tabular-nums">{timeStr}</td>
                           <td className="px-2 py-2">{t.side}</td>
                           <td className="px-2 py-2 text-right tabular-nums">
-                            {typeof t.arrivalSlippageBps === 'number' ? `${t.arrivalSlippageBps.toFixed(1)} bps` : <ValueState state="insufficient" label="Arrival slippage" size="cell" />}
+                            {typeof t.arrivalSlippageBps === 'number' ? `${t.arrivalSlippageBps.toFixed(1).replace('-', '−')} bps` : <ValueState state="insufficient" label="Arrival slippage" size="cell" />}
                             <div className="mt-0.5 text-[11px] font-normal text-ui-graphite">{tooltip}</div>
                           </td>
                         </tr>

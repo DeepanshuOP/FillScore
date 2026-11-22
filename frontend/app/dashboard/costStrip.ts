@@ -17,6 +17,14 @@ export interface StripView { parts: StripPart[]; sentence: string }
 
 interface Seg { key?: unknown; usd?: unknown; share?: unknown; below?: unknown }
 const num = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v)
+/**
+ * A printed amount split into its sign and the rest: "−$0.53" gives ["−", "$0.53"]. The text carries a true minus (U+2212),
+ * but the mono face of the legend draws it as a short bar that reads like a hyphen, so the page sets the sign in the text face.
+ * An amount with no leading minus gives ["", amount]. Display only.
+ */
+export function splitSign(amount: string): [string, string] {
+  return amount.startsWith('−') ? ['−', amount.slice(1)] : ['', amount]
+}
 const pct = (v: number) => `${(v * 100).toFixed(3)}%`
 const ORDER: StripKey[] = ['execution', 'missed', 'fees']
 
@@ -49,16 +57,20 @@ export function describeStrip(body: unknown, feesNotMeasured: boolean): StripVie
   // the fee figure names its basis when it was not measured (design v3.1 review). An unfilled order did not take money
   // out of the account: the market moved away from it (F2), so the clause says that. A price improvement is stated as one.
   const feesName = fees.dashed ? 'Fees, at the published rate,' : 'Fees'
+  // Orders of 2026-11-22: two short sentences (each at most 25 words), the fees first and then the orders' own
+  // execution. The unfilled clause does not repeat chapter 1's sentence ("the market moved ... away from ... orders that
+  // never filled"); chapter 1 says what those orders are, this chapter only gives their dollars.
   const rest: string[] = []
-  if (missed.usd > 0) rest.push(`the market moved ${missed.amount} away from orders that never filled`)
+  // "modelled cost": an unfilled order took no money out of the account (F2); the figure is the modelled cost of the missed fill
+  if (missed.usd > 0) rest.push(`the modelled cost of unfilled orders was ${missed.amount}`)
   if (exec.usd > 0) rest.push(`filled orders' execution cost ${exec.amount}`)
   else if (exec.usd < 0) rest.push(`filled orders came out ${formatUsd(-exec.usd)} better than the market`)
   const feesLead = fees.usd > 0
   // fees above the total (an improvement larger than the other costs): do not say "of the" total
-  const lead = feesLead ? (fees.usd <= s.strip.totalUsd ? `${feesName} were ${fees.amount} of the ${total}` : `${feesName} were ${fees.amount}`) : null
-  const tail = feesLead && fees.usd > s.strip.totalUsd ? `${total} in total` : null
-  const clauses = [...(lead ? [lead] : []), ...rest, ...(tail ? [tail] : [])]
-  const sentence = !feesLead && rest.length <= 1 ? `The orders cost ${total}.`
-    : `${lead ?? `The orders cost ${total}`}${rest.length || tail ? `; ${clauses.slice(lead ? 1 : 0).join('; ')}` : ''}.`
+  const first = feesLead ? (fees.usd <= s.strip.totalUsd ? `${feesName} were ${fees.amount} of the ${total}.` : `${feesName} were ${fees.amount}, against ${total} in total.`)
+    : `The orders cost ${total}.`
+  const second = rest.length ? `${rest.join(', and ')}.`.replace(/^./, (c) => c.toUpperCase()) : null
+  // nothing to add to a lone cost: no second sentence (it would only repeat the first)
+  const sentence = !feesLead && rest.length <= 1 ? `The orders cost ${total}.` : second ? `${first} ${second}` : first
   return { parts, sentence }
 }

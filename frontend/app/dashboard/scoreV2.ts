@@ -2,7 +2,7 @@
  * View model for the measured score (Scoring v2, GET /api/audit/v2). Pure: every number shown comes from the API,
  * which comes from deterministic ml-service code. No letter is ever shown below the minimum sample.
  */
-import { formatBps } from '../utils/formatBps';
+import { formatBpsDisplay as formatBps } from '../utils/formatBps';   // display only: a true minus (U+2212)
 
 export interface V2Component { score: number | null; measured: number; unmeasured: number; reason: string | null }
 /** What the market orders cost against what taker events of the same size cost in the same hour (ml-service

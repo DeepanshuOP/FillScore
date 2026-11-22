@@ -3,7 +3,7 @@
  * blank that looks like zero. The rebuilt demos have no per-trade v1 fields; the API marks those views
  * (`v1Computed: false`, `notComputed: true`, or slippage `null`) and these helpers show them honestly.
  */
-import { formatBps } from './formatBps';
+import { formatBpsDisplay as formatBps } from './formatBps';   // display only: a true minus (U+2212)
 
 export const NOT_COMPUTED = 'not computed for this data';
 

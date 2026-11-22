@@ -4,7 +4,7 @@
  * A value that is not known is null, never zero. `orderCounts` is the one source of the order counts: GET
  * /audit/orders-summary (the overview) and GET /audit/orders-ledger (the Orders page) both return it.
  */
-export interface LedgerOrderIn { exchange?: string; symbol: string; orderId: string; type?: string | null; side: string; status: string; createdAt: Date | string }
+export interface LedgerOrderIn { exchange?: string; symbol: string; orderId: string; type?: string | null; side: string; status: string; createdAt: Date | string; origQty?: number; executedQty?: number }
 export interface LedgerFillIn {
     exchange?: string; tradeId?: string; symbol: string; orderId?: string | null; side?: string; orderType?: string | null;
     quantity: number; executionPrice?: number; notional?: number | null; feeUsd?: number | null; isMaker?: boolean | null; executedAt: Date | string;
@@ -18,6 +18,10 @@ export interface LedgerRow {
     cost: { usd: number; bps: number } | null;
 }
 export interface LedgerMeasurementIn { exchange?: string; symbol: string; orderId: string; shortfall?: Record<string, any> | null; unmeasuredReason?: string | null }
+
+const QTY_TOL = 1e-9;   // the same tolerance as orderSummary.ts
+/** Final order statuses that mean the order ended (the same set as orderSummary's unfilled rule, and the Orders page's). */
+const ENDED_UNFILLED = new Set(['CANCELED', 'CANCELLED', 'EXPIRED', 'EXPIRED_IN_MATCH', 'REJECTED']);
 
 const fin = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
@@ -78,8 +82,15 @@ export function buildOrderLedger(orders: LedgerOrderIn[], fills: LedgerFillIn[],
     for (const o of orders) {
         const k = keyOf(o);
         stored.add(k);
+        const s = sums(groups.get(k) ?? []);
+        // An order that ended with nothing filled paid no fee: no fill, no fee ($0, a known value). It must also have
+        // executed nothing by the exchange's own count (orderSummary's rule: executedQty <= origQty x 1e-9): a cancelled
+        // order that the exchange says was partly filled, whose fills are not stored here, has an unknown fee (null). An order
+        // still open keeps null too: a fill may come.
+        const noFee = s.fills === 0 && ENDED_UNFILLED.has(String(o.status).toUpperCase())
+            && fin(o.executedQty) && fin(o.origQty) && o.executedQty <= o.origQty * QTY_TOL;
         rows.push({ key: k, orderId: o.orderId, symbol: o.symbol, side: o.side === 'SELL' ? 'SELL' : 'BUY', type: o.type ?? null,
-            status: o.status, placedAt: iso(o.createdAt), ...sums(groups.get(k) ?? []), cost: orderTotalCost(measured.get(k)) });
+            status: o.status, placedAt: iso(o.createdAt), ...s, feesUsd: noFee ? 0 : s.feesUsd, cost: orderTotalCost(measured.get(k)) });
     }
     for (const [k, fs] of groups) {
         if (stored.has(k)) continue;
