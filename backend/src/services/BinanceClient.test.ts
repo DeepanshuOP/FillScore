@@ -144,3 +144,64 @@ describe('BinanceClient - fetchRecentTrades', () => {
         await expect(client.fetchRecentTrades('BTCUSDT')).rejects.toThrow(BinanceApiError);
     });
 });
+
+describe('BinanceClient - fetchCommission (GET /api/v3/account/commission)', () => {
+    // Example response of "Query Commission Rates (USER_DATA)", read 2026-11-22 at
+    // https://developers.binance.com/docs/binance-spot-api-docs/rest-api/account-endpoints (weight 20, signed).
+    // /api/v3/tradeFee, which the old fetchFeeRate called, is not listed on that page.
+    const docsExample = {
+        symbol: 'BTCUSDT',
+        standardCommission: { maker: '0.00000010', taker: '0.00000020', buyer: '0.00000030', seller: '0.00000040' },
+        taxCommission: { maker: '0.00000112', taker: '0.00000114', buyer: '0.00000118', seller: '0.00000116' },
+        specialCommission: { maker: '0.01000000', taker: '0.02000000', buyer: '0.03000000', seller: '0.04000000' },
+        discount: { enabledForAccount: true, enabledForSymbol: true, discountAsset: 'BNB', discount: '0.75000000' },
+    };
+    let mockGet: any;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mockGet = vi.fn();
+        (axios.create as any).mockReturnValue({ get: mockGet });
+    });
+
+    it('calls the documented path, signed, with symbol, and parses every part as numbers', async () => {
+        mockGet.mockResolvedValueOnce({ data: docsExample, status: 200, headers: {} });
+        const c = await new BinanceClient('test_key', 'test_secret', new BinanceGovernor()).fetchCommission('BTCUSDT');
+        const url = mockGet.mock.calls[0][0] as string;
+        expect(url.startsWith('/api/v3/account/commission?')).toBe(true);
+        expect(url).not.toContain('tradeFee');
+        expect(url).toContain('symbol=BTCUSDT');
+        expect(url).toMatch(/&signature=[0-9a-f]{64}$/);
+        // '0.00000010' -> 1e-7, '0.01000000' -> 0.01, '0.00000112' -> 1.12e-6, discount '0.75000000' -> 0.75
+        expect(c).toEqual({
+            symbol: 'BTCUSDT',
+            standard: { maker: 1e-7, taker: 2e-7, buyer: 3e-7, seller: 4e-7 },
+            tax: { maker: 1.12e-6, taker: 1.14e-6, buyer: 1.18e-6, seller: 1.16e-6 },
+            special: { maker: 0.01, taker: 0.02, buyer: 0.03, seller: 0.04 },
+            discount: { enabledForAccount: true, enabledForSymbol: true, asset: 'BNB', rate: 0.75 },
+        });
+    });
+
+    it('reserves weight 20 in the shared governor (no header: two calls use 20 + 20 = 40)', async () => {
+        const gov = new BinanceGovernor({ limit: 100, fraction: 0.5, now: () => 0, sleep: async () => {} });
+        mockGet.mockResolvedValue({ data: docsExample, status: 200, headers: {} });
+        const client = new BinanceClient('k', 's', gov);
+        await client.fetchCommission('BTCUSDT');
+        await client.fetchCommission('BTCUSDT');
+        expect(gov.snapshot().used).toBe(40);
+    });
+
+    it('the old tradeFee array shape (no standardCommission) is an error, never zero rates', async () => {
+        mockGet.mockResolvedValueOnce({ data: [{ symbol: 'BTCUSDT', makerCommission: '0.001', takerCommission: '0.001' }], status: 200, headers: {} });
+        await expect(new BinanceClient('k', 's', new BinanceGovernor()).fetchCommission('BTCUSDT')).rejects.toThrow(BinanceApiError);
+    });
+
+    it('an HTTP error becomes BinanceApiError with its status', async () => {
+        mockGet.mockRejectedValueOnce({ isAxiosError: true, response: { status: 400, headers: {}, data: { msg: 'bad' } }, message: 'x' });
+        await expect(new BinanceClient('k', 's', new BinanceGovernor()).fetchCommission('BTCUSDT')).rejects.toMatchObject({ statusCode: 400 });
+    });
+
+    it('the undocumented fetchFeeRate is gone', () => {
+        expect((BinanceClient.prototype as any).fetchFeeRate).toBeUndefined();
+    });
+});

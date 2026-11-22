@@ -558,3 +558,23 @@ Fix: the test builds the string in pieces (`"mongodb://user:" + "x" * 6 + "@host
 is in `.gitleaksignore` with a reason for the old commit (history is not rewritten). No rule change. `test_council_scope.py`: 9 passed.
 Full-history `gitleaks git`: 376 commits, no leaks, exit 0.
 
+## AK. Two fixes and the production 418 (orders of 2026-11-22, fifth)
+
+### 0a. `BinanceClient.fetchFeeRate` called an undocumented endpoint
+
+Docs read 2026-11-22 (one web fetch):
+- https://developers.binance.com/docs/binance-spot-api-docs/rest-api/account-endpoints: "Query Commission Rates (USER_DATA)",
+  `GET /api/v3/account/commission`, IP weight 20, signed, `symbol` required; response `standardCommission`, `taxCommission`,
+  `specialCommission` (each maker, taker, buyer, seller, strings) and `discount` (`enabledForAccount`, `enabledForSymbol`,
+  `discountAsset`, `discount`). The page's endpoint index lists no `/api/v3/tradeFee`.
+- https://developers.binance.com/docs/wallet/asset/trade-fee: "Trade Fee (USER_DATA)", `GET /sapi/v1/asset/tradeFee` (the fetch was
+  cut before its body; its weight 1 and flat `makerCommission`/`takerCommission` array came from a summary and were not relied on).
+
+Callers: none. `grep -rn fetchFeeRate` over backend, frontend, ml-service and mcp-server finds only the definition; the sync's real
+fee source is `syncBinanceCommission` (`services/orders/binanceOrders.ts`), which already calls `/api/v3/account/commission`.
+Choice: the method now calls `/api/v3/account/commission` (same host, same signed read-only key, the parser the sync uses) and is named
+`fetchCommission`, returning the raw parts. Weight 20 through the shared governor. **What a real user saw before: nothing.** The method
+was never called, so no request reached Binance and no fee figure came from it; every account rate came from the commission snapshot.
+Tests: `BinanceClient.test.ts` (5 new: the docs example parsed by hand, e.g. `"0.00000112"` = 1.12e-6 and discount `"0.75000000"` =
+0.75; governor weight 20 + 20 = 40; the old array shape is an error, not zero rates; HTTP 400 keeps its status; `fetchFeeRate` is gone).
+

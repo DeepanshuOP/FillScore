@@ -4,11 +4,15 @@ import { BinanceRawTrade } from '../types';
 import { BinanceBanError, BinanceGovernor, binanceGovernor } from './binanceGovernor';
 import { ExchangeHttp, createExchangeHttp } from './exchangeEgress';
 
-// IP request weights (https://developers.binance.com/docs/binance-spot-api-docs/rest-api/account-endpoints):
-// GET /api/v3/myTrades is 20 without an orderId. The fee call below is weighted 1, like the documented
-// GET /sapi/v1/asset/tradeFee (wallet docs); /api/v3/tradeFee is not in the official docs (see docs/PROGRESS.md).
+import { BinanceRawCommission, COMMISSION_WEIGHT, mapBinanceCommission } from './orders/binanceOrders';
+import { FeeSnapshotDocument } from '../models/FeeSnapshot';
+
+// IP request weights (https://developers.binance.com/docs/binance-spot-api-docs/rest-api/account-endpoints, read
+// 2026-11-22): GET /api/v3/myTrades is 20 without an orderId; GET /api/v3/account/commission ("Query Commission
+// Rates") is 20. The old fee call used /api/v3/tradeFee, which that page does not list (docs/research/LOG.md §AK).
 const MY_TRADES_WEIGHT = 20;
-const FEE_RATE_WEIGHT = 1;
+
+export type CommissionRates = Pick<FeeSnapshotDocument, 'symbol' | 'standard' | 'tax' | 'special' | 'discount'>;
 
 export class BinanceApiError extends Error {
     public statusCode: number | undefined;
@@ -120,32 +124,32 @@ export class BinanceClient {
         }));
     }
 
-    public async fetchFeeRate(symbol: string): Promise<{ makerRate: number; takerRate: number }> {
+    /** The account's commission rates for one symbol (raw parts; the effective-rate formula is ml-service/measure/fees.py).
+     *  Same documented endpoint and parser as the sync's snapshot (services/orders/binanceOrders.ts). */
+    public async fetchCommission(symbol: string): Promise<CommissionRates> {
+        let raw: BinanceRawCommission;
         try {
-            const response = await this.governor.run(FEE_RATE_WEIGHT, () => {
+            const response = await this.governor.run(COMMISSION_WEIGHT, () => {
                 // signed after any wait for the weight budget (see executeWithRetry)
                 const signedQuery = this.signQuery({ symbol, timestamp: Date.now() });
-                return this.axiosInstance.get<Array<{ symbol: string; makerCommission: string; takerCommission: string }>>(`/api/v3/tradeFee?${signedQuery}`);
+                return this.axiosInstance.get<BinanceRawCommission>(`/api/v3/account/commission?${signedQuery}`);
             });
-
-            const feeData = response.data.find(d => d.symbol === symbol);
-            if (!feeData) {
-                throw new BinanceApiError(`Fee rate not found for symbol ${symbol}`, 404);
-            }
-
-            return {
-                makerRate: parseFloat(feeData.makerCommission),
-                takerRate: parseFloat(feeData.takerCommission),
-            };
+            raw = response.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 throw new BinanceApiError(
-                    `Binance API Error (fetchFeeRate): ${error.response?.data?.msg || error.message}`,
+                    `Binance API Error (fetchCommission): ${error.response?.data?.msg || error.message}`,
                     error.response?.status
                 );
             }
             if (error instanceof BinanceBanError) throw new BinanceApiError(error.message, 418);
-            throw new BinanceApiError('Unknown error during fetchFeeRate');
+            throw new BinanceApiError('Unknown error during fetchCommission');
+        }
+        try {
+            const { symbol: s, standard, tax, special, discount } = mapBinanceCommission(raw, '', 0);
+            return { symbol: s, standard, tax, special, ...(discount ? { discount } : {}) };
+        } catch {
+            throw new BinanceApiError('Binance commission response had an unexpected shape');
         }
     }
 }

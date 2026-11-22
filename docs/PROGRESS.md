@@ -2,6 +2,13 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-22, fifth: two fixes, the production 418, IA v4 research and proposal (local commits)
+
+- **Next concrete action: Step 0b** (receipt cost labels at 320 and 390 px).
+- **Step 0a: done.** `BinanceClient.fetchFeeRate` (undocumented `/api/v3/tradeFee`, no callers) is now `fetchCommission` on the
+  documented `GET /api/v3/account/commission`, weight 20, parsed by the sync's `mapBinanceCommission`. A real user saw nothing before:
+  the method was never called. Tests `BinanceClient.test.ts` (5 new). Backend vitest 1107 passed (131 files), tsc 0. LOG §AK.
+
 ## CI `secrets` fix (2026-11-22)
 
 - CI gitleaks found 1 false positive: `mongodb-uri-credentials` in `ml-service/tests/test_council_scope.py:59` (commit 92a3c62), a dummy
