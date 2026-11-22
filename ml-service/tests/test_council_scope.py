@@ -56,7 +56,7 @@ def test_no_event_when_the_counts_cannot_be_read():
         events.append((name, data))
 
     async def boom(*_a, **_k):
-        raise RuntimeError("mongodb://user:secret@host")
+        raise RuntimeError("mongodb://user:" + "x" * 6 + "@host")   # dummy, built in pieces so no scanner reads it as a URI with a password
 
     with patch.object(loader, "scope_counts", boom):
         asyncio.run(council_service.emit_scope(sink, "u1", "BTCUSDT"))

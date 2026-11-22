@@ -548,3 +548,13 @@ arrival placed between prints by time.
 Weak test noted and kept: `TradeIngestionRace` "two concurrent writers" asserts `raced <= 50`, which passes with 0 because the server
 usually retries a racing upsert itself; the forced-11000 test beside it carries the real check.
 
+## AJ. CI `secrets` job failed on main at 129b2aa (2026-11-22)
+
+Finding (gitleaks 8.30.1, `.gitleaks.toml`, redacted): rule `mongodb-uri-credentials`, `ml-service/tests/test_council_scope.py` line 59,
+commit 92a3c62, fingerprint `92a3c62f1ce1a953119e74ba90f02bebf21d509b:ml-service/tests/test_council_scope.py:mongodb-uri-credentials:59`.
+Kind: false positive. The line is a fake error message in a test (`RuntimeError("mongodb://user:<6 letters>@host")`) that proves the
+error text is never sent as an event; user is `user`, host is `host`, no cluster name. Not a credential of any service.
+Fix: the test builds the string in pieces (`"mongodb://user:" + "x" * 6 + "@host"`), so HEAD no longer matches, and the fingerprint
+is in `.gitleaksignore` with a reason for the old commit (history is not rewritten). No rule change. `test_council_scope.py`: 9 passed.
+Full-history `gitleaks git`: 376 commits, no leaks, exit 0.
+

@@ -2,6 +2,12 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## CI `secrets` fix (2026-11-22)
+
+- CI gitleaks found 1 false positive: `mongodb-uri-credentials` in `ml-service/tests/test_council_scope.py:59` (commit 92a3c62), a dummy
+  `user:<6 letters>@host` in a test. Fixed: the test builds the string in pieces; the fingerprint is in `.gitleaksignore` with a reason.
+  Full-history gitleaks exit 0. Detail in `docs/research/LOG.md` §AJ. Local commit, not pushed.
+
 ## Orders of 2026-11-22, fourth: honest AI layer, two hardened backend paths, prints on the receipt (local commits)
 
 - **Next concrete action: Run 4 ready for Deepanshu's review** (local commits, not pushed).

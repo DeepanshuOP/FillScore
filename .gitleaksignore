@@ -28,3 +28,7 @@ ac6110240403a712ae3dad7879bd7037b092280a:backend/src/config/__tests__/hardening.
 # text 'fsk_ab12cd34_secret'. Neither is a key of any account; the tests check that a key is passed through and printed in the config snippet.
 16c53e585f19e3b56d6a30162e3a2d28d73d0443:frontend/app/lib/apiKeys.test.ts:generic-api-key:31
 16c53e585f19e3b56d6a30162e3a2d28d73d0443:frontend/app/lib/apiKeys.test.ts:generic-api-key:87
+
+# Test dummy in ml-service/tests/test_council_scope.py (user:<six letters>@host in a fake error message; no real host).
+# Found 2026-11-22 in 92a3c62. The file now builds the string in pieces, so HEAD no longer matches; this line covers the old commit.
+92a3c62f1ce1a953119e74ba90f02bebf21d509b:ml-service/tests/test_council_scope.py:mongodb-uri-credentials:59
