@@ -154,7 +154,8 @@ app.add_middleware(
     allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_headers=["Authorization", "Content-Type", "Last-Event-ID"],
+    expose_headers=["X-Council-Run"],   # the browser reads the run id to resume a dropped Council stream
 )
 
 # The CSV check body is refused above 400,000 bytes before it is read (a file may hold 200,000 characters; JSON escapes add some).
@@ -528,47 +529,40 @@ async def council_stream(request: CouncilRequest, req: Request):
     SSE view of the same pipeline as POST /ml/agents/council. The events come from hooks inside
     agents.council.run_council_pipeline; the final `complete` event carries the full result,
     identical to the non-stream response.
+
+    Resumable: every event has an `id:` (1, 2, 3, ... per run) and is kept in agents.stream_store; the response
+    header `X-Council-Run` names the run. The pipeline does not depend on this connection: if it drops, the run
+    goes on, and GET /ml/agents/council/stream/{run} with `Last-Event-ID` continues after the last id seen.
     """
     if not council_enabled():
         return _council_maintenance_response()
     account_id = get_account_id(request.userId, req)
     symbol = request.symbol
     from agents.council_service import council_flow
+    from agents.stream_store import HEARTBEAT_FRAME, sse_frame, store as stream_store
 
-    def sse(event: str, data: dict) -> str:
-        return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+    run = stream_store.create(account_id)
+
+    async def runner():
+        try:
+            await council_flow(account_id, symbol, on_event=run.publish, mode=request.mode)
+        except Exception as e:
+            code = classify_exception(e)
+            # Class name only: exception text can contain connection strings or credentials
+            print(f"[council] stream failed code={code} type={type(e).__name__}")
+            quick_available = getattr(e, "quick_available", None)
+            payload = {"code": code, "message": refusal_message(code, quick_available)}
+            if quick_available is not None:
+                payload["quick_available"] = quick_available
+            await run.publish("error", payload)
+        finally:
+            await run.finish()
+
+    run.task = asyncio.create_task(runner())
 
     async def event_generator():
-        queue: asyncio.Queue = asyncio.Queue()
-
-        async def sink(event: str, data: dict) -> None:
-            await queue.put((event, data))
-
-        async def runner():
-            try:
-                await council_flow(account_id, symbol, on_event=sink, mode=request.mode)
-            except Exception as e:
-                code = classify_exception(e)
-                # Class name only: exception text can contain connection strings or credentials
-                print(f"[council] stream failed code={code} type={type(e).__name__}")
-                quick_available = getattr(e, "quick_available", None)
-                payload = {"code": code, "message": refusal_message(code, quick_available)}
-                if quick_available is not None:
-                    payload["quick_available"] = quick_available
-                await queue.put(("error", payload))
-            finally:
-                await queue.put(None)
-
-        task = asyncio.create_task(runner())
-        try:
-            while True:
-                item = await queue.get()
-                if item is None:
-                    break
-                yield sse(*item)
-        finally:
-            if not task.done():
-                task.cancel()
+        async for item in run.follow(0):
+            yield HEARTBEAT_FRAME if item is None else sse_frame(item)
 
     return StreamingResponse(
         event_generator(),
@@ -576,5 +570,43 @@ async def council_stream(request: CouncilRequest, req: Request):
         headers={
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
-        }
+            "X-Council-Run": run.run_id,
+        },
+    )
+
+
+_STREAM_GONE_MESSAGE = {
+    "stream_expired": "This audit's stream is no longer available (it expired, or the service restarted). The audit was not started again.",
+    "unknown_event_id": "The stream cannot be continued from that point. The audit was not started again.",
+}
+
+
+@app.get("/ml/agents/council/stream/{run_id}")
+async def council_stream_resume(run_id: str, req: Request, userId: str | None = None, lastEventId: int | None = None):
+    """Continue a Council stream after the last event id the client saw (`Last-Event-ID` header, or `lastEventId`).
+    Only the events after that id are sent; the run is never started again. An unknown, expired or foreign run gives
+    404 `stream_expired`; an id the run never issued or no longer keeps gives 409 `unknown_event_id`."""
+    from agents.stream_store import HEARTBEAT_FRAME, StreamGone, sse_frame, store as stream_store
+
+    account_id = get_account_id(userId, req)
+    header = req.headers.get("Last-Event-ID")
+    try:
+        after_id = int(header) if header not in (None, "") else (lastEventId or 0)
+    except ValueError:
+        after_id = -1                                   # not an id this store ever issued: refused below
+    try:
+        run = stream_store.get(run_id, account_id)
+        run.check_after(after_id)
+    except StreamGone as gone:
+        return JSONResponse(status_code=404 if gone.code == "stream_expired" else 409,
+                            content={"code": gone.code, "message": _STREAM_GONE_MESSAGE[gone.code]})
+
+    async def event_generator():
+        async for item in run.follow(after_id):
+            yield HEARTBEAT_FRAME if item is None else sse_frame(item)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no", "X-Council-Run": run.run_id},
     )

@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { waitForHealthy } from "../utils/serviceWarmup";
 import { track } from "../lib/track";
+import { CouncilStreamError, readCouncilStream } from "../utils/councilStream";
 import {
   councilMaintenanceMessage,
   councilErrorMessage,
@@ -297,9 +298,10 @@ export default function AgentCouncil({
       return;
     }
 
-    // SSE via fetch+ReadableStream (EventSource doesn't support POST)
+    // SSE via fetch (EventSource cannot POST or send Authorization), with resume: a dropped connection continues from the
+    // last event id (utils/councilStream.ts); the run is never started again.
     try {
-      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      const headers: Record<string, string> = {};
       if (accessToken) {
         headers["Authorization"] = `Bearer ${accessToken}`;
       }
@@ -309,59 +311,27 @@ export default function AgentCouncil({
         body.userId = userId;
       }
 
-      const res = await fetch(`${mlBaseUrl}/ml/agents/council/stream`, {
-        method: "POST",
+      await readCouncilStream({
+        url: `${mlBaseUrl}/ml/agents/council/stream`,
+        body,
         headers,
-        body: JSON.stringify(body),
+        userId,
+        onEvent: (eventType, data) => handleEvent(eventType, data as StreamPayload),
       });
-
-      if (res.status === 503) {
-        const errBody = await res.json().catch(() => null);
-        setError(councilMaintenanceMessage(503, errBody));
-        return;
-      }
-
-      if (!res.ok || !res.body) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-
-        const lines = buffer.split("\n");
-        buffer = lines.pop() ?? "";
-
-        let eventType = "";
-        let dataStr = "";
-
-        for (const line of lines) {
-          if (line.startsWith("event: ")) {
-            eventType = line.slice(7).trim();
-          } else if (line.startsWith("data: ")) {
-            dataStr = line.slice(6).trim();
-          } else if (line === "" && eventType && dataStr) {
-            // Dispatch event
-            try {
-              const data = JSON.parse(dataStr) as StreamPayload;
-              handleEvent(eventType, data);
-            } catch {}
-            eventType = "";
-            dataStr = "";
-          }
-        }
-      }
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "";
-      if (msg.includes("fetch") || msg.includes("refused") || msg.includes("network")) {
-        setError(councilOfflineMessage(process.env.NODE_ENV !== 'production'));
-      } else {
+      if (e instanceof CouncilStreamError && e.kind === "http" && e.status === 503) {
+        setError(councilMaintenanceMessage(503, e.body));
+      } else if (e instanceof CouncilStreamError && (e.kind === "gone" || e.kind === "resume_failed")) {
+        setError(e.message);
+      } else if (e instanceof CouncilStreamError) {
         setError(councilErrorMessage(undefined));
+      } else {
+        const msg = e instanceof Error ? e.message : "";
+        if (msg.includes("fetch") || msg.includes("refused") || msg.includes("network")) {
+          setError(councilOfflineMessage(process.env.NODE_ENV !== 'production'));
+        } else {
+          setError(councilErrorMessage(undefined));
+        }
       }
     } finally {
       setRunning(false);

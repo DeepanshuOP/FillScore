@@ -173,6 +173,7 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/version` | Service version |
 | POST | `/ml/agents/council` | One audit, return the full result. Body `mode`: `quick` (one model call, no specialists; the dashboard default) or `deep` (the 9-call Council; the API default). Deep costs 9 budget units, Quick 1; a refused Deep run answers 429 with `quick_available` |
 | POST | `/ml/agents/council/stream` | Same run, streamed as server-sent events (Quick: `synthesis_done`, `gate_done`, `complete`; Deep adds `cited_values` just before `complete`: each specialist's cited values traced to packet fields, `agents/cited_values.py`, computed on read, not stored) |
+| GET | `/ml/agents/council/stream/{run_id}` | Resume a Council stream: only the events after `Last-Event-ID` (header, or `?lastEventId=`), never a new run. 404 `stream_expired` (unknown, expired or another account's run), 409 `unknown_event_id`. See "Resumable Council stream" in §7 |
 | POST | `/ml/agents/ask` | Ask your execution: a question about the caller's own past executions, answered from deterministic tools only (planner call, tools, answerer call, code checks). 2 budget units; demo accounts refused |
 | GET | `/ml/agents/council/budget` | What is left of the account's and the day's audit budget, in units, and whether one more Deep or Quick audit is allowed |
 | GET | `/ml/agents/council/runs` | Past runs for the account |
@@ -314,6 +315,13 @@ and erasure are `GET /api/account/export` and `DELETE /api/account/`.
   are specified in `docs/superpowers/specs/2026-11-07-measurement-v2-design.md`.
 - **Demo data is only partly real** (see §5). No real-user trade has been scored yet.
 - **Council replay** endpoint does not exist; runs are persisted but not replayable.
+- **Resumable Council stream (single instance).** Every Council SSE event carries an `id:` (1, 2, 3, ... per run); `agents/stream_store.py`
+  keeps a run's events in this process's memory (at most 32 runs, 300 events each, a finished run for 10 minutes; an unfinished run is not
+  expired) and the pipeline no longer depends on the connection that started it. The response header `X-Council-Run` names the run; a
+  client that lost the connection calls `GET /ml/agents/council/stream/{run_id}` with `Last-Event-ID` and receives only the later events;
+  a comment line (`: keepalive`) every 20 s keeps an idle stream open. **Limit:** the events live in one process. A restart or redeploy
+  loses every unfinished run and all kept events, and a second instance would not know the first one's runs; the client then gets
+  `stream_expired` and the page says the audit was not started again (a finished audit is still served from `council_runs`, by content hash).
 - **State is per instance:** rate limiters, the API-key limiter, the CSV-check budget and the Council run budget live in memory, and the
   scheduled re-sync runs only while the free instance is awake. Running more than one instance needs a shared store (ROADMAP G1).
 - **No billing or quotas per plan** (ROADMAP G3). Stripe is prepared behind `BILLING_ENABLED` (off): `POST /api/billing/checkout` and

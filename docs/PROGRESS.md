@@ -4,7 +4,7 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, fourth: honest AI layer, two hardened backend paths, prints on the receipt (local commits)
 
-- **Next concrete action: Step 3 (resumable Council stream).**
+- **Next concrete action: Step 4 (exchange egress guard, Binance weight governor, duplicate-key ingestion).**
 - **Step 1: done.** `ml-service/evals/placeholder_compliance.py` (offline; test `tests/test_placeholder_compliance.py`, hand-computed on
   3 small runs) and the table in README "Evaluation". Unit = one agent output (regeneration and fallback are recorded per agent, not per
   sentence). Synthesis text was used as the model wrote it in 2 of 21 council runs and 3 of 18 single-call runs. ADR-0018
@@ -18,6 +18,17 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
   Tests: `tests/test_benchmark_line.py` (7, hand cases both signs, zero, rounding, singular, no packet), `test_cited_values.py`
   (event), `councilStatus.test.ts` (40). **Finding:** the rebuilt demo trades carry no `vwap5m`, so for the three demos the served line reads
   "insufficient data" (the model's enum had said negative, negative, positive); real accounts with `vwap5m` get the measured line.
+- **Step 3: done.** Every Council SSE event has an `id:` per run; `ml-service/agents/stream_store.py` keeps a run's events in memory (32 runs,
+  300 events, finished run 10 min; an unfinished run does not expire) and the pipeline no longer stops when the client disconnects; header
+  `X-Council-Run` names the run; `GET /ml/agents/council/stream/{run_id}` + `Last-Event-ID` sends only later events (404 `stream_expired`,
+  409 `unknown_event_id`, never a new run); `: keepalive` comment every 20 s; CORS allows `Last-Event-ID` and exposes `X-Council-Run`.
+  Deviation: the page cannot use `EventSource` (it needs POST and an Authorization header), so `frontend/app/utils/councilStream.ts` reads
+  the stream with fetch and implements the same resume protocol (reconnect with `Last-Event-ID`, skip ids already shown, give up with a
+  clear message after 5 tries; 404/409 become the "not started again" message). The "TTL like the run cache": the run cache has none (it
+  is by content hash), so the TTL is 10 minutes after finish. Tests: `test_council_stream_store.py` (8), `test_council_stream_resume.py` (6,
+  including the fault injection: the ASGI client disconnects after 2 events; the resumed run's notes and `n_calls_ok` 9 equal an
+  uninterrupted run and the fake provider's call count is equal), `councilStream.test.ts` (10), e2e `council-stream-resume.spec.ts`
+  (demo stream cut after 4 events: one POST, one GET with Last-Event-ID 4, 4 notes once each). ARCHITECTURE.md §7 states the limit.
 
 ## Orders of 2026-11-22, third: Council scope, four copy fixes, launch kit (local commits)
 
