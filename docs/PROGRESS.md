@@ -2,6 +2,46 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-22, third: Council scope, four copy fixes, launch kit (local commits)
+
+- **Next concrete action: Council scope fixed and launch kit ready for Deepanshu's review (local commits, not pushed).** Golden set v4
+  was dumped by Deepanshu (packets only, `recorded: false`); `test_eval_golden.py` reads v4 (versions 1.8.0 / 1.4.0) and
+  `test_golden_sets.py` pins v4 as the newest set and v3 by name. Rerun: `run_offline.py` exit 0 (0 violations), `ablation.py --check`
+  exit 0, `dump_golden_packets --check v4` hash-identical. Committed as one unit per step.
+- **Step 1 (Council scope): done except one part.** Not done: the benchmark label (BLOCKED, below).
+  Code, tests, golden v4 and the three re-recorded demo runs are committed (details and the sentences read: LOG §AH).
+- **Step 2 (four copy fixes): done.** Chapter 03 is two sentences of 11 and 19 words (served values; improvement and cost cases tested);
+  true minus in the formatters that printed a hyphen (`formatBpsDisplay` and the Council finding formatters; the legend's sign is set in
+  the text face because the mono face draws U+2212 like a hyphen; the shared `formatBps` and the PDF are unchanged); a cancelled order with
+  no fills shows fees "$0.00" and notional "$0.00 executed" (only when the exchange's own executed quantity is 0); images in
+  `docs/design/v31b/` (16, README updated).
+- **Step 3 (launch kit): done.** `README.md` top section (pitch, live link, check it yourself, Mermaid architecture, Evaluation table,
+  test counts), `docs/runbooks/MCP_CLIENT.md`, `docs/launch/RESUME.md`, `docs/product/PRD.md`; drafts refreshed: `BLOG_1_MEASURED.md`
+  (grades 93.4 to 94.3, from the file), `BLOG_2_EXPLAINED.md` (Council scope, parked re-record), `LAUNCH_CHANNELS.md` (same),
+  `DEMO_SCRIPT.md` (light theme, demo names, download buttons exist in Settings, a Council scene).
+- **Step 4 (checks, review): done.** One reviewer (Sonnet): 7 findings, 3 fixed, 4 kept with reasons (LOG §AH). Final checks of
+  2026-11-22: ml-service pytest 1816 passed, 0 failed, 9 deselected (after v4: the first run had 5 failures that needed it, then one
+  more, the "newest set is v3" pin, fixed by pinning v3 by name and adding a v4 test); backend 1053 passed (126 files), tsc 0; frontend vitest 727 passed
+  (76 files), tsc 0, lint 0 errors (17 warnings), build ok; e2e 39 passed; MCP 26 passed; guard table 214 passed; roadmap ids OK;
+  ablation `--check` exit 0; `run_offline.py` exit 0 (0 violations, after v4); `dump_golden_packets --check v4` hash-identical.
+- **Step 1 detail:**
+  Scope: `frontend/app/dashboard/page.tsx:303` hard-codes BTCUSDT; not changeable by the user. Fix: `scope` event with served fill counts
+  printed beside the title; metrics 1.4.0 (a one-symbol packet has no concentration keys); prompt 1.8.0 (Risk Auditor prompt for a
+  one-symbol packet); claim rules 1.4.0 ("rather than", "inherent to", "resulting in"); display label "Fee Reviewer".
+  **BLOCKED: benchmark verdict label** ("worse than"/"better than" the 5-minute VWAP): direction not defined in code
+  (`ml-service/agents/schemas.py:32`, `agents/alpha_architect.py:27`); label left as it was.
+  Live runs used: 4 of 5 (three demos, then one more for demo-disciplined, not kept: LOG §AH).
+
+## Waiting for Deepanshu (2026-11-22, third order)
+
+- **Golden set v4: DONE** (dumped by Deepanshu; follow-up applied, first bullet of the third order). Still waiting: the benchmark label
+  (BLOCKED, Step 1) and the push. Original request, kept for the record:
+- **Golden set v4 (packets only).** The auto-mode classifier denied `cd ml-service && .venv/bin/python -m evals.dump_golden_packets --set v4`
+  (it reads the demo trades from Atlas read-only and writes only the new folder `ml-service/evals/golden/v4`; v1 to v3 stay unchanged).
+  Until it exists, `python evals/run_offline.py` exits 1 with 3 violations ("demo_runs/<id>.json: fixture matches no golden set"): the
+  three re-recorded demo fixtures carry prompt 1.8.0 and metrics 1.4.0, which no golden set owns. After it: change
+  `ml-service/tests/test_eval_golden.py:29` from `load_golden("v3")` to `load_golden("v4")`, and rerun.
+
 ## Orders of 2026-11-22, second: verify Part A, F1-F3, Part B screens, QA (local commits)
 
 - **Next concrete action: Design v3.1 complete: all screens ready for Deepanshu's review (docs/design/v31b/).**

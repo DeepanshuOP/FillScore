@@ -400,3 +400,94 @@ Report: `docs/milestones/M8.md` ("Design v3.1"); references `docs/design/REFEREN
   count (325 to 354) until the cited values went into a closed fold (285).
 - **Overlap detectors read boxes, not clipping**: rows scrolled out of an overflow region still overlap the footer in
   `getBoundingClientRect`; the image is the check.
+
+## AH. Council scope (orders of 2026-11-22, third)
+
+**Finding (a): where the scope is chosen.** The Council audits one symbol, BTCUSDT, everywhere:
+- `frontend/app/dashboard/page.tsx:303` passes `symbol="BTCUSDT"` to the panel; `frontend/app/components/AgentCouncil.tsx:151`
+  defaults the prop to the same value and sends it in the request body (`{symbol, mode}`); the page has no control to change it.
+- The API accepts any symbol: `ml-service/main.py:310-312` (`CouncilRequest.symbol`), `main.py:401` passes `req.symbol` to
+  `council_flow`; `ml-service/agents/council.py:754` (`load_packets`) and `agents/metrics/loader.py:57` filter the trades by that
+  symbol; the value `"ALL"` means every symbol (`loader.py:57`, `:73`). Nothing in the UI sends `"ALL"`.
+- The demo runs are recorded for it: `ml-service/scripts/generate_demo_runs.py:35` (`SYMBOL = "BTCUSDT"`), and a stored demo run
+  is served only for the symbol it was recorded for (`agents/council_service.py` `load_demo_fixture`, `data.get("symbol")`).
+- Result: the notes described 344 of demo-moderate's 607 fills (fees $23.96, 77.9% maker) while every other screen is account-wide
+  ($41.98, 607 fills, 74%), and the Risk Auditor read a one-symbol packet in which the top symbol is 100% of notional by
+  construction, so "single-asset exposure" was a statement about the packet, not the account (4 symbols).
+
+**Fix (b), decided: keep a per-symbol Council (token budget), and say so.**
+- `scope` stream event (`agents/council_service.py` `emit_scope`, `agents/metrics/loader.py` `scope_counts`): the audited symbol,
+  its fill count and the account's fill count, both read from the `trades` collection by the server. The Council page prints
+  them next to the title ("BTCUSDT only: 344 of the account's 607 fills", `councilScopeStatement`; the browser only formats the
+  two served integers). If the counts cannot be read no event is sent and the page says only "BTCUSDT only", with no number.
+- **Metrics 1.4.0** (`agents/metrics/risk_packet.py`): a packet built for one symbol leaves out `symbol_hhi`,
+  `top_symbol_by_notional`, `top_symbol_notional_fraction` and `symbol_notional_shares` (the dataclass fields are None/empty, so the
+  packet hash covers the omission; `to_prompt_dict` drops the keys). A packet built with `symbol="ALL"` keeps them. Hand values in
+  `tests/test_risk_packet.py` (6 trades: BTC 750, ETH 250 of 1000: HHI 0.625, top share 0.75; the one-symbol packet over the 4 BTC
+  trades has none of the four keys). `required_evidence` already skipped a key the packet lacks, so a one-symbol audit has no
+  risk headline; `evidence_counts` and `adverse_rate_by_symbol` still name the one symbol (a symbol name, not a concentration).
+- **Prompt 1.8.0**: the Risk Auditor's system prompt for a one-symbol packet says it holds no concentration values and gives an
+  example with a key the packet has (`agents/risk_auditor.py` `system_prompt_for`); the all-symbols prompt is byte-identical.
+  The metrics version is inside every packet hash, so all four packet hashes of every account changed with 1.4.0.
+- **Claim rules 1.4.0** (PROGRESS item 23, option C): a bare "rather than" joins "inherent to" and "resulting in" (both already in
+  1.2.0) as a causal phrasing, never excused by a passed finding (`CAUSAL_PHRASES_1_4_0`, `extra_terms_1_4_0`). Hand cases and
+  guards in `tests/test_claim_rules_1_4_0.py` (16). Rules 1.2.0 and 1.3.0 are unchanged and still pinned in the offline evals.
+- Display label only: "Fee Optimizer" shows as "Fee Reviewer" (`councilStatus.ts` `AGENT_LABELS`); the stored key and every
+  recorded sentence are unchanged.
+- **BLOCKED: direction not defined in code** for the benchmark verdict label ("worse than" / "better than" the 5-minute VWAP).
+  `alphaRating` is `POSITIVE | NEUTRAL | NEGATIVE | SEVERELY_NEGATIVE` (`ml-service/agents/schemas.py:32`, repeated in the prompt at
+  `agents/alpha_architect.py:27`) and nothing in the code says which direction of which benchmark each value means; the prompt asks
+  the model to judge "captured or leaked value relative to the packet's benchmarks" (plural: VWAP and the unfilled-order
+  opportunity cost). The rating is the model's word, not a threshold on `pct_beating_vwap` (`alpha_packet.py:35`, `:181`). The
+  label "Versus the benchmark: severely negative" (`councilStatus.ts` `alphaRatingPhrase`) is left as it is.
+
+**Golden sets and ablation recordings (d): unchanged.** Runs 1-6 (golden v1 to v3, the 18 ablation recordings) were made under
+prompt 1.7.0 or older, metrics 1.3.0 or older and claim rules 1.2.0 or older, before this packet change; they stay as recorded.
+`tests/test_golden_sets.py` now pins golden v3 to those versions (as it pins v2) instead of to the current ones, because the
+metrics version is inside every packet hash and the current code can no longer reproduce v3's packet hashes. So
+`python -m evals.dump_golden_packets --check v3` would report a mismatch by design; it was not run (it needs an Atlas read).
+Offline evals after the change: 39 runs x 6 invariants, 0 violations; claim_rules_1_2_0 flags 18 of 39 and claim_rules_1_3_0 18 of
+39, the same as before.
+
+**Re-recorded demo Council runs (c).** Through `ml-service/scripts/generate_demo_runs.py --yes` (writes `llm_usage` counters to
+Atlas and the three fixture files; no `--persist`, so nothing was added to `council_runs`). 4 of the 5 live runs of this session
+were used: one per demo, plus one more for demo-disciplined (below). All under prompt 1.8.0, metrics 1.4.0, rules 1.4.0:
+
+| Run | Models (calls) | HTTP attempts | `n_calls_ok` | Code-built fallback sentences |
+|---|---|---|---|---|
+| demo-disciplined (run 3, kept) | specialists qwen/qwen3.8-27b (5), debate openai/gpt-oss-20b (6), synthesis qwen/qwen3.8-27b (3) | 14 | 9 of 9 | 5 fields, 3 sentences redacted (numerals outside placeholders) |
+| demo-moderate | same three models (4, 4, 2) | 10 | 9 of 9 | 1 field (alpha) |
+| demo-aggressive | same three models (4, 4, 3) | 11 | 9 of 9 | 3 fields |
+| demo-disciplined (run 4, not kept) | same models; one `http_429` on a specialist, recovered | 16 | 9 of 9 | 6 fields |
+
+Each run: `check_council_run.py` ACCEPTED, `degraded` false, failure-string sweep zero for `failed:`, `Max retries`, `_default_`,
+`rate limit` (run 4: one recovered `http_429`), no `RouterExhausted`, `REJECTED` or `fell back`, `generated_at` 2026-11-22
+10:26 to 10:34 UTC, the serving check (`states_a_cause`, `new_rule_hits` under 1.4.0) clean. I read every sentence: none states
+an account-wide concentration or the number of symbols; the Risk Auditor's flags speak of adverse selection and the busiest hour.
+- demo-disciplined run 3 holds one sentence I did not like: "The fee drag of 10.0 bps was consistent with the market structure
+  and order type used." (an unmeasured mechanism, though not a causal connective, so the claim check lets it through). I spent
+  run 4 on it: run 4 had no such sentence but its debate text says "the persistent fee drag of 10.0 bps reveals execution
+  inefficiencies", "demonstrate efficient execution" and "supporting reasonable execution quality", which are judgements the
+  claim check also lets through and which sit beside a fee verdict of OPTIMAL. Neither is better, so the committed fixture is run
+  3, restored byte for byte from the file the generator wrote (nothing edited). Both runs are kept in the session scratchpad.
+- demo-moderate and demo-aggressive: the `>-0.01 bps` and `<0.01 bps` strings are the packet renderer's, not new. The code-built
+  `key_dispute` sentence "disagreed on the cause of the costs" is the older fallback wording, unchanged.
+- The runs are mostly code-built fallback text because the models wrote numerals outside placeholders (redaction kind `numeral`).
+  That is the grounding guard working as designed, and it is not a result of the scope change.
+- **Reviewer (one subagent, read-only, Sonnet) on the Step 1-2 diff and the three runs: 7 findings, no high one.** Fixed (one pass):
+  (1) medium, `orderLedger.ts`: "$0 fees" was set from the status and the stored fill count alone; a cancelled order the exchange
+  says was partly filled, with its fills not stored, would have read "$0.00 executed". Now also requires the exchange's own
+  `executedQty <= origQty x 1e-9` (orderSummary's rule; the route now reads both fields), else null; the page says "executed"
+  only when the server sent fees of exactly 0. Tests with hand values. (5) low, `AgentCouncil.tsx`: a stale `scope` could be
+  printed over another symbol; the scope is used only when its symbol equals the page's. (7) low, `costStrip.ts`: "unfilled
+  orders added $X" now reads "the modelled cost of unfilled orders was $X" (an unfilled order took no money out of the account).
+  Kept with reasons: (2) medium, the recorded demo text says "The trader executed 344 trades, paying $23.96" and calls fills
+  "orders": the page now states the scope beside the title, no claim rule catches "the trader/account executed N", and a rule
+  plus a re-record would need more live runs than the one left of the five, so the wording is left as recorded and listed
+  under "Open" in PROGRESS; (3) low, "keeping total fee cost", "no market impact" and the older code-built `key_dispute`
+  sentence ("disagreed on the cause of the costs", `claims.py` `KEY_DISPUTE_FALLBACK`): recorded or code-owned text, not edited;
+  (4) low, the one-symbol prompt still carries `evidence_counts.symbol_BTCUSDT` and a one-entry `adverse_rate_by_symbol`:
+  neither is a concentration value, removing them is another metrics bump and re-record; (6) low, `toFixed(1)` in
+  `councilFindings.ts` and `WhaleCorrelation.tsx` can print "−0.0": not new, the old text had the same with a hyphen.
+- Disk: `/tmp` (tmpfs) was 99% full from 46 leftover `fs-e2e-mongo-*` folders of earlier e2e runs and a backend test failed with
+  ENOSPC; I removed those folders (no mongod was running). The e2e setup leaves about 300 MB per run behind.

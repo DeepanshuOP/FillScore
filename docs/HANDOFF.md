@@ -29,7 +29,13 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
-**2026-11-21 (latest): Design v3 fixes ready for Deepanshu's review.** Design v3 was pushed; A1-A10 and B1-B3 are
+**2026-11-22 (latest, third order): Council scope fixed and launch kit ready for Deepanshu's review (local commits, not pushed).** The Council
+audits one symbol and says so ("BTCUSDT only: 344 of the account's 607 fills", served counts); a one-symbol packet carries no concentration
+(metrics 1.4.0, prompt 1.8.0, claim rules 1.4.0); the three demo runs were re-recorded (4 of 5 live runs). Golden set `v4` (packets only,
+not recorded) owns those runs; suites green and committed per step. Open: the benchmark label (BLOCKED) and the push. Launch kit: `README.md` top, `docs/runbooks/MCP_CLIENT.md`, `docs/launch/RESUME.md`, `docs/product/PRD.md`.
+Report: `docs/research/LOG.md` §AH. Older text follows.
+
+**2026-11-21: Design v3 fixes ready for Deepanshu's review.** Design v3 was pushed; A1-A10 and B1-B3 are
 committed locally (B3 not built: no readable prints without new storage; A2 kept: the display matches the locked grade).
 New: `GET /api/audit/orders-ledger`, `counts` and `byType` on `/orders-summary`, the Council `cited_values` event.
 Report: `docs/milestones/M8.md` ("Design v3 fixes, 2026-11-21"); status: `docs/PROGRESS.md`. Older text follows.
