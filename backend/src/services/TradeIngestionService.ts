@@ -10,6 +10,23 @@ import { computeFeeUsd } from '../scoring/fees';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
+export type StoreOutcome = 'inserted' | 'existing' | 'raced';
+
+/**
+ * Insert a trade unless it is stored. Two writers can race for the same (userId, exchange, symbol, tradeId): the loser's
+ * upsert can fail with a duplicate-key error (code 11000). That means "already stored", so it is reported as `raced` and
+ * counted by the caller, never thrown. Any other error still propagates.
+ */
+export async function storeTradeIfAbsent(filter: Record<string, unknown>, doc: Record<string, unknown>): Promise<StoreOutcome> {
+    try {
+        const r = await Trade.updateOne(filter, { $setOnInsert: doc }, { upsert: true });
+        return r.upsertedCount > 0 ? 'inserted' : 'existing';
+    } catch (e: any) {
+        if (e?.code === 11000) return 'raced';
+        throw e;
+    }
+}
+
 export class TradeIngestionService {
     private marketData = new MarketDataService();
 
@@ -100,7 +117,7 @@ export class TradeIngestionService {
         apiSecret: string,
         symbol: string,
         daysBack: number
-    ): Promise<{ inserted: number; skipped: number }> {
+    ): Promise<{ inserted: number; skipped: number; raced?: number }> {
         // Instantiate a dedicated client to avoid any concurrency/singleton side-effects
         const client = new BinanceClient(apiKey, apiSecret);
 
@@ -129,6 +146,7 @@ export class TradeIngestionService {
 
         let inserted = 0;
         let skipped = 0;
+        let raced = 0;
 
         // Orchestration step 2 & 3: Normalise & Upsert
         for (const raw of rawTrades) {
@@ -143,20 +161,16 @@ export class TradeIngestionService {
 
             // $setOnInsert prevents us from unnecessarily overwriting existing trade fields
             // which allows future enrichments (scores, metrics) to not be destroyed by re-ingestion.
-            const updateResult = await Trade.updateOne(
-                filter,
-                { $setOnInsert: { ...normalised, accountId: userId, dataSource: VALID_DEMO_USERS.has(userId) ? 'synthetic-demo' : 'real-user' } },
-                { upsert: true }
-            );
-
-            if (updateResult.upsertedCount > 0) {
+            const outcome = await storeTradeIfAbsent(filter, { ...normalised, accountId: userId, dataSource: VALID_DEMO_USERS.has(userId) ? 'synthetic-demo' : 'real-user' });
+            if (outcome === 'inserted') {
                 inserted++;
             } else {
                 skipped++;
+                if (outcome === 'raced') raced++;
             }
         }
 
-        return { inserted, skipped };
+        return { inserted, skipped, raced };
     }
 
     public async ingestBybitForUser(
@@ -165,7 +179,7 @@ export class TradeIngestionService {
         apiSecret: string,
         symbol: string,
         daysBack: number
-    ): Promise<{ inserted: number; skipped: number }> {
+    ): Promise<{ inserted: number; skipped: number; raced?: number }> {
         // Instantiate a dedicated Bybit client — avoids singleton/concurrency side-effects
         const bybitClient = new BybitClient(apiKey, apiSecret);
 
@@ -188,6 +202,7 @@ export class TradeIngestionService {
 
         let inserted = 0;
         let skipped = 0;
+        let raced = 0;
 
         let dayIndex = 1;
 
@@ -208,17 +223,17 @@ export class TradeIngestionService {
             for (const raw of rawTrades) {
                 const normalised = await this.withFeeUsd(bybitClient.normaliseBybitTrade(raw, userId));
 
-                const updateResult = await Trade.updateOne(
+                const outcome = await storeTradeIfAbsent(
                     { userId, exchange: 'bybit', symbol: normalised.symbol, tradeId: raw.execId },
-                    { $setOnInsert: { ...normalised, accountId: userId, dataSource: VALID_DEMO_USERS.has(userId) ? 'synthetic-demo' : 'real-user' } },
-                    { upsert: true }
+                    { ...normalised, accountId: userId, dataSource: VALID_DEMO_USERS.has(userId) ? 'synthetic-demo' : 'real-user' },
                 );
 
-                if (updateResult.upsertedCount > 0) {
+                if (outcome === 'inserted') {
                     inserted++;
                 } else {
-                    // matchedCount > 0 means the document already existed — skip it
+                    // already stored (or a racing writer stored it first) — skip it
                     skipped++;
+                    if (outcome === 'raced') raced++;
                 }
             }
 
@@ -231,7 +246,7 @@ export class TradeIngestionService {
             }
         }
 
-        return { inserted, skipped };
+        return { inserted, skipped, raced };
     }
 
     public async ingestOKXForUser(
@@ -241,7 +256,7 @@ export class TradeIngestionService {
         passphrase: string,
         instId: string,
         daysBack: number
-    ): Promise<{ inserted: number; skipped: number }> {
+    ): Promise<{ inserted: number; skipped: number; raced?: number }> {
         const okxClient = new OKXClient(apiKey, apiSecret, passphrase);
 
         const endTime = Date.now();
@@ -264,6 +279,7 @@ export class TradeIngestionService {
 
         let inserted = 0;
         let skipped = 0;
+        let raced = 0;
         let dayIndex = 1;
 
         while (windowStart < endTime) {
@@ -279,16 +295,16 @@ export class TradeIngestionService {
             for (const raw of rawTrades) {
                 const normalised = await this.withFeeUsd(okxClient.normaliseOKXTrade(raw, userId));
 
-                const updateResult = await Trade.updateOne(
+                const outcome = await storeTradeIfAbsent(
                     { userId, exchange: 'okx', symbol: normalised.symbol, tradeId: raw.billId },
-                    { $setOnInsert: { ...normalised, accountId: userId, dataSource: VALID_DEMO_USERS.has(userId) ? 'synthetic-demo' : 'real-user' } },
-                    { upsert: true }
+                    { ...normalised, accountId: userId, dataSource: VALID_DEMO_USERS.has(userId) ? 'synthetic-demo' : 'real-user' },
                 );
 
-                if (updateResult.upsertedCount > 0) {
+                if (outcome === 'inserted') {
                     inserted++;
                 } else {
                     skipped++;
+                    if (outcome === 'raced') raced++;
                 }
             }
 
@@ -300,6 +316,6 @@ export class TradeIngestionService {
             }
         }
 
-        return { inserted, skipped };
+        return { inserted, skipped, raced };
     }
 }

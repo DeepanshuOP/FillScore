@@ -1,4 +1,5 @@
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
+import { ExchangeHttp, createExchangeHttp } from './exchangeEgress';
 import crypto from 'crypto';
 import { BybitRawTrade, NormalisedTrade } from '../types';
 
@@ -15,13 +16,13 @@ export class BybitApiError extends Error {
 export class BybitClient {
     private apiKey: string;
     private apiSecret: string;
-    private axiosInstance: AxiosInstance;
+    private axiosInstance: ExchangeHttp;
 
     constructor(apiKey: string, apiSecret: string) {
         this.apiKey = apiKey;
         this.apiSecret = apiSecret;
-        this.axiosInstance = axios.create({
-            baseURL: 'https://api.bybit.com',
+        // Host allow-list, https only, redirects off (exchangeEgress.ts)
+        this.axiosInstance = createExchangeHttp('https://api.bybit.com', {
             timeout: 10000,
         });
     }

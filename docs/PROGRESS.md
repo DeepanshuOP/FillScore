@@ -4,7 +4,7 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, fourth: honest AI layer, two hardened backend paths, prints on the receipt (local commits)
 
-- **Next concrete action: Step 4 (exchange egress guard, Binance weight governor, duplicate-key ingestion).**
+- **Next concrete action: Step 5 (prints on the receipt).**
 - **Step 1: done.** `ml-service/evals/placeholder_compliance.py` (offline; test `tests/test_placeholder_compliance.py`, hand-computed on
   3 small runs) and the table in README "Evaluation". Unit = one agent output (regeneration and fallback are recorded per agent, not per
   sentence). Synthesis text was used as the model wrote it in 2 of 21 council runs and 3 of 18 single-call runs. ADR-0018
@@ -29,6 +29,21 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
   including the fault injection: the ASGI client disconnects after 2 events; the resumed run's notes and `n_calls_ok` 9 equal an
   uninterrupted run and the fake provider's call count is equal), `councilStream.test.ts` (10), e2e `council-stream-resume.spec.ts`
   (demo stream cut after 4 events: one POST, one GET with Last-Event-ID 4, 4 notes once each). ARCHITECTURE.md §7 states the limit.
+- **Step 4: done.** (a) `backend/src/services/exchangeEgress.ts`: allowed hosts `api.binance.com`, `data-api.binance.vision`, `api.bybit.com`,
+  `api.bytick.com`, `www.okx.com`; https only, default port, no credentials in the URL, redirects never followed (axios `maxRedirects: 0`,
+  fetch `redirect: 'manual'` and a 3xx is refused); used by BinanceClient, BybitClient, OKXClient, BinanceHistorySync, keyValidation,
+  MarketDataService and ExchangeReachability. SECURITY.md says Helmet CSP protects browsers and this guard protects server egress.
+  (b) `binanceGovernor.ts`: one process-wide weight budget (50% of the per-minute limit; X-MBX-USED-WEIGHT-1M; FIFO queue; 429 pause for
+  Retry-After, 5 s if absent, at most 60 s; 418 refuses everything for Retry-After, 120 s if absent, requests already waiting are refused)
+  for BinanceClient (myTrades weight 20), BinanceHistorySync (its private counter is gone), and klines (weight 2). `ccxtShadow.ts` does no
+  I/O, so it needs no governor. Facts cited in the file header (docs-researcher; the docs do not say whether the header includes the
+  request just made or whether the minute rolls: both are designed for conservatively). (c) `storeTradeIfAbsent`: a duplicate-key (11000)
+  from a racing insert is "already stored", counted in `skipped` and `raced` (ingestion x3 and the history sync; `SyncReport.raced`).
+  Tests: `exchangeEgress.test.ts` (20, incl. a real-socket redirect), `binanceGovernor.test.ts` (15: header sequences 10/45, 429 Retry-After 7,
+  418 120 s boundaries, 10 concurrent syncs x 8 calls x weight 20 on a fake exchange with limit 1000: peak 500 per minute, 0 429, 3 waits of
+  61 000 ms), `TradeIngestionRace.test.ts` (4, mongodb-memory-server: two concurrent writers of 50 trades give 50 rows and inserted sum 50).
+  Backend vitest 1092 passed (129 files), tsc 0. **Found, not fixed (not asked):** `BinanceClient.fetchFeeRate` calls `/api/v3/tradeFee`,
+  which is not in Binance's official docs (the documented fee endpoint is `GET /sapi/v1/asset/tradeFee`, weight 1).
 
 ## Orders of 2026-11-22, third: Council scope, four copy fixes, launch kit (local commits)
 

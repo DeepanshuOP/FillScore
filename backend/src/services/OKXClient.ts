@@ -1,4 +1,5 @@
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
+import { ExchangeHttp, createExchangeHttp } from './exchangeEgress';
 import crypto from 'crypto';
 import { OKXRawTrade, NormalisedTrade } from '../types';
 
@@ -16,14 +17,14 @@ export class OKXClient {
     private apiKey: string;
     private apiSecret: string;
     private passphrase: string;
-    private axiosInstance: AxiosInstance;
+    private axiosInstance: ExchangeHttp;
 
     constructor(apiKey: string, apiSecret: string, passphrase: string) {
         this.apiKey = apiKey;
         this.apiSecret = apiSecret;
         this.passphrase = passphrase;
-        this.axiosInstance = axios.create({
-            baseURL: 'https://www.okx.com',
+        // Host allow-list, https only, redirects off (exchangeEgress.ts)
+        this.axiosInstance = createExchangeHttp('https://www.okx.com', {
             timeout: 10000,
         });
     }

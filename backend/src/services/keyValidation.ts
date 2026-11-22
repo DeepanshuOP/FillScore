@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { guardedFetch } from './exchangeEgress';
 
 /** Thrown when a key can do more than read. `disable` names the exchange's permissions to switch off. */
 export class KeyNotReadOnlyError extends Error {
@@ -35,7 +36,7 @@ export async function validateBinanceKey(apiKey: string, apiSecret: string): Pro
         // /api/v3/account returns canTrade/canWithdraw based on the overall ACCOUNT status,
         // which means even a legitimate read-only key would show canTrade=true and get rejected.
         // apiRestrictions returns the actual key-level permissions.
-        response = await fetch(`https://api.binance.com/sapi/v1/account/apiRestrictions?${queryString}&signature=${signature}`, {
+        response = await guardedFetch(`https://api.binance.com/sapi/v1/account/apiRestrictions?${queryString}&signature=${signature}`, {
             headers: {
                 'X-MBX-APIKEY': apiKey,
             },
@@ -93,7 +94,7 @@ export async function validateBybitKey(apiKey: string, apiSecret: string): Promi
 
     let response;
     try {
-        response = await fetch('https://api.bybit.com/v5/user/query-api', {
+        response = await guardedFetch('https://api.bybit.com/v5/user/query-api', {
             headers: {
                 'X-BAPI-API-KEY': apiKey,
                 'X-BAPI-SIGN': signature,
@@ -152,7 +153,7 @@ export async function validateOKXKey(apiKey: string, apiSecret: string, passphra
 
     let response;
     try {
-        response = await fetch(`https://www.okx.com${path}`, {
+        response = await guardedFetch(`https://www.okx.com${path}`, {
             headers: {
                 'OK-ACCESS-KEY': apiKey,
                 'OK-ACCESS-SIGN': signature,

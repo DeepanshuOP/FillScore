@@ -1,6 +1,14 @@
-import axios, { AxiosInstance, AxiosError } from 'axios';
+import axios from 'axios';
 import crypto from 'crypto';
 import { BinanceRawTrade } from '../types';
+import { BinanceBanError, BinanceGovernor, binanceGovernor } from './binanceGovernor';
+import { ExchangeHttp, createExchangeHttp } from './exchangeEgress';
+
+// IP request weights (https://developers.binance.com/docs/binance-spot-api-docs/rest-api/account-endpoints):
+// GET /api/v3/myTrades is 20 without an orderId. The fee call below is weighted 1, like the documented
+// GET /sapi/v1/asset/tradeFee (wallet docs); /api/v3/tradeFee is not in the official docs (see docs/PROGRESS.md).
+const MY_TRADES_WEIGHT = 20;
+const FEE_RATE_WEIGHT = 1;
 
 export class BinanceApiError extends Error {
     public statusCode: number | undefined;
@@ -13,13 +21,14 @@ export class BinanceApiError extends Error {
 }
 
 export class BinanceClient {
-    private axiosInstance: AxiosInstance;
+    private axiosInstance: ExchangeHttp;
     private apiSecret: string;
 
-    constructor(apiKey: string, apiSecret: string) {
+    /** `governor` is the process-wide one in production: every Binance call shares one weight budget. */
+    constructor(apiKey: string, apiSecret: string, private governor: BinanceGovernor = binanceGovernor) {
         this.apiSecret = apiSecret;
-        this.axiosInstance = axios.create({
-            baseURL: 'https://api.binance.com',
+        // Host allow-list, https only, redirects off (exchangeEgress.ts)
+        this.axiosInstance = createExchangeHttp('https://api.binance.com', {
             headers: {
                 'X-MBX-APIKEY': apiKey,
             },
@@ -54,7 +63,7 @@ export class BinanceClient {
             };
             const signedQuery = this.signQuery(params);
             const url = `/api/v3/myTrades?${signedQuery}`;
-            return this.axiosInstance.get<BinanceRawTrade[]>(url);
+            return this.governor.run(MY_TRADES_WEIGHT, () => this.axiosInstance.get<BinanceRawTrade[]>(url));
         };
 
         try {
@@ -66,6 +75,8 @@ export class BinanceClient {
                     const retryAfterStr = error.response.headers['retry-after'];
                     // Fallback to 5 seconds if header isn't present
                     const retryAfterMs = retryAfterStr ? parseInt(retryAfterStr, 10) * 1000 : 5000;
+                    // The governor recorded this 429 too and pauses every other caller; this caller sleeps it here, so its pause is cleared.
+                    this.governor.takePause();
                     console.warn(`[BinanceClient] Rate limited HTTP 429. Retrying after ${retryAfterMs}ms...`);
                     await this.sleep(retryAfterMs);
 
@@ -85,6 +96,7 @@ export class BinanceClient {
                     error.response?.status
                 );
             }
+            if (error instanceof BinanceBanError) throw new BinanceApiError(error.message, 418);
             throw new BinanceApiError('Unknown error during Binance API request');
         }
     }
@@ -115,7 +127,7 @@ export class BinanceClient {
         const url = `/api/v3/tradeFee?${signedQuery}`;
 
         try {
-            const response = await this.axiosInstance.get<Array<{ symbol: string; makerCommission: string; takerCommission: string }>>(url);
+            const response = await this.governor.run(FEE_RATE_WEIGHT, () => this.axiosInstance.get<Array<{ symbol: string; makerCommission: string; takerCommission: string }>>(url));
 
             const feeData = response.data.find(d => d.symbol === symbol);
             if (!feeData) {
@@ -133,6 +145,7 @@ export class BinanceClient {
                     error.response?.status
                 );
             }
+            if (error instanceof BinanceBanError) throw new BinanceApiError(error.message, 418);
             throw new BinanceApiError('Unknown error during fetchFeeRate');
         }
     }

@@ -17,6 +17,8 @@ export interface SyncFailure {
 export interface SyncReport {
     inserted: number;
     skipped: number;
+    /** Of `skipped`: trades a racing writer stored first (duplicate-key answers). Counted; never a failed sync. */
+    raced?: number;
     failures: SyncFailure[];
     partial?: boolean;
     partialMessage?: string;
@@ -92,6 +94,7 @@ export async function syncAccountTrades(accountId: string, daysBack: number, opt
                 doneBase += r.symbolsScanned; totalBase += r.symbolsScanned; addedBase += r.inserted;
                 report.inserted += r.inserted;
                 report.skipped += r.skipped;
+                if (r.raced) report.raced = (report.raced ?? 0) + r.raced;
                 report.symbolsScanned = (report.symbolsScanned ?? 0) + r.symbolsScanned;
                 report.invalidSymbols = [...(report.invalidSymbols ?? []), ...r.invalidSymbols];
                 if (r.partial) { report.partial = true; report.partialMessage = r.message; report.partialReason = r.partialReason; }
@@ -124,6 +127,7 @@ export async function syncAccountTrades(accountId: string, daysBack: number, opt
             if (result.status === 'fulfilled') {
                 report.inserted += result.value.inserted;
                 report.skipped += result.value.skipped;
+                if (result.value.raced) report.raced = (report.raced ?? 0) + result.value.raced;
             } else {
                 const reason = result.reason?.message ?? String(result.reason);
                 console.error(`[Sync] ${conn.exchange} ${INGEST_SYMBOLS[index]} failed: ${reason}`);

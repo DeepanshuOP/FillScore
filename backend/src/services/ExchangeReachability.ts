@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { assertAllowedUrl } from './exchangeEgress';
 
 export type ExchangeName = 'binance' | 'binance-data' | 'bybit' | 'bybit-alt' | 'okx';
 
@@ -59,8 +60,9 @@ async function probeOne(exchange: ExchangeName, url: string): Promise<ExchangeRe
     });
 
     try {
+        assertAllowedUrl(url);   // host allow-list, https only; redirects are not followed
         const response = await Promise.race([
-            axios.get(url, { timeout: TIMEOUT_MS, validateStatus: () => true }),
+            axios.get(url, { timeout: TIMEOUT_MS, validateStatus: () => true, maxRedirects: 0 }),
             timeoutGuard,
         ]);
         clearTimeout(timer!);

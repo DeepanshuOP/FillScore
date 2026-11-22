@@ -1,8 +1,10 @@
 import crypto from 'crypto';
 import { Trade } from '../models/Trade';
 import { BinanceRawTrade } from '../types';
-import { TradeIngestionService } from './TradeIngestionService';
+import { TradeIngestionService, storeTradeIfAbsent } from './TradeIngestionService';
 import { SignedCall, syncBinanceOrders, syncBinanceCommission } from './orders/binanceOrders';
+import { BinanceBanError, BinanceGovernor, binanceGovernor } from './binanceGovernor';
+import { guardedFetch } from './exchangeEgress';
 
 /**
  * Full-history Binance spot sync.
@@ -15,8 +17,6 @@ import { SignedCall, syncBinanceOrders, syncBinanceCommission } from './orders/b
  */
 export const QUOTE_ASSETS = ['USDT', 'USDC', 'FDUSD', 'BTC'];
 export const MYTRADES_LIMIT = 1000;
-export const DEFAULT_WEIGHT_LIMIT_1M = 6000; // exchangeInfo rateLimits REQUEST_WEIGHT example
-export const WEIGHT_BUDGET_FRACTION = 0.5;
 export const MAX_REQUESTS_PER_SYNC = 400;
 const MS_PER_DAY = 86_400_000;
 const BASE = 'https://api.binance.com';
@@ -26,6 +26,8 @@ export type PartialReason = 'rate_limited' | 'request_cap' | 'banned' | 'time_ca
 export interface HistorySyncOptions {
     lookbackDays: number; // >= 3650 means "all available"
     extraSymbols?: string[];
+    /** The weight governor; the process-wide one unless a test gives its own `sleep`/`now` (then a private one is built). */
+    governor?: BinanceGovernor;
     sleep?: (ms: number) => Promise<void>;
     now?: () => number;
     maxRequests?: number;
@@ -39,6 +41,8 @@ export interface HistorySyncOptions {
 export interface HistorySyncResult {
     inserted: number;
     skipped: number;
+    /** Of `skipped`: trades a racing writer stored first (duplicate-key answers), counted and not a failure. */
+    raced?: number;
     symbolsScanned: number;
     invalidSymbols: string[];
     requests: number;
@@ -61,9 +65,7 @@ interface SymbolInfo { symbol: string; baseAsset: string; quoteAsset: string; st
 
 export class BinanceHistorySync {
     private requests = 0;
-    private usedWeight = 0;
-    private weightLimit = DEFAULT_WEIGHT_LIMIT_1M;
-    private sleep: (ms: number) => Promise<void>;
+    private gov: BinanceGovernor;
     private now: () => number;
     private maxRequests: number;
     private ingestion = new TradeIngestionService();
@@ -90,8 +92,8 @@ export class BinanceHistorySync {
     }
 
     constructor(private apiKey: string, private apiSecret: string, private userId: string, private opts: HistorySyncOptions) {
-        this.sleep = opts.sleep ?? (ms => new Promise(r => setTimeout(r, ms)));
         this.now = opts.now ?? Date.now;
+        this.gov = opts.governor ?? (opts.sleep || opts.now ? new BinanceGovernor({ sleep: opts.sleep, now: opts.now }) : binanceGovernor);
         this.maxRequests = opts.maxRequests ?? MAX_REQUESTS_PER_SYNC;
         this.coverage = { ...(opts.coverage ?? {}) };
     }
@@ -100,23 +102,30 @@ export class BinanceHistorySync {
         for (let attempt = 0; attempt < 3; attempt++) {
             if (this.requests >= this.maxRequests) throw new StopSync('request_cap');
             if (this.opts.deadlineMs !== undefined && this.now() > this.opts.deadlineMs) throw new StopSync('time_cap');
-            // stay under 50% of the per-minute weight limit
-            if (this.usedWeight + weight > this.weightLimit * WEIGHT_BUDGET_FRACTION) {
-                await this.sleep(61_000);
-                this.usedWeight = 0;
+            // the shared governor: waits for the weight budget, refuses during a 418 ban (binanceGovernor.ts)
+            try {
+                await this.gov.acquire(weight);
+            } catch (e) {
+                if (e instanceof BinanceBanError) throw new StopSync('banned');
+                throw e;
             }
+            this.requests++;
+            // built after any wait: a signed timestamp must be fresh
             const all: Record<string, string | number> = signed ? { ...params, timestamp: this.now() } : { ...params };
             let qs = Object.entries(all).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
             if (signed) qs += `&signature=${crypto.createHmac('sha256', this.apiSecret).update(qs).digest('hex')}`;
-            this.requests++;
-            const res = await fetch(`${BASE}${path}${qs ? `?${qs}` : ''}`, { headers: { 'X-MBX-APIKEY': this.apiKey } });
-            const used = Number(res.headers.get('x-mbx-used-weight-1m'));
-            if (Number.isFinite(used) && used > 0) this.usedWeight = used; else this.usedWeight += weight;
+            let res: Response;
+            try {
+                res = await guardedFetch(`${BASE}${path}${qs ? `?${qs}` : ''}`, { headers: { 'X-MBX-APIKEY': this.apiKey } });
+            } catch (e) {
+                this.gov.release(weight);
+                throw e;
+            }
+            this.gov.record(weight, res);   // used weight from X-MBX-USED-WEIGHT-1M; a 429 pauses, a 418 bans, for Retry-After
 
             if (res.status === 418) throw new StopSync('banned');
             if (res.status === 429) {
-                const ra = Number(res.headers.get('retry-after'));
-                await this.sleep(Math.min(Number.isFinite(ra) && ra > 0 ? ra * 1000 : 5000, 60_000));
+                await this.gov.waitIfPaused();
                 continue; // back off, retry
             }
             if (!res.ok) throw new Error(`binance_http_${res.status}`);
@@ -150,18 +159,21 @@ export class BinanceHistorySync {
         return { symbols: [...out].sort(), invalid };
     }
 
-    private async ingestRaw(raw: BinanceRawTrade, acc: { inserted: number; skipped: number }): Promise<void> {
+    private async ingestRaw(raw: BinanceRawTrade, acc: { inserted: number; skipped: number; raced?: number }): Promise<void> {
         const n = await this.ingestion.withFeeUsd(this.ingestion.normaliseTrade(raw, this.userId));
-        const r = await Trade.updateOne(
+        const outcome = await storeTradeIfAbsent(
             { userId: this.userId, exchange: 'binance', symbol: n.symbol, tradeId: n.tradeId },
-            { $setOnInsert: { ...n, accountId: this.userId, dataSource: 'real-user' } },
-            { upsert: true },
+            { ...n, accountId: this.userId, dataSource: 'real-user' },
         );
-        if (r.upsertedCount > 0) acc.inserted++; else acc.skipped++;
+        if (outcome === 'inserted') acc.inserted++;
+        else {
+            acc.skipped++;                       // already stored; a racing writer that won the insert is counted too
+            if (outcome === 'raced') acc.raced = (acc.raced ?? 0) + 1;
+        }
     }
 
     /** Fetch trades older than the oldest stored one: startTime=cutoff, page by fromId, stop at the stored id. */
-    private async backfill(symbol: string, cutoffMs: number, oldestId: number, acc: { inserted: number; skipped: number }): Promise<void> {
+    private async backfill(symbol: string, cutoffMs: number, oldestId: number, acc: { inserted: number; skipped: number; raced?: number }): Promise<void> {
         let params: Record<string, string | number> = { symbol, startTime: cutoffMs, limit: MYTRADES_LIMIT };
         for (;;) {
             const page = await this.call<BinanceRawTrade[]>('/api/v3/myTrades', params, true, 20);
@@ -177,7 +189,7 @@ export class BinanceHistorySync {
         }
     }
 
-    private async pageSymbol(symbol: string, cutoffMs: number, acc: { inserted: number; skipped: number }): Promise<void> {
+    private async pageSymbol(symbol: string, cutoffMs: number, acc: { inserted: number; skipped: number; raced?: number }): Promise<void> {
         const q = { userId: this.userId, exchange: 'binance', symbol };
         const last = await Trade.findOne(q, { tradeId: 1 }, { sort: { executedAt: -1 } }).lean();
         const covered = this.coverage[symbol];
@@ -204,13 +216,13 @@ export class BinanceHistorySync {
     async run(): Promise<HistorySyncResult> {
         const { lookbackDays } = this.opts;
         const cutoffMs = lookbackDays >= 3650 ? 0 : this.now() - lookbackDays * MS_PER_DAY;
-        const acc = { inserted: 0, skipped: 0 };
+        const acc: { inserted: number; skipped: number; raced?: number } = { inserted: 0, skipped: 0 };
         let invalid: string[] = [];
         let scanned = 0;
         try {
             const info = await this.call<{ symbols: SymbolInfo[]; rateLimits?: Array<{ rateLimitType: string; interval: string; intervalNum: number; limit: number }> }>('/api/v3/exchangeInfo', {}, false, 20);
             const rl = info.rateLimits?.find(r => r.rateLimitType === 'REQUEST_WEIGHT' && r.interval === 'MINUTE' && r.intervalNum === 1);
-            if (rl?.limit) this.weightLimit = rl.limit;
+            if (rl?.limit) this.gov.setLimit(rl.limit);
             const account = await this.call<{ balances: Array<{ asset: string; free: string; locked: string }> }>('/api/v3/account', { omitZeroBalances: 'true' }, true, 20);
             const stored: string[] = await Trade.distinct('symbol', { userId: this.userId, exchange: 'binance' });
             const found = BinanceHistorySync.discoverSymbols(info.symbols ?? [], account.balances ?? [], this.opts.extraSymbols ?? [], stored);

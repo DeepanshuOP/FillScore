@@ -2,6 +2,11 @@ import axios from 'axios';
 import { MarketCache } from '../models/MarketCache';
 import { Trade, EnrichedTradeDocument } from '../models/Trade';
 import { BinanceKline } from '../types';
+import { binanceGovernor } from './binanceGovernor';
+import { assertAllowedUrl } from './exchangeEgress';
+
+// GET /api/v3/klines is IP weight 2 (https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints)
+const KLINES_WEIGHT = 2;
 
 export class MarketDataService {
     /**
@@ -18,7 +23,11 @@ export class MarketDataService {
         }
 
         const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1m&startTime=${startTime}&endTime=${endTime}&limit=${limit}`;
-        const response = await axios.get<BinanceKline[]>(url);
+        // shared weight budget with every other Binance call; host allow-list, no redirects (exchangeEgress.ts)
+        const response = await binanceGovernor.run(KLINES_WEIGHT, () => {
+            assertAllowedUrl(url);
+            return axios.get<BinanceKline[]>(url, { maxRedirects: 0 });
+        });
         const data = response.data;
 
         if (data && data.length > 0) {
