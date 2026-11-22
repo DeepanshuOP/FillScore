@@ -4,7 +4,13 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, sixth: IA v4 built in production (local commits)
 
-- **Next concrete action: Step 6 (interactions and DESIGN.md: receipt print on first open, sidebar underline check, page fade check, pen nib on the hero tape, DESIGN §12 "Numbers", bundle check).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Next concrete action: Step 7 (phone layouts at 390 and 320 for every app section; no page-level horizontal scroll).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Step 6: done.** Receipt: first open of a session feeds in 420 ms on the drawer curve with its lines printing 18 ms apart (at most 360 ms),
+  later opens 300 ms plain, tear 220 ms (`paper.css`; the phone drawer carries `data-enter` too); Ask slip prints (step 3); sidebar
+  underline 180 ms; page fade 160 ms + 8 px keyed by pathname (a Fills tab change does not replay it); pen nib on the hero tape
+  (`PenNib.tsx`, fine pointer only, quickTo 90 ms, off under reduced motion, no mark). DESIGN.md: layout section rewritten for the two
+  shells, motion bullet, new section 12 "Numbers", decisions log is section 13. **Bundle (First Load JS, gzip, `scripts/first-load-js.mjs`):**
+  `/app` 397.8 kB, `/app/overview` 397.8 kB against the budget 389.6 (`/dashboard` before) + 15 = 404.6 kB; `/` 325.9, `/login` 313.9.
 - **Step 5: done.** Top bar (How it works, Demo, Verify, Docs, Log in, Open the demo; signed in: Open the app), phone Menu as a Vaul receipt
   sheet with the account actions pinned, footer with Product, Docs, Trust, Legal (every link exists), `/demo` (three slips: name, line,
   orders, fills, period, total bps from the API, the synthetic line), `/how-it-works` (HowItReads, left the landing, which keeps the hero

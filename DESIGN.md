@@ -103,9 +103,19 @@ audit is light, printed and calm. Carbon copy covers dark rooms.
 
 - Full-bleed with a gutter (`--ui-gutter`, 16 to 40 px); app content up to 1440 px. Square corners (4 to 8 px radius at
   most); pill buttons; no shadows except paper lifting off paper.
-- App shell: one top bar (wordmark with the orange dot, account switcher, synthetic badge, period in mono, actions,
-  "Jump to ⌘K", the Carbon copy toggle, log in/out) and a row of section tabs (Overview, Orders, Rules, Rankings, Council,
-  Evidence, then "More": Trades, Analytics, Methodology, Settings). No sidebar. Phones: a Vaul drawer behind "Menu".
+- **Two shells (IA v4, 2026-11-23).** The marketing site has a top bar: How it works, Demo, Verify, Docs, then Log in and
+  "Open the demo" (both demo entries lead to `/demo`, the choice of trader); a phone shows the wordmark, "Open the demo" and
+  Menu (a receipt sheet with the account actions pinned at the bottom). The footer has four columns: Product, Docs, Trust,
+  Legal. Docs are a third, quiet shell (a short list of documents beside the text).
+- **The app (`/app/*`) has a left sidebar**, 232 px, on the same paper with one ink rule beside it (no card, no shadow): the
+  wordmark and ⌘K, the account switcher (the only thing about the account it holds), nine nouns in a flat list with no group
+  labels (Home, Overview, Orders, Rules, Rankings, Council, Evidence, Fills, Check a broker file), and a bottom group:
+  Public score card (demo accounts), Methodology, Settings (only when signed in), Carbon copy, the scoring and measure
+  versions, Log in or Log out. The pen underline marks the current noun. From 1024 to 1279 px the sidebar is a 64 px rail of
+  two printed letters with a toggle. **Provenance, account and period print once, in the page header of every app page**
+  (never only in the sidebar). Below 1024 px: a printed bottom bar of four (Home, Overview, Orders, More), the account
+  switcher at the top of the page, and a More sheet (Vaul) with a one-line gloss for each noun. ⌘K lists the nine with the
+  same glosses. Settings has its own shell with "Back".
 - Landing hero: the headline anchored bottom-left at editorial scale, the tape full-bleed across the upper third, the
   lede and call to action bottom-right; on a phone the tape on top, the fee circles centred, the costs printed under it.
 
@@ -120,6 +130,12 @@ audit is light, printed and calm. Carbon copy covers dark rooms.
 - **The number rule.** NumberFlow (`Figure`, `SplitFigure`) only after a user action (switching account, period or tab),
   only when its Intl output equals the canonical string, never a count from zero, never a scramble.
 - Stamps press once; manifest lines tick once; nothing loops, pulses or shimmers.
+- **IA v4 interactions** (each with its reduced-motion and touch rule; none on tables, filters, folds, tabs, the palette or keys):
+  the receipt prints on the first open of a session (paper 420 ms on the drawer curve, lines 18 ms apart, at most 360 ms; later
+  opens 300 ms plain; tearing back 220 ms); the Ask slip on Home prints each answer the same way, paper and first line starting
+  in the same frame; the sidebar's pen underline moves in 180 ms (`cubic-bezier(0.23, 1, 0.32, 1)`); an app page fades in 160 ms
+  with an 8 px rise, no exit (a tab change keeps the page); a pen nib follows a fine pointer over the landing's hero tape and
+  leaves no mark. Reduced motion: the finished frame at once. Touch: no nib; the receipt rises as a drawer.
 
 ## 8. Data
 
@@ -193,8 +209,30 @@ The objects, tokens, fonts and invariants above stay. v3.1 removes overload (pla
   market moved away from them; nobody paid it) and filled orders' execution (below the strip's line when it is an
   improvement). The printed word "missed" is not used: `adviceCopy.test.ts` bans it as counterfactual wording.
 
-## 12. Decisions log
+## 12. Numbers
 
+1. **One headline figure per view.** A page or card leads with one figure at display size; everything else is smaller or in a
+   fold. Never a strip of four same-weight figures (section 10).
+2. **Unit and period beside the figure, in words**: "$52.08 the 245 orders paid, Jan 1 to Jan 31, 2024". bps always carries
+   "bps"; a share carries "%"; a count names what it counts.
+3. **Comparisons are sentences**: "against 0.1 bps modelled", "4 of 245 orders". Shape and words carry better or worse; money
+   is never coloured good or bad (section 3). The sign is a true minus.
+4. **Precision follows meaning**: dollars to cents, bps to one decimal, scores to one decimal; the exact stored value is in
+   the title or the note. No running counters, no 8-decimal shares.
+5. **Partial and empty data say so** through ValueState (measured, insufficient data, not computed); a missing cost line
+   prints NOT COMPUTED, never 0; an empty page has one icon, one title, two lines and at most one action.
+6. **Provenance travels with the figure**: the synthetic line in the page header of every app page, NOT SIGNED on demo receipts,
+   "not independently measured" on published-rate fees, the scoring version at the sidebar's foot and on the stamp.
+7. **Model text never carries a figure of its own**: figures in Ask and Council answers are placed by code, and the block says
+   so. The language-model heading shows only over text the model wrote; a sentence code wrote because the model's answer did
+   not pass the checks says so in one line, and its meta line says the model's answer was not used.
+
+## 13. Decisions log
+
+- 2026-11-23 (IA v4 built; the sixth order, from the proposal in `docs/design/IA-v4/`): a marketing site and an app under `/app/*`;
+  Trades and Analytics merged into Fills (tabs Ledger and Patterns); Home is "Ask FillScore" with the key figures under it (demo
+  accounts play recorded answers, labelled; signed-in accounts ask live); `/how-it-works` is a page; the hero tape carries a
+  printed label with the order's own date. Every old address answers a permanent redirect with the query kept (`legacyRedirects.mjs`).
 - 2026-11-22 (design v3.1 Part B, F1 to F3): see section 11 "Part B" and "Where the money went". The hero holds its
   content inside the first 700 px (gaps above and below the tape about 110 px at 1440 x 900; the box stays 100svh).
 

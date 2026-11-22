@@ -288,7 +288,7 @@ export function OrderReplay({ open, onOpenChange, onCloseAutoFocus, origin, ...r
     <Drawer.Root open={open} onOpenChange={onOpenChange}>
       <Drawer.Portal>
         <Drawer.Overlay className="fs-r-overlay" />
-        <Drawer.Content className="fs-vaul" onCloseAutoFocus={onCloseAutoFocus}>
+        <Drawer.Content className="fs-vaul" data-enter={enter} onCloseAutoFocus={onCloseAutoFocus}>
           <div className="fs-torn-top" aria-hidden="true" />
           <div className="fs-receipt"><div className="grip" aria-hidden="true" />{open ? <ReceiptBody {...rest} onClose={close} Title={Drawer.Title} Description={Drawer.Description} /> : null}</div>
         </Drawer.Content>

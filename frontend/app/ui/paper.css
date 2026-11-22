@@ -83,13 +83,16 @@
    paper advances in three steps, as a printer feeds it. flip: GSAP Flip grows it out of the clicked bar or row; until
    the script starts, the paper is not shown (no flash at rest), and the lines appear as it lands. */
 .fs-r-shell[data-state='open'] .fs-r-paper { animation: fs-print-in 300ms var(--ui-ease-drawer) both; }
-.fs-r-shell[data-enter='feed'][data-state='open'] .fs-r-paper { animation: fs-print-feed 420ms linear both; }
-@keyframes fs-print-feed {
-  0% { transform: translateY(-100%); animation-timing-function: var(--ui-ease-out); }
-  24%, 30% { transform: translateY(-68%); animation-timing-function: var(--ui-ease-out); }
-  54%, 60% { transform: translateY(-36%); animation-timing-function: var(--ui-ease-out); }
-  100% { transform: translateY(0); }
-}
+/* IA v4 step 6 (PROPOSAL section 5): the first receipt of a session feeds out of the slot in 420 ms on the drawer curve while its lines
+   print in order, 18 ms apart (at most 360 ms), from the first frame; every later open is the 300 ms plain entry above. */
+.fs-r-shell[data-enter='feed'][data-state='open'] .fs-r-paper { animation: fs-print-in 420ms var(--ui-ease-drawer) both; }
+.fs-r-shell[data-enter='feed'][data-state='open'] .fs-receipt > *, .fs-vaul[data-enter='feed'][data-state='open'] .fs-receipt > * { animation: fs-line-print 140ms linear backwards; animation-delay: calc(var(--i, 0) * 18ms); }
+@keyframes fs-line-print { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.fs-receipt > :nth-child(1) { --i: 0; } .fs-receipt > :nth-child(2) { --i: 1; } .fs-receipt > :nth-child(3) { --i: 2; } .fs-receipt > :nth-child(4) { --i: 3; }
+.fs-receipt > :nth-child(5) { --i: 4; } .fs-receipt > :nth-child(6) { --i: 5; } .fs-receipt > :nth-child(7) { --i: 6; } .fs-receipt > :nth-child(8) { --i: 7; }
+.fs-receipt > :nth-child(9) { --i: 8; } .fs-receipt > :nth-child(10) { --i: 9; } .fs-receipt > :nth-child(11) { --i: 10; } .fs-receipt > :nth-child(12) { --i: 11; }
+.fs-receipt > :nth-child(13) { --i: 12; } .fs-receipt > :nth-child(14) { --i: 13; } .fs-receipt > :nth-child(15) { --i: 14; } .fs-receipt > :nth-child(16) { --i: 15; }
+.fs-receipt > :nth-child(17) { --i: 16; } .fs-receipt > :nth-child(18) { --i: 17; } .fs-receipt > :nth-child(19) { --i: 18; } .fs-receipt > :nth-child(n + 20) { --i: 20; }
 .fs-r-shell[data-enter='flip'] .fs-r-clip { overflow: visible; }
 .fs-r-shell[data-enter='flip'][data-state='open'] .fs-r-paper { animation: none; visibility: hidden; transform-origin: 0 0; }
 .fs-r-shell[data-enter='flip'][data-state='open'] .fs-r-paper[data-flip] { visibility: visible; }

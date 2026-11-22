@@ -8,6 +8,7 @@ import { formatPct, formatPrice, formatQty, formatSignedBps, formatUsd, heroCost
 import { heroGeometry, type HeroGeo, type LayoutName } from './heroGeometry'
 import { startPinnedStory } from './v3/pinnedStory'
 import { DEMO_ENTRY } from './siteItems'
+import { PenNib } from './PenNib'
 
 /** The order's day, from the fixture the tape is cut from (the day of its prints and of the order itself, UTC): "Jan 28, 2024". */
 const TAPE_DAY = new Date(`${heroTape.date}T00:00:00Z`).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
@@ -97,6 +98,7 @@ export function TapeHero() {
       <div aria-hidden="true" />
       <div className="fs-hero-stage">
         {/* printed on the tape's paper: which order this is and where it comes from; the dots are drawn by CSS (landing.css) */}
+        <PenNib />
         <p className="fs-tape-label" data-testid="tape-label"><span>One demo order</span><span>{TAPE_DAY}</span><span>synthetic trader, real prices</span></p>
         <div className="fs-hero-viewport">
           <div ref={strip} className="fs-hero-strip fs-strip fs-sprockets" role="img" style={vars}
