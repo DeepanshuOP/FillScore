@@ -346,7 +346,7 @@ function AnalyticsContent() {
         </p>
       </div>
 
-      <Panel title="Activity heatmap (UTC)" description="Average fill score by weekday and hour. A deeper cell is a higher average score." bodyClassName="overflow-x-auto">
+      <Panel title="Activity heatmap (UTC)" note={{ label: 'how to read the heatmap', text: 'Average fill score by weekday and hour. A deeper cell is a higher average score.' }} bodyClassName="overflow-x-auto">
         <div className="min-w-[600px]">
           <div className="mb-1 grid grid-cols-[30px_repeat(24,_1fr)] gap-1 md:grid-cols-[40px_repeat(24,_1fr)]">
             <div />
@@ -397,7 +397,7 @@ function AnalyticsContent() {
       <MarkoutCard rows={data.markouts} />
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-[3fr_2fr]">
-        <Panel title="Symbol breakdown" description="Notional, average score, maker share, slippage and fee drag per symbol." bodyClassName="overflow-x-auto">
+        <Panel title="Symbol breakdown" note={{ label: 'the columns', text: 'Notional, average score, maker share, slippage and fee drag per symbol.' }} bodyClassName="overflow-x-auto">
           <table className="w-full min-w-[500px] border-collapse text-[13px] text-ui-ink">
             <thead>
               <tr className="text-ui-graphite shadow-[inset_0_-1px_0_var(--ui-rule)]">
@@ -426,13 +426,13 @@ function AnalyticsContent() {
           </table>
         </Panel>
 
-        <Panel title="Score distribution" description="Number of trades per grade.">
+        <Panel title="Score distribution" note={{ label: 'what the bars count', text: 'Number of trades per grade.' }}>
           <div className="h-[220px] w-full"><ScoreDistributionChart data={data.scoreDistribution} /></div>
           <ChartTable caption="Trades per grade" head={["Grade", "Trades"]} rows={data.scoreDistribution.map((d) => [d.grade, d.count])} />
         </Panel>
       </div>
 
-      <Panel title="Slippage distribution (5 bps buckets)" description="Number of trades per slippage bucket. Trades without a computed slippage are not counted.">
+      <Panel title="Slippage distribution (5 bps buckets)" note={{ label: 'what the bars count', text: 'Number of trades per slippage bucket. Trades without a computed slippage are not counted.' }}>
         {slippageBuckets.length === 0 ? (
           <ValueState state="not-computed" label="Slippage distribution" reason="No trade has a computed slippage." />
         ) : (
@@ -444,7 +444,7 @@ function AnalyticsContent() {
       </Panel>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <Panel title="Fee drag analysis" description="Fees as a share of notional, and the maker and taker split of the fills.">
+        <Panel title="Fee drag analysis" note={{ label: 'what fee drag is', text: 'Fees as a share of notional, and the maker and taker split of the fills.' }}>
           {!feeStats.any ? (
             <ValueState state="insufficient" label="Fee drag" what="trades loaded" />
           ) : (
@@ -477,7 +477,7 @@ function AnalyticsContent() {
           )}
         </Panel>
 
-        <Panel title="Hourly performance" description="Average fill score by hour of day (UTC). The dashed line marks a score of 75.">
+        <Panel title="Hourly performance" note={{ label: 'how to read the chart', text: 'Average fill score by hour of day (UTC). The dashed line marks a score of 75.' }}>
           <div className="h-[250px] w-full"><HourlyChart data={sortedHourly} /></div>
           <ChartTable caption="Average score by hour (UTC)" head={["Hour", "Average score"]} rows={sortedHourly.map((h) => [`${h.hour.toString().padStart(2, '0')}:00`, `${h.avgScore} (${h.count} trades)`])} />
         </Panel>

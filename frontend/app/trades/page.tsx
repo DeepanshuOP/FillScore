@@ -400,7 +400,7 @@ function TradesContent() {
           <StatCell label="Maker fills">{totalMakers}</StatCell>
         </div>
 
-        <Panel title="Trade ledger" description="Every fill, newest first by default. Select a row for its details." bodyClassName="flex flex-col gap-4"
+        <Panel title="Trade ledger" note={{ label: 'how to read the ledger', text: 'Every fill, newest first by default. Select a row for its details.' }} bodyClassName="flex flex-col gap-4"
           actions={filtered ? <Button variant="quiet" size="sm" onClick={clearFilters}>Clear filters</Button> : undefined}>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             {filterSelect('Symbol', symbolFilter, ['ALL', 'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'], setSymbolFilter)}

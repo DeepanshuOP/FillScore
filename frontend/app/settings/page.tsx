@@ -116,7 +116,7 @@ export default function SettingsPage() {
       <div className="flex max-w-3xl flex-col gap-6" data-view-body="">
         {status && <Banner kind="info" title={status} />}
 
-        <Panel id="settings-account" title="Account" description="The account you are signed in with.">
+        <Panel id="settings-account" title="Account">
           <p className="text-sm text-ui-ink">{user.email ?? 'Signed in with a provider that shared no email address.'}</p>
         </Panel>
 
@@ -128,14 +128,16 @@ export default function SettingsPage() {
           </div>
         </Panel>
 
-        <Panel id="settings-export" title="Download your data" description="A JSON copy of your trades, audits, score history and notes. Exchange keys are never included. Personal API keys appear by name, prefix and dates only.">
+        <Panel id="settings-export" title="Download your data" description="A JSON copy of your data. Exchange keys are never included."
+          note={{ label: 'what the export holds', text: 'Your trades, audits, score history and notes. Personal API keys appear by name, prefix and dates only.' }}>
           <Button variant="secondary" disabled={busy} onClick={onExport}>Download my data</Button>
         </Panel>
 
         <EvidencePanel mode="real" auth={auth} />
 
         <Panel id="settings-keys" title="API keys for AI clients (read-only)"
-          description="A key lets an AI client that speaks the Model Context Protocol read your stored measurements of past executions through the FillScore MCP server. It can only read, only the six tools of that server, and only your own account. It expires, you can revoke it at any time, and you can have 5 active keys. FillScore keeps a hash of the key, not the key, so a key is shown once.">
+          description="A key lets an AI client read your stored measurements. It can only read, and only your own account."
+          note={{ label: 'what a key can do', text: 'A key lets an AI client that speaks the Model Context Protocol read your stored measurements of past executions through the FillScore MCP server. It can only read, only the six tools of that server, and only your own account. It expires, you can revoke it at any time, and you can have 5 active keys. FillScore keeps a hash of the key, not the key, so a key is shown once.' }}>
           <div className="flex flex-col gap-6">
             {newKey && (
               <div role="alert" className="rounded-[12px] bg-ui-raised p-4 ring-1 ring-inset ring-ui-edge">

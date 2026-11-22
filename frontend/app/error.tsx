@@ -14,7 +14,7 @@ export default function ErrorPage({ reset }: { error: Error & { digest?: string 
         <div className="px-[var(--ui-gutter)] pt-36">
           <span aria-hidden="true" className="fs-word-stamp" data-tone="danger">NOT PRINTED<small>this page failed</small></span>
           <h1 className="display-lg mt-8 max-w-[18ch] text-ui-ink">Something went wrong on this page.</h1>
-          <p className="mt-3 max-w-[68ch] text-[15px] text-ui-graphite">Nothing on your account was changed. Trying again reloads the page.</p>
+          <p className="mt-3 max-w-[68ch] text-[15px] text-ui-graphite">Nothing on your account was changed.</p>
           <div className="mt-8 flex flex-wrap gap-3">
             <button type="button" onClick={() => reset()} className={buttonClass('primary', 'md')}>Try again</button>
             <Link href="/" className={buttonClass('secondary', 'md', 'no-underline')}>Go to the home page</Link>
