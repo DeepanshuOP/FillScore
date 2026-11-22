@@ -182,7 +182,21 @@ The objects, tokens, fonts and invariants above stay. v3.1 removes overload (pla
   buyer-initiated, hollow down: seller-initiated). A pinned horizontal row of three printed objects (tape, receipt,
   stamp) with masked line titles and a "1 / 3" counter on a desktop with motion; stacked otherwise.
 
+- **Part B (2026-11-22): the other screens.** `Panel` takes a `note` ({ label, text }): the explanation that sat under a
+  panel title moves behind a pen margin note after the title; what remains visible is the state (counts, a finding, a
+  ValueState). A stored field is shown by a plain name (`plainFieldName`: `liquidity.clean_market_count` reads
+  "Liquidity: clean market count"); the path is the last line of the note beside the list, and the Council's cited
+  values sit in a closed printed fold ("CITED FROM THE AUDIT (n)", the lines stay in the document). The Orders ledger
+  opens with the columns a reader scans; the order id, fills, quantity and maker share are one menu away; mono only on
+  figures and times. Refusals (onboarding), legal text, the methodology document and the auth forms stay complete.
+- **Where the money went (F1).** Three parts that add up to the total, all from the server: fees, unfilled orders (the
+  market moved away from them; nobody paid it) and filled orders' execution (below the strip's line when it is an
+  improvement). The printed word "missed" is not used: `adviceCopy.test.ts` bans it as counterfactual wording.
+
 ## 12. Decisions log
+
+- 2026-11-22 (design v3.1 Part B, F1 to F3): see section 11 "Part B" and "Where the money went". The hero holds its
+  content inside the first 700 px (gaps above and below the tape about 110 px at 1440 x 900; the box stays 100svh).
 
 - 2026-11-21 (design v3.1): "Quiet audit" rules (section 11). Visible words: landing 381 to 179, overview 378 to 122,
   receipt 113 to 52 (1440). The small stamp (landing demo receipts) prints the period without the scoring line. The overview's demo banner became one slim always-visible line; the B2 term table and

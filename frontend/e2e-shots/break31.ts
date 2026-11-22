@@ -82,6 +82,32 @@ async function main() {
       await ctx.close()
     }
   }
+  // Part B (2026-11-22, second): the Orders ledger with the same three data variants, the Council after a run and the
+  // broker-file Check page, at the same four sizes (one viewport capture each: the first screen is where they break)
+  const extra: Array<[string, Variant | null, string, (p: Page) => Promise<void>]> = [
+    ['orders-long', 'long', '/dashboard?userId=demo-moderate&view=orders', async (p) => { await p.locator('[data-testid=orders-row]').first().waitFor({ timeout: 30000 }) }],
+    ['orders-one', 'one', '/dashboard?userId=demo-moderate&view=orders', async (p) => { await p.locator('[data-testid=orders-row]').first().waitFor({ timeout: 30000 }) }],
+    ['orders-empty', 'empty', '/dashboard?userId=demo-moderate&view=orders', async (p) => { await p.getByText('No orders yet').waitFor({ timeout: 30000 }) }],
+    ['council-run', null, '/dashboard?userId=demo-moderate&view=council', async (p) => {
+      await p.getByRole('button', { name: 'Run analysis' }).click(); await p.getByRole('heading', { name: /^Explanation/ }).waitFor({ timeout: 30000 }) }],
+    ['check', null, '/check', async (p) => { await p.waitForLoadState('networkidle') }],
+  ]
+  for (const [name, v, path, ready] of extra) {
+    for (const [label, viewport, dsf] of sizes) {
+      const ctx = await b.newContext({ viewport, deviceScaleFactor: dsf, reducedMotion: 'reduce' })
+      const page = await ctx.newPage()
+      await mock(page, false, (p) => (v && p === '/audit/orders-summary' ? summary(v) : v && p === '/audit/orders-ledger' ? ledger(v) : undefined))
+      try {
+        await page.goto(BASE + path, { waitUntil: 'networkidle', timeout: 60000 })
+        await ready(page); await page.waitForTimeout(1000)
+        await page.screenshot({ path: resolve(OUT, `${name}-${label}.jpg`), type: 'jpeg', quality: 60 })
+        results.push(await checks(page, `${name}-${label}`))
+      } catch (e) {
+        results.push({ name: `${name}-${label}`, error: String(e).slice(0, 200) })
+      }
+      await ctx.close()
+    }
+  }
   await b.close()
   for (const r of results as Array<Record<string, unknown>>) {
     const bad = r.error || r.overflow || (r.wide as unknown[])?.length || (r.overlaps as unknown[])?.length || (r.axe as unknown[])?.length
