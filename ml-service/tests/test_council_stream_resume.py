@@ -213,3 +213,22 @@ def test_an_expired_unknown_or_foreign_run_is_a_404_that_says_so_and_starts_noth
 
 def test_resuming_needs_a_token():
     assert client.get("/ml/agents/council/stream/anything").status_code == 401
+
+
+def test_a_run_that_does_not_finish_in_time_ends_with_an_error_event_and_a_full_account_is_refused(monkeypatch):
+    import asyncio as aio
+    from agents import stream_store as mod
+
+    async def hangs(*_a, **_k):
+        await aio.sleep(30)
+
+    monkeypatch.setattr("agents.council_service.council_flow", hangs)
+    monkeypatch.setattr(mod, "RUN_TIMEOUT_S", 0.2)
+    res = client.post("/ml/agents/council/stream", json={"symbol": "BTCUSDT", "mode": "deep"}, headers=_h())
+    events = parse(res.text)
+    assert [n for _i, n, _d in events] == ["error"]
+    assert events[0][2]["code"] == "RUN_TIMEOUT" and events[0][0] == 1
+    # the cap: three unfinished runs of one account, the fourth POST is refused with a 429 and starts nothing
+    monkeypatch.setattr(mod, "UNFINISHED_PER_ACCOUNT", 0)
+    refused = client.post("/ml/agents/council/stream", json={"symbol": "BTCUSDT", "mode": "deep"}, headers=_h())
+    assert refused.status_code == 429 and refused.json()["code"] == "STREAM_BUSY"

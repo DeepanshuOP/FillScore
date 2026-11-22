@@ -23,8 +23,14 @@ HEARTBEAT_S = 20.0        # a comment line every 20 s on an idle stream keeps pr
 RUN_TTL_S = 600.0         # a finished run's events are kept 10 minutes (the Council result itself is cached by content hash)
 MAX_RUNS = 32
 MAX_EVENTS = 300          # a run holds about 30 events
+RUN_TIMEOUT_S = 900.0     # a run that has not finished by then is stopped with an error event (a Deep run takes about 100 s)
+UNFINISHED_PER_ACCOUNT = 3   # unfinished runs one account may hold at once
 
 HEARTBEAT_FRAME = ": keepalive\n\n"
+
+
+class TooManyRuns(Exception):
+    """The account already holds the most unfinished runs it may."""
 
 
 class StreamGone(Exception):
@@ -134,6 +140,8 @@ class StreamStore:
     def create(self, account_id: str, now: float | None = None) -> RunStream:
         now = time.monotonic() if now is None else now
         self._purge(now)
+        if sum(1 for r in self._runs.values() if r.account_id == account_id and not r.finished) >= UNFINISHED_PER_ACCOUNT:
+            raise TooManyRuns()
         while len(self._runs) >= self.max_runs:
             finished = [s for s in self._runs.values() if s.finished]
             if not finished:

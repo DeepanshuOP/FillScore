@@ -100,16 +100,22 @@ export class BinanceGovernor {
         };
     }
 
-    /** The remaining 429 pause in ms, once: it is cleared, so the caller that sleeps it is the only one to. */
-    takePause(): number {
-        const ms = Math.max(0, this.pausedUntil - this.now());
-        this.pausedUntil = 0;
-        return ms;
+    /** Serve a 429 pause inside the queue: every caller behind this one waits too. The pause is cleared only after it was
+     *  slept and only if nobody extended it meanwhile (so a constant test clock cannot loop). */
+    private async servePause(): Promise<boolean> {
+        const t = this.now();
+        if (t >= this.pausedUntil) return false;
+        const until = this.pausedUntil;
+        await this.sleep(until - t);
+        if (this.pausedUntil === until) this.pausedUntil = 0;
+        return true;
     }
 
-    async waitIfPaused(): Promise<void> {
-        const ms = this.takePause();
-        if (ms > 0) await this.sleep(ms);
+    /** Wait out a recorded 429 pause (in the FIFO, behind earlier waiters, ahead of later ones). */
+    waitIfPaused(): Promise<void> {
+        const mine = this.tail.then(() => this.servePause().then(() => undefined));
+        this.tail = mine.catch(() => undefined);
+        return mine;
     }
 
     acquire(weight: number): Promise<void> {
@@ -125,13 +131,9 @@ export class BinanceGovernor {
 
     private async reserve(weight: number): Promise<void> {
         for (;;) {
+            if (await this.servePause()) continue;       // after this await nothing suspends until the reservation is made
             const t = this.now();
             if (t < this.bannedUntil) throw new BinanceBanError(this.bannedUntil - t);
-            const pause = this.takePause();
-            if (pause > 0) {
-                await this.sleep(pause);
-                continue;
-            }
             if (this.windowStart === null || t >= this.windowStart + WINDOW_MS) {
                 this.used = 0;
                 this.windowStart = t;
@@ -164,6 +166,12 @@ export class BinanceGovernor {
         } else if (res.status === 429) {
             this.pausedUntil = Math.max(this.pausedUntil, t + Math.min(seconds(res.headers) ?? DEFAULT_429_MS, MAX_429_MS));
         }
+        this.notifyRelease();
+    }
+
+    /** Free a reservation for a request that was never sent (nothing is counted). */
+    cancel(weight: number): void {
+        this.reserved = Math.max(0, this.reserved - weight);
         this.notifyRelease();
     }
 

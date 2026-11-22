@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import axios from 'axios';
 import { BinanceClient, BinanceApiError } from './BinanceClient';
+import { BinanceGovernor } from './binanceGovernor';
 import { BinanceRawTrade } from '../types';
 
 vi.mock('axios', () => {
@@ -45,6 +46,28 @@ describe('BinanceClient - fetchRecentTrades', () => {
             get: mockGet,
         });
         client = new BinanceClient('test_key', 'test_secret');
+    });
+
+    it('signs the query after the wait for the weight budget, so its timestamp is fresh (-1021 otherwise)', async () => {
+        // a governor that "waits" 60 s inside acquire: the wall clock moves before the governed call runs
+        vi.useFakeTimers();
+        try {
+            vi.setSystemTime(new Date('2024-01-01T00:00:00.000Z'));
+            const waiting = new BinanceGovernor();
+            const realRun = waiting.run.bind(waiting);
+            vi.spyOn(waiting, 'run').mockImplementation((async (w: number, call: () => Promise<any>) => {
+                vi.setSystemTime(new Date('2024-01-01T00:01:00.000Z'));     // 60 000 ms later
+                return realRun(w, call);
+            }) as any);
+            const slow = new BinanceClient('test_key', 'test_secret', waiting);
+            mockGet.mockResolvedValueOnce({ data: [dummyTrade] });
+            await slow.fetchRecentTrades('BTCUSDT', 10);
+            const url = mockGet.mock.calls[0][0] as string;
+            expect(url).toContain(`timestamp=${Date.parse('2024-01-01T00:01:00.000Z')}`);   // 1704067260000, not 1704067200000
+            expect(url).not.toContain('timestamp=1704067200000');
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('sends no startTime/endTime params and passes limit', async () => {

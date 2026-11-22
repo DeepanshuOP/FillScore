@@ -112,12 +112,36 @@ describe('BinanceGovernor: 429 and 418', () => {
         expect(b.sleeps).toEqual([60_000]);
     });
 
-    it('takePause returns the wait once and clears it', async () => {
-        const { gov } = setup();
+    it('a 429 pause holds every caller: a second caller during the first one\'s sleep waits behind it', async () => {
+        const clock = { t: T0 };
+        const sleeps: number[] = [];
+        let wake: () => void = () => {};
+        const gov = new BinanceGovernor({
+            limit: 100, fraction: 0.5, now: () => clock.t,
+            sleep: (ms) => { sleeps.push(ms); return new Promise<void>((r) => { wake = () => { clock.t += ms; r(); }; }); },
+        });
         await gov.acquire(5);
-        gov.record(5, { status: 429, headers: { 'retry-after': '3' } });
-        expect(gov.takePause()).toBe(3_000);
-        expect(gov.takePause()).toBe(0);
+        gov.record(5, { status: 429, headers: { 'retry-after': '30' } });
+        const a = gov.waitIfPaused();                 // the retrying caller sleeps the pause inside the queue
+        let bSent = false;
+        const b = gov.acquire(5).then(() => { bSent = true; });   // another sync arrives during that sleep
+        await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+        expect(bSent).toBe(false);                    // it must not send inside the Retry-After window
+        wake();
+        await a; await b;
+        expect(bSent).toBe(true);
+        expect(sleeps).toEqual([30_000]);             // one sleep, served once, for both
+        expect(clock.t).toBe(T0 + 30_000);
+    });
+
+    it('cancel frees a reservation without counting it; release counts it', async () => {
+        const { gov } = setup();
+        await gov.acquire(20);
+        gov.cancel(20);
+        expect(gov.snapshot()).toMatchObject({ used: 0, reserved: 0 });
+        await gov.acquire(20);
+        gov.release(20);
+        expect(gov.snapshot()).toMatchObject({ used: 20, reserved: 0 });
     });
 
     it('418 with Retry-After 120: every request is refused for 120 000 ms, then allowed again', async () => {
@@ -156,7 +180,7 @@ describe('BinanceGovernor: 429 and 418', () => {
         expect(gov.snapshot().used).toBe(12);        // max(0+10, 12)
         const err = Object.assign(new Error('429'), { response: { status: 429, headers: { 'retry-after': '4' } } });
         await expect(gov.run(10, async () => { throw err; })).rejects.toBe(err);
-        expect(gov.takePause()).toBe(4_000);
+        expect(gov.snapshot().pausedForMs).toBe(4_000);
     });
 
     it('run(): a call that fails with no response still counts its weight and frees its reservation', async () => {

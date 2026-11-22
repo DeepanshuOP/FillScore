@@ -69,6 +69,9 @@ def cut_demo(demo_dir: Path, published: dict, load_day) -> dict:
     fills: dict[tuple, list[int]] = {}
     for t in trades:
         fills.setdefault((t["orderId"], t["symbol"]), []).append(_ms(t["executedAt"]))
+    ids = [o["orderId"] for o in orders]
+    if len(ids) != len(set(ids)):
+        raise ValueError("order ids repeat across symbols: windows are keyed by order id, key them by (order id, symbol) first")
     skipped = {"no_fill": 0, "no_arrival": 0}
     todo = []
     for o in orders:

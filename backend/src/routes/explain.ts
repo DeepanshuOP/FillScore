@@ -106,7 +106,7 @@ explainRouter.get('/orders/:orderId/replay', resolveAccount, async (req: Request
         });
         // Demo orders only: the capped window of public prints cut offline from the checksummed daily files. A real account's
         // payload is unchanged (no `prints` key): no print of a real account is stored where the server can read it.
-        const prints = demoPrintsFor(accountId, orderId);
+        const prints = demoPrintsFor(accountId, orderId, o.symbol);
         return res.status(200).json(prints ? { ...replay, prints } : replay);
     } catch (err) {
         return fail(res, err, 'GET /orders/:orderId/replay');

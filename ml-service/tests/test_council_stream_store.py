@@ -12,7 +12,7 @@ import asyncio
 
 import pytest
 
-from agents.stream_store import RunStream, StreamGone, StreamStore, sse_frame
+from agents.stream_store import RunStream, StreamGone, StreamStore, TooManyRuns, UNFINISHED_PER_ACCOUNT, sse_frame
 
 
 def run(coro):
@@ -126,3 +126,14 @@ def test_sse_frame_carries_the_id_the_event_name_and_one_json_line():
     rs = RunStream("r", "acct", now=0.0)
     run(rs.publish("scope", {"a": 1}))
     assert sse_frame(rs.events[0]) == 'id: 1\nevent: scope\ndata: {"a": 1}\n\n'
+
+
+def test_an_account_may_hold_only_so_many_unfinished_runs_and_finishing_one_frees_a_place():
+    store = StreamStore(ttl_s=600.0, max_runs=32)
+    runs = [store.create("busy", now=float(i)) for i in range(UNFINISHED_PER_ACCOUNT)]     # 3 unfinished
+    with pytest.raises(TooManyRuns):
+        store.create("busy", now=10.0)
+    other = store.create("quiet", now=10.0)                                                  # another account is not held back
+    assert other.account_id == "quiet"
+    run(runs[0].finish(now=11.0))
+    assert store.create("busy", now=12.0).account_id == "busy"                               # 2 unfinished + the new one = 3

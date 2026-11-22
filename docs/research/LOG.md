@@ -525,3 +525,26 @@ three committed windows row for row from the cached daily files. First layout (c
 within about a second of the fills, into one spike; the tape now runs in print order like the landing tape, with the fills and the
 arrival placed between prints by time.
 
+**Step 6, reviewer (one Sonnet reviewer, read-only, Steps 2-5 diff): 7 findings, 6 fixed, 1 kept.**
+1. medium, fixed: `BinanceClient` signed the query before the governed call, so a 60 s wait for the weight budget sent a stale
+   timestamp (Binance -1021). It is now built inside the governed call (history sync already did); test: a governor that moves the
+   clock 60 s inside `acquire` and the URL's timestamp.
+2. medium, fixed: `takePause()` cleared the shared 429 pause, so a second caller arriving during the first one's sleep sent inside the
+   `Retry-After` window. The pause now stays recorded and is served inside the FIFO (`waitIfPaused`, `reserve`); `takePause` is gone.
+   While fixing it, the ban check was found to run before an awaited step and miss a 418 landing in between; reordered (the existing
+   418 test caught it). Test: a second caller during a 429 sleep must not send.
+3. low-medium, **kept**: a waiter sleeping out a spent window (at most 61 s) is refused after the sleep, not at the instant of a 418. It
+   never sends; cancelling the sleep would need an abortable timer for no safety gain.
+4. low, fixed: in `BinanceHistorySync.call` a throw between `acquire` and the fetch (for example `encodeURIComponent` on a lone surrogate)
+   leaked the reservation, and the deadline was not re-checked after a long wait. Everything after `acquire` is now guarded
+   (`cancel` if nothing was sent, `release` if it may have been), and the deadline is checked again.
+5. low, fixed: the pipeline task no longer stops on disconnect, so a run had no upper bound. A run now stops with an `error` event
+   `RUN_TIMEOUT` after 900 s, and an account may hold at most 3 unfinished runs (429 `STREAM_BUSY`); tests for both.
+6. low, fixed: the resume counter counted every reconnect; it now counts consecutive failures only (5 successful resumes no longer end
+   an audit that is still running), and the reader takes an `AbortSignal` that the page aborts on unmount.
+7. low, fixed: prints are looked up by order id only; `demoPrintsFor` now also checks the symbol, and the cutter refuses a demo whose
+   order ids repeat across symbols (they are unique in all three: 311, 245, 144). The ARRIVAL mark of a capped window sits at the left
+   edge because the kept prints are those nearest the fills; the caption says so.
+Weak test noted and kept: `TradeIngestionRace` "two concurrent writers" asserts `raced <= 50`, which passes with 0 because the server
+usually retries a racing upsert itself; the forced-11000 test beside it carries the real check.
+

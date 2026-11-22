@@ -57,13 +57,17 @@ export class BinanceClient {
 
     private async executeWithRetry(getParams: () => Record<string, string | number>): Promise<BinanceRawTrade[]> {
         const makeRequest = async () => {
-            const params = {
-                ...getParams(),
-                timestamp: Date.now()
-            };
-            const signedQuery = this.signQuery(params);
-            const url = `/api/v3/myTrades?${signedQuery}`;
-            return this.governor.run(MY_TRADES_WEIGHT, () => this.axiosInstance.get<BinanceRawTrade[]>(url));
+            // The signed query is built inside the governed call, after any wait for the weight budget: a timestamp taken
+            // before a 60 s wait would be outside Binance's receive window (-1021).
+            return this.governor.run(MY_TRADES_WEIGHT, () => {
+                const params = {
+                    ...getParams(),
+                    timestamp: Date.now()
+                };
+                const signedQuery = this.signQuery(params);
+                const url = `/api/v3/myTrades?${signedQuery}`;
+                return this.axiosInstance.get<BinanceRawTrade[]>(url);
+            });
         };
 
         try {
@@ -75,8 +79,7 @@ export class BinanceClient {
                     const retryAfterStr = error.response.headers['retry-after'];
                     // Fallback to 5 seconds if header isn't present
                     const retryAfterMs = retryAfterStr ? parseInt(retryAfterStr, 10) * 1000 : 5000;
-                    // The governor recorded this 429 too and pauses every other caller; this caller sleeps it here, so its pause is cleared.
-                    this.governor.takePause();
+                    // The governor recorded this 429 too and holds every other caller behind the same pause.
                     console.warn(`[BinanceClient] Rate limited HTTP 429. Retrying after ${retryAfterMs}ms...`);
                     await this.sleep(retryAfterMs);
 
@@ -118,16 +121,12 @@ export class BinanceClient {
     }
 
     public async fetchFeeRate(symbol: string): Promise<{ makerRate: number; takerRate: number }> {
-        const params = {
-            symbol,
-            timestamp: Date.now(),
-        };
-
-        const signedQuery = this.signQuery(params);
-        const url = `/api/v3/tradeFee?${signedQuery}`;
-
         try {
-            const response = await this.governor.run(FEE_RATE_WEIGHT, () => this.axiosInstance.get<Array<{ symbol: string; makerCommission: string; takerCommission: string }>>(url));
+            const response = await this.governor.run(FEE_RATE_WEIGHT, () => {
+                // signed after any wait for the weight budget (see executeWithRetry)
+                const signedQuery = this.signQuery({ symbol, timestamp: Date.now() });
+                return this.axiosInstance.get<Array<{ symbol: string; makerCommission: string; takerCommission: string }>>(`/api/v3/tradeFee?${signedQuery}`);
+            });
 
             const feeData = response.data.find(d => d.symbol === symbol);
             if (!feeData) {

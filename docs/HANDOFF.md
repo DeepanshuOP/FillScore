@@ -29,6 +29,12 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
+**2026-11-22 (latest, fourth order): Run 4 ready for Deepanshu's review (local commits, not pushed).** Placeholder-compliance table in the README and
+ADR-0018 (proposal); the Council's benchmark line is computed from the packet (demos read "insufficient data": their trades carry no `vwap5m`);
+the Council stream resumes after a dropped connection (single instance); exchange egress guard, one Binance weight governor, racing
+duplicate inserts counted; public prints on the demo receipt (681 windows, 1.69 MB). Report: `docs/research/LOG.md` §AI, details in
+`docs/PROGRESS.md`. Older text follows.
+
 **2026-11-22 (latest, third order): Council scope fixed and launch kit ready for Deepanshu's review (local commits, not pushed).** The Council
 audits one symbol and says so ("BTCUSDT only: 344 of the account's 607 fills", served counts); a one-symbol packet carries no concentration
 (metrics 1.4.0, prompt 1.8.0, claim rules 1.4.0); the three demo runs were re-recorded (4 of 5 live runs). Golden set `v4` (packets only,

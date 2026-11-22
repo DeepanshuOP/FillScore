@@ -72,6 +72,8 @@ export interface ReadOptions {
     onEvent: (event: string, data: unknown) => void;
     fetchImpl?: typeof fetch;
     maxResumes?: number;
+    /** Aborts the read and any resume (the page unmounted): nothing is requested after it. */
+    signal?: AbortSignal;
     wait?: (ms: number) => Promise<void>;
 }
 
@@ -83,6 +85,7 @@ export async function readCouncilStream(o: ReadOptions): Promise<void> {
     const maxResumes = o.maxResumes ?? BACKOFF_MS.length;
     let lastId = 0;
     let terminal = false;
+    let progressed = false;
 
     const pump = async (res: Response): Promise<void> => {
         const reader = res.body!.getReader();
@@ -95,6 +98,7 @@ export async function readCouncilStream(o: ReadOptions): Promise<void> {
                 if (ev.id !== null) {
                     if (ev.id <= lastId) continue;          // already shown: a replay never repeats a note
                     lastId = ev.id;
+                    progressed = true;
                 }
                 if (TERMINAL.has(ev.event)) terminal = true;
                 let data: unknown;
@@ -108,7 +112,7 @@ export async function readCouncilStream(o: ReadOptions): Promise<void> {
         }
     };
 
-    const first = await doFetch(o.url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...o.headers }, body: JSON.stringify(o.body) });
+    const first = await doFetch(o.url, { method: 'POST', headers: { 'Content-Type': 'application/json', ...o.headers }, body: JSON.stringify(o.body), signal: o.signal });
     if (!first.ok || !first.body) {
         const body = await first.json().catch(() => null);
         throw new CouncilStreamError('http', `HTTP ${first.status}`, first.status, body);
@@ -117,7 +121,9 @@ export async function readCouncilStream(o: ReadOptions): Promise<void> {
     let res: Response | null = first;
     let dropped: unknown = null;
 
-    for (let attempt = 0; ; attempt++) {
+    let attempt = 0;
+    for (;;) {
+        if (o.signal?.aborted) return;
         if (res) {
             try {
                 await pump(res);
@@ -131,13 +137,18 @@ export async function readCouncilStream(o: ReadOptions): Promise<void> {
             if (dropped) throw dropped;                     // nothing to resume: the caller's usual network message
             return;
         }
+        // a resume that delivered events was a success: only consecutive failures count toward giving up
+        if (progressed) { attempt = 0; progressed = false; }
         if (attempt >= maxResumes) throw new CouncilStreamError('resume_failed', STREAM_LOST_MESSAGE);
         await wait(BACKOFF_MS[Math.min(attempt, BACKOFF_MS.length - 1)]);
+        attempt++;
+        if (o.signal?.aborted) return;
         try {
             const q = o.userId ? `?userId=${encodeURIComponent(o.userId)}` : '';
             const next = await doFetch(`${o.url}/${encodeURIComponent(runId)}${q}`, {
                 method: 'GET',
                 headers: { ...o.headers, 'Last-Event-ID': String(lastId) },
+                signal: o.signal,
             });
             if (next.status === 404 || next.status === 409) {
                 const body = (await next.json().catch(() => null)) as { message?: unknown } | null;

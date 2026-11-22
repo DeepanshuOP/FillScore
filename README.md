@@ -63,7 +63,7 @@ How to read it, plainly:
   Read: synthesis text reached the user as the model wrote it in 2 of 21 council runs and 3 of 18 single-call runs; specialists did so in about 70% of outputs. The debate roles rarely fall back to code text (1 of 42) but carry most claim-rule redactions (158 sentences).
 - Source files: `ml-service/evals/ablation_results_v3.md`, `ml-service/evals/ablation_notes_v3.md`.
 
-Tests, run on 2026-11-22: ml-service pytest 1810 passed and 5 failed (the 5 are the runner and golden-set checks named above); backend vitest 1053 passed (126 files), tsc clean; frontend vitest 727 passed (76 files), tsc clean, lint 0 errors; end-to-end 39 passed; MCP server 26 passed. The route table in `ARCHITECTURE.md` has 75 rows and a test keeps it equal to the code.
+Tests, run on 2026-11-22 (after the fourth order): ml-service pytest 1852 passed (9 deselected); backend vitest 1102 passed (131 files), tsc clean; frontend vitest 752 passed (78 files), tsc clean, lint 0 errors, build ok; end-to-end 40 passed; MCP server 26 passed. The route table in `ARCHITECTURE.md` is checked against the code by a test.
 
 ## Three pillars
 

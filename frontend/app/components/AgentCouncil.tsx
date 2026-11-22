@@ -188,6 +188,8 @@ export default function AgentCouncil({
   }, [mlBaseUrl]);
 
   const cited = useRef<unknown>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => abortRef.current?.abort(), []);   // leaving the page ends the read and any resume
   const reset = useCallback(() => {
     cited.current = null;
     setBenchmarkLine(null);
@@ -311,7 +313,11 @@ export default function AgentCouncil({
         body.userId = userId;
       }
 
+      abortRef.current?.abort();
+      const ctl = new AbortController();
+      abortRef.current = ctl;
       await readCouncilStream({
+        signal: ctl.signal,
         url: `${mlBaseUrl}/ml/agents/council/stream`,
         body,
         headers,

@@ -539,13 +539,21 @@ async def council_stream(request: CouncilRequest, req: Request):
     account_id = get_account_id(request.userId, req)
     symbol = request.symbol
     from agents.council_service import council_flow
-    from agents.stream_store import HEARTBEAT_FRAME, sse_frame, store as stream_store
+    from agents import stream_store as stream_mod
+    from agents.stream_store import HEARTBEAT_FRAME, TooManyRuns, sse_frame, store as stream_store
 
-    run = stream_store.create(account_id)
+    try:
+        run = stream_store.create(account_id)
+    except TooManyRuns:
+        return JSONResponse(status_code=429, content={"code": "STREAM_BUSY", "message": "This account already has audits running. Wait for one to finish; nothing was started."})
 
     async def runner():
         try:
-            await council_flow(account_id, symbol, on_event=run.publish, mode=request.mode)
+            await asyncio.wait_for(council_flow(account_id, symbol, on_event=run.publish, mode=request.mode),
+                                   stream_mod.RUN_TIMEOUT_S)
+        except asyncio.TimeoutError:
+            print("[council] stream run timed out")
+            await run.publish("error", {"code": "RUN_TIMEOUT", "message": "The audit did not finish in time and was stopped."})
         except Exception as e:
             code = classify_exception(e)
             # Class name only: exception text can contain connection strings or credentials

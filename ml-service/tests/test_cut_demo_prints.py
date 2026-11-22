@@ -110,6 +110,14 @@ def test_a_daily_file_whose_hash_is_not_the_committed_one_stops_the_cut(tmp_path
                  lambda s, d: day)
 
 
+def test_an_order_id_repeated_across_symbols_stops_the_cut(tmp_path):
+    d = _write_demo(tmp_path)
+    (d / "orders.json").write_text(json.dumps([
+        {"orderId": "dup", "symbol": "AAAUSDT", "status": "FILLED"}, {"orderId": "dup", "symbol": "BBBUSDT", "status": "FILLED"}]))
+    with pytest.raises(ValueError, match="repeat"):
+        cut_demo(d, {}, lambda s, day: None)
+
+
 def test_the_backend_copy_is_one_json_string_per_demo_with_quotes_and_backslashes_escaped(tmp_path):
     for demo, text in (("demo-b", '{"k":"it\'s a \\ test"}'), ("demo-a", '{"k":1}')):
         (tmp_path / demo).mkdir()

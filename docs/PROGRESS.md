@@ -4,7 +4,7 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, fourth: honest AI layer, two hardened backend paths, prints on the receipt (local commits)
 
-- **Next concrete action: Step 6 (reviewer on the Steps 2-5 diff, then the final checks).**
+- **Next concrete action: Run 4 ready for Deepanshu's review** (local commits, not pushed).
 - **Step 1: done.** `ml-service/evals/placeholder_compliance.py` (offline; test `tests/test_placeholder_compliance.py`, hand-computed on
   3 small runs) and the table in README "Evaluation". Unit = one agent output (regeneration and fallback are recorded per agent, not per
   sentence). Synthesis text was used as the model wrote it in 2 of 21 council runs and 3 of 18 single-call runs. ADR-0018
@@ -54,6 +54,18 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
   buyer-initiated), fills ringed in pen, arrival dashed. Tests: `test_cut_demo_prints.py` (7, hand fixture + a local re-derivation of three
   real windows from the daily files), `demoPrints.test.ts` (5, two orders by hand), `replayPrints.test.ts` (3), `printsTape.test.ts` (10),
   `receiptCopy.test.ts`. Images `docs/design/v31b/receipt-prints-{1440,390}.jpg` (16 in the folder; two Carbon copies removed).
+- **Step 6: done.** One reviewer (Sonnet): 7 findings, 6 fixed, 1 kept with a reason (LOG §AI). Final checks of 2026-11-22, after the fixes:
+  ml-service pytest **1852 passed**, 0 failed, 9 deselected; `run_offline.py` exit 0 (36 runs x 6 invariants, 0 violations);
+  `ablation.py --check` exit 0; `placeholder_compliance.py` exit 0; backend vitest **1102 passed** (131 files), tsc 0; frontend vitest
+  **752 passed** (78 files), tsc 0, lint 0 errors (17 warnings, as before), build ok; full e2e **40 passed**; MCP **26 passed**;
+  First Load JS (gzip kB, `scripts/first-load-js.mjs`): `/` 328.4, `/dashboard` 391.7, `/login` 315.9.
+  Live LLM calls this order: none. Atlas writes: none. Nothing pushed.
+- **Not verified / limits:** the stream resume is single-instance (ARCHITECTURE.md §7); the governor is per process; the real-file test of the
+  prints needs the local daily-file cache and skips elsewhere (CI runs the fixture tests); the receipt tape was captured from fixtures plus
+  the committed windows in a browser, and its DOM facts checked (60 ticks, 2 fill rings, arrival line, no overflow at 1440 and 390), not
+  through the full stack with a real order id; Safari, Firefox and real phones are not covered.
+- **Ideas, not done:** fix `BinanceClient.fetchFeeRate`'s `/api/v3/tradeFee` (not in Binance's docs; `GET /sapi/v1/asset/tradeFee`); wire the
+  governor to a shared store for more than one instance; drop the backend's copy of the prints by serving them from a small store.
 
 ## Orders of 2026-11-22, third: Council scope, four copy fixes, launch kit (local commits)
 

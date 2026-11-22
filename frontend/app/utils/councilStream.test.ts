@@ -122,4 +122,20 @@ describe('readCouncilStream', () => {
         expect(seen).toEqual(['error']);
         expect(calls).toHaveLength(1);
     });
+    it('only consecutive failures count: five resumes that each delivered events do not exhaust maxResumes 2', async () => {
+        const drops = [1, 2, 3, 4, 5].map((i) => sseResponse(frame(i, 'agent_done', { i }), { breakAfter: true }));
+        const { fetchImpl, calls } = scripted([...drops, sseResponse(frame(6, 'complete', {}))]);
+        const seen: string[] = [];
+        await readCouncilStream({ ...base, fetchImpl, maxResumes: 2, onEvent: (e) => seen.push(e) });
+        expect(seen).toEqual(['agent_done', 'agent_done', 'agent_done', 'agent_done', 'agent_done', 'complete']);
+        expect(calls.map((c) => c.method)).toEqual(['POST', 'GET', 'GET', 'GET', 'GET', 'GET']);
+    });
+
+    it('an aborted signal stops the reader: no resume is requested', async () => {
+        const ctl = new AbortController();
+        const { fetchImpl, calls } = scripted([sseResponse(frame(1, 'scope', {}), { breakAfter: true })]);
+        const done = readCouncilStream({ ...base, fetchImpl, signal: ctl.signal, onEvent: () => ctl.abort() });
+        await expect(done).resolves.toBeUndefined();
+        expect(calls.map((c) => c.method)).toEqual(['POST']);
+    });
 });

@@ -33,10 +33,11 @@ function load(demo: string): Cut | null {
     return doc;
 }
 
-export function demoPrintsFor(accountId: string, orderId: string): DemoPrintsWindow | null {
+export function demoPrintsFor(accountId: string, orderId: string, symbol?: string): DemoPrintsWindow | null {
     if (!VALID_DEMO_USERS.has(accountId)) return null;
     const doc = load(accountId);
     if (!doc || !Object.prototype.hasOwnProperty.call(doc.windows, orderId)) return null;
-    const { symbol, arrivalMs, fromMs, toMs, total, truncated, files, prints } = doc.windows[orderId];
-    return { symbol, arrivalMs, fromMs, toMs, total, truncated, files, prints };
+    const w = doc.windows[orderId];
+    if (symbol !== undefined && w.symbol !== symbol) return null;      // an order id that exists on another symbol is not this order
+    return { symbol: w.symbol, arrivalMs: w.arrivalMs, fromMs: w.fromMs, toMs: w.toMs, total: w.total, truncated: w.truncated, files: w.files, prints: w.prints };
 }

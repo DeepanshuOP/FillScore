@@ -109,16 +109,20 @@ export class BinanceHistorySync {
                 if (e instanceof BinanceBanError) throw new StopSync('banned');
                 throw e;
             }
-            this.requests++;
-            // built after any wait: a signed timestamp must be fresh
-            const all: Record<string, string | number> = signed ? { ...params, timestamp: this.now() } : { ...params };
-            let qs = Object.entries(all).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
-            if (signed) qs += `&signature=${crypto.createHmac('sha256', this.apiSecret).update(qs).digest('hex')}`;
             let res: Response;
+            let sent = false;
             try {
+                // the wait above can take a minute: the deadline is checked again, and the signed query is built now, not before
+                if (this.opts.deadlineMs !== undefined && this.now() > this.opts.deadlineMs) throw new StopSync('time_cap');
+                this.requests++;
+                const all: Record<string, string | number> = signed ? { ...params, timestamp: this.now() } : { ...params };
+                let qs = Object.entries(all).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
+                if (signed) qs += `&signature=${crypto.createHmac('sha256', this.apiSecret).update(qs).digest('hex')}`;
+                sent = true;
                 res = await guardedFetch(`${BASE}${path}${qs ? `?${qs}` : ''}`, { headers: { 'X-MBX-APIKEY': this.apiKey } });
             } catch (e) {
-                this.gov.release(weight);
+                // a request that may have reached Binance counts its weight; one that was never sent frees its reservation
+                if (sent) this.gov.release(weight); else this.gov.cancel(weight);
                 throw e;
             }
             this.gov.record(weight, res);   // used weight from X-MBX-USED-WEIGHT-1M; a 429 pauses, a 418 bans, for Retry-After

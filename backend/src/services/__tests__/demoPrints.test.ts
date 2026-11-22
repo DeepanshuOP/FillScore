@@ -69,5 +69,8 @@ describe('demo prints for the receipt', () => {
         expect(demoPrintsFor('demo-nobody', 'ord-moderate-BNBUSDT-115583')).toBeNull();
         expect(demoPrintsFor('demo-moderate', 'no-such-order')).toBeNull();
         expect(demoPrintsFor('demo-moderate', '__proto__')).toBeNull();
+        // an order id that exists on another symbol is not this order
+        expect(demoPrintsFor('demo-moderate', 'ord-moderate-BNBUSDT-115583', 'BNBUSDT')).not.toBeNull();
+        expect(demoPrintsFor('demo-moderate', 'ord-moderate-BNBUSDT-115583', 'BTCUSDT')).toBeNull();
     });
 });
