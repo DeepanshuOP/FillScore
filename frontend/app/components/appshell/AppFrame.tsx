@@ -189,7 +189,8 @@ function PageHeader() {
           <Link href="/" aria-label="FillScore home" className="shrink-0 no-underline"><Logo compact /></Link>
           <AccountSwitcher account={account} section={section} className="min-w-0 flex-1" />
         </div>
-        {dataSource ? <ProvenanceChip dataSource={dataSource} /> : null}
+        {dataSource ? <ProvenanceChip dataSource={dataSource} />
+          : header.sourceText ? <span className="inline-flex h-6 items-center whitespace-nowrap rounded-full border border-ui-edge px-2.5 text-xs font-medium text-ui-ink" data-testid="header-source-text">{header.sourceText}</span> : null}
         {dataSource === 'synthetic-demo' ? <MarginNote label="the demo data">{DEMO_NOTE}</MarginNote> : null}
         <span className="hidden text-[14px] font-bold text-ui-ink lg:inline" data-testid="header-account">{account.label}</span>
         {header.period ? <span className="font-mono text-[12px] tracking-[0.04em] text-ui-graphite" data-testid="header-period"><span className="sr-only">Period: </span>{header.period}</span> : null}

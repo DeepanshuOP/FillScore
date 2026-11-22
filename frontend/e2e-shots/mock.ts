@@ -36,7 +36,12 @@ export async function mock(page: Page, signedIn: boolean, over: (p: string, url:
       v1Computed: false, current: f.current }))
     if (p === '/audit/v2') return route.fulfill(json(f.v2Body))
     if (p === '/audit/orders-summary') return route.fulfill(json(f.ordersBody))
-    if (p === '/audit/trades') return route.fulfill(json(f.trades))
+    if (p === '/audit/trades') {
+      // paged like the real API (page, limit; the ledger asks for 50, the symbol list for 1000), not all 607 rows at once
+      const limit = Math.max(1, Number(url.searchParams.get('limit') ?? 50)), pg = Math.max(1, Number(url.searchParams.get('page') ?? 1))
+      const all = (f.trades as { trades: unknown[] }).trades
+      return route.fulfill(json({ ...(f.trades as object), trades: all.slice((pg - 1) * limit, pg * limit), page: pg, pages: Math.max(1, Math.ceil(all.length / limit)) }))
+    }
     if (p === '/audit/orders-ledger') return route.fulfill(json(f.ledger))
     if (p === '/audit/exceptions') return route.fulfill(json(f.explain.exceptions))
     if (p === '/audit/rankings') return route.fulfill(json(f.explain.rankings))
@@ -76,7 +81,17 @@ export async function checks(page: Page, name: string) {
       // (text inside a fixed or sticky layer, such as the top bar, is drawn over the page on purpose and is left out)
       let layered = false
       for (let a: HTMLElement | null = el; a; a = a.parentElement) { const pos = getComputedStyle(a).position; if (pos === 'fixed' || pos === 'sticky') { layered = true; break } }
-      if (!layered && r.top < window.innerHeight * 2 && el.children.length === 0 && (el.textContent ?? '').trim().length > 1 && !el.closest('[aria-hidden="true"],svg,.sr-only,[data-overlap-ok]')) texts.push({ r, t: (el.textContent ?? '').trim().slice(0, 24) })
+      // text scrolled out of view inside its own scroll box (a table's box) is not drawn, so it cannot overlap anything
+      let clippedAway = false
+      for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
+        const o = getComputedStyle(a).overflowY
+        if (o === 'auto' || o === 'scroll' || o === 'hidden' || o === 'clip') {
+          const ar = a.getBoundingClientRect()
+          const shown = Math.min(r.bottom, ar.bottom) - Math.max(r.top, ar.top)   // less than half of the line is inside the box: it is cut off
+          if (shown < r.height * 0.5) { clippedAway = true; break }
+        }
+      }
+      if (!layered && !clippedAway && r.top < window.innerHeight * 2 && el.children.length === 0 && (el.textContent ?? '').trim().length > 1 && !el.closest('[aria-hidden="true"],svg,.sr-only,[data-overlap-ok]')) texts.push({ r, t: (el.textContent ?? '').trim().slice(0, 24) })
     }
     const overlaps: string[] = []
     for (let i = 0; i < texts.length; i++) for (let j = i + 1; j < texts.length; j++) {

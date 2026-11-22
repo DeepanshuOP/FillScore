@@ -193,7 +193,7 @@ function TradesContent() {
     const identity = resolveIdentityState(urlUser, storageUserId, accessToken, searchParams.get('sample') === '1');
 
     if (identity.mode === 'redirect') {
-      window.location.href = '/';
+      window.location.href = '/login';   // IA v4: a signed-out visitor to /app/* without a demo account goes to log in
       return;
     }
 

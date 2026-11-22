@@ -4,7 +4,15 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, sixth: IA v4 built in production (local commits)
 
-- **Next concrete action: Step 4 (move the sections: Fills tabs, /app/check open signed out, Council without Ask, Evidence without the broker-file check).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Next concrete action: Step 5 (marketing site: top bar, menu sheet, footer, /demo, /how-it-works, /docs, /docs/mcp, /docs/package, hero label and button).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Step 4: done.** Overview, Orders, Rules, Rankings, Council, Evidence unchanged apart from the frame (Ask left Council; the broker-file
+  check left Evidence). Fills (`/app/fills`) has two tabs, Ledger and Patterns (`?tab=patterns`; links, no motion): `TradesLedger` and
+  `Patterns` are today's Trades and Analytics bodies. `/app/check` opens signed out and in demo mode (header text "Your file, public
+  prices"; a banner says the check itself needs a signed-in account, which the ml-service enforces); `/app/connect` is the onboarding page;
+  a signed-out visitor to `/app/*` without a demo account goes to `/login` (Home, Fills tabs; Settings and Connect already did).
+  `e2e/legacy-redirects.spec.ts`: 11 passed against the real stack (each old URL 308 and lands on its new page, query kept). QA tooling:
+  the mock pages `/audit/trades` like the real API and `checks()` skips text cut off inside a scroll box (both were false overlaps).
+  Frontend vitest 777 passed, tsc 0.
 - **Step 3: done.** Home (`/app`): `dashboard/AskHome.tsx` (demo: recorded chips, no input box, "Recorded answer, not live", code-built scope
   line "January 2024, 245 orders", passed answers first and degraded last; live: the existing agent, 2 units, four suggestion chips;
   blocked: disabled with "Ask needs measured orders." plus the connect empty state), `dashboard/HomeFigures.tsx` (chapters 01 total and

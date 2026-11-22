@@ -1,36 +1,32 @@
 'use client';
 
-import React, { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { MarketingNav } from '../components/marketing/MarketingNav';
-import SiteFooter from '../components/SiteFooter';
+import React from 'react';
+import Link from 'next/link';
+import { AppPage } from '../components/appshell/shellContext';
+import { Banner } from '../ui/Banner';
+import { buttonClass } from '../ui/buttonClass';
 import { useAuth } from '../context/AuthContext';
 import CsvCheckPanel from '../dashboard/CsvCheckPanel';
 
-/** Check a broker file (M6 §1) without an exchange connection: for people whose trades are in a broker app. Signed-in accounts only. */
-export default function CheckFilePage() {
-  const router = useRouter();
-  const { user, isLoading, accessToken, refreshAccessToken } = useAuth();
-
-  useEffect(() => {
-    if (!isLoading && !user) router.push('/login');
-  }, [isLoading, user, router]);
-
-  if (isLoading || !user) return null;
-
+/**
+ * Check a broker file (M6 §1) for people whose trades are in a broker app. The page opens signed out and in demo mode (IA v4); the
+ * check itself runs only for a signed-in account (the server refuses the others with a printed message), so a visitor without one
+ * is told so before choosing a file.
+ */
+export default function CheckFile() {
+  const { isLoading, accessToken, refreshAccessToken } = useAuth();
   return (
-    <>
-      <MarketingNav />
-      <main className="min-h-screen bg-ui-surface pb-24">
-        <div className="mx-auto max-w-[1240px] px-5 pt-28 sm:px-8">
-          <h1 className="display-md mb-3 text-ui-ink">Check a trade-history file</h1>
-          <p className="mb-8 max-w-[68ch] text-[15px] text-ui-graphite">Choose a broker export. Each fill is read and compared with the public price at its time.</p>
-          <div className="max-w-[900px]">
-            <CsvCheckPanel mlBaseUrl={process.env.NEXT_PUBLIC_ML_URL ?? 'http://localhost:8000'} accessToken={accessToken} refreshAccessToken={refreshAccessToken} />
-          </div>
-        </div>
-      </main>
-      <SiteFooter />
-    </>
+    <AppPage sourceText="Your file, public prices">
+      <div className="flex max-w-[900px] flex-col gap-6">
+        <p className="max-w-[68ch] text-[15px] text-ui-graphite">Choose a broker export. Each fill is read and compared with the public price at its time.</p>
+        {!isLoading && !accessToken ? (
+          <Banner kind="info" title="Checking a file needs a signed-in account"
+            action={<Link href="/login" className={buttonClass('secondary', 'sm', 'no-underline')}>Log in</Link>}>
+            The check runs on our server and counts against a limit for each account, so a sample account or a visitor without one cannot run it.
+          </Banner>
+        ) : null}
+        <CsvCheckPanel mlBaseUrl={process.env.NEXT_PUBLIC_ML_URL ?? 'http://localhost:8000'} accessToken={accessToken} refreshAccessToken={refreshAccessToken} />
+      </div>
+    </AppPage>
   );
 }

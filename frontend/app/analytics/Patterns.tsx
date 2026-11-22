@@ -127,7 +127,7 @@ function AnalyticsContent() {
     const identity = resolveIdentityState(urlUser, storageUserId, accessToken, searchParams.get('sample') === '1');
 
     if (identity.mode === "redirect") {
-      router.push("/");
+      router.push("/login");   // IA v4: a signed-out visitor to /app/* without a demo account goes to log in
       return;
     }
 

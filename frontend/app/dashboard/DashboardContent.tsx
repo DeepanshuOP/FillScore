@@ -43,7 +43,6 @@ const OrderReplay = dynamic(() => import('./OrderReplay').then((m) => m.OrderRep
 const RulesView = dynamic(() => import('./RulesView'), { loading: section });
 const RankingsView = dynamic(() => import('./RankingsView'), { loading: section });
 const AgentCouncil = dynamic(() => import('../components/AgentCouncil'), { loading: section });
-const CsvCheckPanel = dynamic(() => import('./CsvCheckPanel'));
 const ScoreRecord = dynamic(() => import('./ScoreRecord'), { loading: section });
 const EvidencePanel = dynamic(() => import('../components/EvidencePanel').then((m) => m.EvidencePanel), { loading: section });
 
@@ -363,7 +362,6 @@ function DashboardContent({ view }: { view: View }) {
                       )}
                     </Disclosure>
                   </Panel>
-                  {dashboardMode === 'real' && <CsvCheckPanel mlBaseUrl={ML_URL} accessToken={accessToken} refreshAccessToken={refreshAccessToken} />}
                 </div>
               </div>
             )}
