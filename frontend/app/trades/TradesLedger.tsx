@@ -8,7 +8,7 @@ import { cn } from '../../lib/utils'
 import { openAuthenticatedDownload } from '../lib/downloads';
 import { formatUsd } from '../utils/format';
 import { useSearchParams } from 'next/navigation'
-import { AppShell } from '../components/shell/AppShell'
+import { AppPage } from '../components/appshell/shellContext'
 import { Button } from '../ui/Button'
 import { EmptyState } from '../ui/EmptyState'
 import { Field } from '../ui/Field'
@@ -378,12 +378,11 @@ function TradesContent() {
     </Button>
   ) : null
 
-  const shellUser = dashboardMode === 'demo' ? userId : (urlUserId ?? null)
   const sel = selectedTrade
   const arrival = sel ? formatPrice(sel.arrivalPriceProxy) : null
 
   return (
-    <AppShell userId={shellUser} page="trades" dataSource={dashboardMode === 'demo' ? 'synthetic-demo' : dashboardMode === 'real' ? 'real-user' : null}
+    <AppPage dataSource={dashboardMode === 'demo' ? 'synthetic-demo' : dashboardMode === 'real' ? 'real-user' : null}
       venue={exchangeRaw ? (VENUE_NAME[exchangeRaw.toLowerCase()] ?? displayExchange) : null} actions={actions}>
       <div className="flex flex-col gap-5">
         <p className="text-[13px] text-ui-graphite">{total} executions on {displayExchange}</p>
@@ -598,7 +597,7 @@ function TradesContent() {
           ) : null}
         </SheetContent>
       </Sheet>
-    </AppShell>
+    </AppPage>
   )
 }
 

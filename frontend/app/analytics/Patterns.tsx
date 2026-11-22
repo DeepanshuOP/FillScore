@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { Info } from "lucide-react";
 import { makerRatioNote } from '../utils/makerAdvice';
 import { useRouter, useSearchParams } from "next/navigation";
-import { AppShell } from "../components/shell/AppShell";
+import { AppPage } from "../components/appshell/shellContext";
 import { Banner } from "../ui/Banner";
 import { Button } from "../ui/Button";
 import { EmptyState } from "../ui/EmptyState";
@@ -296,11 +296,10 @@ function AnalyticsContent() {
 
   const exchange = tradeData[0]?.exchange;
   const shell = (children: ReactNode) => (
-    <AppShell userId={dashboardMode === 'demo' ? resolvedUserId : (urlUserId ?? null)} page="analytics"
-      dataSource={dashboardMode === 'demo' ? 'synthetic-demo' : 'real-user'}
+    <AppPage dataSource={dashboardMode === 'demo' ? 'synthetic-demo' : 'real-user'}
       venue={exchange ? (VENUE_NAME[exchange.toLowerCase()] ?? exchange) : null}>
       {children}
-    </AppShell>
+    </AppPage>
   );
 
   if (loading) {

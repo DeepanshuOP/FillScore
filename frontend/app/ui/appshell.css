@@ -1,0 +1,47 @@
+/* The app frame (IA v4): sidebar on a desktop, a rail from 1024 to 1279 px, a bottom bar of four on a phone.
+   Class names carry the prefix fa- (frame): fs-side and others already exist in landing.css.
+   Motion budget (docs/design/IA-v4/PROPOSAL.md section 5): the pen underline 180 ms, the page change 160 ms fade + 8 px;
+   nothing on tables, filters, folds, tabs, the palette or keys. Transform and opacity only; reduced motion shows the finished frame. */
+
+.fa-app { --fa-side-w: 232px; display: grid; grid-template-columns: var(--fa-side-w) minmax(0, 1fr); min-height: 100dvh; background: var(--ui-surface); }
+.fa-app[data-rail="true"] { --fa-side-w: 64px; }
+@media (max-width: 1023px) { .fa-app { grid-template-columns: minmax(0, 1fr); padding-bottom: calc(56px + env(safe-area-inset-bottom)); } }
+
+.fa-side { position: sticky; top: 0; height: 100dvh; display: flex; flex-direction: column; gap: 18px; padding: 20px 16px 16px;
+  border-right: 1px solid var(--ui-ink); background: var(--ui-surface); overflow-y: auto; overflow-x: hidden; }
+.fa-app[data-rail="true"] .fa-side { padding-inline: 8px; align-items: stretch; }
+@media (max-width: 1023px) { .fa-side { display: none; } }
+
+.fa-nav { position: relative; display: flex; flex-direction: column; }
+.fa-nav a { position: relative; display: block; padding: 6px 2px; font-size: 15px; font-weight: 500; color: var(--ui-graphite); text-decoration: none; }
+.fa-nav a:hover { color: var(--ui-ink); }
+.fa-nav a[aria-current="page"] { color: var(--ui-ink); font-weight: 700; }
+.fa-app[data-rail="true"] .fa-nav a { text-align: center; font-family: var(--ui-mono); font-size: 13px; letter-spacing: 0.04em; }
+/* the pen underline under the current item: one element moved by transform */
+.fa-pen { position: absolute; left: 2px; top: 0; height: 2px; width: var(--w, 44px); background: var(--ui-pen); border-radius: 2px;
+  transform: translateY(var(--y, 0px)); pointer-events: none; }
+.fa-app[data-rail="true"] .fa-pen { left: 50%; margin-left: calc(var(--w, 44px) / -2); }
+@media (prefers-reduced-motion: no-preference) { .fa-pen { transition: transform 180ms cubic-bezier(0.23, 1, 0.32, 1); } }
+
+.fa-side-text { display: block; }
+/* in the rail the full word stays in the accessible name (visually hidden) while the two printed letters show */
+.fa-app[data-rail="true"] .fa-side-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.fa-side-short { display: none; }
+.fa-app[data-rail="true"] .fa-side-short { display: block; }
+
+/* the page header: provenance, account and period on every app page */
+.fa-head { border-bottom: 1px solid var(--ui-rule); padding: 12px var(--ui-gutter); }
+
+/* phone bottom bar: four printed words, 56 px */
+.fa-bar { position: fixed; inset: auto 0 0 0; z-index: 30; display: grid; grid-template-columns: repeat(4, 1fr); height: calc(56px + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom); border-top: 1px solid var(--ui-ink); background: var(--ui-raised); }
+@media (min-width: 1024px) { .fa-bar { display: none; } }
+.fa-bar a, .fa-bar button { display: grid; place-items: center; min-height: 44px; font-family: var(--ui-mono); font-size: 13px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--ui-graphite); text-decoration: none; background: none; border: 0; }
+.fa-bar [aria-current="page"] { color: var(--ui-ink); text-decoration: underline; text-decoration-color: var(--ui-pen); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+@media (max-width: 359px) { .fa-bar a, .fa-bar button { font-size: 12px; letter-spacing: 0.02em; } }
+
+/* page change: 160 ms fade and 8 px, no exit; the key is the pathname, so tabs and filters never replay it */
+.fa-page { min-width: 0; }
+@media (prefers-reduced-motion: no-preference) { .fa-page { animation: fa-page-in 160ms ease-out both; } }
+@keyframes fa-page-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }

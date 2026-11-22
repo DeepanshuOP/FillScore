@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { BookOpen, Download, Link2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { AppShell } from '../components/shell/AppShell';
+import { AppPage } from '../components/appshell/shellContext';
 import { viewHref, type View } from '../components/shell/nav';
 import dynamic from 'next/dynamic';
 import ConnectPrompt from '../components/ConnectPrompt';
@@ -226,10 +226,9 @@ function DashboardContent({ view }: { view: View }) {
   ) : null;
 
   return (
-    <AppShell userId={shellUser} page={view} dataSource={audit ? (isDemoData ? 'synthetic-demo' : 'real-user') : null}
+    <AppPage dataSource={audit ? (isDemoData ? 'synthetic-demo' : 'real-user') : null} ownHeading={view === 'home'}
       period={audit ? formatPeriodLabel(audit.period.start, audit.period.end) : null}
       venue={audit ? VENUES[audit.exchange?.toLowerCase()] ?? audit.exchange : null} actions={actions}>
-      <h1 className="sr-only">Execution quality dashboard</h1>
 
       {loading && <Loading />}
 
@@ -263,7 +262,7 @@ function DashboardContent({ view }: { view: View }) {
                 costVs={v2Body?.costVsExpected}
                 ordersBody={ordersSummary}
                 isDemo={isDemoData}
-                sampleNote={dashboardMode === 'demo' ? DEMO_NOTE : null}
+                sampleNote={null /* IA v4: the provenance prints once, in the app page header (with the demo note behind a pen mark) */}
                 facts={scopeFacts(audit, audit.current, orderCountsOf(ordersSummary))}
                 v1={{ grade: audit.fillGrade, score: audit.avgFillScore, basis: isDemoData ? undefined : 'rule-based, scoring v1' }}
                 v1Note={v2Body?.demo ? 'Kept unchanged. The measured grade is the one that describes the orders shown now.' : null}
@@ -346,7 +345,7 @@ function DashboardContent({ view }: { view: View }) {
           </div>
         );
       })()}
-    </AppShell>
+    </AppPage>
   );
 }
 

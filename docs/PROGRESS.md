@@ -4,7 +4,16 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, sixth: IA v4 built in production (local commits)
 
-- **Next concrete action: Step 2 (app shell: sidebar, page header, phone bar, More sheet, ⌘K).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Next concrete action: Step 3 (Home: Ask FillScore).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Step 2: done.** Persistent frame in `app/app/(shell)/layout.tsx` -> `components/appshell/AppFrame.tsx`: sidebar (232 px; rail
+  1024-1279 px with a toggle; account switcher only, no provenance), nine nouns with the pen underline (180 ms), bottom group
+  (public score card for demo accounts, Methodology, Settings only when signed in, Carbon copy, versions read on the server from
+  `methodology.json`, log in/out), page header on every app page (ProvenanceChip + the demo note behind a pen mark, account, period,
+  venue, actions slot), phone bottom bar Home/Overview/Orders/More with a Vaul More sheet with one-line glosses, ⌘K lists the nine with
+  glosses. Pages report their header through `AppPage` (`appshell/shellContext.tsx`). Settings has its own shell with Back
+  (`SettingsShell`). The old top bar and "More" menu (`shell/AppShell.tsx`) are deleted. The overview's own "Sample data" line is gone
+  (provenance prints once, in the header); e2e specs that read that text are updated in step 9. Class prefix `fa-` (`.fs-side` exists in
+  landing.css). Looked at 1440, 1100 and 390: overflow 0, axe 0. Frontend vitest 778 passed (80 files), tsc 0, eslint 0 errors.
 - **Step 1: done.** Routes `/app`, `/app/{overview,orders,rules,rankings,council,evidence,fills,check,settings,connect}` exist as thin
   wrappers over the old page bodies (kept in their feature folders: `dashboard/DashboardContent.tsx` takes a `view`, `trades/TradesLedger`,
   `analytics/Patterns`, `check/CheckFile`, `settings/SettingsPage`, `onboarding/ConnectExchange`). `frontend/legacyRedirects.mjs` (308,

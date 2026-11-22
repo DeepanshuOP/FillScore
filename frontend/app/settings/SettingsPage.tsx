@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AppShell } from '../components/shell/AppShell';
+import { SettingsShell } from '../components/appshell/SettingsShell';
 import { EvidencePanel } from '../components/EvidencePanel';
 import { useAuth } from '../context/AuthContext';
 import { disconnectExchange, fetchAccountExport, deleteAccount } from '../lib/accountActions';
@@ -112,7 +112,7 @@ export default function SettingsPage() {
   if (isLoading || !user) return null;
 
   return (
-    <AppShell userId={null} page="settings" title="Settings">
+    <SettingsShell title="Settings">
       <div className="flex max-w-3xl flex-col gap-6" data-view-body="">
         {status && <Banner kind="info" title={status} />}
 
@@ -205,6 +205,6 @@ export default function SettingsPage() {
           </div>
         </Panel>
       </div>
-    </AppShell>
+    </SettingsShell>
   );
 }

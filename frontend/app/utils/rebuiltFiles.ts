@@ -1,7 +1,7 @@
 /** The screens rebuilt in M8 phase 2b part 1 (2026-11-20). The copy tests scan exactly these files; part 2 adds its screens here. */
 export const REBUILT_FILES = [
   // design v2 core: landing, shell, marketing, tape, charts, primitives (Headline, CostPanels and OrdersPanel were replaced by Overview)
-  'app/page.tsx', 'app/providers.tsx', 'app/components/shell/AppShell.tsx', 'app/components/shell/CommandMenu.tsx', 'app/components/shell/Logo.tsx',
+  'app/page.tsx', 'app/providers.tsx', 'app/components/appshell/AppFrame.tsx', 'app/components/appshell/SettingsShell.tsx', 'app/components/shell/CommandMenu.tsx', 'app/components/shell/Logo.tsx',
   'app/components/shell/ThemeToggle.tsx', 'app/components/marketing/MarketingNav.tsx', 'app/components/marketing/TapeHero.tsx',
   'app/components/marketing/DemoCards.tsx', 'app/components/marketing/CheckIt.tsx',
   'app/ui/charts/RankPlot.tsx', 'app/ui/GradeChip.tsx', 'app/ui/GradeBadge.tsx',
