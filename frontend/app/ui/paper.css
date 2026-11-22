@@ -41,12 +41,25 @@
 .fs-receipt .kv { display: grid; grid-template-columns: 9ch minmax(0, 1fr); gap: 0 10px; margin: 0; }
 .fs-receipt .kv dd { margin: 0; overflow-wrap: anywhere; }
 .fs-receipt .fs-perf { margin: 8px -26px; }
-.fs-lines { display: grid; grid-template-columns: 3ch minmax(0, 1fr) auto auto; gap: 2px 10px; align-items: baseline; }
-.fs-lines .lab { position: relative; overflow: hidden; white-space: nowrap; }
-.fs-lines .lab::after { content: ' ........................................................................'; color: var(--ui-rule); }
+.fs-lines { display: grid; grid-template-columns: 3ch minmax(min-content, 1fr) auto auto; gap: 2px 10px; align-items: baseline; }
+/* a long label wraps onto a second line and the dotted leader fills what is left of its last line, so no label is cut at
+   320 or 390 px (fifth order of 2026-11-22, step 0b; e2e-shots/receipt-lines.ts) */
+.fs-lines .lab { display: flex; align-items: flex-end; min-width: 0; }
+.fs-lines .lab .t { min-width: 0; }
+.fs-lines .lab.sub { padding-left: 2ch; }
+.fs-lines .lab::after {
+  content: ' ........................................................................'; color: var(--ui-rule);
+  flex: 1 1 0; min-width: 0; overflow: hidden; white-space: nowrap;
+  contain: inline-size;   /* the dots add no intrinsic width: the label column's floor is its longest word */
+}
 .fs-lines .num, .fs-fills .num { text-align: right; white-space: nowrap; }
+/* on a narrow phone the bps figure may break before its unit, which leaves the label column room for a whole word */
+@media (max-width: 400px) { .fs-lines .num.g { white-space: normal; } }
 .fs-fills { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 10px; }
-.fs-totalline { display: grid; grid-template-columns: 1fr auto auto; gap: 12px; align-items: baseline; font-family: var(--ui-font); font-weight: 900; }
+/* flex with wrap: when the dollars do not fit beside TOTAL and bps they move under them, right-aligned (step 0b) */
+.fs-totalline { display: flex; flex-wrap: wrap; column-gap: 12px; align-items: baseline; font-family: var(--ui-font); font-weight: 900; }
+.fs-totalline .k { flex: 1 0 auto; }
+.fs-totalline .u, .fs-totalline .nc { margin-left: auto; }
 .fs-totalline .k { font-size: 18px; letter-spacing: 0.02em; }
 .fs-totalline .b { font-size: 18px; color: var(--ui-graphite); font-weight: 700; }
 .fs-totalline .u { font-size: 40px; letter-spacing: -0.04em; line-height: 1; }

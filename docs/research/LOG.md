@@ -578,3 +578,15 @@ was never called, so no request reached Binance and no fee figure came from it; 
 Tests: `BinanceClient.test.ts` (5 new: the docs example parsed by hand, e.g. `"0.00000112"` = 1.12e-6 and discount `"0.75000000"` =
 0.75; governor weight 20 + 20 = 40; the old array shape is an error, not zero rates; HTTP 400 keeps its status; `fetchFeeRate` is gone).
 
+### 0b. Receipt cost labels at 320 and 390 px
+
+Cause: `.fs-lines .lab` was `white-space: nowrap; overflow: hidden` (the dotted leader is its `::after`), and the label column was
+`minmax(0, 1fr)` beside two `auto` figure columns, which grid sizes to their full width first; at 390 "Unfilled orders (modelled)"
+lost its end. Measured before the fix (`e2e-shots/receipt-lines.ts`, worst-case figures, every line present): 390 px 1 label cut,
+320 px 4 cut; the six-digit TOTAL also ran past the receipt's edge at 320. Fix (CSS, the printed label text unchanged): the label wraps
+inside a flex box whose leader fills the rest of the last line (`contain: inline-size`, so the dots add no intrinsic width); the label
+column's floor is its longest word (`minmax(min-content, 1fr)`); below 400 px the bps figure may break before "bps"; the total line is a
+wrapping flex row, so the dollars move under TOTAL only when they do not fit. Sub-lines keep their 2ch indent (padding, not spaces).
+After: 0 cut at 320 and 390, no horizontal overflow; 1440 receipt and the landing's printed receipts unchanged (captures checked;
+landing axe 0, overlaps 0).
+

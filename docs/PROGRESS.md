@@ -4,7 +4,12 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, fifth: two fixes, the production 418, IA v4 research and proposal (local commits)
 
-- **Next concrete action: Step 0b** (receipt cost labels at 320 and 390 px).
+- **Next concrete action: Step 0c** (the production 418: trace, probe source, smoke script). Waiting on Deepanshu's probe output and
+  Render log lines for the egress-IP finding.
+- **Step 0b: done.** Receipt cost lines wrap with their leader; label column floor = longest word; bps breaks before its unit under
+  400 px; the TOTAL dollars wrap under TOTAL when they do not fit. Check `e2e-shots/receipt-lines.ts` (worst-case figures, every line):
+  before 1 cut at 390 and 4 at 320, after 0 and 0. Frontend vitest 752 passed (one run had the timing test `MarginNote` "opens on click
+  and closes on Escape" fail under load; it passed alone 3 times and in the full rerun), tsc 0, lint 0 errors (17 warnings), build ok.
 - **Step 0a: done.** `BinanceClient.fetchFeeRate` (undocumented `/api/v3/tradeFee`, no callers) is now `fetchCommission` on the
   documented `GET /api/v3/account/commission`, weight 20, parsed by the sync's `mapBinanceCommission`. A real user saw nothing before:
   the method was never called. Tests `BinanceClient.test.ts` (5 new). Backend vitest 1107 passed (131 files), tsc 0. LOG §AK.

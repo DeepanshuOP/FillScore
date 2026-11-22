@@ -164,7 +164,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
               {lines.map((d, i) => (
                 <div key={`${d.label}:${d.source.field}`} className="contents">
                   <span className="g">{String(i + 1).padStart(2, '0')}</span>
-                  <span className="lab" title={`Source field: ${String(d.source.field)}`}>{d.partOf ? '  ' : ''}{d.label}{d.key === 'unfilled' ? ' (modelled)' : ''}</span>
+                  <span className={d.partOf ? 'lab sub' : 'lab'} title={`Source field: ${String(d.source.field)}`}><span className="t">{d.label}{d.key === 'unfilled' ? ' (modelled)' : ''}</span></span>
                   <span className="num g"><Fig text={cell(d.bps, formatSignedBps)} exact={exactTitle(d.bps, 'bps')} /></span><span className="num"><Fig text={cell(d.usd, formatUsd)} exact={exactTitle(d.usd, 'usd')} /></span>
                 </div>
               ))}
