@@ -4,7 +4,13 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, sixth: IA v4 built in production (local commits)
 
-- **Next concrete action: Step 8 (cleanup: ARCHITECTURE.md section 4, README and runbook paths, smoke script paths), then step 9 (e2e specs to the new routes, qa3 run, break-ui, keyboard pass, reduced motion, one reviewer, final checks, M8 report and images).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Step 8: done.** The dashboard tab bar and "More" menu code left with `shell/AppShell.tsx` (step 2). The lab prototype `design-lab/ia4` is
+  **deleted** (reason: nothing in production imports it, production replaced it, its tests asserted the old Ask view model that this order
+  changed; the proposal's images stay in `docs/design/IA-v4/`, the guard spec keeps its paths). ARCHITECTURE.md section 4 rewritten (frame,
+  routes and screens, redirects, qa3); README line, the MCP runbook (public, neutral, `/app/settings`), FIRST_REAL_USER, FREE_HOSTING and
+  DEMO_SCRIPT paths updated in step 1; `scripts/smoke_prod.sh` has no page path (it checks API routes and the frontend's `/api` proxy), so it
+  needed no change.
+- **Next concrete action: Step 9 (e2e specs to the new routes, qa3 pass, break-ui, keyboard pass, reduced motion, one reviewer, final checks, M8 report and images).** Earlier text: Step 8 (cleanup: ARCHITECTURE.md section 4, README and runbook paths, smoke script paths), then step 9 (e2e specs to the new routes, qa3 run, break-ui, keyboard pass, reduced motion, one reviewer, final checks, M8 report and images).** Steps 0 to 9 follow the order; each is committed locally when done.
 - **Step 7: done.** qa3 (`e2e-shots/qa3.ts`, rewritten for the new routes: 36 marketing and app states, apps also at 320, Carbon copy for Home,
   Overview, Orders receipt and Council): 110 states, landing CLS 0 at 1440 and 390, after fixes 0 with overflow, overlaps or axe problems on the
   states re-run. Fixes: Orders ledger default columns by width (`defaultOrderColumns`: 390 time, symbol, side, cost; 320 time and cost with

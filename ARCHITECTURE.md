@@ -222,10 +222,15 @@ analytics card.
 Design system v3 "Tape & Receipt" (2026-11-20; rules in `DESIGN.md`; tokens in `app/ui/tokens.css`, themes `paper`
 (default) and `carbon` through next-themes, storage key `fs-theme`; fonts Cabinet Grotesk and Departure Mono in
 `app/fonts.ts`; printed objects in `app/ui/paper.css`, the landing hero in `app/ui/landing.css`). App screens render inside
-`app/components/shell/AppShell.tsx` (one top bar: wordmark, account switcher, synthetic badge, period, actions, ⌘K
-`CommandMenu`, theme toggle; a row of section tabs with Trades, Analytics, Methodology and Settings under "More"; a Vaul
-drawer behind "Menu" on phones; no sidebar). Reading and marketing pages use `components/marketing/MarketingNav` and
-`SiteFooter`. Primitives in `app/ui/` (ValueState, GradeChip as a small stamp, GradeStamp, Figure and SplitFigure with
+`app/components/appshell/AppFrame.tsx` (IA v4: the persistent frame in the layout of `app/app/(shell)/`: a left sidebar of
+nine nouns with the pen underline and a bottom group, a rail from 1024 to 1279 px, a bottom bar of four with a Vaul More
+sheet on phones, the page header that prints provenance, account and period on every app page, the ⌘K `CommandMenu`).
+Pages report their header with `AppPage` (`appshell/shellContext.tsx`) and own their data. Settings has its own shell
+(`SettingsShell`, "Back"). The marketing site and the docs use `components/marketing/MarketingNav` (four items, Log in, Open
+the demo; a Vaul Menu sheet on phones) and `SiteFooter` (Product, Docs, Trust, Legal). Old addresses answer 308 from
+`frontend/legacyRedirects.mjs` (imported by `next.config.mjs`, tested). The feature code stays in its folders:
+`app/dashboard/` (Home's `AskHome` and `HomeFigures`, Overview, Orders, Rules, Rankings, Evidence), `app/trades/` (Fills
+Ledger), `app/analytics/` (Fills Patterns), `app/check/`, `app/settings/`, `app/onboarding/` (Connect). Primitives in `app/ui/` (ValueState, GradeChip as a small stamp, GradeStamp, Figure and SplitFigure with
 NumberFlow, Button, Panel as a ledger block, PenMarks and the seeded strokes of `pen.ts`, `hash.ts`, charts in
 `app/ui/charts/`: CostRuler, RankPlot); shadcn/ui components in `components/ui/`. The order receipt is
 `app/dashboard/OrderReplay.tsx` (Radix Dialog on a desktop, Vaul on a phone); the overview's month tape is
@@ -234,19 +239,28 @@ NumberFlow, Button, Panel as a ledger block, PenMarks and the seeded strokes of 
 the server; GSAP (ScrollTrigger, DrawSVG, SplitText) and Lenis load on the landing page only, by dynamic import
 (`components/marketing/v3/pinnedStory.ts`, `LandingMotion.tsx`). Motion's features (`app/motionFeatures.ts`, through
 `LazyMotion`) and the Sonner toaster (`app/ThemedToaster.tsx`, `next/dynamic`) load after first paint. Visual QA:
-`e2e-shots/qa3.ts` (22 states, axe, overlap, landing CLS), `e2e-shots/look.ts` (one screen, break-ui cases), `e2e-shots/keys.ts`
+`e2e-shots/qa3.ts` (36 states of the marketing site and the app, apps also at 320, Carbon copy, axe, overlap, landing CLS), `e2e-shots/look.ts` (one screen, break-ui cases), `e2e-shots/keys.ts`
 (keyboard-only pass); the v2 scripts `qa.ts` and `break.ts` are kept for reference.
 
-| `/` | Landing page: the tape hero of one real demo order (pinned story, pen annotations), the giant total, demo receipts, check it yourself, close |
+| `/` | Landing page: the tape hero of one real demo order (a printed label with the order's date, pen nib on a fine pointer, pinned story, pen annotations), the giant total, demo receipts, check it yourself, close |
+| `/how-it-works` | The three printed objects (the tape, the receipt, the stamp), the landing's former pinned section |
+| `/demo` | The choice of trader: three slips (name, line, orders, fills, period, total bps from the API, the synthetic line) |
+| `/docs`, `/docs/mcp`, `/docs/package` | Docs hub; the MCP client runbook and the metrics package README, rendered from copies in `app/docs/content/` (drift-tested) |
 | `/signup`, `/login`, `/forgot-password`, `/reset-password`, `/verify-email` | Account flows |
-| `/onboarding` | Connect Binance, Bybit or OKX with a read-only key, then sync |
-| `/dashboard` | Sections by `?view=`: overview (the total, the grade stamp, the month tape, cost by term as receipt lines, cost vs expected ruler, outcomes tally, provenance line), orders (ledger and the thermal receipt), rules (exception queue as ledger rows with review states), rankings (noise-aware rankings tape), council (Quick/Deep Council, Ask), evidence (packs, record behind the grade, v1 details, broker-file check) |
-| `/analytics`, `/trades` | Deep dive, trade blotter, CSV export, trade notes |
+| `/app` | Home, "Ask FillScore": a demo account plays recorded answers of the Ask agent (labelled, no input); a signed-in account with measured orders asks live (2 budget units a question); without measured orders Ask is disabled. Key figures under it: the total and the small grade stamp |
+| `/app/overview` | The overview: the total, the grade stamp, where it went, the month tape, cost against expected and outcomes, the scope facts |
+| `/app/orders` | The orders ledger (columns by screen width) and the thermal receipt (a Radix dialog on a desktop, a Vaul drawer on a phone; prints on the first open of a session) |
+| `/app/rules`, `/app/rankings` | The exception queue with review states; the noise-aware rankings tape |
+| `/app/council` | Quick and Deep Council |
+| `/app/evidence` | Signed evidence packs, the record behind the grade, the rule-based (v1) details |
+| `/app/fills` | Tabs Ledger (the fills, filters, CSV export, notes) and Patterns (`?tab=patterns`: the deep dive) |
+| `/app/check` | The broker-file check; opens signed out and in demo mode, runs for a signed-in account |
+| `/app/settings` | Account, connected exchanges, download or delete your data, evidence packs, personal API keys (its own shell) |
+| `/app/connect` | Connect Binance, Bybit or OKX with a read-only key, then sync |
+| `/dashboard`, `/trades`, `/analytics`, `/check`, `/settings`, `/onboarding` | Permanent 308 redirects to the pages above, the rest of the query kept (`legacyRedirects.mjs`) |
 | `/verify` | Check a signed evidence pack in the browser (WebCrypto Ed25519, `@noble/ed25519` fallback); nothing is uploaded |
-| `/check` | The broker-file check for people whose trades are in a broker app |
 | `/methodology` | The method and the scoring version, generated from the code |
-| `/settings` | Account, connected exchanges, download or delete your data, evidence packs, personal API keys |
-| `/design-lab` | Development only (404 in production): the design v3 prototypes (Tape & Receipt, Grid & Highlighter) |
+| `/design-lab` | Development only (404 in production): the design v3 prototypes (Tape & Receipt, Grid & Highlighter); the IA v4 prototype was deleted when IA v4 was built |
 | `/share/[userId]` | Public score card for demo accounts, with Open Graph image |
 | `/terms`, `/privacy` | Legal pages |
 | `/api/preflight` | Server route that probes Binance, Bybit and OKX reachability from the frontend host |

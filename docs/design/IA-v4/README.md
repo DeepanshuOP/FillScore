@@ -3,7 +3,11 @@
 Proposal for Deepanshu's choice. Read in this order: `PROPOSAL.md` (structure, inventory, rules, budgets), `REFERENCES.md`
 (what was observed and measured), then the images below. Production screens are unchanged.
 
-**Prototype:** `/design-lab/ia4` (development only; 404 in production, `e2e/design-lab-guard.spec.ts`). Run it with
+**Status (2026-11-23): built in production.** The prototype described below was deleted when IA v4 was built (production replaced it, and
+its tests asserted a view model the order changed). The images stay as the record of the proposal; the built screens are in `built/`
+(see `built/README.md`). The recorded Ask answers now live at `frontend/app/lib/ask/ask-recorded.json`.
+
+**Prototype (deleted):** `/design-lab/ia4` (development only; 404 in production, `e2e/design-lab-guard.spec.ts`). It ran with
 `cd frontend && npm run build && DESIGN_LAB=1 PORT=3101 npm run start`, then open `/design-lab/ia4/site` and `/design-lab/ia4/app`.
 Every figure comes from committed fixtures through the production model functions (`frontend/app/design-lab/ia4/data.ts`,
 tested in `data.test.ts`); the Ask answers are the real Ask agent's recorded output on demo-moderate
