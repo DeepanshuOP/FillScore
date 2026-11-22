@@ -2,6 +2,23 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-22, second: verify Part A, F1-F3, Part B screens, QA (local commits)
+
+- **Next concrete action: Part B commit (B1 and B2 edits are in the working tree, not yet committed), then QA (qa3, one
+  reviewer, final checks, docs).**
+- **Step 1: done.** Full e2e on e5ddba8: 39 passed (1.6 min); nothing to fix, no commit.
+- **Step 2: done** (commits 667b7aa F1, 0024e9b F2, 1d24822 F3). Backend 1050 passed; frontend vitest 714 passed.
+  - F1: `/audit/orders-summary` `strip` has three parts that add up to the total (`execution` = total - fees - unfilled,
+    `unfilled`, `fees`; `below` is the improvement's share, drawn below the line). Served demo-moderate: fees 41.98 +
+    unfilled orders 10.63 + filled-order execution -0.53 = 52.08 (matches the order). The printed word "missed" is
+    banned by `adviceCopy.test.ts` (counterfactual list), so the part reads "Unfilled orders", caption "the market moved
+    away from them"; the server key stays `missed`.
+  - F2: "The 245 orders cost $52.08, including $10.63 the market moved away from 11 orders that never filled." (count =
+    the measured unfilled orders); receipt NOTES line; tape circle "$3.31, unfilled: market moved away".
+  - F3: hero gaps at 1440 x 900, nav to tape and tape to headline: 247 / 172 px before, 110 / 109 after; CLS 0 at 1440
+    and 390. The box stays 100svh (a shorter box let the next section peek in and shifted, CLS 0.22); the content is held
+    inside the first 700 px, so a band of paper remains under the CTA (about 280 px at 900 px tall).
+
 ## Orders of 2026-11-22, design v3.1 fixes, all screens, status (step 0, A1-A7, Part B, QA; local commits)
 
 v3.1 is approved and live. This order: STATUS.md, fix the review findings, bring every other screen to DESIGN.md
