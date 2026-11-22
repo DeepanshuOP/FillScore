@@ -227,3 +227,34 @@ describe('BinanceGovernor: ten concurrent account syncs never exceed the budget'
         expect(clock.t).toBe(T0 + 3 * 61_000);
     });
 });
+
+describe('BinanceGovernor: observe (a response with no reservation) and the last block received (fifth order, step 0c)', () => {
+    it('observe 418 Retry-After 300 while a weight-20 request is in flight: reserved stays 20, ban 300 000 ms, block remembered', async () => {
+        const { gov, clock } = setup();
+        await gov.acquire(20);                                        // in flight: reserved 20
+        gov.observe(1, { status: 418, headers: { 'retry-after': '300' } });
+        expect(gov.snapshot()).toMatchObject({ reserved: 20, used: 1, bannedForMs: 300_000, lastBlock: { status: 418, retryAfterS: 300 } });
+        clock.t += 100_000;                                           // 300 000 - 100 000 = 200 000 left
+        expect(gov.snapshot().bannedForMs).toBe(200_000);
+        await expect(gov.acquire(1)).rejects.toBeInstanceOf(BinanceBanError);
+    });
+
+    it('observe 429 without Retry-After: pause 5 000 ms (default), Retry-After remembered as absent (null)', () => {
+        const { gov } = setup();
+        gov.observe(1, { status: 429, headers: {} });
+        expect(gov.snapshot()).toMatchObject({ pausedForMs: 5_000, bannedForMs: 0, lastBlock: { status: 429, retryAfterS: null } });
+    });
+
+    it('record keeps the last block too: 429 Retry-After 7 -> lastBlock { 429, 7 }; a later 200 does not clear it', async () => {
+        const { gov } = setup();
+        await gov.acquire(20);
+        gov.record(20, { status: 429, headers: { 'Retry-After': '7' } });
+        await gov.acquire(20);                                        // waits out the 7 s pause on the fake clock
+        gov.record(20, ok());
+        expect(gov.snapshot()).toMatchObject({ pausedForMs: 0, lastBlock: { status: 429, retryAfterS: 7 } });
+    });
+
+    it('no block received: lastBlock is null', () => {
+        expect(setup().gov.snapshot().lastBlock).toBeNull();
+    });
+});

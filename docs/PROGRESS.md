@@ -4,8 +4,18 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, fifth: two fixes, the production 418, IA v4 research and proposal (local commits)
 
-- **Next concrete action: Step 0c** (the production 418: trace, probe source, smoke script). Waiting on Deepanshu's probe output and
-  Render log lines for the egress-IP finding.
+- **Next concrete action: Step 1a** (cal.com public site, read-only). Open from 0c: Deepanshu's probe output and Render log lines, to
+  confirm or reject the provisional egress-IP reading (LOG §AK 0c).
+- **Step 0c: code done, diagnosis provisional.** At b380669 the probe did not go through the governor, so its 418 was Binance's answer to
+  the probe's own request, not stored state. A fresh deploy sends nothing to Binance at boot; the scheduler's first tick (+60 s) sends
+  only for a stale real account with a key; the smoke probe sends 1 request of weight 1. Now: the api.binance.com probe consults the
+  governor (paused: nothing sent, `source: governor_paused`, `pauseRemainingS`, the earlier `retryAfterS`; otherwise `binance_sent` and
+  its 418/429 pauses every caller; the 60 s cache kept); key validation goes through the governor; `smoke_prod.sh` prints the source and
+  the pause (any non-reachable status still FAILs). Backend vitest 1124 passed (133 files), tsc 0.
+  **Options if the logs show nothing of ours before the ban (shared Render egress IP), for Deepanshu:** (1) wait it out: bans run 2 min
+  to 3 days, and the new probe no longer extends one; (2) public market data (klines, aggTrades, time) from data-api.binance.vision,
+  which Binance documents for market data only (whether its IP limits are separate is not documented); signed account calls must stay on
+  api.binance.com; (3) for users, the broker-file path (`/check`) needs no call from our IP. A paid static egress IP is not proposed (I8).
 - **Step 0b: done.** Receipt cost lines wrap with their leader; label column floor = longest word; bps breaks before its unit under
   400 px; the TOTAL dollars wrap under TOTAL when they do not fit. Check `e2e-shots/receipt-lines.ts` (worst-case figures, every line):
   before 1 cut at 390 and 4 at 320, after 0 and 0. Frontend vitest 752 passed (one run had the timing test `MarginNote` "opens on click

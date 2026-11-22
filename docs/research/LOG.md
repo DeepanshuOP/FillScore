@@ -590,3 +590,51 @@ wrapping flex row, so the dollars move under TOTAL only when they do not fit. Su
 After: 0 cut at 320 and 390, no horizontal overflow; 1440 receipt and the landing's printed receipts unchanged (captures checked;
 landing axe 0, overlaps 0).
 
+### 0c. The production 418 (smoke check of b380669)
+
+Reported: "backend reaches Binance: status rate_limited, HTTP 418"; every earlier smoke run returned 200. Deepanshu's probe output and
+Render log lines had not arrived when this was written; the trace below is from the code, and the conclusion waits for them.
+
+Docs (read 2026-11-22): limits are per IP, not per key; 418 = an IP auto-banned for continuing after 429s; Retry-After is sent with 418
+and 429; bans scale from 2 minutes to 3 days (https://developers.binance.com/docs/binance-spot-api-docs/rest-api/limits).
+`GET /api/v3/time` IP weight 1 (.../rest-api/general-endpoints); `GET /sapi/v1/account/apiRestrictions` IP weight 1
+(https://developers.binance.com/docs/wallet/account/api-key-permission). Whether data-api.binance.vision shares api.binance.com's IP limits
+is not stated (.../faqs/market_data_only, .../rest-api/limits).
+
+Every Binance caller of the deployed backend (b380669), host and governor:
+
+| Caller | Host | Through the governor at b380669 | When it sends |
+|---|---|---|---|
+| Reachability probe `GET /api/preflight/exchanges` (`ExchangeReachability.ts`) | api.binance.com `/api/v3/time` (w 1) and data-api.binance.vision `/api/v3/time` | **No** | only when the route is requested; 60 s cache |
+| Manual sync and scheduled re-sync: `BinanceHistorySync` (exchangeInfo 20, account 20, myTrades 20 ...), `BinanceClient` (myTrades 20), orders and commission (20 each) | api.binance.com | Yes | manual: on a user's request; scheduled: first tick 60 s after start, then every 10 min, at most 3 accounts whose last sync is older than 24 h |
+| Key validation `validateBinanceKey` (onboarding and every sync) | api.binance.com `/sapi/v1/account/apiRestrictions` (w 1) | **No** | on key submission and at the start of a sync |
+| Klines `MarketDataService` (w 2) | api.binance.com | Yes | during a sync's enrichment |
+| CCXT shadow (`scripts/ccxtShadow.ts`) | none at runtime (a script, not live) | n/a | never in production |
+| `orderReplay.ts` | none: it only builds source-link URLs | n/a | never |
+| ml-service (another Render service): `measure/data/klines.py`, `measure/data/rest.py` aggTrades | api.binance.com | no (another process; klines stop the job on 418/429) | after a real account's sync |
+
+A fresh deploy's first minutes, from the code: **zero** Binance requests at boot (`index.ts` starts only the scheduler). The scheduler's
+first tick at +60 s sends only if a real account with a stored key is stale; with no such account it sends nothing. The smoke run's
+probe sends **one** request of weight 1 to api.binance.com (and one to data-api.binance.vision), and at most one per 60 s after that.
+
+Can the 418 have come from the governor's stored state? **Not at b380669**: the probe did not consult the governor; its 418 is a
+response Binance sent to the probe's own request. Now (this step): the api.binance.com probe consults the governor first. During a
+pause it sends nothing (no weight spent, the ban is not extended) and reports `source: 'governor_paused'`, the remaining pause and the
+Retry-After of the earlier block. Otherwise it reports `source: 'binance_sent'` with Retry-After as received, and its 418/429 is recorded,
+so every caller pauses. Key validation, the other caller that bypassed the governor, now goes through it. data-api.binance.vision stays
+ungoverned (undocumented sharing). `smoke_prod.sh` prints the source and the remaining pause; any non-reachable status stays FAIL.
+
+Provisional reading, pending the logs: if Render shows no `[resync] started` and no `[SyncJob]` line before the smoke run, our backend's
+first request after the deploy was the probe's single weight-1 call, and a 418 to it means the IP was already banned. Limits are per IP
+and Render's free web services send from shared outbound addresses, so the ban was most likely earned by other traffic on the same
+egress IP, not by us. If the logs show a sync before it, the counts from those lines decide.
+
+Tests: `binanceGovernor.test.ts` (4 new: observe 418 Retry-After 300 with 20 in flight, reserved stays 20, 200 000 ms left after 100 s;
+429 without header: 5 000 ms, Retry-After null; lastBlock kept after a later 200; null when none), `ExchangeReachabilityGovernor.test.ts`
+(6: ban 120 s observed, 30 s later 90 s left and 0 requests to api.binance.com; 429 Retry-After 7, 2.5 s later ceil(4.5) = 5 s; fresh 418
+Retry-After 600 bans every caller 600 000 ms; 418 without header: null and 120 s; 200: weight 1 counted; data-api's 418 pauses nothing),
+`keyValidation.test.ts` (2 new: no request during a ban; weight 1 counted and a 418 Retry-After 300 bans every caller; each case now
+imports the module afresh so case 10's 418 does not ban the next cases' process-wide governor), `ExchangeReachability.test.ts` case 7
+(the Binance entry carries the three new keys; the others keep exactly six), `smokeBinance.test.ts` (5: the printed line for a fresh 418,
+a governor pause, an absent Retry-After, an older backend, and reachable).
+

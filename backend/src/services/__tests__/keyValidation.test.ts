@@ -1,12 +1,17 @@
-import { validateBinanceKey } from '../keyValidation';
+import { BinanceGovernor } from '../binanceGovernor';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 describe('validateBinanceKey', () => {
     let fetchMock: any;
+    // Validation shares the process-wide Binance governor (step 0c): case 10's 418 bans it for 120 s, which would refuse
+    // the cases after it. Each case imports the module afresh, so each starts with an unbanned process-wide governor.
+    let validateBinanceKey: typeof import('../keyValidation').validateBinanceKey;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         fetchMock = vi.fn();
         global.fetch = fetchMock as any;
+        vi.resetModules();
+        ({ validateBinanceKey } = await import('../keyValidation'));
     });
 
     afterEach(() => {
@@ -116,5 +121,29 @@ describe('validateBinanceKey', () => {
         expect(loggedText).not.toContain(dummyKey);
         expect(loggedText).not.toContain(dummySecret);
         consoleSpy.mockRestore();
+    });
+
+    // Fifth order of 2026-11-22, step 0c: key validation went to api.binance.com outside the governor. GET
+    // /sapi/v1/account/apiRestrictions is IP weight 1 (https://developers.binance.com/docs/wallet/account/api-key-permission).
+    it('during a governor ban nothing is sent and the key is not judged: network_error', async () => {
+        const gov = new BinanceGovernor();
+        gov.observe(1, { status: 418, headers: { 'retry-after': '120' } });
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        await expect(validateBinanceKey('k', 's', gov)).rejects.toThrow('network_error');
+        expect(fetchMock).not.toHaveBeenCalled();
+        errSpy.mockRestore();
+    });
+
+    it('a sent validation spends weight 1 in the governor, and its 418 bans every caller for Retry-After 300 s', async () => {
+        const gov = new BinanceGovernor();
+        fetchMock.mockResolvedValueOnce({ ...createSuccessResponse(defaultValidResponse), headers: new Headers() });
+        await validateBinanceKey('k', 's', gov);
+        expect(gov.snapshot().used).toBe(1);
+        fetchMock.mockResolvedValueOnce({ ...createErrorResponse(418), headers: new Headers({ 'Retry-After': '300' }) });
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        await expect(validateBinanceKey('k', 's', gov)).rejects.toThrow('network_error');
+        errSpy.mockRestore();
+        expect(gov.snapshot().bannedForMs).toBeGreaterThan(299_000);   // 300 000 minus the test's own run time
+        expect(gov.snapshot().lastBlock).toEqual({ status: 418, retryAfterS: 300 });
     });
 });

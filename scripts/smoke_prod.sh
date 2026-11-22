@@ -112,7 +112,18 @@ if b is None:
 elif b.get("status") == "reachable":
     print("PASS status reachable, HTTP %s" % b.get("httpStatus"))
 else:
-    print("FAIL status %s, HTTP %s" % (b.get("status"), b.get("httpStatus")))
+    # Where the status came from (backend step 0c of 2026-11-22): binance_sent = Binance answered this probe just now;
+    # governor_paused = nothing was sent, the backend still holds a pause from an earlier 418/429. Both FAIL: either way
+    # the backend cannot reach Binance at this moment.
+    src = b.get("source")
+    line = "FAIL status %s, HTTP %s" % (b.get("status"), b.get("httpStatus"))
+    if src in ("binance_sent", "governor_paused"):
+        ra = b.get("retryAfterS")
+        how = "from Binance just now (binance_sent)" if src == "binance_sent" else "received earlier, nothing sent (governor_paused)"
+        line += " %s, Retry-After %s, pause %s s left" % (how, "absent" if ra is None else "%s s as received" % ra, b.get("pauseRemainingS"))
+    else:
+        line += ", source not reported by this backend"
+    print(line)
 ' 2>/dev/null)
 verdict=${verdict:-"FAIL could not parse the response"}
 report "${verdict%% *}" "backend reaches Binance" "${verdict#* }"

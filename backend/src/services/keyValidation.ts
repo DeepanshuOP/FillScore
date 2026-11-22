@@ -1,5 +1,8 @@
 import crypto from 'crypto';
 import { guardedFetch } from './exchangeEgress';
+import { BinanceGovernor, binanceGovernor } from './binanceGovernor';
+
+const API_RESTRICTIONS_WEIGHT = 1;
 
 /** Thrown when a key can do more than read. `disable` names the exchange's permissions to switch off. */
 export class KeyNotReadOnlyError extends Error {
@@ -22,24 +25,24 @@ const BYBIT_CATEGORY_LABELS: Record<string, string> = {
 };
 const OKX_LABELS: Record<string, string> = { trade: 'Trade', withdraw: 'Withdraw' };
 
-export async function validateBinanceKey(apiKey: string, apiSecret: string): Promise<void> {
-    const timestamp = Date.now();
-    const queryString = `timestamp=${timestamp}`;
-    const signature = crypto
-        .createHmac('sha256', apiSecret)
-        .update(queryString)
-        .digest('hex');
-
+export async function validateBinanceKey(apiKey: string, apiSecret: string, governor: BinanceGovernor = binanceGovernor): Promise<void> {
     let response;
     try {
         // We use /sapi/v1/account/apiRestrictions instead of /api/v3/account.
         // /api/v3/account returns canTrade/canWithdraw based on the overall ACCOUNT status,
         // which means even a legitimate read-only key would show canTrade=true and get rejected.
         // apiRestrictions returns the actual key-level permissions.
-        response = await guardedFetch(`https://api.binance.com/sapi/v1/account/apiRestrictions?${queryString}&signature=${signature}`, {
-            headers: {
-                'X-MBX-APIKEY': apiKey,
-            },
+        // Through the shared governor (IP weight 1, https://developers.binance.com/docs/wallet/account/api-key-permission):
+        // nothing is sent during a 418 ban or a 429 pause, and this call's own 418/429 pauses every caller. Signed inside
+        // the governed call, after any wait, so the timestamp is fresh.
+        response = await governor.run(API_RESTRICTIONS_WEIGHT, () => {
+            const queryString = `timestamp=${Date.now()}`;
+            const signature = crypto.createHmac('sha256', apiSecret).update(queryString).digest('hex');
+            return guardedFetch(`https://api.binance.com/sapi/v1/account/apiRestrictions?${queryString}&signature=${signature}`, {
+                headers: {
+                    'X-MBX-APIKEY': apiKey,
+                },
+            });
         });
     } catch (error: any) {
         console.error(`[keyValidation] Binance request failed: ${error?.name || 'Error'}`);

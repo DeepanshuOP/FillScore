@@ -71,6 +71,8 @@ export class BinanceGovernor {
     private windowStart: number | null = null;
     private pausedUntil = 0;
     private bannedUntil = 0;
+    /** The last 418 or 429 received, with its Retry-After in seconds as received (null when the header was absent). */
+    private lastBlock: { status: 418 | 429; retryAfterS: number | null } | null = null;
     private tail: Promise<unknown> = Promise.resolve();
     private releaseWaiters: Array<() => void> = [];
 
@@ -97,6 +99,7 @@ export class BinanceGovernor {
             budget: this.budget,
             bannedForMs: Math.max(0, this.bannedUntil - t),
             pausedForMs: Math.max(0, this.pausedUntil - t),
+            lastBlock: this.lastBlock ? { ...this.lastBlock } : null,
         };
     }
 
@@ -158,9 +161,23 @@ export class BinanceGovernor {
     /** Settle a reservation from the response (any status). */
     record(weight: number, res: SettledResponse): void {
         this.reserved = Math.max(0, this.reserved - weight);
+        this.settle(weight, res);
+    }
+
+    /** Record a response to a request that held no reservation (the reachability probe): its weight, and a 418 or 429
+     *  pauses every caller exactly as `record` does. In-flight reservations are untouched. */
+    observe(weight: number, res: SettledResponse): void {
+        this.settle(weight, res);
+    }
+
+    private settle(weight: number, res: SettledResponse): void {
         const headerUsed = Number(header(res.headers, 'x-mbx-used-weight-1m'));
         this.used = Math.max(this.used + weight, Number.isFinite(headerUsed) && headerUsed > 0 ? headerUsed : 0);
         const t = this.now();
+        if (res.status === 418 || res.status === 429) {
+            const received = seconds(res.headers);
+            this.lastBlock = { status: res.status, retryAfterS: received === null ? null : received / 1000 };
+        }
         if (res.status === 418) {
             this.bannedUntil = Math.max(this.bannedUntil, t + (seconds(res.headers) ?? DEFAULT_BAN_MS));
         } else if (res.status === 429) {

@@ -122,8 +122,10 @@ describe('probeAllExchanges', () => {
         const results = await probeAllExchanges();
 
         const expectedKeys = ['checkedAt', 'detail', 'exchange', 'httpStatus', 'latencyMs', 'status'].sort();
+        // fifth order of 2026-11-22, step 0c: the api.binance.com entry also says where its status came from
+        const binanceKeys = [...expectedKeys, 'pauseRemainingS', 'retryAfterS', 'source'].sort();
         for (const result of results) {
-            expect(Object.keys(result).sort()).toEqual(expectedKeys);
+            expect(Object.keys(result).sort()).toEqual(result.exchange === 'binance' ? binanceKeys : expectedKeys);
         }
     });
 
