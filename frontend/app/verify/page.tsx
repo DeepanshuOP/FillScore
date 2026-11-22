@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { MarketingNav } from '../components/marketing/MarketingNav';
 import SiteFooter from '../components/SiteFooter';
 import { buttonClass } from '../ui/buttonClass';
+import { MarginNote } from '../ui/MarginNote';
 import { cn } from '../../lib/utils';
 import { verifyEvidencePack, type VerifyResult } from '../lib/evidenceVerify';
 
@@ -70,21 +71,15 @@ export default function VerifyPage() {
             <header className="max-w-[64ch]">
               <h1 className="display-lg text-ui-ink">Check an evidence pack</h1>
               <p className="mt-4 text-[17px] text-ui-ink">Checked in your browser. Nothing is uploaded.</p>
-              <p className="mt-6 text-[15px] leading-7 text-ui-graphite">
-                Choose the pack file you downloaded from FillScore (the JSON file with the pack and its files). This page recomputes the
-                signature check and the SHA-256 of every file in your browser. The file is read on this device. It is not sent to FillScore or to
-                anyone else. The same check runs offline with <code className={MONO}>scripts/verify_evidence_pack.mjs</code> in the repository.
+              <p className="mt-6 text-[16px] leading-7 text-ui-graphite">
+                Choose the pack file you downloaded. The signature and the SHA-256 of every file are recomputed here.
+                <MarginNote label="how the check runs">
+                  <p>The file is read on this device and is not sent to FillScore or to anyone else. The same check runs offline with <code className={MONO}>scripts/verify_evidence_pack.mjs</code> in the repository.</p>
+                </MarginNote>
               </p>
-              <p className="mt-4 text-[15px] leading-7 text-ui-graphite">
-                A pack carries its own public key, so a pack made by anyone is consistent with its own key. To learn where a pack came from,
-                compare its key with one you trust. FillScore&apos;s key fingerprint is <code className={MONO}>{PUBLISHED_FINGERPRINT}</code>. It is also
-                written in the repository (<code className={MONO}>docs/research/LOG.md</code>, section T) and in the response of{' '}
-                <code className={MONO}>/api/evidence/public-key</code>. A fingerprint read on this page comes from the same site as this page, so
-                check it against the repository as well.
-              </p>
-              <p className="mt-6 max-w-[64ch] text-sm leading-6 text-ui-graphite">
-                The pack lists measurements of past executions and the public market data they used. It supports your own documentation. It
-                makes no statement about rules or regulation. <Link href="/methodology" className="text-ui-ink">How the numbers are made</Link>.
+              <p className="mt-4 max-w-[64ch] text-[16px] leading-7 text-ui-graphite">
+                The pack lists measurements of past executions. It makes no statement about rules or regulation.{' '}
+                <Link href="/methodology" className="text-ui-ink">How the numbers are made</Link>.
               </p>
             </header>
 
@@ -95,9 +90,8 @@ export default function VerifyPage() {
                 onDrop={(e) => { e.preventDefault(); setOver(false); void onFile(e.dataTransfer.files?.[0]); }}
                 className={cn('fs-envelope flex flex-col items-start gap-2 transition-shadow', over && 'outline-2 outline-dashed outline-offset-4 outline-ui-ink')}
               >
-                <p className="font-mono text-[11px] tracking-[0.06em] text-ui-graphite uppercase">Drop a pack here</p>
                 <p className="text-[1.375rem] font-black tracking-[-0.02em] text-ui-ink">Drop a pack or choose a file</p>
-                <p className="text-sm text-ui-graphite">A .json pack file. {name ? <span className={MONO}>{name}</span> : 'The file stays on this device.'}</p>
+                {name ? <p className="text-sm text-ui-graphite"><span className={MONO}>{name}</span></p> : null}
                 {/* design v3 fixes A9: the real file input stays in the tab order (visually hidden), named by the label
                     drawn as a pill button; its focus ring shows on the button */}
                 <span className="relative mt-1 inline-flex">
@@ -109,8 +103,13 @@ export default function VerifyPage() {
               </div>
 
               <section aria-labelledby="trusted-t" className="panel pt-4">
-                <h2 id="trusted-t" className="text-[1.125rem] font-bold tracking-[-0.02em] text-ui-ink">Trusted key</h2>
-                <p className="mt-0.5 text-sm text-ui-graphite">Optional. A 16-character fingerprint, or a PEM public key.</p>
+                <div className="flex items-center gap-1.5">
+                  <h2 id="trusted-t" className="text-[1.125rem] font-bold tracking-[-0.02em] text-ui-ink">Trusted key</h2>
+                  <MarginNote label="the trusted key">
+                    <p>A pack carries its own public key, so a pack made by anyone is consistent with its own key. To learn where a pack came from, compare its key with one you trust: a 16-character fingerprint, or a PEM public key (optional).</p>
+                    <p className="mt-1.5">FillScore&apos;s key fingerprint is <code className={MONO}>{PUBLISHED_FINGERPRINT}</code>. It is also written in the repository (<code className={MONO}>docs/research/LOG.md</code>, section T) and in the response of <code className={MONO}>/api/evidence/public-key</code>. A fingerprint read on this page comes from the same site as this page, so check it against the repository as well.</p>
+                  </MarginNote>
+                </div>
                 <label htmlFor="trusted" className="sr-only">Trusted key</label>
                 <textarea id="trusted" rows={3} value={trusted} onChange={(e) => setTrusted(e.target.value)} spellCheck={false}
                   placeholder={PUBLISHED_FINGERPRINT}

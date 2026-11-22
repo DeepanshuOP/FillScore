@@ -60,7 +60,7 @@ export function EvidencePanel({ mode, auth }: { mode: 'demo' | 'real' | null; au
   const demo = mode === 'demo'
 
   return (
-    <Panel id="evidence" title="Evidence" description="Signed files that record how these orders were measured, for your own documentation.">
+    <Panel id="evidence" title="Evidence" note={{ label: 'what the packs are', text: 'Signed files that record how these orders were measured, for your own documentation.' }}>
       <div className="flex flex-col gap-5">
         {demo ? (
           <Banner kind="demo" title="Demo accounts have no evidence pack">

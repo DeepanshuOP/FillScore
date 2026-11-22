@@ -62,7 +62,8 @@ export default function RulesView({ query, readOnly, request }: Props) {
 
   return (
     <div data-testid="explain-panel" className="flex flex-col gap-5">
-      <Panel title={PANEL_COPY.queueTitle} description={q?.summary ?? (q ? "Orders whose stored measurements met one of the account's rules." : 'Loading the queue.')}
+      <Panel title={PANEL_COPY.queueTitle} description={q?.summary ?? (q ? 'No rule was checked.' : 'Loading the queue.')}
+        note={q?.threshold ? { label: 'the rules', text: <>Orders whose stored measurements met one of the account&rsquo;s rules. {q.threshold}</> } : { label: 'the rules', text: "Orders whose stored measurements met one of the account's rules." }}
         actions={
           <label className="inline-flex min-h-8 items-center gap-2 text-sm text-ui-ink">
             <input type="checkbox" checked={showDismissed} onChange={(e) => setShowDismissed(e.target.checked)} className="size-4 accent-[var(--ui-ink)]" /> {PANEL_COPY.showDismissed}
@@ -72,7 +73,6 @@ export default function RulesView({ query, readOnly, request }: Props) {
           <p className="font-mono text-[12px] text-ui-graphite">READING THE QUEUE</p>
         ) : q.kind === 'error' ? <Banner kind="refused" title={q.note ?? 'The exception queue could not be loaded.'} /> : (
           <div className="flex flex-col gap-4">
-            {q.threshold && <p className="text-sm text-ui-graphite">{q.threshold}</p>}
             {q.note && <p className="text-sm text-ui-graphite" data-testid="explain-queue-note">{q.note}</p>}
             {counts && (
               <dl className="flex flex-wrap gap-x-8 gap-y-1 font-mono text-[12px]" aria-label="Review states">

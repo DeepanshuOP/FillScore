@@ -57,7 +57,8 @@ export default function RankingsView({ query, request }: Props) {
     <div data-testid="explain-panel" className="flex flex-col gap-5">
       <div data-testid="explain-rankings">
         <Panel title={PANEL_COPY.rankingsTitle}
-          description={`Median execution cost per ${by === 'symbol' ? 'symbol' : 'hour of the day'}, with its 90% interval. Rank 1 paid the least. Groups with fewer than 20 orders are not ranked.`}
+          description={`Median execution cost per ${by === 'symbol' ? 'symbol' : 'hour of the day'}.`}
+          note={{ label: 'how the ranks are made', text: 'Each dot is the median with its 90% interval. Rank 1 paid the least. Groups with fewer than 20 orders are not ranked.' }}
           actions={<>
             <Segmented label="Group by" value={by} onChange={setBy} options={[['symbol', 'Symbol'], ['hour', 'Hour']]} />
             <Segmented label="Show as" value={as} onChange={setAs} options={[['chart', 'Chart'], ['table', 'Table']]} />
@@ -85,7 +86,7 @@ export default function RankingsView({ query, request }: Props) {
 
       {venueBody && (
         <div data-testid="explain-venue">
-          <Panel title={PANEL_COPY.venuesTitle} description="Venues are compared only inside the same symbol and size bucket.">
+          <Panel title={PANEL_COPY.venuesTitle} note={{ label: 'how venues are compared', text: 'Venues are compared only inside the same symbol and size bucket.' }}>
             <div className="flex flex-col gap-1.5">
               {venueBody.note && <p className="text-[13px] text-ui-graphite">{venueBody.note}</p>}
               {venueBody.buckets.map((b) => (

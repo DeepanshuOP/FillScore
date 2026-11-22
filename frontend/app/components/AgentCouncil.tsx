@@ -34,6 +34,8 @@ import {
 } from "../utils/councilFindings";
 import { formatUsd, formatSignedBps } from "../ui/format";
 import { Panel } from "../ui/Panel";
+import { MarginNote } from "../ui/MarginNote";
+import { plainFieldName } from "./fieldNames";
 import { Banner } from "../ui/Banner";
 import { Button } from "../ui/Button";
 import { Disclosure } from "../ui/Disclosure";
@@ -94,18 +96,29 @@ const UNIT_WORD: Record<string, string> = { bps: "bps", "%": "percent", USD: "US
  * trace keeps the recorded count; a note whose numerals could not all be traced says so instead of listing a part.
  */
 function CitedValues({ card }: { card: AgentCard }) {
+  const [open, setOpen] = useState(false);   // a printed fold (design v3.1): the lines stay in the document, closed by default
   const c = card.cited;
   if (!c) return card.valuesCited === null ? null : <p className="text-[12px]">{`${card.valuesCited} ${card.valuesCited === 1 ? "value" : "values"} cited`}</p>;
   if (!c.complete) return <ValueState state="not-computed" label="Cited values" reason="the values in this note could not be traced to the audit fields" />;
   if (c.lines.length === 0) return <p className="text-[12px]">No values cited.</p>;
   return (
     <div data-testid="council-cited">
-      <p className="text-[11px] leading-4 text-ui-graphite">CITED FROM THE AUDIT</p>
-      <dl className="mt-1 border-t border-ui-ink">
+      <div className="flex items-center gap-1.5 text-[11px] leading-4 text-ui-graphite">
+        <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="border-b border-dashed border-ui-edge font-mono">
+          <span aria-hidden="true">{open ? "−" : "+"}</span> CITED FROM THE AUDIT ({c.lines.length})
+        </button>
+        <MarginNote label="the audit fields">
+          <p>Each line was read from a stored audit field:</p>
+          <ul className="mt-1 space-y-0.5">
+            {c.lines.map((ln, i) => <li key={`${ln.value}:${i}`} className="[overflow-wrap:anywhere]">{plainFieldName(ln.fields[0])}: <code className="font-mono text-[12px]">{ln.fields.join(", ")}</code></li>)}
+          </ul>
+        </MarginNote>
+      </div>
+      <dl className="mt-1 border-t border-ui-ink" hidden={!open}>
         {c.lines.map((ln, i) => (
           <div key={`${ln.value}:${i}`} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-3 border-b border-dashed border-ui-rule py-1">
-            <dt className="min-w-0 text-[11.5px] text-ui-graphite [overflow-wrap:anywhere]" title={ln.fields.join(", ")}>
-              {ln.fields[0]}{ln.fields.length > 1 ? <span>{` and ${ln.fields.length - 1} more with this value`}</span> : null}
+            <dt className="min-w-0 text-[12px] text-ui-graphite [overflow-wrap:anywhere]">
+              {plainFieldName(ln.fields[0])}{ln.fields.length > 1 ? <span>{` and ${ln.fields.length - 1} more with this value`}</span> : null}
             </dt>
             <dd className="text-right whitespace-nowrap text-ui-ink">{ln.value}{UNIT_WORD[ln.unit] && !ln.value.includes(ln.unit) && !(ln.unit === "USD" && ln.value.includes("$")) ? <span className="text-ui-graphite"> {UNIT_WORD[ln.unit]}</span> : null}</dd>
           </div>

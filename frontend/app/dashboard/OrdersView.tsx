@@ -69,7 +69,8 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
   const [text, setText] = useState('');
   const [side, setSide] = useState<'all' | 'BUY' | 'SELL'>('all');
   const [sorting, setSorting] = useState<SortingState>([{ id: 'when', desc: true }]);
-  const [visibility, setVisibility] = useState<VisibilityState>({});
+  // v3.1 Part B: the default columns are the ones a reader scans (when, what, outcome, size, fees); the rest are one menu away
+  const [visibility, setVisibility] = useState<VisibilityState>({ orderId: false, fills: false, quantity: false, makerShare: false });
   const [shown, setShown] = useState(PAGE);
   const [selected, setSelected] = useState<{ orderId: string; symbol: string; row?: OrderRow; origin?: DOMRect | null } | null>(null);
   const [open, setOpen] = useState(false);
@@ -126,7 +127,8 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
   return (
     <div data-testid="orders-view" className="flex flex-col gap-5">
       <Panel title="Orders"
-        description={loaded ? `${countsLine(loaded.counts)} Select a row to print its receipt.` : 'Loading the orders.'}
+        description={loaded ? countsLine(loaded.counts) : 'Loading the orders.'}
+        note={{ label: 'how to read the ledger', text: 'Select a row to print its receipt. Sort by a column heading; the Columns menu adds the order id, fills, quantity and maker share.' }}
         actions={mode === 'demo' ? <span className="text-[12px] text-ui-graphite">Synthetic trader, real prices</span> : null}>
         {load === 'error' ? <Banner kind="refused" title="The orders could not be loaded" />
           : !loaded ? (
@@ -157,7 +159,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
 
                 {sortedRows.length === 0 ? <EmptyState title="No order matches the filter" /> : (
                   <div role="region" aria-label="Orders ledger" tabIndex={0} className="relative max-h-[640px] overflow-auto border-t border-ui-ink">
-                    <table className="w-full border-collapse font-mono text-[13px] text-ui-ink">
+                    <table className="w-full border-collapse text-[13px] text-ui-ink [&_td.num]:font-mono">
                       <thead>
                         {table.getHeaderGroups().map((hg) => (
                           <tr key={hg.id}>
@@ -185,7 +187,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
                             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(row.original); } }}
                             className={cn('border-t border-dashed border-ui-rule focus-visible:outline-2 focus-visible:-outline-offset-2', row.original.orderId && 'cursor-pointer hover:bg-ui-raised')}>
                             {row.getVisibleCells().map((cell) => (
-                              <td key={cell.id} className={cn('px-3 py-2 whitespace-nowrap', cell.column.columnDef.meta?.numeric ? NUM : 'text-left')}>
+                              <td key={cell.id} className={cn('px-3 py-2 whitespace-nowrap', cell.column.columnDef.meta?.numeric ? `num ${NUM}` : cell.column.id === 'when' ? 'num text-left font-mono' : 'text-left')}>
                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                               </td>
                             ))}

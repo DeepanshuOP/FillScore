@@ -59,7 +59,7 @@ export default function ScoreRecord({ status, body, onVerify }: Props) {
 
   return (
     <div data-testid="score-v2">
-      <Panel id="score-record" title="The record behind the grade" description="What the measured grade was made of, and how to check that it was not changed."
+      <Panel id="score-record" title="The record behind the grade" note={{ label: 'what the record holds', text: 'What the measured grade was made of, and how to check that it was not changed.' }}
         actions={<span data-testid="score-v2-badge" className="inline-flex h-6 items-center rounded-full bg-ui-overlay px-2.5 text-[12px] font-medium text-ui-ink ring-1 ring-inset ring-ui-rule">{badge.label}</span>}>
         <Disclosure summary="Components, version and integrity hash">
           <div className="flex flex-col gap-4">
