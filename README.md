@@ -48,7 +48,19 @@ How to read it, plainly:
 - The 36 recordings are three synthetic demo traders, six runs each, on two prompt versions. This is a small, descriptive check, **not** evidence that one arm is better. A claim rule judges the words of a run; a run can be flagged for one sentence.
 - `evidence_cited` fails on every run of both arms: the recordings were made before the renderer fix that lets a run state the required value (`docs/research/LOG.md` §Z, §AB). It is reported, not gated.
 - Claim rules 1.2.0 and 1.3.0 are measured on every recording, whatever rules it was made under. The current rules are 1.4.0 (2026-11-22); no recording was made under them.
-- **The offline runner currently exits 1 with 3 violations.** The three committed demo Council runs were recorded again on 2026-11-22 under prompt 1.8.0 and metrics 1.4.0, and the golden set that owns those versions (`v4`, packets only) waits for the owner's permission to be created (`docs/PROGRESS.md`, "Waiting for Deepanshu").
+- The offline runner exits 0 (0 violations) since golden set `v4` (packets only) owns the three re-recorded demo runs.
+- **Placeholder compliance** (the model writes `{{placeholders}}`, code inserts the numbers). Command: `python ml-service/evals/placeholder_compliance.py` (offline; the 36 recordings and the 3 demo runs). Unit: one agent output. "Written" = the model's text was used as written; "regenerated" = a number outside a placeholder made the system ask again once; "code fallback" = the text was removed and code built a sentence. Numeral redactions and claim-rule redactions count sentences removed. Models are the router's record for that role; recordings span prompt versions 1.2.0 to 1.8.0 and are descriptive, not a model ranking.
+
+| Arm | Role | Model (as recorded) | Runs | Agent outputs | Written by the model | Regenerated | Code fallback | Numeral redactions | Claim-rule redactions |
+|---|---|---|---|---|---|---|---|---|---|
+| council | specialist | groq/qwen/qwen3.8-27b | 19 | 76 | 53 (69.7%) | 8 (10.5%) | 15 (19.7%) | 7 | 14 |
+| council | specialist | groq/qwen/qwen3.8-27b, groq/openai/gpt-oss-20b | 2 | 8 | 3 (37.5%) | 3 (37.5%) | 2 (25.0%) | 1 | 2 |
+| council | debate | groq/openai/gpt-oss-20b | 21 | 42 | 26 (61.9%) | 15 (35.7%) | 1 (2.4%) | 8 | 158 |
+| council | synthesis | groq/qwen/qwen3.8-27b | 20 | 20 | 2 (10.0%) | 15 (75.0%) | 3 (15.0%) | 18 | 7 |
+| council | synthesis | groq/qwen/qwen3.8-27b, groq/openai/gpt-oss-120b | 1 | 1 | 0 (0.0%) | 1 (100.0%) | 0 (0.0%) | 0 | 0 |
+| single | synthesis | groq/qwen/qwen3.8-27b | 18 | 18 | 3 (16.7%) | 15 (83.3%) | 0 (0.0%) | 8 | 0 |
+
+  Read: synthesis text reached the user as the model wrote it in 2 of 21 council runs and 3 of 18 single-call runs; specialists did so in about 70% of outputs. The debate roles rarely fall back to code text (1 of 42) but carry most claim-rule redactions (158 sentences).
 - Source files: `ml-service/evals/ablation_results_v3.md`, `ml-service/evals/ablation_notes_v3.md`.
 
 Tests, run on 2026-11-22: ml-service pytest 1810 passed and 5 failed (the 5 are the runner and golden-set checks named above); backend vitest 1053 passed (126 files), tsc clean; frontend vitest 727 passed (76 files), tsc clean, lint 0 errors; end-to-end 39 passed; MCP server 26 passed. The route table in `ARCHITECTURE.md` has 75 rows and a test keeps it equal to the code.

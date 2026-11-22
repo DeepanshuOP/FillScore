@@ -2,6 +2,16 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-22, fourth: honest AI layer, two hardened backend paths, prints on the receipt (local commits)
+
+- **Next concrete action: Step 2 (benchmark label, deterministic).**
+- **Step 1: done.** `ml-service/evals/placeholder_compliance.py` (offline; test `tests/test_placeholder_compliance.py`, hand-computed on
+  3 small runs) and the table in README "Evaluation". Unit = one agent output (regeneration and fallback are recorded per agent, not per
+  sentence). Synthesis text was used as the model wrote it in 2 of 21 council runs and 3 of 18 single-call runs. ADR-0018
+  (proposal, not built) is at `docs/research/decisions/ADR-0018-structured-claims.md`, beside ADR-0000 to 0017 (the order named
+  `docs/adr/`, which does not exist; the ADRs live in `docs/research/decisions/`). The README line "runner exits 1 with 3 violations"
+  was stale (v4 exists) and now says exit 0.
+
 ## Orders of 2026-11-22, third: Council scope, four copy fixes, launch kit (local commits)
 
 - **Next concrete action: Council scope fixed and launch kit ready for Deepanshu's review (local commits, not pushed).** Golden set v4
