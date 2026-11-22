@@ -48,7 +48,7 @@ export function DemoCards() {
             <li key={d.id} className={`relative ${d.tilt}`}>
               {/* a strip of tape pins the receipt to the page */}
               <span aria-hidden="true" className="absolute -top-3 left-1/2 z-10 h-6 w-24 -translate-x-1/2 rotate-[-3deg] bg-[color-mix(in_srgb,var(--ui-edge)_28%,transparent)]" />
-              <Link href={`/dashboard?userId=${d.id}`} className="group block no-underline">
+              <Link href={`/app?userId=${d.id}`} className="group block no-underline">
                 <div className="fs-receipt shadow-ui transition-transform duration-200 ease-out group-hover:-translate-y-1">
                   <p className="fs-r-title !text-[1.375rem]">{d.name}</p>
                   <p className="c g mt-1">SYNTHETIC TRADER, REAL PRICES</p>

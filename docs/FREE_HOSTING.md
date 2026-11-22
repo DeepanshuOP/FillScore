@@ -100,7 +100,7 @@ Because the API is reached through the Vercel domain, the callback URLs use **th
 ### Step E. Check it works
 
 1. Open the site, sign up with email, log in, refresh the page (you should stay logged in).
-2. Open the demo dashboard (`/dashboard?userId=demo-disciplined`) and press **Run analysis**. If the Council was asleep you will see the "waking up" note, then results.
+2. Open the demo's Council (`/app/council?userId=demo-disciplined`) and press **Run analysis**. If the Council was asleep you will see the "waking up" note, then results.
 3. Sign in with Google and GitHub once each.
 
 ## 4. Optional: keep the backend awake for demos

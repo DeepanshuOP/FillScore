@@ -6,7 +6,7 @@ import { BookOpen, FileCheck2, Hash, LayoutGrid, ListOrdered, Settings, ShieldCh
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from '@/components/ui/command'
 import { DEMO_ACCOUNTS, looksLikeOrderId, VIEW_LABEL, VIEWS, viewHref, type View } from './nav'
 
-const VIEW_ICON: Record<View, typeof LayoutGrid> = { overview: LayoutGrid, orders: ListOrdered, rules: ShieldCheck, rankings: Trophy, council: Sparkles, evidence: FileCheck2 }
+const VIEW_ICON: Record<View, typeof LayoutGrid> = { home: LayoutGrid, overview: LayoutGrid, orders: ListOrdered, rules: ShieldCheck, rankings: Trophy, council: Sparkles, evidence: FileCheck2 }
 
 /** ⌘K / Ctrl K: jump to a demo account, a section, a page, or an order id. */
 export function CommandMenu({ open, onOpenChange, userId, signedIn }: { open: boolean; onOpenChange: (o: boolean) => void; userId: string | null; signedIn: boolean }) {
@@ -49,15 +49,15 @@ export function CommandMenu({ open, onOpenChange, userId, signedIn }: { open: bo
               <User aria-hidden="true" /> {a.label}<CommandShortcut>synthetic</CommandShortcut>
             </CommandItem>
           ))}
-          {signedIn ? <CommandItem value="account your account" onSelect={() => go('/dashboard')}><User aria-hidden="true" /> Your account</CommandItem> : null}
+          {signedIn ? <CommandItem value="account your account" onSelect={() => go('/app')}><User aria-hidden="true" /> Your account</CommandItem> : null}
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading="Pages">
-          <CommandItem value="page trades" onSelect={() => go(userId ? `/trades?userId=${userId}${signedIn ? '&sample=1' : ''}` : '/trades')}><Table2 aria-hidden="true" /> Trades</CommandItem>
-          <CommandItem value="page analytics" onSelect={() => go(userId ? `/analytics?userId=${userId}${signedIn ? '&sample=1' : ''}` : '/analytics')}><Activity aria-hidden="true" /> Analytics</CommandItem>
+          <CommandItem value="page trades" onSelect={() => go(viewHref('fills', userId, signedIn))}><Table2 aria-hidden="true" /> Trades</CommandItem>
+          <CommandItem value="page analytics" onSelect={() => go(viewHref('fills', userId, signedIn, { tab: 'patterns' }))}><Activity aria-hidden="true" /> Analytics</CommandItem>
           <CommandItem value="page methodology" onSelect={() => go('/methodology')}><BookOpen aria-hidden="true" /> Methodology</CommandItem>
           <CommandItem value="page verify an evidence pack" onSelect={() => go('/verify')}><FileCheck2 aria-hidden="true" /> Verify an evidence pack</CommandItem>
-          {signedIn ? <CommandItem value="page settings" onSelect={() => go('/settings')}><Settings aria-hidden="true" /> Settings</CommandItem> : null}
+          {signedIn ? <CommandItem value="page settings" onSelect={() => go('/app/settings')}><Settings aria-hidden="true" /> Settings</CommandItem> : null}
         </CommandGroup>
       </CommandList>
     </CommandDialog>

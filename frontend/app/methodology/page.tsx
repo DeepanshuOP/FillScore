@@ -135,7 +135,7 @@ export default function MethodologyPage() {
               </p>
 
               <p className="mt-12 border-t border-ui-rule pt-6 text-sm">
-                <Link href="/dashboard" className="text-ui-ink">Back to the dashboard</Link>
+                <Link href="/app" className="text-ui-ink">Back to the app</Link>
               </p>
             </article>
           </div>

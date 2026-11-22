@@ -30,7 +30,7 @@ export function MarketingNav() {
       <div className="flex h-16 items-center gap-6 px-[var(--ui-gutter)] max-sm:h-14 max-sm:gap-3">
         <Link href="/" className="no-underline" aria-label="FillScore home"><Logo /></Link>
         <nav aria-label="Site" className="hidden items-center gap-1 md:flex">
-          {[['/methodology', 'Methodology'], ['/verify', 'Verify a pack'], ['/check', 'Check a broker file']].map(([href, label]) => (
+          {[['/methodology', 'Methodology'], ['/verify', 'Verify a pack'], ['/app/check', 'Check a broker file']].map(([href, label]) => (
             <Link key={href} href={href} className="px-3 py-1.5 text-[15px] font-medium text-ui-graphite no-underline transition-colors hover:text-ui-ink">{label}</Link>
           ))}
         </nav>
@@ -40,7 +40,7 @@ export function MarketingNav() {
           </button>
           <ThemeToggle className="max-sm:hidden" />
           {accessToken ? (
-            <Link href="/dashboard" className={buttonClass('primary', 'sm', 'no-underline')}>Your audit</Link>
+            <Link href="/app" className={buttonClass('primary', 'sm', 'no-underline')}>Your audit</Link>
           ) : (
             <>
               <Link href="/login" className="hidden rounded-md px-3 py-1.5 text-[13.5px] text-ui-graphite no-underline hover:text-ui-ink sm:inline-block">Log in</Link>

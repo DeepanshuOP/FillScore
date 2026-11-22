@@ -10,7 +10,7 @@ import { REBUILT_FILES } from './rebuiltFiles';
 // ordersView.ts is left out of this scan only: its generic type parameters (`Array<[keyof Totals, string]>`) look like JSX text
 // to the scanner and its object keys name the stored field "opportunity". Its visible strings are rendered by OrdersPanel.tsx
 // (scanned) and read by the e2e advice scans of the rendered page.
-const FILES = [...REBUILT_FILES.filter((f) => f !== 'app/dashboard/ordersView.ts'), 'app/trades/page.tsx', 'app/share/[userId]/page.tsx', 'app/utils/makerAdvice.ts', 'app/dashboard/scoreV2.ts', 'app/methodology/page.tsx'];
+const FILES = [...REBUILT_FILES.filter((f) => f !== 'app/dashboard/ordersView.ts'), 'app/trades/TradesLedger.tsx', 'app/share/[userId]/page.tsx', 'app/utils/makerAdvice.ts', 'app/dashboard/scoreV2.ts', 'app/methodology/page.tsx'];
 
 function visibleText(src: string): string[] {
   const out: string[] = [];

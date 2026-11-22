@@ -5,6 +5,8 @@
  * and removes the cross-origin CORS hop for API calls. The Council stream
  * (NEXT_PUBLIC_ML_URL) still goes straight to the ml-service.
  */
+import { legacyRedirects } from './legacyRedirects.mjs'
+
 const backendProxyUrl = process.env.BACKEND_PROXY_URL?.trim().replace(/\/+$/, '')
 
 /** @type {import('next').NextConfig} */
@@ -23,6 +25,10 @@ const nextConfig = {
         { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
       ],
     }]
+  },
+  // IA v4: every address that moved answers 308 with the rest of the query kept (legacyRedirects.mjs, tested)
+  async redirects() {
+    return legacyRedirects
   },
   async rewrites() {
     if (!backendProxyUrl) return []

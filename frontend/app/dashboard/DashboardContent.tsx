@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { BookOpen, Download, Link2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AppShell } from '../components/shell/AppShell';
-import { parseView, viewHref, type View } from '../components/shell/nav';
+import { viewHref, type View } from '../components/shell/nav';
 import dynamic from 'next/dynamic';
 import ConnectPrompt from '../components/ConnectPrompt';
 import { useAuth } from '../context/AuthContext';
@@ -101,7 +101,7 @@ function MethodSheet({ isDemo }: { isDemo: boolean }) {
   );
 }
 
-function DashboardContent() {
+function DashboardContent({ view }: { view: View }) {
   const [audit, setAudit] = useState<AuditSummary | null>(null);
   const [ordersSummary, setOrdersSummary] = useState<unknown>(null);
   const [scoreV2, setScoreV2] = useState<{ status: number | null; body: unknown }>({ status: null, body: null });
@@ -118,7 +118,6 @@ function DashboardContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const toast = useToast();
-  const view: View = parseView(searchParams.get('view'));
 
   // One request helper for the explain views: a signed-in account sends its token, a demo account is read-only and sends none.
   const explainRequest = useCallback(async (path: string, init?: { method?: string; body?: unknown }) => {
@@ -165,7 +164,7 @@ function DashboardContent() {
     const identity = resolveIdentityState(urlUserId, storageUserId, accessToken, sample);
 
     if (identity.mode === 'redirect') {
-      router.replace('/');
+      router.replace('/login'); // IA v4: a signed-out visitor to /app/* without a demo account goes to log in
       return;
     }
     if (identity.shouldClearStorage) localStorage.removeItem('userId');
@@ -351,10 +350,11 @@ function DashboardContent() {
   );
 }
 
-export default function Dashboard() {
+/** One section of the audit; the route files under app/app/ pick the section. */
+export function DashboardSection({ view }: { view: View }) {
   return (
     <Suspense fallback={<div className="min-h-dvh bg-ui-surface" />}>
-      <DashboardContent />
+      <DashboardContent view={view} />
     </Suspense>
   );
 }

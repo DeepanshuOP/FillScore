@@ -6,7 +6,7 @@ part of the video, not an apology.
 
 ## Before recording (checklist)
 
-- The live site shows the three rebuilt demos (`demo-moderate` is the one used below) and v2.3.0. Open `/dashboard?userId=demo-moderate` once so the API is awake (the free instance sleeps).
+- The live site shows the three rebuilt demos (`demo-moderate` is the one used below) and v2.3.0. Open `/app?userId=demo-moderate` once so the API is awake (the free instance sleeps).
 - `GET /api/evidence/public-key` answers with fingerprint `ba11aa53c4961be4`.
 - Save one signed pack from the demo account first (the address is in the 1:00 row), to use on the verify page.
 - Browser: a clean profile, zoom 110%, no bookmarks bar, no personal tabs. Light system theme: design v3.1 is ink on paper, with one fill-orange pen colour (`DESIGN.md`). The demo names on the landing page are "Limit orders, daytime" (`demo-disciplined`), "Mixed orders, mixed hours" (`demo-moderate`) and "Market orders, night" (`demo-aggressive`).
@@ -16,7 +16,7 @@ part of the video, not an apology.
 
 | Time | On screen | Say (plain, past tense, no advice) |
 |---|---|---|
-| 0:00 | The dashboard header for `demo-moderate`: grade and the dollar breakdown | "This is a sample account. Its trading behaviour is synthetic; every fill price comes from real public Binance prints." |
+| 0:00 | The Overview page header for `demo-moderate`: grade and the dollar breakdown | "This is a sample account. Its trading behaviour is synthetic; every fill price comes from real public Binance prints." |
 | 0:12 | The v2 panel: execution cost, fees, unfilled orders, in dollars and basis points | "FillScore measured what each order cost against the market at the moment it arrived: the spread paid, how far the price moved with it, and what unfilled orders cost." |
 | 0:30 | The cost-vs-expected line, then the replay of one order with its sources | "Market orders cost this much against the modelled cost of an order that size in that hour, with an interval, or the page says insufficient data. Each figure in the replay names the stored field and the public data file it came from." |
 | 0:50 | The integrity hash line of the v2 panel | "The score has a version and a hash that FillScore can recompute from the stored inputs." (The "verified" badge works for real accounts only: a demo account is not verifiable, so do not click it on a demo.) |

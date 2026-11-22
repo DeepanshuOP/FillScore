@@ -51,7 +51,7 @@ billingRouter.post('/checkout', flagGate, requireAuth, async (req: Request, res:
         const user = await User.findById(req.userId!, { _id: 1 }).lean();
         if (!user) return res.status(404).json({ error: 'not_found' });
         const base = (process.env.FRONTEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
-        const r = buildCheckoutRequest({ secretKey, priceId, userId: req.userId!, successUrl: `${base}/settings?billing=success`, cancelUrl: `${base}/settings?billing=cancel` });
+        const r = buildCheckoutRequest({ secretKey, priceId, userId: req.userId!, successUrl: `${base}/app/settings?billing=success`, cancelUrl: `${base}/app/settings?billing=cancel` });
         const out = await fetch(r.url, { ...r.init, signal: AbortSignal.timeout(10_000) });
         const body = await out.json().catch(() => null) as { url?: unknown } | null;
         if (!out.ok || typeof body?.url !== 'string' || !body.url.startsWith('https://checkout.stripe.com/')) return res.status(502).json({ error: 'billing_provider_error' });

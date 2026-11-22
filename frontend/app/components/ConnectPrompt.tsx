@@ -12,9 +12,9 @@ export default function ConnectPrompt() {
         title="No trades yet"
         action={
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-            <Link href="/onboarding" className={buttonClass('primary')}>Sync again</Link>
-            <Link href="/check" className="text-sm text-ui-action underline-offset-4 hover:underline">Trades in a broker app? Check a trade-history file</Link>
-            <Link href="/dashboard?userId=demo-disciplined&sample=1" className="text-sm text-ui-action underline-offset-4 hover:underline">View the sample dashboard</Link>
+            <Link href="/app/connect" className={buttonClass('primary')}>Sync again</Link>
+            <Link href="/app/check" className="text-sm text-ui-action underline-offset-4 hover:underline">Trades in a broker app? Check a trade-history file</Link>
+            <Link href="/app?userId=demo-disciplined&sample=1" className="text-sm text-ui-action underline-offset-4 hover:underline">View the sample audit</Link>
           </div>
         }
       >

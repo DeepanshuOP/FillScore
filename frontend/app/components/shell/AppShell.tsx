@@ -15,8 +15,10 @@ import { navHref } from '../../utils/navLinks'
 import { CommandMenu } from './CommandMenu'
 import { Logo } from './Logo'
 import { ThemeToggle } from './ThemeToggle'
-import { accountLabel, DEMO_ACCOUNTS, VIEW_LABEL, VIEWS, viewHref, type View } from './nav'
+import { accountLabel, DEMO_ACCOUNTS, VIEW_LABEL, viewHref, type View } from './nav'
 
+// Interim (IA v4 step 1): the old top bar keeps its six tabs until the new shell replaces it (step 2).
+const VIEWS = ['overview', 'orders', 'rules', 'rankings', 'council', 'evidence'] as const
 export type ShellPage = View | 'trades' | 'analytics' | 'settings' | 'methodology'
 
 interface Props {
@@ -38,10 +40,10 @@ const isView = (p: ShellPage): p is View => (VIEWS as readonly string[]).include
 function morePages(userId: string | null, signedIn: boolean) {
   const pageHref = (p: string) => navHref(p, userId ?? undefined, signedIn)
   return [
-    { id: 'trades', label: 'Trades', href: pageHref('/trades') },
-    { id: 'analytics', label: 'Analytics', href: pageHref('/analytics') },
+    { id: 'trades', label: 'Trades', href: pageHref('/app/fills') },
+    { id: 'analytics', label: 'Analytics', href: `${pageHref('/app/fills')}${pageHref('/app/fills').includes('?') ? '&' : '?'}tab=patterns` },
     { id: 'methodology', label: 'Methodology', href: '/methodology' },
-    ...(signedIn ? [{ id: 'settings', label: 'Settings', href: '/settings' }] : []),
+    ...(signedIn ? [{ id: 'settings', label: 'Settings', href: '/app/settings' }] : []),
   ] as const
 }
 
@@ -71,7 +73,7 @@ function AccountSwitcher({ userId, signedIn, className }: { userId: string | nul
         ))}
         <DropdownMenuSeparator />
         {signedIn
-          ? <DropdownMenuItem asChild><Link href="/dashboard" className="no-underline">Your account</Link></DropdownMenuItem>
+          ? <DropdownMenuItem asChild><Link href="/app" className="no-underline">Your account</Link></DropdownMenuItem>
           : <DropdownMenuItem asChild><Link href="/signup" className="no-underline">Connect your own account</Link></DropdownMenuItem>}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -87,7 +89,7 @@ function AccountEnd({ signedIn, inDrawer = false }: { signedIn: boolean; inDrawe
   }
   return (
     <span className={cn('flex min-w-0 items-center gap-3', !inDrawer && 'max-lg:hidden')}>
-      <Link href="/settings" className="min-w-0 truncate font-mono text-[12px] text-ui-graphite no-underline hover:text-ui-ink" title="Settings">{user?.email ?? 'Your account'}</Link>
+      <Link href="/app/settings" className="min-w-0 truncate font-mono text-[12px] text-ui-graphite no-underline hover:text-ui-ink" title="Settings">{user?.email ?? 'Your account'}</Link>
       <button type="button" onClick={() => { void logout(); router.push('/') }} className="whitespace-nowrap text-sm font-medium text-ui-ink underline decoration-ui-edge underline-offset-[0.3em]">Log out</button>
     </span>
   )

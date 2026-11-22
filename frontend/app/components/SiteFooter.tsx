@@ -16,8 +16,8 @@ export default function SiteFooter() {
         <nav aria-label="Footer" className="grid grid-cols-2 gap-x-12 gap-y-2 text-[13px] sm:grid-cols-3">
           <Link href="/methodology" className="text-ui-graphite no-underline hover:text-ui-ink">Methodology</Link>
           <Link href="/verify" className="text-ui-graphite no-underline hover:text-ui-ink">Check a pack</Link>
-          <Link href="/check" className="text-ui-graphite no-underline hover:text-ui-ink">Check a broker file</Link>
-          <Link href="/dashboard?userId=demo-moderate" className="text-ui-graphite no-underline hover:text-ui-ink">Demo audit</Link>
+          <Link href="/app/check" className="text-ui-graphite no-underline hover:text-ui-ink">Check a broker file</Link>
+          <Link href="/app?userId=demo-moderate" className="text-ui-graphite no-underline hover:text-ui-ink">Demo audit</Link>
           <Link href="/terms" className="text-ui-graphite no-underline hover:text-ui-ink">Terms</Link>
           <Link href="/privacy" className="text-ui-graphite no-underline hover:text-ui-ink">Privacy</Link>
         </nav>

@@ -122,7 +122,7 @@ against data you care about; see [CONTRIBUTING.md](CONTRIBUTING.md)). The checks
 ```text
 FillScore/
 ├── backend/                  # Express API: accounts, keys, sync, audit routes, evidence packs, API keys
-├── frontend/                 # Next.js app: dashboard, /verify, /check, /methodology, settings
+├── frontend/                 # Next.js: marketing site (/, /demo, /how-it-works, /docs, /verify, /methodology) and the app under /app
 ├── ml-service/               # FastAPI: measurement (measure/), scoring_v2/, expected_cost/, agents/ (Council, Ask),
 │                             #   csv_import/, dp_baselines/, whale/ (older study)
 ├── mcp-server/               # read-only MCP server and the scorecard MCP App

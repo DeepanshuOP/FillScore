@@ -7,7 +7,7 @@ import { join } from 'path';
 // labels, advice or unauthenticated-era copy is back. It used to assert that the descriptive labels EXECUTION PATTERNS,
 // INSIGHTS, BEST-SCORING WINDOW and LOWEST-SCORING WINDOW were present.
 // design v2: Headline, CostPanels and OrdersPanel were replaced by Overview and the section views; the scan follows them.
-const files = ['../dashboard/page.tsx', '../dashboard/Overview.tsx', '../dashboard/OrdersView.tsx', '../dashboard/RulesView.tsx', '../dashboard/RankingsView.tsx', '../dashboard/OrderReplay.tsx'];
+const files = ['../dashboard/DashboardContent.tsx', '../dashboard/Overview.tsx', '../dashboard/OrdersView.tsx', '../dashboard/RulesView.tsx', '../dashboard/RankingsView.tsx', '../dashboard/OrderReplay.tsx'];
 const src = files.map((f) => readFileSync(join(__dirname, f), 'utf8')).join('\n');
 
 describe('dashboard labels', () => {

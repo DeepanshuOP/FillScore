@@ -45,7 +45,7 @@ describe('copy honesty (audit §2.10)', () => {
         const root = path.resolve(__dirname, '../../..');
         const read = (p: string) => fs.readFileSync(path.join(root, p), 'utf8');
         const utils = fs.readdirSync(path.join(root, 'frontend/app/utils')).filter(f => f.endsWith('.ts')).map(f => `frontend/app/utils/${f}`);
-        for (const f of ['frontend/app/layout.tsx', 'frontend/app/page.tsx', 'frontend/app/dashboard/page.tsx', 'README.md', ...utils]) {
+        for (const f of ['frontend/app/layout.tsx', 'frontend/app/page.tsx', 'frontend/app/dashboard/DashboardContent.tsx', 'README.md', ...utils]) {
             const t = read(f).toLowerCase();
             expect(t, f).not.toContain('institutional');
             expect(t, f).not.toContain('venue alpha');
@@ -53,7 +53,7 @@ describe('copy honesty (audit §2.10)', () => {
         }
         // 2026-11-20 (dashboard rebuilt, M8 part 1): the venue-slippage card left the dashboard, so the assertion is conditional:
         // if a card of that name ever returns, it must carry the "(unmatched)" wording of the original honesty fix.
-        const dashboard = read('frontend/app/dashboard/page.tsx');
+        const dashboard = read('frontend/app/dashboard/DashboardContent.tsx');
         if (dashboard.includes('Average slippage by venue')) expect(dashboard).toContain('Average slippage by venue (unmatched)');
         // the component label is now sentence case (it was "LIQUIDITY PROVISION"); it is still not "Exchange spread cost"
         expect(read('frontend/app/dashboard/componentCards.ts')).toContain("'Liquidity provision'");

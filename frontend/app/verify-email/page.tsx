@@ -34,7 +34,7 @@ function VerifyEmailContent() {
   return (
     <AuthLayout title={title} intro={intro}>
       {status === 'success' && (
-        <Link href="/dashboard" className="text-ui-ink">Go to dashboard</Link>
+        <Link href="/app" className="text-ui-ink">Open the app</Link>
       )}
 
       {status === 'invalid' && (

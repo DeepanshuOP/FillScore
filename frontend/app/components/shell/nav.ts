@@ -1,11 +1,26 @@
-/** The app's sections and accounts (design v2 shell). Pure: tested in nav.test.ts. */
+/** The app's sections and accounts (IA v4: marketing site and app, 2026-11-23). Pure: tested in nav.test.ts. */
 import { navHref } from '../../utils/navLinks'
 
-export const VIEWS = ['overview', 'orders', 'rules', 'rankings', 'council', 'evidence'] as const
-export type View = (typeof VIEWS)[number]
-export const VIEW_LABEL: Record<View, string> = {
-  overview: 'Overview', orders: 'Orders', rules: 'Rules', rankings: 'Rankings', council: 'Council', evidence: 'Evidence',
-}
+/** The nine nouns of the sidebar, in order, with the one-line gloss shown in ⌘K and the phone's More sheet (PROPOSAL §3). */
+export const SECTIONS = [
+  { id: 'home', label: 'Home', path: '/app', gloss: 'Ask about this account, and its key figures' },
+  { id: 'overview', label: 'Overview', path: '/app/overview', gloss: 'The five chapters of the audit' },
+  { id: 'orders', label: 'Orders', path: '/app/orders', gloss: 'Every order, and its receipt' },
+  { id: 'rules', label: 'Rules', path: '/app/rules', gloss: 'Orders that broke a stated rule' },
+  { id: 'rankings', label: 'Rankings', path: '/app/rankings', gloss: 'Groups of orders compared, with noise' },
+  { id: 'council', label: 'Council', path: '/app/council', gloss: 'A language-model review of the audit' },
+  { id: 'evidence', label: 'Evidence', path: '/app/evidence', gloss: 'Signed packs and the record behind the grade' },
+  { id: 'fills', label: 'Fills', path: '/app/fills', gloss: 'Each fill and its patterns' },
+  { id: 'check', label: 'Check a broker file', path: '/app/check', gloss: 'Compare a broker export with public prices' },
+] as const
+export type SectionId = (typeof SECTIONS)[number]['id']
+/** The sections that read the account's audit (everything but the two tools and Fills, which load their own data). */
+export type View = Exclude<SectionId, 'fills' | 'check'>
+export const VIEWS = ['home', 'overview', 'orders', 'rules', 'rankings', 'council', 'evidence'] as const
+export const VIEW_LABEL: Record<SectionId, string> = Object.fromEntries(SECTIONS.map((s) => [s.id, s.label])) as Record<SectionId, string>
+
+/** The phone's bottom bar; every other section is in the More sheet. */
+export const PHONE_BAR: readonly SectionId[] = ['home', 'overview', 'orders']
 
 // Design v3.1 fixes A3: the labels state what the generated trader does (utils/demoProfiles.ts), not a quality.
 export const DEMO_ACCOUNTS = [
@@ -14,18 +29,24 @@ export const DEMO_ACCOUNTS = [
   { id: 'demo-aggressive', label: 'Demo: market orders, night' },
 ] as const
 
-export function parseView(v: string | null | undefined): View {
-  return (VIEWS as readonly string[]).includes(v ?? '') ? (v as View) : 'overview'
+/** The section a pathname belongs to ("/app/orders" -> orders; "/app" -> home); null outside the sidebar's sections. */
+export function sectionOfPath(pathname: string): SectionId | null {
+  const p = pathname.replace(/\/+$/, '') || '/'
+  return SECTIONS.find((s) => s.path === p)?.id ?? null
 }
 
-/** Link to a dashboard section. A demo account carries its id (and `sample=1` when signed in); the overview has no `view`. */
-export function viewHref(view: View, userId: string | null | undefined, signedIn: boolean, extra: Record<string, string> = {}): string {
-  const base = navHref('/dashboard', userId ?? undefined, signedIn)
-  const params = new URLSearchParams(base.includes('?') ? base.split('?')[1] : '')
-  if (view !== 'overview') params.set('view', view)
+/**
+ * Link to a section. A demo account carries its id (and `sample=1` when signed in); a signed-in user's own data carries none.
+ * `extra` adds parameters (an order to open, the Fills tab).
+ */
+export function viewHref(view: SectionId, userId: string | null | undefined, signedIn: boolean, extra: Record<string, string> = {}): string {
+  const path = SECTIONS.find((s) => s.id === view)!.path
+  const base = navHref(path, userId ?? undefined, signedIn)
+  const [pathOnly, query = ''] = base.split('?')
+  const params = new URLSearchParams(query)
   for (const [k, v] of Object.entries(extra)) params.set(k, v)
   const q = params.toString()
-  return q ? `/dashboard?${q}` : '/dashboard'
+  return q ? `${pathOnly}?${q}` : pathOnly
 }
 
 /** Label of the account in the switcher. */

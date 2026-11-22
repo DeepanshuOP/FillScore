@@ -40,7 +40,7 @@ export default function LoginPage() {
       }
 
       await login(data.accessToken);
-      router.push('/dashboard');
+      router.push('/app');
     } catch (err) {
       setError((err instanceof Error && err.message) || 'Something went wrong');
     } finally {

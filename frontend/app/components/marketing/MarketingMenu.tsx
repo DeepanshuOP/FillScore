@@ -5,7 +5,7 @@ import { Drawer, DrawerContent, DrawerTitle } from '@/components/ui/drawer'
 
 /** The phone menu of the marketing header (a Vaul bottom sheet). Loaded only when it is first opened. */
 export default function MarketingMenu({ open, onOpenChange, signedIn }: { open: boolean; onOpenChange: (o: boolean) => void; signedIn: boolean }) {
-  const links = [['/methodology', 'Methodology'], ['/verify', 'Verify a pack'], ['/check', 'Check a broker file'], ...(signedIn ? [] : [['/login', 'Log in']])]
+  const links = [['/methodology', 'Methodology'], ['/verify', 'Verify a pack'], ['/app/check', 'Check a broker file'], ...(signedIn ? [] : [['/login', 'Log in']])]
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="bg-ui-raised">

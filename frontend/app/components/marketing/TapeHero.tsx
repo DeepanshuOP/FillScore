@@ -128,7 +128,7 @@ export function TapeHero() {
             {' '}It never advises.
           </p>
           <div className="flex flex-wrap gap-2.5">
-            <Link href="/dashboard?userId=demo-moderate" className={buttonClass('primary', 'lg', 'no-underline')}>Open the demo</Link>
+            <Link href="/app?userId=demo-moderate" className={buttonClass('primary', 'lg', 'no-underline')}>Open the demo</Link>
             <Link href="/verify" className={buttonClass('secondary', 'lg', 'no-underline')}>Check a pack</Link>
           </div>
           {/* the tape's order is a synthetic trader's (DESIGN.md invariant 4); a phone prints it under the tape */}

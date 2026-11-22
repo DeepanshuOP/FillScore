@@ -77,19 +77,19 @@ Whichever you choose, delete the key from Binance after the test if you won't ke
 | Step | Do | Good looks like | Failure signatures |
 |---|---|---|---|
 | 1 | Open the Vercel site, **Sign up** with email (or Google/GitHub), verify the email if asked, log in, refresh the page | You stay logged in after the refresh | logged out on refresh: cookie or proxy problem (`BACKEND_PROXY_URL`, `NEXT_PUBLIC_API_URL=/api`) |
-| 2 | `/onboarding` → Binance → paste the key and secret → Connect | "Connected"; the key is accepted | `key_not_read_only` (a permission besides reading is on); `invalid_key` (copy error); a network error (Binance unreachable: see smoke) |
+| 2 | `/app/connect` (was `/onboarding`) → Binance → paste the key and secret → Connect | "Connected"; the key is accepted | `key_not_read_only` (a permission besides reading is on); `invalid_key` (copy error); a network error (Binance unreachable: see smoke) |
 | 3 | **Sync** | The trade count is > 0 for an account that traded | 0 trades on an account that traded: check the symbols and date range; a 451 in the sync error means geo-blocked |
-| 4 | **Run the audit** (`/dashboard`) | Score and grade shown; attribution and trend render | an empty dashboard after the audit; a 429 means the audit-run limit (10 per 15 min) |
-| 5 | `/analytics` and `/trades` | Charts render; every trade row has a fill score; fees in USD | rows without a fill score (`fillScore` missing on real trades); fee columns blank or `$0` on taker trades (`feeUsd` not set: USD fee math must use `feeUsd`, never the native `fee`) |
+| 4 | **Run the audit** (`/app`, then `/app/overview`) | Score and grade shown; attribution and trend render | an empty dashboard after the audit; a 429 means the audit-run limit (10 per 15 min) |
+| 5 | `/app/fills` (tabs Ledger and Patterns; were `/trades` and `/analytics`) | Charts render; every trade row has a fill score; fees in USD | rows without a fill score (`fillScore` missing on real trades); fee columns blank or `$0` on taker trades (`feeUsd` not set: USD fee math must use `feeUsd`, never the native `fee`) |
 | 6 | Coach panel on the dashboard | Past-tense findings about your own fills | any advice or prediction wording ("you should", "could save") is a bug: screenshot it |
-| 7 | **PDF report** and **CSV export** (`/trades` → export) | The PDF downloads and opens; the CSV opens with one row per trade, and `dataSource` is `real-user` | a 401 on download (download token); an empty CSV |
+| 7 | **PDF report** and **CSV export** (`/app/fills` → Ledger → export) | The PDF downloads and opens; the CSV opens with one row per trade, and `dataSource` is `real-user` | a 401 on download (download token); an empty CSV |
 | 8 | **Run the Council once** on the dashboard | It may first show "waking up" for about a minute, then four specialists, the debate and the verdict. The run is **not degraded**: it has a rating, the panel shows no degraded banner, and findings/observations render | "degraded" or "no model returned a valid answer" (Groq free limits: wait and retry once; don't loop); a CORS error in the browser console (ml-service `ALLOWED_ORIGINS`); a 401 from the stream (`JWT_ACCESS_SECRET` differs between the services) |
 
 The Council allows 8 runs a day across the deployment and 3 per account per hour.
 
 ## 5. Clean up (optional)
 
-- **Delete the account:** `/settings` → Delete account. Password accounts confirm with the password; OAuth-only
+- **Delete the account:** `/app/settings` → Delete account. Password accounts confirm with the password; OAuth-only
   accounts need a login from the last 5 minutes. This removes the user, trades, audits, history, exchange
   connections (the encrypted key) and tokens.
 - **Not removed by that:** the ml-service's `council_runs` for the account (verdicts and packet hashes, no keys or

@@ -46,7 +46,7 @@ export default function OAuthRedirectHandler() {
         if (!res.ok) throw new Error(`exchange failed: ${res.status}`);
         const { accessToken } = await res.json();
         await login(accessToken);
-        router.replace('/dashboard');
+        router.replace('/app');
       })
       .catch((err) => {
         console.error('OAuth login failed:', err);

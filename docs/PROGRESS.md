@@ -4,7 +4,15 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, sixth: IA v4 built in production (local commits)
 
-- **Next concrete action: Step 1 (routes and redirects).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Next concrete action: Step 2 (app shell: sidebar, page header, phone bar, More sheet, ⌘K).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Step 1: done.** Routes `/app`, `/app/{overview,orders,rules,rankings,council,evidence,fills,check,settings,connect}` exist as thin
+  wrappers over the old page bodies (kept in their feature folders: `dashboard/DashboardContent.tsx` takes a `view`, `trades/TradesLedger`,
+  `analytics/Patterns`, `check/CheckFile`, `settings/SettingsPage`, `onboarding/ConnectExchange`). `frontend/legacyRedirects.mjs` (308,
+  imported by `next.config.mjs`) + unit test (17) + measured with `next start` (every old URL 308, query kept; the old `view` stays in the
+  forwarded query and is ignored). `/app` shows the overview until step 3; `/app/check` still needs login until step 4;
+  `e2e/legacy-redirects.spec.ts` is written and runs in step 4/9. Old paths updated in frontend links, the OAuth return (`/` then `/app`;
+  the provider callback URLs point at the backend and are unchanged), billing success/cancel URLs (backend, Stripe is off), README, 4
+  docs, and path lists in 4 invariant tests (same scan coverage). No setting outside the repo changes for this step.
 - **Step 0: done.** 0a: smoke and the probe read the same route (`/api/preflight/exchanges`, `ExchangeReachability.ts`, 60 s cache); a
   200 then a 418 seconds apart cannot come from stored state (a cached answer would repeat the 200); the real defect was the smoke line
   calling a cached answer "just now", fixed with a test (LOG §AL 0a). 0b: 4 live calls spent, both re-recorded answers degraded, kept

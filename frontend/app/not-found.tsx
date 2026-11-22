@@ -14,7 +14,7 @@ export default function NotFound() {
           <h1 className="display-md mt-8 text-ui-ink">This page does not exist.</h1>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/" className={buttonClass('primary', 'md', 'no-underline')}>Go to the home page</Link>
-            <Link href="/dashboard?userId=demo-moderate" className={buttonClass('secondary', 'md', 'no-underline')}>Open the demo audit</Link>
+            <Link href="/app?userId=demo-moderate" className={buttonClass('secondary', 'md', 'no-underline')}>Open the demo audit</Link>
           </div>
         </div>
       </main>

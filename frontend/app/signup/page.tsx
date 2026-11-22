@@ -51,7 +51,7 @@ export default function SignupPage() {
       }
 
       await login(data.accessToken);
-      router.push('/dashboard');
+      router.push('/app');
     } catch (err) {
       setError((err instanceof Error && err.message) || 'Something went wrong');
     } finally {

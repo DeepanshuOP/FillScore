@@ -258,7 +258,7 @@ export default function OnboardingPage() {
     if (r.noTrades) { setNoTrades(true); return; }
     setSyncResult({ fillScore: r.fillScore ?? 0, grade: r.grade ?? '-', tradesIngested: r.tradesIngested ?? 0, tradesScored: r.tradesScored ?? 0 });
     // A complete sync goes straight to the dashboard; a partial one stays so the note is read first.
-    if (s.state === 'done') router.push('/dashboard');
+    if (s.state === 'done') router.push('/app');
   };
 
   /** Polls the background job every 3 s, showing progress, until it finishes. */
@@ -342,7 +342,7 @@ export default function OnboardingPage() {
               <Button variant="secondary" onClick={() => { setNoTrades(false); setSyncNote(null); if (lookbackDays < 3650) setLookbackDays(lookbackDays < 90 ? 90 : lookbackDays < 365 ? 365 : 3650); }}>
                 Sync a longer period
               </Button>
-              <Button onClick={() => router.push('/dashboard')}>Go to dashboard</Button>
+              <Button onClick={() => router.push('/app')}>Go to Home</Button>
             </div>
           </section>
         ) : syncResult ? (
@@ -363,7 +363,7 @@ export default function OnboardingPage() {
               </div>
             </dl>
             {syncNote && <p className="text-left text-[13px] leading-5 text-ui-graphite">{syncNote}</p>}
-            <Button onClick={() => router.push('/dashboard')}>View my dashboard</Button>
+            <Button onClick={() => router.push('/app')}>Open my audit</Button>
           </section>
         ) : isSuccess ? (
           <section className="sheet flex flex-col gap-5 p-5 sm:p-6">
