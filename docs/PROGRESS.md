@@ -2,9 +2,17 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-23, sixth: IA v4 built in production (local commits)
+
+- **Next concrete action: Step 1 (routes and redirects).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Step 0: done.** 0a: smoke and the probe read the same route (`/api/preflight/exchanges`, `ExchangeReachability.ts`, 60 s cache); a
+  200 then a 418 seconds apart cannot come from stored state (a cached answer would repeat the 200); the real defect was the smoke line
+  calling a cached answer "just now", fixed with a test (LOG §AL 0a). 0b: 4 live calls spent, both re-recorded answers degraded, kept
+  verbatim (LOG §AL 0b). The provisional "shared egress IP" reading of §AK 0c is unchanged: still waiting for Render logs.
+
 ## Orders of 2026-11-22, fifth: two fixes, the production 418, IA v4 research and proposal (local commits)
 
-- **Next concrete action: IA v4 proposal ready: Deepanshu chooses (docs/design/IA-v4/)**. Also open: Deepanshu's probe output and
+- **Next concrete action: superseded by the sixth order above.** Also open: Deepanshu's probe output and
   Render log lines for the 418 (step 0c).
 - **Step 4: done.** One reviewer (Sonnet, read-only): 15 findings (3 high, 8 medium, 4 low); 10 fixed in the prototype and proposal, 5
   kept with a reason (table in PROPOSAL.md section 9). Final checks: frontend vitest 760 passed (79 files; the pre-existing timing test

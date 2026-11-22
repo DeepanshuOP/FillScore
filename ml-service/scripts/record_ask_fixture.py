@@ -28,7 +28,10 @@ QUESTIONS = [
 ]
 
 
-async def main(account: str, out_path: str) -> None:
+async def main(account: str, out_path: str, only: list[int] | None = None) -> None:
+    """`only` = 0-based indexes into QUESTIONS to re-record (sixth order, step 0b): those runs replace the same question's earlier
+    run in the existing file, verbatim; the other runs stay exactly as they were recorded. Each question is exactly two live calls
+    (agents/ask.py: no regeneration), so two questions are four calls."""
     from mongomock_motor import AsyncMongoMockClient
 
     from agents.ask import ask_flow
@@ -46,13 +49,28 @@ async def main(account: str, out_path: str) -> None:
         return score, measurements
 
     router = LLMRouter(load_routes(), usage_store=MongoUsageStore(AsyncMongoMockClient()["ask_fixture"]))
-    runs = []
-    for q in QUESTIONS:
+    existing = json.loads(Path(out_path).read_text()) if only is not None else None
+    runs = list(existing["runs"]) if existing else []
+    live_calls = 0
+    for i, q in enumerate(QUESTIONS):
+        if only is not None and i not in only:
+            continue
         telemetry: list = []
         result = await ask_flow(q, load, router, telemetry=telemetry)
+        live_calls += result["n_calls"]
         models = [f"{t.get('provider')}/{t.get('model')}" for t in telemetry if isinstance(t, dict) and t.get("outcome") == "ok"]
-        runs.append({"question": q, "result": result, "models": models})
+        run = {"question": q, "result": result, "models": models}
+        if only is not None:
+            run["recordedAt"] = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+            at = next((k for k, r in enumerate(runs) if r["question"] == q), None)
+            if at is None:
+                runs.append(run)
+            else:
+                runs[at] = run
+        else:
+            runs.append(run)
         print(f"{q!r}: calls={result['n_calls']} degraded={result['degraded']} tools={result['tools_used']}")
+    print(f"live calls this run: {live_calls}")
     doc = {
         "recorded": True,
         "label": "Recorded answers of the Ask agent on demo data (synthetic trader, real prices); not a live answer.",
@@ -69,4 +87,6 @@ async def main(account: str, out_path: str) -> None:
 if __name__ == "__main__":
     if os.environ.get("FILLSCORE_E2E_NO_LLM") == "1":
         sys.exit("FILLSCORE_E2E_NO_LLM=1: refusing to record")
-    asyncio.run(main(sys.argv[1], sys.argv[2]))
+    # optional third argument: comma-separated 0-based question indexes to re-record, e.g. "0,2"
+    only = [int(x) for x in sys.argv[3].split(",")] if len(sys.argv) > 3 else None
+    asyncio.run(main(sys.argv[1], sys.argv[2], only))

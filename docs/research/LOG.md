@@ -638,3 +638,41 @@ imports the module afresh so case 10's 418 does not ban the next cases' process-
 (the Binance entry carries the three new keys; the others keep exactly six), `smokeBinance.test.ts` (5: the printed line for a fresh 418,
 a governor pause, an absent Retry-After, an older backend, and reachable).
 
+## AL. IA v4 built (orders of 2026-11-23, sixth)
+
+### 0a. The 418 that "contradicted" a 200 seconds earlier (deploy b380669)
+
+Which state the smoke check reads: `scripts/smoke_prod.sh` (the "backend reaches Binance" block) calls `$BACKEND/api/preflight/exchanges` and
+reads the `binance` entry. That is the same route Deepanshu called: `backend/src/routes/preflight.ts` `GET /exchanges` ->
+`getExchangeReachability()` (`backend/src/services/ExchangeReachability.ts`). The Vercel route `frontend/app/api/preflight/route.ts` is a
+different, older diagnostic (no `cached` field, Vercel's IP), so it is not the 200 that was reported.
+
+Why 200 and then 418 are both possible without a stored state: `getExchangeReachability` caches the whole answer for 60 s
+(`CACHE_TTL_MS`, the `cache` variable). The 17:41:48Z answer was `cached: false`, so that call sent a real request and Binance answered 200.
+A smoke request inside the next 60 s would have been served that cached 200, never a 418. A 418 therefore means the smoke request was a
+new request (60 s or more later, a request that Binance answered 418 at that moment) or reached a different process. At b380669 the probe
+did not use the governor, so no stored pause could produce the 418: it was Binance's answer to a request sent then. The logs
+(Render lines before the run, Deepanshu's probe output) are still what would say whether another caller on the shared egress IP earned
+the ban; that part of LOG §AK 0c stays provisional.
+
+What was a real defect: the smoke line printed `from Binance just now (binance_sent)` for any `binance_sent` answer, including a cached
+one, which can be 60 s old. A stored answer was reported as live. Fix: when the response says `cached: true`, the line reads
+`from Binance at <checkedAt>, cached answer, not a new request (binance_sent)`. Test: `smokeBinance.test.ts` case 4 (red before the fix,
+green after; 6 passed). Nothing else changed in the backend.
+
+### 0b. Re-recording the two weak Ask fixtures
+
+`ml-service/scripts/record_ask_fixture.py` now takes an optional third argument, the 0-based question indexes to re-record; those runs
+replace the same question's earlier run, the other runs stay byte for byte as recorded, and each new run carries its own `recordedAt`.
+Command: `.venv/bin/python scripts/record_ask_fixture.py demo-moderate ../frontend/app/design-lab/ia4/fixtures/ask-recorded.json 0,2`.
+**Live calls: 4** (2 questions x 2; `agents/ask.py` never regenerates), same free provider and model as before (groq, qwen3.8-27b),
+usage counted in memory, no Atlas, no retry. Results kept verbatim:
+
+| Question | Before | After |
+|---|---|---|
+| Which orders cost the most? | degraded (answer empty after the checks) | degraded again (same reason), code-built sentence |
+| How did my market orders compare with the modelled cost? | passed, but "bps in bps" in the model's sentence | degraded ("the answer looked forward, advised or assigned a cause"); the shown sentence is the code-built "Market orders cost -0.1 bps against a modelled 0.1 bps." |
+
+So 2 of 4 recorded answers passed (total, score) and 2 are degraded. The live-call budget is spent; no further recording. The demo chips
+order the two that passed first and the degraded ones last.
+

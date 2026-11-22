@@ -2,7 +2,7 @@
  "recorded": true,
  "label": "Recorded answers of the Ask agent on demo data (synthetic trader, real prices); not a live answer.",
  "account": "demo-moderate",
- "recordedAt": "2026-11-22T19:03:02+00:00",
+ "recordedAt": "2026-11-22T20:42:03+00:00",
  "claimRulesVersion": "1.4.0",
  "scoringVersion": "v2.3.0",
  "source": "ml-service/scripts/record_ask_fixture.py over ml-service/demo_v2/out (committed demo files)",
@@ -105,7 +105,8 @@
    "models": [
     "groq/qwen/qwen3.8-27b",
     "groq/qwen/qwen3.8-27b"
-   ]
+   ],
+   "recordedAt": "2026-11-22T20:42:02+00:00"
   },
   {
    "question": "What did my orders cost in total?",
@@ -186,14 +187,15 @@
      }
     ],
     "n_calls": 2,
-    "degraded": false,
-    "fallback": null,
-    "answer": "Your market orders paid -0.1 bps in bps, which was better than the modelled cost of 0.1 bps in bps. The excess performance was -0.2 bps in bps, falling within the interval of -0.3 bps to -0.1 bps in bps."
+    "degraded": true,
+    "fallback": "the answer looked forward, advised or assigned a cause",
+    "answer": "Market orders cost -0.1 bps against a modelled 0.1 bps."
    },
    "models": [
     "groq/qwen/qwen3.8-27b",
     "groq/qwen/qwen3.8-27b"
-   ]
+   ],
+   "recordedAt": "2026-11-22T20:42:03+00:00"
   },
   {
    "question": "What score did my execution get?",
