@@ -11,6 +11,7 @@ import { parseOrReject } from '../validation/schemas';
 import { Order } from '../models/Order';
 import { OrderMeasurement } from '../models/OrderMeasurement';
 import { Trade } from '../models/Trade';
+import { demoPrintsFor } from '../services/demoPrints';
 import { ExceptionReview, REVIEW_STATES } from '../models/ExceptionReview';
 import { buildExceptionQueue, ExceptionOrder } from '../services/exceptionQueue';
 import { buildOrderReplay } from '../services/orderReplay';
@@ -95,14 +96,18 @@ explainRouter.get('/orders/:orderId/replay', resolveAccount, async (req: Request
             Trade.find({ accountId, orderId, symbol: o.symbol }).lean(),
             OrderMeasurement.findOne({ accountId, orderId, symbol: o.symbol }).lean(),
         ]);
-        return res.status(200).json(buildOrderReplay({
+        const replay = buildOrderReplay({
             order: { orderId: o.orderId, symbol: o.symbol, exchange: o.exchange, type: o.type ?? null, side: o.side, origQty: o.origQty, executedQty: o.executedQty,
                 status: o.status, restingMs: o.restingMs ?? null, createdAt: new Date(o.createdAt), updatedAt: new Date(o.updatedAt) },
             fills: fills.map(f => ({ tradeId: f.tradeId, executionPrice: f.executionPrice, quantity: f.quantity, executedAt: new Date(f.executedAt),
                 feeUsd: (f as any).feeUsd ?? null, isMaker: (f as any).isMaker ?? null })),
             measurement: m ? { version: m.version, arrivalMid: m.arrivalMid, endMid: m.endMid, endBasis: m.endBasis, unmeasuredReason: m.unmeasuredReason,
                 shortfall: (m.shortfall as any) ?? null, expectedCost: (m.expectedCost as any) ?? null, marketDataRefs: (m.marketDataRefs as any[]) ?? [] } : null,
-        }));
+        });
+        // Demo orders only: the capped window of public prints cut offline from the checksummed daily files. A real account's
+        // payload is unchanged (no `prints` key): no print of a real account is stored where the server can read it.
+        const prints = demoPrintsFor(accountId, orderId);
+        return res.status(200).json(prints ? { ...replay, prints } : replay);
     } catch (err) {
         return fail(res, err, 'GET /orders/:orderId/replay');
     }

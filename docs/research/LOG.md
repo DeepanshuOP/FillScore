@@ -491,3 +491,37 @@ an account-wide concentration or the number of symbols; the Risk Auditor's flags
   `councilFindings.ts` and `WhaleCorrelation.tsx` can print "−0.0": not new, the old text had the same with a hyphen.
 - Disk: `/tmp` (tmpfs) was 99% full from 46 leftover `fs-e2e-mongo-*` folders of earlier e2e runs and a backend test failed with
   ENOSPC; I removed those folders (no mongod was running). The e2e setup leaves about 300 MB per run behind.
+
+## AI. Honest AI layer, hardened backend paths, prints on the receipt (orders of 2026-11-22, fourth)
+
+**Step 1, placeholder compliance (offline).** `ml-service/evals/placeholder_compliance.py` over the 36 recordings and 3 demo runs
+(unit: one agent output; recorded per agent, not per sentence). Synthesis text was used as the model wrote it in 2 of 21 council runs
+(10.0% of outputs) and 3 of 18 single-call runs; regenerated in 75.0% and 83.3%; code fallback in 15.0% and 0%. Specialists: 69.7%
+written, 10.5% regenerated, 19.7% fallback (qwen3.8-27b). Debate (gpt-oss-20b): 61.9% written, 35.7% regenerated, 2.4% fallback, and 158
+claim-rule redactions. Descriptive only: the recordings span prompt versions 1.2.0 to 1.8.0. ADR-0018 (structured claims, proposal)
+is `docs/research/decisions/ADR-0018-structured-claims.md`; the order named `docs/adr/`, which does not exist.
+
+**Step 2, benchmark label.** Direction is defined in the packet (`alpha_packet.py`: positive `median_vwap_deviation_bps` = paid more than
+the 5-minute VWAP). `agents/benchmark_line.py` builds the sentence; decided on the figure as printed (one decimal) so 0.04 bps reads
+"equal to", never "0.0 bps worse than". Finding: the rebuilt demo trades carry no `vwap5m`, so for all three demos the served line is
+"insufficient data" (the model's enum had said negative, negative, positive). Real accounts with `vwap5m` get the measured line.
+
+**Step 3, resumable stream.** Design in PROGRESS. Two findings: the browser's `EventSource` cannot POST or send an Authorization header,
+so the page keeps fetch and implements the same protocol (`Last-Event-ID`); and the run cache has no TTL (it is by content hash), so the
+event store's TTL (10 minutes after finish) is its own. The pipeline task no longer stops when the client disconnects (before, a drop
+cancelled the run and the budget was spent for nothing).
+
+**Step 4, egress and governor.** Binance facts (docs-researcher, official docs, read 2026-11-22): per-IP limits; header
+`X-MBX-USED-WEIGHT-1M`; `Retry-After` on 418 and 429 in seconds; bans "from 2 minutes to 3 days"; REQUEST_WEIGHT example 6000/min;
+myTrades weight 20, klines 2, account 20, exchangeInfo 20, openOrders without symbol 80. Not stated in the docs: whether the header
+includes the current request, and aligned versus rolling minutes; the governor stops at 50% of the limit and keeps its own count.
+Found, not fixed: `BinanceClient.fetchFeeRate` calls `/api/v3/tradeFee`, which the account-endpoints page does not list (the wallet
+page lists `GET /sapi/v1/asset/tradeFee`, weight 1).
+
+**Step 5, prints.** 681 windows, 33,611 prints, 1.69 MB in `demo_v2/out/<demo>/prints.json` (plus the same bytes as a generated TS copy
+in `backend/src/data/demoPrints.ts`, because the backend image holds only `backend/`). 182 windows hit the cap of 60 (an order that rested
+for minutes has thousands of prints between arrival and fill). Every file hash equals the one in `manifest.json`; a local test re-derives
+three committed windows row for row from the cached daily files. First layout (clock-time axis) stacked the prints that matter, all
+within about a second of the fills, into one spike; the tape now runs in print order like the landing tape, with the fills and the
+arrival placed between prints by time.
+

@@ -25,4 +25,6 @@ export function unfilledLineNote(usd: number | null | undefined): string | null 
 export const NO_FILLS = 'No fills: the order did not trade.'
 export const NO_COST_TERMS = 'Insufficient data: no cost terms were stored.'
 export const CHART_NOTE = 'Fills only; the public prints are in the source file.'
+// Demo orders (the prints are drawn): what the marks on the tape are. Past tense, no advice, no cause.
+export const PRINTS_LEGEND = 'A filled tick up is a buyer-initiated public print, a hollow tick down a seller-initiated one, in the order they printed and higher for a higher price. The pen rings mark this order\'s fills and the dashed line its arrival, each placed between the prints by time. The full day of prints is in the source file.'
 export const BARS_NOTE = 'SHA-256 of the order record. The bars draw it; they are not a scannable code.'

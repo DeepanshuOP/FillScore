@@ -4,7 +4,7 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, fourth: honest AI layer, two hardened backend paths, prints on the receipt (local commits)
 
-- **Next concrete action: Step 5 (prints on the receipt).**
+- **Next concrete action: Step 6 (reviewer on the Steps 2-5 diff, then the final checks).**
 - **Step 1: done.** `ml-service/evals/placeholder_compliance.py` (offline; test `tests/test_placeholder_compliance.py`, hand-computed on
   3 small runs) and the table in README "Evaluation". Unit = one agent output (regeneration and fallback are recorded per agent, not per
   sentence). Synthesis text was used as the model wrote it in 2 of 21 council runs and 3 of 18 single-call runs. ADR-0018
@@ -44,6 +44,16 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
   61 000 ms), `TradeIngestionRace.test.ts` (4, mongodb-memory-server: two concurrent writers of 50 trades give 50 rows and inserted sum 50).
   Backend vitest 1092 passed (129 files), tsc 0. **Found, not fixed (not asked):** `BinanceClient.fetchFeeRate` calls `/api/v3/tradeFee`,
   which is not in Binance's official docs (the documented fee endpoint is `GET /sapi/v1/asset/tradeFee`, weight 1).
+- **Step 5: done.** `ml-service/scripts/cut_demo_prints.py` cut, offline from the cached checksummed daily files, a window per filled demo
+  order (arrival - 5 s to last fill + 5 s, at most 60 prints, nearest the fills when over): **681 windows, 33,611 prints, 1.69 MB** in
+  `ml-service/demo_v2/out/<demo>/prints.json` (aggressive 659,665 B, disciplined 401,911 B, moderate 624,437 B; under the 3 MB limit);
+  182 windows are capped; every file hash equals `manifest.json`'s. The deployed backend holds only `backend/`, so a generated copy
+  (the same 1.69 MB as TS strings) is `backend/src/data/demoPrints.ts` (a test fails on drift). `GET /api/audit/orders/:id/replay` adds `prints`
+  for demo accounts only (a real account's payload is unchanged: no `prints` key; tested with a real account holding the same order id). The
+  receipt draws it (`PrintsTape.tsx`, plain SVG, no motion so reduced motion sees the same finished frame): ticks in print order (filled up =
+  buyer-initiated), fills ringed in pen, arrival dashed. Tests: `test_cut_demo_prints.py` (7, hand fixture + a local re-derivation of three
+  real windows from the daily files), `demoPrints.test.ts` (5, two orders by hand), `replayPrints.test.ts` (3), `printsTape.test.ts` (10),
+  `receiptCopy.test.ts`. Images `docs/design/v31b/receipt-prints-{1440,390}.jpg` (16 in the folder; two Carbon copies removed).
 
 ## Orders of 2026-11-22, third: Council scope, four copy fixes, launch kit (local commits)
 

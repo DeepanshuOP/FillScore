@@ -7,15 +7,17 @@ import { track } from '../lib/track';
 import { useToast } from '../ui/Toast';
 import { exactTitle, formatSignedBps, formatUsd } from '../ui/format';
 import { Fig } from '../ui/Fig';
-import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, expectedLine, unfilledLineNote } from './receiptCopy';
+import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, PRINTS_LEGEND, expectedLine, unfilledLineNote } from './receiptCopy';
 import { bars, barsWidth, canonicalJson, sha256Hex } from '../ui/hash';
 import { describeReplay, type ReplayApi } from './explainView';
+import { PrintsTape } from './PrintsTape';
+import { parsePrintsWindow } from './printsTape';
 import { formatUtc, withParams, type OrderRow } from './ordersTable';
 
 type Json = { status: number; body: unknown };
 type ReplayOrder = { orderId?: string; symbol?: string; side?: string | null; type?: string | null; orderType?: string | null; status?: string | null;
   quantity?: number | null; executedQuantity?: number | null; createdAt?: string | null };
-type ReplayBody = Omit<ReplayApi, 'decomposition'> & { order?: ReplayOrder; decomposition: Array<ReplayApi['decomposition'][number] & { key?: string }> };
+type ReplayBody = Omit<ReplayApi, 'decomposition'> & { prints?: unknown; order?: ReplayOrder; decomposition: Array<ReplayApi['decomposition'][number] & { key?: string }> };
 
 interface Props {
   open: boolean;
@@ -58,6 +60,9 @@ const cell = (v: number | null | undefined, f: (n: number) => string) => (typeof
  */
 function PrintsNote({ body }: { body: ReplayBody }) {
   if (!body.fills.length) return <p className="g">{NO_FILLS}</p>;
+  // Step 5 (fourth order): a demo order's payload carries its window of prints, drawn above; the note then explains the marks.
+  // A real account's payload has no `prints`, and its receipt keeps this line.
+  if (parsePrintsWindow(body.prints)) return <p className="g mt-1 text-[11px]" data-testid="receipt-prints-note">{PRINTS_LEGEND}</p>;
   return <p className="g mt-1 text-[11px]" data-testid="receipt-prints-note">{CHART_NOTE}</p>;
 }
 
@@ -148,6 +153,10 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
               ))}
             </div>
           ) : null}
+          {(() => {
+            const pw = body.fills.length ? parsePrintsWindow(body.prints) : null;
+            return pw ? <PrintsTape window={pw} fills={body.fills.map((f) => ({ timeMs: new Date(f.time).getTime(), price: f.price }))} /> : null;
+          })()}
           {body.fills.length ? null : <PrintsNote body={body} />}
           <p className="sec">COSTS</p>
           {lines.length ? (
