@@ -32,6 +32,14 @@ async function main() {
         if (breakCase === 'one') { for (const t of Object.values(b.shortfall.totals) as Array<{ n: number }>) t.n = 1; b.orders = { total: 1, filled: 1, partial: 0, unfilled: 0, open: 0 }; b.shortfall.n = 1 }
         return b
       }
+      if (p === '/audit/orders-ledger') {
+        // break-ui for the Orders ledger (IA v4): empty, one order, long symbols and ids
+        const led = (base as unknown as { ledger: { orders: Array<Record<string, unknown>> } }).ledger
+        const counts = (n: number) => ({ orders: n, withFills: n, fills: n, unrecorded: 0 })
+        if (breakCase === 'empty') return { available: true, orders: [], counts: counts(0) }
+        if (breakCase === 'one') return { ...led, orders: led.orders.slice(0, 1), counts: counts(1) }
+        if (breakCase === 'long') return { ...led, orders: led.orders.map((o) => ({ ...o, symbol: '1000SATSFDUSDPERPETUALUSDT', orderId: `${String(o.orderId)}-${'9'.repeat(30)}` })) }
+      }
       if (p === '/audit/trades') {
         if (breakCase === 'empty') return { trades: [] }
         if (breakCase === 'one') return { trades: base.trades.trades.slice(0, 1) }

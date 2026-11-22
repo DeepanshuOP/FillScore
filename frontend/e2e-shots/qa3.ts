@@ -79,8 +79,8 @@ const STATES: State[] = [
   } })),
   { name: 'app-orders', path: `/app/orders${D}`, prepare: async (p) => { await p.locator('[data-testid=orders-row]').first().waitFor({ timeout: 30000 }); await p.waitForTimeout(800) } },
   { name: 'app-orders-receipt', path: `/app/orders${D}`, prepare: async (p) => receipt(p) },
-  { name: 'app-orders-receipt-unfilled', path: `/app/orders${D}`, prepare: async (p) => {
-    await p.locator('[data-testid=orders-row]', { hasText: 'Cancelled' }).first().click()
+  // a cancelled order of the demo, opened by its id in the address (the phone's ledger has no Status column to pick it by)
+  { name: 'app-orders-receipt-unfilled', path: `/app/orders${D}&order=ord-moderate-BTCUSDT-186102`, prepare: async (p) => {
     await p.getByTestId('explain-replay').getByText('COSTS').waitFor({ timeout: 15000 }); await p.waitForTimeout(1200)
   } },
   { name: 'app-rules', path: `/app/rules${D}`, prepare: settle },

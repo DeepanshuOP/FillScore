@@ -56,7 +56,9 @@ function CommandDialog({
         )}
         showCloseButton={showCloseButton}
       >
-        {children}
+        {/* cmdk's input, list and items read their store from this root; without it the palette throws on open
+            ("Cannot read properties of undefined (reading 'subscribe')"), found in the keyboard pass of IA v4 (sixth order, step 9) */}
+        <Command>{children}</Command>
         <div aria-hidden="true" className="fs-torn-bottom" />
       </DialogContent>
     </Dialog>

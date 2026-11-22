@@ -22,16 +22,17 @@ test('email sign-up, verification link, own empty state, no demo userId in nav, 
   await page.goto('/dashboard')
   // its own empty state, never the demo data
   await expect(page.getByRole('heading', { name: 'No trades yet' })).toBeVisible()
-  await expect(page.getByText('Sample data', { exact: false })).toHaveCount(0)
+  // IA v4 (sixth order): the demo marker is now the provenance chip of the page header, "Synthetic trader, real prices" (selector only)
+  await expect(page.getByText('Synthetic trader, real prices', { exact: false })).toHaveCount(0)
   expect(page.url()).not.toContain('demo-')
 
   // (the empty state's own "View sample dashboard" link is an explicit opt-in, so only the nav is checked)
-  const navHrefs = await page.locator('header a[href]').evaluateAll((as) => as.map((a) => a.getAttribute('href') ?? ''))
+  const navHrefs = await page.locator('header a[href], aside a[href]').evaluateAll((as) => as.map((a) => a.getAttribute('href') ?? ''))
   expect(navHrefs.length).toBeGreaterThan(0)
   for (const h of navHrefs) expect(h, `nav link ${h}`).not.toContain('demo-')
 
   await page.getByRole('button', { name: 'LOG OUT' }).first().click()
   await expect(page.getByRole('link', { name: 'LOG IN' }).first()).toBeVisible()
   await page.goto('/dashboard?userId=demo-disciplined')
-  await expect(page.getByText('Sample data', { exact: false }).first()).toBeVisible()
+  await expect(page.getByTestId('app-page-header').getByText('Synthetic trader, real prices', { exact: false }).first()).toBeVisible()
 })

@@ -3,8 +3,9 @@ import { findAdviceTerms } from '../../backend/src/constants/adviceTerms'
 
 // M1: the dashboard labels the v1 grade "rule-based" and shows the measured score (v2) panel beside it. Demo accounts
 // have no v2 score until M2 rebuilds them from real prints, so the panel says so instead of showing a number.
+// IA v4 (sixth order): the overview moved from /dashboard to /app/overview (route change only).
 test('dashboard: v1 is labelled rule-based and the v2 panel states its demo status', async ({ page }) => {
-  await page.goto('/dashboard?userId=demo-moderate')
+  await page.goto('/app/overview?userId=demo-moderate')
   // 2026-11-20 (dashboard rebuilt): the v1 grade is a labelled secondary line, "Rule-based score, grade X"; a demo's v2 grade
   // is served only from the offline build, so the headline carries the measured letter with its "Measured score" label.
   // A4: with a measured grade the visible line is only "Graded A, 93.4 of 100." and the v1 grade is in the stamp's pen margin

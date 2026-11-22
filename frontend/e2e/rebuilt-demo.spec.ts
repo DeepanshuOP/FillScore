@@ -15,8 +15,9 @@ const ID = 'demo-aggressive'
 
 test.beforeAll(async () => { await reshapeDemoAsRebuilt(ID) })
 
+// IA v4 (sixth order): the overview moved from /dashboard to /app/overview; /dashboard is now Home (route changes only in this file).
 test('dashboard of a rebuilt demo: v1-only views say "not computed", measured views are shown', async ({ page }) => {
-  await page.goto(`/dashboard?userId=${ID}`)
+  await page.goto(`/app/overview?userId=${ID}`)
   await expect(page.getByTestId('score-v1-label')).toBeVisible({ timeout: 30_000 })
 
   // the headline never makes up a figure: the total is the measured total of the orders (hand value, see below)
@@ -31,7 +32,7 @@ test('dashboard of a rebuilt demo: v1-only views say "not computed", measured vi
   const notComputed = page.getByTestId('not-computed')
   await expect(notComputed).toBeVisible()
   await expect(notComputed).toContainText(/not computed for this data/i)
-  await page.goto(`/dashboard?userId=${ID}`)
+  await page.goto(`/app/overview?userId=${ID}`)
 
   // measured views
   const orders = page.getByTestId('orders-panel')
@@ -50,7 +51,7 @@ test('dashboard of a rebuilt demo: v1-only views say "not computed", measured vi
 
 // Live-site review of the rebuilt demo (2026-11-14), items 1 to 4 and 6, against the real backend and pages.
 test('the scope facts come from the current fills and orders, not from the stored v1 audit', async ({ page }) => {
-  await page.goto(`/dashboard?userId=${ID}`)
+  await page.goto(`/app/overview?userId=${ID}`)
   await expect(page.getByTestId('score-v1-label')).toBeVisible({ timeout: 30_000 })
   // 3 fills of $420 in 5 orders, none a maker fill (reshapeDemoAsRebuilt)
   const facts = page.getByTestId('scope-facts')
@@ -62,7 +63,7 @@ test('the scope facts come from the current fills and orders, not from the store
 })
 
 test('no negative zero; totals per term in USD and bps; grammar of the unfilled note', async ({ page }) => {
-  await page.goto(`/dashboard?userId=${ID}`)
+  await page.goto(`/app/overview?userId=${ID}`)
   const orders = page.getByTestId('orders-panel')
   await expect(orders).toBeVisible({ timeout: 30_000 })
   const text = await orders.innerText()
@@ -93,7 +94,7 @@ test('no negative zero; totals per term in USD and bps; grammar of the unfilled 
 })
 
 test('headline and record: dollar total, the cost sentence, components named after the shortfall terms, timing as information', async ({ page }) => {
-  await page.goto(`/dashboard?userId=${ID}`)
+  await page.goto(`/app/overview?userId=${ID}`)
   // hand values of reshapeDemoAsRebuilt: total $15.00 (4.3 bps) over the 3 orders that carry a measured total
   const headline = page.getByTestId('headline')
   await expect(headline).toBeVisible({ timeout: 30_000 })

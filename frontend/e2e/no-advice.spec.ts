@@ -6,15 +6,17 @@ const DEMO = 'demo-disciplined'
 
 // What each page really renders once its data has loaded (read from the page sources).
 const READY: Record<string, (page: Page) => Promise<void>> = {
-  '/dashboard': async (page) => {
-    await expect(page.getByText('Sample data', { exact: false }).first()).toBeVisible()
+  // IA v4 (sixth order): routes and selectors only. /dashboard is /app/overview, /trades and /analytics are the two tabs of /app/fills, and
+  // the demo marker is the provenance chip in the page header.
+  '/app/overview': async (page) => {
+    await expect(page.getByTestId('app-page-header').getByText('Synthetic trader, real prices', { exact: false }).first()).toBeVisible()
     await expect(page.getByRole('button', { name: /download report/i })).toBeVisible()
   },
-  '/trades': async (page) => {
+  '/app/fills': async (page) => {
     await expect(page.getByRole('heading', { name: 'Trade ledger' })).toBeAttached()
     await expect(page.locator('div[title$="USDT"]').first()).toBeVisible() // first ledger row's symbol cell
   },
-  '/analytics': async (page) => {
+  '/app/fills?tab=patterns': async (page) => {
     await expect(page.getByRole('heading', { name: 'Execution Analytics' })).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Symbol Breakdown' })).toBeVisible()
     await expect(page.locator('tbody tr').first()).toBeVisible()
@@ -22,7 +24,7 @@ const READY: Record<string, (page: Page) => Promise<void>> = {
 }
 
 async function bodyText(page: Page, path: string, query: string): Promise<string> {
-  await page.goto(`${path}?${query}`)
+  await page.goto(`${path}${path.includes('?') ? '&' : '?'}${query}`)
   await READY[path](page)
   return page.evaluate(() => document.body.innerText)
 }
