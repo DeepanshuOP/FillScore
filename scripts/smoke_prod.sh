@@ -119,7 +119,13 @@ else:
     line = "FAIL status %s, HTTP %s" % (b.get("status"), b.get("httpStatus"))
     if src in ("binance_sent", "governor_paused"):
         ra = b.get("retryAfterS")
-        how = "from Binance just now (binance_sent)" if src == "binance_sent" else "received earlier, nothing sent (governor_paused)"
+        # The route caches its answer for 60 s: a cached answer is not a new request, so it must not read "just now".
+        if src == "binance_sent" and data.get("cached") is True:
+            how = "from Binance at %s, cached answer, not a new request (binance_sent)" % data.get("checkedAt")
+        elif src == "binance_sent":
+            how = "from Binance just now (binance_sent)"
+        else:
+            how = "received earlier, nothing sent (governor_paused)"
         line += " %s, Retry-After %s, pause %s s left" % (how, "absent" if ra is None else "%s s as received" % ra, b.get("pauseRemainingS"))
     else:
         line += ", source not reported by this backend"

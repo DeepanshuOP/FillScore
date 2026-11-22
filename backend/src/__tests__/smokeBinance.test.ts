@@ -8,11 +8,11 @@ import { AddressInfo } from 'net';
  * Fifth order of 2026-11-22, step 0c: smoke_prod.sh's "backend reaches Binance" line says where a 418 came from and how
  * long the pause still runs, instead of a bare FAIL. A fake backend answers /api/preflight/exchanges with a fixed body.
  */
-function serve(binance: Record<string, unknown>): Promise<http.Server> {
+function serve(binance: Record<string, unknown>, top: Record<string, unknown> = { checkedAt: 'x', cached: false }): Promise<http.Server> {
   return new Promise((resolve) => {
     const s = http.createServer((req, res) => {
       res.setHeader('content-type', 'application/json');
-      if (req.url === '/api/preflight/exchanges') res.end(JSON.stringify({ checkedAt: 'x', cached: false, exchanges: [{ exchange: 'binance', ...binance }] }));
+      if (req.url === '/api/preflight/exchanges') res.end(JSON.stringify({ ...top, exchanges: [{ exchange: 'binance', ...binance }] }));
       else res.end('{}');
     });
     s.listen(0, '127.0.0.1', () => resolve(s));
@@ -49,6 +49,15 @@ describe('smoke_prod.sh: the Binance reachability line', () => {
     s = await serve({ status: 'rate_limited', httpStatus: 418, source: 'binance_sent', pauseRemainingS: 120, retryAfterS: null });
     const { line } = await binanceLine(url(s));
     expect(line).toMatch(/HTTP 418 from Binance just now \(binance_sent\), Retry-After absent, pause 120 s left$/);
+  }, 60000);
+
+  it('a cached answer is not "just now": the line says cached and gives the time the probe ran (step 0a of the sixth order)', async () => {
+    // The route caches 60 s (ExchangeReachability.ts getExchangeReachability). A cached 418 is the answer of up to 60 s ago.
+    s = await serve({ status: 'rate_limited', httpStatus: 418, source: 'binance_sent', pauseRemainingS: 60, retryAfterS: 120 },
+      { checkedAt: '2026-11-22T17:41:48.000Z', cached: true });
+    const { line } = await binanceLine(url(s));
+    expect(line).toMatch(/HTTP 418 from Binance at 2026-11-22T17:41:48\.000Z, cached answer, not a new request \(binance_sent\), Retry-After 120 s as received/);
+    expect(line).not.toMatch(/just now/);
   }, 60000);
 
   it('a backend older than step 0c (no source field): the bare status, and says the source is not reported', async () => {
