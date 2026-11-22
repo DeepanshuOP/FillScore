@@ -213,6 +213,10 @@
 .fs-seg, .fs-seg-key { display: block; background: var(--ui-ink); }
 .fs-seg { height: 100%; min-width: 3px; }
 .fs-seg[data-key='fees'], .fs-seg-key[data-key='fees'] { background: color-mix(in srgb, var(--ui-ink) 65%, var(--ui-raised)); }
+.fs-seg[data-key='missed'], .fs-seg-key[data-key='missed'] { background: color-mix(in srgb, var(--ui-ink) 32%, var(--ui-raised)); }
+/* an improvement hangs below the strip's line (F1); never a negative width inside it */
+.fs-seg-below { display: block; height: 8px; min-width: 3px; margin: 0 14px; background: var(--ui-ink); border-radius: 0 0 2px 2px; }
+.fs-seg-key[data-below='true'] { height: 8px; margin-top: 10px; border-radius: 0 0 2px 2px; }
 .fs-seg[data-dashed='true'], .fs-seg-key[data-dashed='true'] {
   background: repeating-linear-gradient(-45deg, color-mix(in srgb, var(--ui-ink) 55%, transparent) 0 1.5px, transparent 1.5px 7px);
   outline: 1.5px dashed var(--ui-ink); outline-offset: -1.5px;

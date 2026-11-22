@@ -298,9 +298,12 @@ auditRouter.get('/orders-summary', resolveAccount, async (req: Request, res: Res
         // byType (design v3 fixes B2): the totals per order type, from the same measurements; summariseOrders is unchanged
         // unfilledCost (design v3.1 fixes A1): the part of the total in orders that never filled (cost, not paid)
         // strip (design v3.1): the overview's cost strip, its two parts' shares, from the totals the headline reads
+        // strip (design v3.1 fixes F1): three parts that add up to the total: filled-order execution, missed fills (the
+        // unfilledCost dollars) and fees
         const summary = summariseOrders(orders as any, measurements as any);
+        const uc = unfilledCost(orders as any, measurements as any);
         return res.status(200).json({ available: true, ...summary, counts: orderCounts(orders as any, fills as any),
-            byType: totalsByType(orders as any, measurements as any), unfilledCost: unfilledCost(orders as any, measurements as any), strip: costStrip((summary as any).shortfall?.totals) });
+            byType: totalsByType(orders as any, measurements as any), unfilledCost: uc, strip: costStrip((summary as any).shortfall?.totals, uc.usd) });
     } catch (error: any) {
         console.error('Error fetching orders summary:', error?.name);
         return res.status(500).json({ error: 'Internal Server Error' });

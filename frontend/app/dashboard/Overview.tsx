@@ -264,18 +264,21 @@ function WhereItWent({ ordersBody, isDemo, headline, account }: { ordersBody: un
           <p className="text-[20px] leading-snug font-bold tracking-[-0.02em] text-ui-ink">{strip.sentence}</p>
           <div className="fs-cost-strip mt-5" data-play={play} data-testid="cost-strip">
             <div className="fs-cost-strip-paper" role="img"
-              aria-label={strip.parts.map((p) => `${p.label} ${p.amount}${p.dashed ? ', not independently measured' : ''}`).join('; ')}>
+              aria-label={strip.parts.map((p) => `${p.label} ${p.amount}${p.caption ? `, ${p.caption}` : ''}`).join('; ')}>
               {strip.parts.filter((p) => p.drawn).map((p) => (
                 <span key={p.key} className="fs-seg" data-key={p.key} data-dashed={p.dashed} style={{ width: p.width }} />
               ))}
             </div>
+            {strip.parts.filter((p) => p.below).map((p) => (
+              <span key={p.key} className="fs-seg-below" data-key={p.key} data-testid="strip-below" style={{ width: p.below! }} />
+            ))}
           </div>
           <ul className="mt-3 flex flex-wrap gap-x-12 gap-y-3">
             {strip.parts.map((p) => (
-              <li key={p.key} className="flex items-start gap-2.5">
-                <span aria-hidden="true" className="fs-seg-key mt-1.5" data-key={p.key} data-dashed={p.dashed} />
+              <li key={p.key} className="flex items-start gap-2.5" data-testid={`strip-part-${p.key}`}>
+                <span aria-hidden="true" className="fs-seg-key mt-1.5" data-key={p.key} data-dashed={p.dashed} data-below={p.usd < 0} />
                 <div>
-                  <p className="text-[16px] text-ui-ink">{p.label}{p.drawn ? '' : p.usd < 0 ? ' (a price improvement)' : ''}</p>
+                  <p className="text-[16px] text-ui-ink">{p.label}</p>
                   <p className="flex items-center gap-1.5 font-mono text-[22px] text-ui-ink">
                     {p.amount}
                     {p.dashed ? (
@@ -284,7 +287,7 @@ function WhereItWent({ ordersBody, isDemo, headline, account }: { ordersBody: un
                       </MarginNote>
                     ) : null}
                   </p>
-                  {p.dashed ? <p className="text-[13px] text-ui-graphite">not independently measured</p> : null}
+                  {p.caption ? <p className="text-[13px] text-ui-graphite">{p.caption}</p> : null}
                 </div>
               </li>
             ))}

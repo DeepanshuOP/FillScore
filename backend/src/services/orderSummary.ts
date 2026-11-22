@@ -72,19 +72,23 @@ export function totalsByType(orders: OrderLike[], measurements: MeasurementLike[
 type TermT = { usd: number; bps: number; n: number } | null | undefined;
 
 /**
- * Design v3.1 (2026-11-21, second): the overview's cost strip. Two parts of the total: `market` = total - fees (what
- * was measured against market prices: execution and unfilled orders) and `fees`; each part's share is its dollars over
- * the sum of the positive parts, so a negative part (a price improvement or a rebate) has no width and is named apart.
- * null without a total or without fees. Computed on read from the same totals as the headline.
+ * Design v3.1 (2026-11-21, second) and fixes F1 (2026-11-22, second order): the overview's cost strip. Three parts that
+ * add up to the total: `fees`; `missed` = the modelled cost of orders that never filled (`missedUsd`, the served
+ * `unfilledCost.usd`; null, when unfilled orders exist and none was measured, counts as 0: such orders are not in the
+ * total either); and `execution` = total - fees - missed, the filled orders' execution (negative: an improvement).
+ * Each part's share is its dollars over the sum of the positive parts, so a negative part has no width and is named
+ * apart. null without a total or without fees. Computed on read from the same totals as the headline.
  */
-export function costStrip(t: { total?: TermT; fees?: TermT } | null | undefined) {
+export function costStrip(t: { total?: TermT; fees?: TermT } | null | undefined, missedUsd?: number | null) {
     const total = t?.total?.usd, fees = t?.fees?.usd;
     if (typeof total !== 'number' || !Number.isFinite(total) || typeof fees !== 'number' || !Number.isFinite(fees)) return null;
-    const parts: Array<['market' | 'fees', number]> = [['market', total - fees], ['fees', fees]];
+    const missed = typeof missedUsd === 'number' && Number.isFinite(missedUsd) ? missedUsd : 0;
+    const parts: Array<['execution' | 'missed' | 'fees', number]> = [['execution', total - fees - missed], ['missed', missed], ['fees', fees]];
     const pos = parts.reduce((s, [, v]) => s + Math.max(0, v), 0);
     return {
         totalUsd: total,
-        segments: parts.map(([key, usd]) => ({ key, usd, share: pos > 0 && usd > 0 ? usd / pos : 0 })),
+        // `below`: a negative part's size on the same scale (|usd| over the positive sum), drawn below the line
+        segments: parts.map(([key, usd]) => ({ key, usd, share: pos > 0 && usd > 0 ? usd / pos : 0, below: pos > 0 && usd < 0 ? -usd / pos : 0 })),
     };
 }
 

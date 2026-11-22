@@ -28,14 +28,15 @@ function summary(v: Variant) {
     s.shortfall.totals.total = { usd: 12345678.91, bps: 2560.4, n: 241 }
     s.shortfall.totals.fees = { usd: 123456789.12, bps: 25604.1, n: 241 }
     // the market part is a price improvement larger than the fees: no width, named apart
-    s.strip = { totalUsd: 12345678.91, segments: [{ key: 'market', usd: -111111110.21, share: 0 }, { key: 'fees', usd: 123456789.12, share: 1 }] }
+    // (111111110.21 / 123456789.12 = 0.9: drawn below the line at 90%; no unfilled part)
+    s.strip = { totalUsd: 12345678.91, segments: [{ key: 'execution', usd: -111111110.21, share: 0, below: 0.9 }, { key: 'missed', usd: 0, share: 0, below: 0 }, { key: 'fees', usd: 123456789.12, share: 1, below: 0 }] }
   } else {
     s.orders = { total: 1, filled: 1, partial: 0, unfilled: 0, open: 0 }
     s.counts = { orders: 1, withFills: 1, fills: 2, unrecorded: 0 }
     s.shortfall.n = 1; s.shortfall.unmeasured = 0
     s.shortfall.totals.total = { usd: 0.25, bps: 10, n: 1 }
     s.shortfall.totals.fees = { usd: 0.25, bps: 10, n: 1 }
-    s.strip = { totalUsd: 0.25, segments: [{ key: 'market', usd: 0, share: 0 }, { key: 'fees', usd: 0.25, share: 1 }] }
+    s.strip = { totalUsd: 0.25, segments: [{ key: 'execution', usd: 0, share: 0, below: 0 }, { key: 'missed', usd: 0, share: 0, below: 0 }, { key: 'fees', usd: 0.25, share: 1, below: 0 }] }
     s.byType = { all: s.shortfall.totals, market: s.shortfall.totals, limit: null, other: null }
   }
   return s

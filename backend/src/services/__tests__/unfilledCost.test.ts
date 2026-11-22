@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { unfilledCost, summariseOrders } from '../orderSummary';
+import { unfilledCost, summariseOrders, costStrip } from '../orderSummary';
 
 // Design v3.1 fixes A1 (2026-11-22): the overview total includes the modelled cost of orders that never filled, which
 // nobody paid. The server states that share, so the screen can say "of it in orders that never filled".
@@ -55,5 +55,21 @@ describe('unfilledCost', () => {
             [m('A', 1000, 99, 'BTCUSDT'), m('A', 1000, 3, 'ETHUSDT')])!;
         expect(u.usd).toBeCloseTo(0.3, 12);
         expect(u.count).toBe(1);
+    });
+
+    it('F1: the strip served beside it is fees + missed fills + filled-order execution = the headline total', () => {
+        // same orders, now with fees (bps of the intended notional): C 4 bps x 2000 / 1e4 = 0.80, D 5 x 800 / 1e4 = 0.40,
+        // A, B and E state 0. Headline total 9.8 (see above); fees 0.80 + 0.40 = 1.20; missed fills 4.50 (A + B);
+        // filled-order execution = 9.8 - 1.2 - 4.5 = 4.10 (C 2.00 - 0.80 + D 2.40 - 0.40 + E 0.90 - 0 = 1.2 + 2.0 + 0.9 = 4.1)
+        const fee = (id: string, bps: number) => ({ ...MEAS.find(x => x.orderId === id)!, shortfall: { ...MEAS.find(x => x.orderId === id)!.shortfall, feesBps: bps } });
+        const meas = [fee('A', 0), fee('B', 0), fee('C', 4), fee('D', 5), fee('E', 0)];
+        const s = summariseOrders(ORDERS, meas);
+        const strip = costStrip(s.shortfall!.totals, unfilledCost(ORDERS, meas).usd)!;
+        const [exec, missed, fees] = strip.segments.map(x => x.usd);
+        expect(fees).toBeCloseTo(1.2, 12);
+        expect(missed).toBeCloseTo(4.5, 12);
+        expect(exec).toBeCloseTo(4.1, 12);
+        expect(exec + missed + fees).toBeCloseTo(9.8, 12);
+        expect(strip.totalUsd).toBeCloseTo(9.8, 12);
     });
 });

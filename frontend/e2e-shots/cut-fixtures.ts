@@ -98,7 +98,7 @@ for (const id of Object.keys(V1)) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ordersBody: { available: true, ...summariseOrders(orders, measurements), counts: orderCounts(orders as any, fills as any), byType: totalsByType(orders, measurements),
       unfilledCost: unfilledCost(orders, measurements),
-      strip: costStrip(summariseOrders(orders, measurements).shortfall?.totals) },
+      strip: costStrip(summariseOrders(orders, measurements).shortfall?.totals, unfilledCost(orders, measurements).usd) },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     ledger: { available: true, ...buildOrderLedger(orders as any, fills as any, measurements as any) },
     v2Body: {
