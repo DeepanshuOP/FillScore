@@ -10,6 +10,15 @@
 /* design v3.1 fixes A7: the tape sits at the middle of the stage (not a fixed 17vh), so no dead band opens between it and the
    headline at 1440; the pen notes need 86 px above the strip and about 110 px below it, which this keeps clear */
 .fs-hero-viewport { position: absolute; left: 0; right: 0; top: max(96px, calc(50% - 30px)); height: 260px; }
+/* design v3.1 fixes F3: on a desktop the hero is no taller than its content needs (nav 64, tape 134, headline block about 283)
+   plus two bands of at most 120 px, and the tape sits exactly between the top bar and the headline: at 1440 x 900 the
+   gaps above and below the tape are 110 and 110 px (they were 247 and 172) */
+@media (min-width: 768px) {
+  /* the box stays 100svh (the pinned story and the layout below it do not move: a shorter box let the next section peek
+     in and shift when the pin spacer arrived, CLS 0.22); the padding keeps the content inside the first 700 px */
+  .fs-hero { padding-bottom: max(0px, calc(100svh - 700px)); }
+  .fs-hero-viewport { top: max(96px, calc(50% - 67px)); }
+}
 /* at rest on the order: --stop-d / --stop-p are the order's centre in tape px, computed on the server (heroGeometry.ts) */
 .fs-hero-strip { position: relative; display: flex; width: max-content; height: 134px; will-change: transform; transform: translate3d(calc(44vw - var(--stop-d)), 0, 0); }
 @media (max-width: 767px) { .fs-hero-strip { transform: translate3d(calc(50vw - var(--stop-p)), 0, 0); } }
