@@ -7,6 +7,10 @@ import { MarginNote } from '../../ui/MarginNote'
 import { formatPct, formatPrice, formatQty, formatSignedBps, formatUsd, heroCosts, heroEntries, heroTape, utcTime } from '../../lib/landing/heroData'
 import { heroGeometry, type HeroGeo, type LayoutName } from './heroGeometry'
 import { startPinnedStory } from './v3/pinnedStory'
+import { DEMO_ENTRY } from './siteItems'
+
+/** The order's day, from the fixture the tape is cut from (the day of its prints and of the order itself, UTC): "Jan 28, 2024". */
+const TAPE_DAY = new Date(`${heroTape.date}T00:00:00Z`).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })
 
 const ENTRIES = heroEntries()
 const GEO: Record<LayoutName, HeroGeo> = { desk: heroGeometry(ENTRIES, 'desk'), phone: heroGeometry(ENTRIES, 'phone') }
@@ -92,6 +96,8 @@ export function TapeHero() {
     <section ref={root} className="fs-hero" aria-labelledby="hero-title">
       <div aria-hidden="true" />
       <div className="fs-hero-stage">
+        {/* printed on the tape's paper: which order this is and where it comes from; the dots are drawn by CSS (landing.css) */}
+        <p className="fs-tape-label" data-testid="tape-label"><span>One demo order</span><span>{TAPE_DAY}</span><span>synthetic trader, real prices</span></p>
         <div className="fs-hero-viewport">
           <div ref={strip} className="fs-hero-strip fs-strip fs-sprockets" role="img" style={vars}
             aria-label={`Ticker tape: ${PRINTS} public ${heroTape.symbol} prints from Binance, 28 January 2024, with the order's arrival quote and its two fills. Spread ${formatUsd(heroCosts.spread.usd)}, impact and timing ${formatUsd(heroCosts.impactTiming.usd)}, fees ${formatUsd(heroCosts.fees.usd)}. The order is a synthetic trader's; the prices are real.`}>
@@ -128,8 +134,8 @@ export function TapeHero() {
             {' '}It never advises.
           </p>
           <div className="flex flex-wrap gap-2.5">
-            <Link href="/app?userId=demo-moderate" className={buttonClass('primary', 'lg', 'no-underline')}>Open the demo</Link>
-            <Link href="/verify" className={buttonClass('secondary', 'lg', 'no-underline')}>Check a pack</Link>
+            <Link href={DEMO_ENTRY} className={buttonClass('primary', 'lg', 'no-underline')}>Open the demo</Link>
+            <Link href="/how-it-works" className={buttonClass('secondary', 'lg', 'no-underline')}>How it works</Link>
           </div>
           {/* the tape's order is a synthetic trader's (DESIGN.md invariant 4); a phone prints it under the tape */}
           <p className="mt-4 font-mono text-[13px] tracking-[0.04em] text-ui-graphite max-md:hidden">SYNTHETIC TRADER, REAL PRICES</p>

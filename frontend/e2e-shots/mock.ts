@@ -91,7 +91,10 @@ export async function checks(page: Page, name: string) {
           if (shown < r.height * 0.5) { clippedAway = true; break }
         }
       }
-      if (!layered && !clippedAway && r.top < window.innerHeight * 2 && el.children.length === 0 && (el.textContent ?? '').trim().length > 1 && !el.closest('[aria-hidden="true"],svg,.sr-only,[data-overlap-ok]')) texts.push({ r, t: (el.textContent ?? '').trim().slice(0, 24) })
+      if (!layered && !clippedAway && r.top < window.innerHeight * 2 && el.children.length === 0 && (el.textContent ?? '').trim().length > 1 && !el.closest('[aria-hidden="true"],svg,.sr-only,[data-overlap-ok]')) {
+        // one box per line of text: an inline element that wraps has a bounding box that covers its neighbours on the next line
+        for (const lr of Array.from(el.getClientRects())) if (lr.width > 0 && lr.height > 0) texts.push({ r: lr, t: (el.textContent ?? '').trim().slice(0, 24) })
+      }
     }
     const overlaps: string[] = []
     for (let i = 0; i < texts.length; i++) for (let j = i + 1; j < texts.length; j++) {

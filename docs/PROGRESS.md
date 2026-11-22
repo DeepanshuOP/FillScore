@@ -4,7 +4,16 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, sixth: IA v4 built in production (local commits)
 
-- **Next concrete action: Step 5 (marketing site: top bar, menu sheet, footer, /demo, /how-it-works, /docs, /docs/mcp, /docs/package, hero label and button).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Next concrete action: Step 6 (interactions and DESIGN.md: receipt print on first open, sidebar underline check, page fade check, pen nib on the hero tape, DESIGN §12 "Numbers", bundle check).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Step 5: done.** Top bar (How it works, Demo, Verify, Docs, Log in, Open the demo; signed in: Open the app), phone Menu as a Vaul receipt
+  sheet with the account actions pinned, footer with Product, Docs, Trust, Legal (every link exists), `/demo` (three slips: name, line,
+  orders, fills, period, total bps from the API, the synthetic line), `/how-it-works` (HowItReads, left the landing, which keeps the hero
+  button "How it works"), `/docs` hub + `/docs/mcp` + `/docs/package` (rendered from copies of the runbook and the package README in
+  `app/docs/content/`, drift-tested; a 90-line Markdown renderer, no dependency, no raw HTML; the runbook lost its personal address and
+  local path), `/methodology` and `/verify` use the new bar and footer. **Deviation from the order:** the tape label prints
+  "One demo order · Jan 28, 2024 · synthetic trader, real prices": the order's date is 28 January 2024 in the fixture (`tape.date`, order
+  `createdAt` 2024-01-28T20:41Z), not 31 January; a wrong date would be a fabricated fact, so the label reads the date from the data.
+  The dots are drawn by CSS. Frontend vitest 792 passed, tsc 0, eslint 0 errors; looked at 8 pages at 1440 and 390 (axe 0, overlaps 0).
 - **Step 4: done.** Overview, Orders, Rules, Rankings, Council, Evidence unchanged apart from the frame (Ask left Council; the broker-file
   check left Evidence). Fills (`/app/fills`) has two tabs, Ledger and Patterns (`?tab=patterns`; links, no motion): `TradesLedger` and
   `Patterns` are today's Trades and Analytics bodies. `/app/check` opens signed out and in demo mode (header text "Your file, public

@@ -1,7 +1,7 @@
 # Connect the read-only FillScore MCP server to Claude Code
 
-For Deepanshu. Written 2026-11-22 from `mcp-server/server.mjs`, `mcp-server/lib.mjs` and `mcp-server/README.md`. I did not run
-`claude mcp add` and I did not edit any settings file; the commands below are yours to run.
+Written 2026-11-22 from `mcp-server/server.mjs`, `mcp-server/lib.mjs` and `mcp-server/README.md`. The commands below are for you to run;
+nothing here edits a settings file for you. Replace `/path/to/FillScore` with the folder of your clone of the repository.
 
 The server reads only. Every tool makes one `GET` to the FillScore API; it computes, predicts and advises nothing.
 
@@ -17,7 +17,7 @@ The server reads only. Every tool makes one `GET` to the FillScore API; it compu
 ## 1. Install once
 
 ```bash
-cd ~/FillScore/mcp-server && npm ci
+cd /path/to/FillScore/mcp-server && npm ci
 ```
 
 ## 2. Add it to Claude Code on a demo account (no key)
@@ -26,7 +26,7 @@ cd ~/FillScore/mcp-server && npm ci
 claude mcp add --transport stdio fillscore \
   --env FILLSCORE_API_URL=https://fillscore-api.onrender.com \
   --env FILLSCORE_DEMO_USER=demo-moderate \
-  -- node /home/shree/FillScore/mcp-server/server.mjs
+  -- node /path/to/FillScore/mcp-server/server.mjs
 ```
 
 Check it: `claude mcp list` should show `fillscore`. Inside Claude Code, `/mcp` shows the six tools.
@@ -47,13 +47,13 @@ The other four tools: `fillscore_exceptions`, `fillscore_order_replay` (needs an
 
 ## 4. Your own account (after you have scored real trades)
 
-Create a key in FillScore under Settings, "API keys for AI clients (read-only)". It is shown once. Then:
+Create a key in FillScore under Settings (`/app/settings`), "API keys for AI clients (read-only)". It is shown once. Then:
 
 ```bash
 claude mcp add --transport stdio fillscore-me \
   --env FILLSCORE_API_URL=https://fillscore-api.onrender.com \
   --env FILLSCORE_API_KEY=<the key, pasted by you> \
-  -- node /home/shree/FillScore/mcp-server/server.mjs
+  -- node /path/to/FillScore/mcp-server/server.mjs
 ```
 
 The key can only read (`GET` and `HEAD`), only the six routes of the tools, and only its owner's account. It expires after 90 days unless

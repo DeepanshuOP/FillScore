@@ -7,6 +7,13 @@
  */
 .fs-hero { position: relative; height: 100svh; min-height: 640px; overflow: hidden; display: grid; grid-template-rows: 64px 1fr auto; }
 .fs-hero-stage { position: relative; }
+/* IA v4: the printed label on the tape. Absolute, so it takes no room (landing CLS stays 0); right-aligned on a desktop, where the
+   pen notes stand near the order at the left; the dots between its three parts are drawn here, not typed. */
+.fs-tape-label { position: absolute; z-index: 1; right: var(--ui-gutter); top: max(60px, calc(50% - 100px)); margin: 0; font-family: var(--ui-mono); font-size: 12px;
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--ui-graphite); text-align: right; }
+.fs-tape-label span + span::before { content: '\00b7'; margin: 0 0.6em; }
+@media (min-width: 768px) { .fs-tape-label { top: max(66px, calc(50% - 104px)); } }
+@media (max-width: 767px) { .fs-tape-label { left: var(--ui-gutter); right: var(--ui-gutter); top: 72px; text-align: left; } }
 /* design v3.1 fixes A7: the tape sits at the middle of the stage (not a fixed 17vh), so no dead band opens between it and the
    headline at 1440; the pen notes need 86 px above the strip and about 110 px below it, which this keeps clear */
 .fs-hero-viewport { position: absolute; left: 0; right: 0; top: max(96px, calc(50% - 30px)); height: 260px; }

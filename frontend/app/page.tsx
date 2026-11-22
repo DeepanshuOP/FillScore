@@ -5,7 +5,6 @@ import { LandingMotion } from './components/marketing/LandingMotion'
 import { StoryEnd, TapeHero } from './components/marketing/TapeHero'
 import { DemoCards } from './components/marketing/DemoCards'
 import { CheckIt } from './components/marketing/CheckIt'
-import { HowItReads } from './components/marketing/HowItReads'
 import SiteFooter from './components/SiteFooter'
 
 /**
@@ -22,7 +21,6 @@ export default function Home() {
       <main id="main">
         <TapeHero />
         <StoryEnd />
-        <HowItReads />
         <DemoCards />
         <CheckIt />
 

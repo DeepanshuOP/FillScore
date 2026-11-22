@@ -4,6 +4,8 @@ export const REBUILT_FILES = [
   'app/page.tsx', 'app/providers.tsx', 'app/components/appshell/AppFrame.tsx', 'app/components/appshell/SettingsShell.tsx', 'app/components/shell/CommandMenu.tsx', 'app/components/shell/Logo.tsx',
   'app/components/shell/ThemeToggle.tsx', 'app/components/marketing/MarketingNav.tsx', 'app/components/marketing/TapeHero.tsx',
   'app/components/marketing/DemoCards.tsx', 'app/components/marketing/CheckIt.tsx',
+  'app/components/marketing/DemoChoice.tsx', 'app/components/marketing/MarketingMenu.tsx', 'app/demo/page.tsx', 'app/how-it-works/page.tsx',
+  'app/docs/layout.tsx', 'app/docs/page.tsx', 'app/docs/markdown.tsx',
   'app/ui/charts/RankPlot.tsx', 'app/ui/GradeChip.tsx', 'app/ui/GradeBadge.tsx',
   'app/ui/ValueState.tsx', 'app/ui/Panel.tsx', 'app/ui/Banner.tsx', 'app/ui/EmptyState.tsx', 'app/ui/Disclosure.tsx', 'app/ui/ProvenanceChip.tsx',
   'app/design-lab/page.tsx',
