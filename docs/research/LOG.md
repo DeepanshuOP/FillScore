@@ -388,3 +388,15 @@ Report: `docs/milestones/M8.md` ("Design v3.1"); references `docs/design/REFEREN
   with 245 bars two orders 4 minutes apart sit 0.1 px apart, so a click must open the bar the preview shows, not
   re-resolve the nearest.
 - **The expected cost is itself a model**: the landing's "never" line must say "language model", not "model".
+
+## AG. Design v3.1 part B and fixes F1 to F3 (orders of 2026-11-22, second)
+
+- **A banned word is a design constraint, not a copy choice**: the order named a strip part "missed fills"; the invariant
+  test `adviceCopy.test.ts` bans "missed" (counterfactual list), so the part reads "Unfilled orders". Money did not
+  leave the account for an unfilled order: the copy says the market moved away from it.
+- **A shorter hero box shifts layout**: cutting the 100svh hero to 700 px let the next section peek into the first
+  viewport before the pin spacer arrived (CLS 0.22); padding inside the 100svh box gives the same gaps with CLS 0.
+- **A path counts as one word, its plain name as four**: replacing field paths by plain names raised the Council word
+  count (325 to 354) until the cited values went into a closed fold (285).
+- **Overlap detectors read boxes, not clipping**: rows scrolled out of an overflow region still overlap the footer in
+  `getBoundingClientRect`; the image is the check.

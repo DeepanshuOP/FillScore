@@ -62,7 +62,7 @@ export default function RulesView({ query, readOnly, request }: Props) {
 
   return (
     <div data-testid="explain-panel" className="flex flex-col gap-5">
-      <Panel title={PANEL_COPY.queueTitle} description={q?.summary ?? (q ? 'No rule was checked.' : 'Loading the queue.')}
+      <Panel title={PANEL_COPY.queueTitle} description={q?.summary ?? (q && q.kind !== 'error' ? 'No rule was checked.' : q ? undefined : 'Loading the queue.')}
         note={q?.threshold ? { label: 'the rules', text: <>Orders whose stored measurements met one of the account&rsquo;s rules. {q.threshold}</> } : { label: 'the rules', text: "Orders whose stored measurements met one of the account's rules." }}
         actions={
           <label className="inline-flex min-h-8 items-center gap-2 text-sm text-ui-ink">

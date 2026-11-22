@@ -23,6 +23,8 @@ const ORDER: StripKey[] = ['execution', 'missed', 'fees']
 export function describeStrip(body: unknown, feesNotMeasured: boolean): StripView | null {
   const s = (body as { available?: boolean; strip?: { totalUsd?: unknown; segments?: Seg[] } | null } | null)
   if (!s || s.available !== true || !s.strip || !num(s.strip.totalUsd) || !Array.isArray(s.strip.segments)) return null
+  const uc = (body as { unfilledCost?: { usd?: unknown; count?: unknown } | null }).unfilledCost
+  const unfilled = { usd: num(uc?.usd) ? uc!.usd as number : null, count: num(uc?.count) ? uc!.count as number : 0 }
   const byKey = new Map<StripKey, StripPart>()
   for (const g of s.strip.segments) {
     if (!ORDER.includes(g.key as StripKey) || !num(g.usd) || !num(g.share) || !num(g.below)) return null
@@ -31,9 +33,12 @@ export function describeStrip(body: unknown, feesNotMeasured: boolean): StripVie
     // the key 'missed' is the server's name for the part; the printed word is "Unfilled orders" (adviceCopy.test bans "missed")
     const label = key === 'fees' ? 'Fees' : key === 'missed' ? 'Unfilled orders'
       : g.usd < 0 ? "Filled orders' execution, better than the market" : "Filled orders' execution"
-    const caption = key === 'fees' ? (dashed ? 'at the published rate, not independently measured' : null) : key === 'missed' ? 'the market moved away from them' : null
+    // unfilled orders that exist but were not measured are not in the total: say so, never print a zero for them
+    const noMeasure = key === 'missed' && unfilled.count > 0 && unfilled.usd === null
+    const caption = key === 'fees' ? (dashed ? 'at the published rate, not independently measured' : null)
+      : key === 'missed' ? (noMeasure ? `insufficient data: none of the ${unfilled.count} unfilled orders was measured` : g.usd > 0 ? 'the market moved away from them' : null) : null
     byKey.set(key, {
-      key, label, caption, amount: formatUsd(g.usd), usd: g.usd,
+      key, label, caption, amount: noMeasure ? 'insufficient data' : formatUsd(g.usd), usd: g.usd,
       width: pct(g.share), below: g.below > 0 ? pct(g.below) : null, dashed, drawn: g.share > 0,
     })
   }

@@ -62,6 +62,17 @@ describe('describeStrip', () => {
     expect(v.sentence).toBe('The orders cost $3.00.')
   })
 
+  it('unfilled orders that were never measured read "insufficient data", not $0.00; no unfilled orders: no caption (review)', () => {
+    const strip = { totalUsd: 12, segments: [
+      { key: 'execution', usd: 3, share: 0.25, below: 0 }, { key: 'missed', usd: 0, share: 0, below: 0 }, { key: 'fees', usd: 9, share: 0.75, below: 0 },
+    ] }
+    const unmeasured = describeStrip({ available: true, strip, unfilledCost: { usd: null, count: 3, measured: 0 } }, false)!
+    expect(unmeasured.parts[1]).toMatchObject({ amount: 'insufficient data', caption: 'insufficient data: none of the 3 unfilled orders was measured' })
+    const none = describeStrip({ available: true, strip, unfilledCost: { usd: 0, count: 0, measured: 0 } }, false)!
+    expect(none.parts[1].caption).toBeNull()
+    expect(none.parts[1].amount).toBe('$0.00')
+  })
+
   it('is null when the server sent no strip or a malformed one', () => {
     expect(describeStrip({ available: true }, false)).toBeNull()
     expect(describeStrip({ available: false, strip: BODY.strip }, false)).toBeNull()

@@ -4,8 +4,12 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, second: verify Part A, F1-F3, Part B screens, QA (local commits)
 
-- **Next concrete action: Part B commit (B1 and B2 edits are in the working tree, not yet committed), then QA (qa3, one
-  reviewer, final checks, docs).**
+- **Next concrete action: Design v3.1 complete: all screens ready for Deepanshu's review (docs/design/v31b/).**
+- **Step 3: done** (commits e61e9ec B1, f37ddf8 B2): words before and after per screen in `docs/milestones/M8.md`
+  ("Design v3.1 complete"); Analytics, Error, Share, OG and the auth pages could not be measured or were already inside the
+  rule (stated there). **Step 4: done**: qa3 48 states, keyboard 20/20, break-ui 76/80 (4 detector artefacts on clipped
+  Orders rows), one reviewer (9 findings, fixed or kept with reasons), final checks green (vitest 715, tsc 0, lint 0
+  errors, build ok, e2e 39, backend 1050, tsc 0). Images `docs/design/v31b/` (16 + README).
 - **Step 1: done.** Full e2e on e5ddba8: 39 passed (1.6 min); nothing to fix, no commit.
 - **Step 2: done** (commits 667b7aa F1, 0024e9b F2, 1d24822 F3). Backend 1050 passed; frontend vitest 714 passed.
   - F1: `/audit/orders-summary` `strip` has three parts that add up to the total (`execution` = total - fees - unfilled,
