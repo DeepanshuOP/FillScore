@@ -8,15 +8,20 @@ import type { RecordedRun } from './data'
  * answers of the real Ask agent (fixtures/ask-recorded.json), shown verbatim and labelled as recorded. The answer prints as a
  * receipt slip: the paper feeds out of the slot, then each line prints (ia4.css; reduced motion: the finished slip).
  */
-export function AskHome({ runs, label, recordedAt }: { runs: RecordedRun[]; label: string; recordedAt: string }) {
+export function AskHome({ runs, label, recordedAt, context }: { runs: RecordedRun[]; label: string; recordedAt: string; context: string }) {
   const [picked, setPicked] = useState<number | null>(null)
   const run = picked === null ? null : runs[picked]
+  // review (step 4): the LLM heading only over text the model wrote; a degraded answer was written by code and says so
+  const byModel = run ? run.view.note === null : false
   const lines: Array<{ key: string; node: React.ReactNode; className?: string }> = run ? [
     { key: 'h', node: 'ASK FILLSCORE', className: 'text-center font-mono tracking-[0.08em]' },
     { key: 'r', node: 'RECORDED ANSWER, NOT LIVE', className: 'text-center font-mono text-[12px] tracking-[0.06em] text-ui-graphite' },
+    // the account's period and order count, placed by code, so a slip read alone keeps its scope
+    { key: 'c', node: context, className: 'text-center font-mono text-[12px] tracking-[0.06em] text-ui-graphite' },
     // DESIGN §4: mono for printed labels only; sentences in the text face
     { key: 'q', node: <><span className="font-mono text-[12px] tracking-[0.06em] text-ui-graphite">QUESTION </span><span className="font-sans text-[15px]">{run.question}</span></>, className: 'mt-3' },
-    { key: 'lh', node: 'Explanation (language model; every number was checked against the audit)', className: 'mt-3 font-sans text-[13px] text-ui-graphite' },
+    { key: 'lh', node: byModel ? 'Explanation (language model; every number was checked against the audit)' : 'Written by code from the measured values (no model text)',
+      className: 'mt-3 font-sans text-[13px] text-ui-graphite' },
     { key: 'a', node: run.view.answer, className: 'font-sans text-[18px] leading-snug font-bold tracking-[-0.015em]' },
     ...(run.view.note ? [{ key: 'n', node: run.view.note, className: 'font-sans text-[14px] text-ui-graphite' }] : []),
     { key: 'm', node: run.view.meta, className: 'mt-2 font-sans text-[14px] text-ui-graphite' },
@@ -26,25 +31,23 @@ export function AskHome({ runs, label, recordedAt }: { runs: RecordedRun[]; labe
     <section aria-labelledby="ask-title" data-testid="ia4-ask">
       <h1 id="ask-title" className="display-md text-ui-ink">Ask FillScore</h1>
       <p className="mt-2 max-w-[60ch] text-[16px] text-ui-graphite">Questions about this account&rsquo;s past executions. Answers use only the stored measurements; every figure is placed by code.</p>
-      <form className="mt-6 flex flex-wrap items-stretch gap-2" onSubmit={(e) => e.preventDefault()}>
-        <label htmlFor="ia4-q" className="sr-only">Your question</label>
-        <input id="ia4-q" readOnly value={run?.question ?? ''} placeholder="Ask about your past executions"
-          aria-describedby="ia4-q-hint" className="min-h-11 min-w-0 flex-1 basis-64 rounded-[8px] border border-ui-edge bg-ui-raised px-3 text-[16px] text-ui-ink placeholder:text-ui-graphite" />
-        <button type="submit" disabled className="min-h-11 rounded-full bg-ui-ink px-5 text-[15px] font-bold text-ui-surface disabled:opacity-60">Ask</button>
-      </form>
-      <p id="ia4-q-hint" className="mt-2 text-[14px] text-ui-graphite">
+      {/* review (step 4): a demo account gets no input it cannot use; the recorded questions are the interaction. A signed-in
+          account gets the live box (production AskPanel) in this place. */}
+      <p className="mt-6 text-[16px] text-ui-ink">
         {runs.length
-          ? 'Demo account: sign in to ask about your own executions. The questions below show recorded answers.'
-          : 'Demo account: sign in to ask about your own executions. Recorded answers exist for the mixed-orders demo trader only.'}
+          ? <>Recorded questions. <span className="text-ui-graphite">Demo accounts run no model on request; <a href="/login" className="text-ui-ink underline underline-offset-2">sign in</a> to ask about your own executions.</span></>
+          : <>No recorded questions for this demo trader. <span className="text-ui-graphite">Recorded answers exist for the mixed-orders trader; <a href="/login" className="text-ui-ink underline underline-offset-2">sign in</a> to ask about your own executions.</span></>}
       </p>
-      <ul className="mt-4 flex flex-wrap gap-2" aria-label="Suggested questions">
+      <ul className="mt-3 flex flex-wrap gap-2" aria-label="Recorded questions">
         {runs.map((r, i) => (
           <li key={r.question} className="max-w-full">
-            <button type="button" className="ia4-chip" aria-pressed={picked === i} onClick={() => setPicked(i)} data-testid="ia4-chip">{r.question}</button>
+            <button type="button" className="ia4-chip" data-picked={picked === i} onClick={() => setPicked(i)} data-testid="ia4-chip">{r.question}</button>
           </li>
         ))}
       </ul>
-      <div aria-live="polite" className="mt-6 max-w-[640px]">
+      {/* screen readers hear the answer sentence once, not every printed line */}
+      <p className="sr-only" role="status">{run ? `Recorded answer: ${run.view.answer}` : ''}</p>
+      <div className="mt-6 max-w-[640px]">
         {run ? (
           <div>
             <div className="ia4-slot" aria-hidden="true" />

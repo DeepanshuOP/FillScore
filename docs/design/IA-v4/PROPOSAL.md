@@ -37,7 +37,8 @@ Pricing: **no page.** Stripe is prepared and off, there is no plan to show (STAT
 
 ### Marketing top bar
 
-`FillScore.` · How it works · Demo · Verify · Docs · (right) Log in · **Open the demo** (ink pill). 5 items plus two actions
+`FillScore.` · How it works · Demo · Verify · Docs · (right) Log in · **Open the demo** (ink pill). "Demo" and "Open the demo"
+both go to `/demo`, the choice of trader; nothing skips the choice. 4 items plus two actions
 (cal.com has 10; Linear 8). Methodology and Verify stay public but leave the app's bar: Methodology sits under Docs, Verify is
 its own item because "check it yourself" is the trust promise. Phone: wordmark, "Open the demo", Menu; the menu is a receipt
 sheet with the five items and Log in / Sign up pinned at the bottom (cal.com's pattern).
@@ -106,10 +107,13 @@ versions, log in/out). The account switcher and the provenance line sit at the t
   its DESIGN §9 heading.
 - **Key figures under it** are today's overview chapter 01 (the total and its sentence, the grade stamp) and 02 (the strip),
   served by the same APIs (`/audit/orders-summary`); the other chapters stay on Overview.
-- **A demo visitor** lands on `/app?userId=demo-moderate` from "Open the demo" (or `/demo`, which lists the three traders). The Ask
-  service refuses demo accounts (no model runs on request for demo data), so Home shows the **recorded** answers of the real Ask
-  agent for that demo, labelled "Recorded answer of the Ask agent on demo data; not a live answer", and the box says "Sign in to ask
-  about your own executions." The chips then show their recorded answer.
+- **A demo visitor** picks a trader on `/demo` and lands on `/app?userId=demo-*`. The Ask service refuses demo accounts (no model
+  runs on request for demo data), so a demo Home has **no input box**: it shows "Recorded questions" as chips, each printing the
+  **recorded** answer of the real Ask agent, labelled "Recorded answer, not live", with a code-built line of scope (period and order
+  count). The LLM heading appears only over text the model wrote; a degraded answer is headed "Written by code from the measured
+  values". Screen readers hear the answer sentence once (one status element), not each printed line.
+- **The stamp** on Home is the small one (period only), so the scoring version and range are printed beside it
+  ("SCORING V2.3.0 (MEASURED), RANGE 92.5 TO 94.1"). The locked v1 grade stays where it is today (Evidence, "v1 details").
 - **A signed-in user** lands on `/app` after login (today: `/dashboard`). With no exchange connected yet, Home shows the connect
   empty state (one icon, "No trades yet", two lines, one action: "Connect an exchange") and the broker-file tool beside it; Ask is
   disabled with "Ask needs measured orders." With data, Ask is live (2 budget units per question, as today).
@@ -147,8 +151,13 @@ the page and stays visible.
 | ⌘K palette | keep | lists the sidebar's items and actions | n/a | n/a |
 
 Nothing retires. Trades and Analytics merge into one page because both read v1 per-fill scores; one sidebar item is clearer
-than two. The redirects go in `next.config` `redirects()`, with a test that every old URL (including each `?view=`) answers
-308 to its new home and keeps the query.
+than two. The redirects go in `next.config` `redirects()`, with a test that every old URL (including each `?view=`, and
+combinations such as `?view=orders&userId=demo-moderate&order=...`) answers 308 to its new home and keeps the rest of the query;
+and that `/app/*` pages without `userId` send a signed-out visitor to log in, while `/app/check` stays open signed out.
+
+Glosses for the less obvious nouns go in the ⌘K palette and the More sheet, one line each: Rules "orders that broke a stated
+rule", Rankings "groups of orders compared, with noise", Council "a language-model review of the audit", Evidence "signed packs and
+the record behind the grade", Fills "each fill and its patterns".
 
 ## 4. Number presentation rules (proposed DESIGN.md section 12; proposal text only)
 
@@ -220,3 +229,25 @@ shadow).
 4. The recorded Ask answers on demo Home (recommended, labelled), or no Ask on demo accounts at all.
 5. The Ask agent's recorded comparison answer reads "-0.1 bps in bps" (a doubled unit in the model's sentence; the recording is not
    edited). A renderer or prompt fix is a separate order.
+6. The landing hero's figures (spread, impact and timing, fees of one demo order) carry the synthetic line below the call to action,
+   not beside the tape. A "One demo order, Jan 31, 2024" label on the tape itself is a small production change, outside this order.
+
+## 9. Review (step 4, one reviewer, Sonnet, read-only)
+
+| Finding (reviewer's rank) | Decision |
+|---|---|
+| Two demo entries land on different pages (high) | Fixed: both go to the choice of trader (`/demo`; lab: the site's demo section). |
+| LLM heading over the code-built fallback answer (high) | Fixed: the heading shows only over model text; a degraded answer is headed "Written by code from the measured values". |
+| `aria-live` around the whole printing slip; chips as `aria-pressed` toggles (high) | Fixed: one `role="status"` element announces the answer sentence; chips are plain buttons. |
+| Home is a chat box a demo visitor cannot use (medium) | Fixed: no input on a demo Home; "Recorded questions" with a sign-in link. |
+| No scoring version beside the small stamp; v1 shows B 84.8 (medium) | Fixed: "Scoring v2.3.0 (measured), range 92.5 to 94.1" printed beside the stamp. v1 stays in Evidence, as today. |
+| Sidebar jargon (medium) | Kept the nine nouns (cal.com: ten, unlabelled); added one-line glosses in the ⌘K palette and the More sheet (section 3). |
+| Model numbers only "verified in the old Ask path" (medium) | Kept: the recording came from the production `ask_flow`, whose gate drops any number that is not a tool value (`agents/ask.py`); the UI shows its output verbatim. The doubled unit is open question 5. |
+| Answer lacks period and count (medium) | Fixed: a code-built scope line on the slip ("JANUARY 2024 · 245 ORDERS"). The strip's sentence sits under the page header's period. |
+| Landing hero figures lack a "demo order" label at the tape (medium) | Kept: the hero is production's, unchanged by this order; open question 6. |
+| Chips and sidebar items under 44 px (medium) | Fixed for chips (min-height 44 px). Sidebar items are desktop-only (fine pointer); WCAG 2.2 AA asks 24 px, met. Native `<dialog>` returns focus to its opener on close. |
+| Pen underline measured once (medium) | Fixed: re-measured on resize and after the fonts load. |
+| Redirect test should cover query combinations; `/app/*` auth (low) | Fixed in section 3. |
+| NOT SIGNED and "not independently measured" absent from images (low) | Kept: no order receipt is in the prototype (NOT SIGNED lives on the receipt, unchanged); the fee part of the Home strip prints "Not independently measured: fees at the published rate." under its figure. |
+| Graphite contrast (low) | Kept: graphite is >= 4.5:1 on all three grounds, tested by `app/ui/contrast.test.ts`; axe 0 serious. |
+| Account switcher button does nothing; ⌘K hint read aloud (low) | Fixed: the switcher links to the choice of trader; the ⌘K hint is `aria-hidden`. |

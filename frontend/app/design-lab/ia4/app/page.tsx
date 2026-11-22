@@ -25,7 +25,8 @@ export default async function Ia4App({ searchParams }: { searchParams: Promise<{
       {active === 'home' ? (
         <div className="flex flex-col gap-16">
           {/* answers were recorded for one demo trader only; the others say so instead of borrowing its answers */}
-          <AskHome runs={trader.id === ask.account ? ask.runs : []} label={ask.label} recordedAt={ask.recordedAt} />
+          <AskHome runs={trader.id === ask.account ? ask.runs : []} label={ask.label} recordedAt={ask.recordedAt}
+            context={`${k.periodLabel.toUpperCase()} · ${(k.headline?.orders ?? trader.orders).toLocaleString('en-US')} ORDERS`} />
 
           <section aria-labelledby="kf-title" className="border-t border-ui-ink pt-8" data-testid="ia4-key-figures">
             <h2 id="kf-title" className="sr-only">Key figures, {k.periodLabel}</h2>
@@ -39,7 +40,15 @@ export default async function Ia4App({ searchParams }: { searchParams: Promise<{
                   </>
                 ) : <ValueState state="not-computed" label="Total cost" reason="The orders were not measured, so there is no dollar total." />}
               </div>
-              {k.grade ? <GradeStamp grade={k.grade.letter} score={k.grade.score} period={k.periodLabel} version={k.grade.version} size="sm" /> : null}
+              {k.grade ? (
+                <div className="flex flex-col items-start gap-3 lg:items-end">
+                  <GradeStamp grade={k.grade.letter} score={k.grade.score} period={k.periodLabel} version={k.grade.version} size="sm" />
+                  {/* review (step 4): the version printed beside the small stamp, which shows the period only */}
+                  <p className="font-mono text-[12px] tracking-[0.06em] text-ui-graphite uppercase" data-testid="ia4-stamp-version">
+                    Scoring {k.grade.version} (measured){k.grade.bandText ? `, range ${k.grade.bandText}` : ''}
+                  </p>
+                </div>
+              ) : null}
             </div>
 
             <div className="mt-12">

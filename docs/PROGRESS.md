@@ -4,7 +4,15 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, fifth: two fixes, the production 418, IA v4 research and proposal (local commits)
 
-- **Next concrete action: Step 4** (one reviewer on the proposal and the images, one pass of fixes).
+- **Next concrete action: IA v4 proposal ready: Deepanshu chooses (docs/design/IA-v4/)**. Also open: Deepanshu's probe output and
+  Render log lines for the 418 (step 0c).
+- **Step 4: done.** One reviewer (Sonnet, read-only): 15 findings (3 high, 8 medium, 4 low); 10 fixed in the prototype and proposal, 5
+  kept with a reason (table in PROPOSAL.md section 9). Final checks: frontend vitest 760 passed (79 files; the pre-existing timing test
+  `MarginNote` "opens on click and closes on Escape" failed once under full-suite load and passed on the rerun; this order does not touch
+  it), tsc 0, lint 0 errors (17 warnings), build ok, `design-lab-guard.spec.ts` 9 passed, `ia4-shots.ts` PASS (10 states, overflow 0,
+  axe serious/critical 0, reduced motion finished); backend vitest 1124 passed (133 files), tsc 0; ml-service pytest 1852 passed,
+  9 deselected. First Load JS: `/dashboard` 389.6 kB; lab app 311.9 kB vs lab index 308.3 kB. Live LLM calls this order: 8 (the
+  recorded Ask fixture, free tier, usage counted in memory). Atlas writes: none. Nothing pushed.
 - **Step 3: done.** Prototype `frontend/app/design-lab/ia4/` (site: top bar, tape hero, demo entry, footer; app: sidebar, phone bar
   with More sheet, Ask home with 4 chips playing the recorded answers as a printing receipt slip, key figures from fixtures). 11 images
   and README in `docs/design/IA-v4/`. Checks: frontend vitest 760 passed (79 files), tsc 0, lint 0 errors (17 warnings), build ok,

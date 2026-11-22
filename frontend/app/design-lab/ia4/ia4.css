@@ -36,10 +36,10 @@
 @keyframes ia4-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 /* ---- the Ask box and chips ---- */
-.ia4-chip { display: inline-block; max-width: 100%; text-align: left; padding: 7px 12px; border: 1px solid var(--ui-edge); border-radius: 999px;
+.ia4-chip { display: inline-block; max-width: 100%; min-height: 44px; text-align: left; padding: 9px 14px; border: 1px solid var(--ui-edge); border-radius: 999px;
   font-size: 14px; color: var(--ui-ink); background: var(--ui-raised); cursor: pointer; }
 .ia4-chip:hover { background: var(--ui-overlay); }
-.ia4-chip[aria-pressed="true"] { border-color: var(--ui-ink); }
+.ia4-chip[data-picked="true"] { border-color: var(--ui-ink); box-shadow: inset 0 0 0 1px var(--ui-ink); }
 
 /* ---- the receipt that prints: paper feeds out of the slot, then each line prints left to right ---- */
 .ia4-slot { height: 6px; border-radius: 3px; background: var(--ui-ink); }

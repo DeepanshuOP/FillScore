@@ -33,19 +33,27 @@ export function AppShell4({ active, userId, account, provenance, period, version
   const [y, setY] = useState<number | null>(null)
   const sheet = useRef<HTMLDialogElement>(null)
   // the pen underline sits under the current item: measured after layout, moved by transform (ia4.css)
+  // re-measured on resize and once the fonts load, so a font swap or text zoom cannot leave it under the wrong item (review)
   useLayoutEffect(() => {
-    const a = nav.current?.querySelector<HTMLAnchorElement>('a[aria-current="page"]')
-    if (a) setY(a.offsetTop + a.offsetHeight - 3)
+    const place = () => {
+      const a = nav.current?.querySelector<HTMLAnchorElement>('a[aria-current="page"]')
+      if (a) setY(a.offsetTop + a.offsetHeight - 3)
+    }
+    place()
+    window.addEventListener('resize', place)
+    void document.fonts?.ready.then(place)
+    return () => window.removeEventListener('resize', place)
   }, [active])
   return (
     <div className="ia4-shell">
       <aside className="ia4-side" aria-label="App">
         <div className="flex items-center justify-between">
           <Link href="/design-lab/ia4/site" className="no-underline" aria-label="FillScore site"><Logo /></Link>
-          <span className="font-mono text-[11px] text-ui-graphite" aria-label="Command menu: control K">⌘K</span>
+          <span className="font-mono text-[11px] text-ui-graphite" aria-hidden="true">⌘K</span>
         </div>
         <div>
-          <button type="button" className="w-full rounded-[8px] border border-ui-edge px-2.5 py-2 text-left text-[14px] font-bold text-ui-ink">Demo: {account}</button>
+          <Link href="/design-lab/ia4/site#demo" className="block w-full rounded-[8px] border border-ui-edge px-2.5 py-2 text-left text-[14px] font-bold text-ui-ink no-underline"
+            aria-label={`Demo: ${account}. Switch demo trader`}>Demo: {account}</Link>
           <p className="mt-2 font-mono text-[11px] tracking-[0.06em] text-ui-ink uppercase">{provenance}</p>
           <p className="font-mono text-[11px] tracking-[0.06em] text-ui-graphite uppercase">{period}</p>
         </div>

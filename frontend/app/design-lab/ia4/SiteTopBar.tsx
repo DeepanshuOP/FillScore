@@ -10,7 +10,8 @@ export const SITE_ITEMS: Array<[string, string]> = [
   // "How it works" is the landing's HowItReads section today (proposed: its own page, /how-it-works)
   ['/', 'How it works'], ['#demo', 'Demo'], ['/verify', 'Verify'], ['/methodology', 'Docs'],
 ]
-const DEMO = '/design-lab/ia4/app'
+// review (step 4): "Demo" and "Open the demo" both lead to the choice of trader (proposed: /demo), never straight past it
+const DEMO = '/design-lab/ia4/site#demo'
 
 export function SiteTopBar() {
   const menu = useRef<HTMLDialogElement>(null)
