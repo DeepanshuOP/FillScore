@@ -4,7 +4,13 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, fifth: two fixes, the production 418, IA v4 research and proposal (local commits)
 
-- **Next concrete action: Step 3** (prototype in `frontend/app/design-lab/ia4/`).
+- **Next concrete action: Step 4** (one reviewer on the proposal and the images, one pass of fixes).
+- **Step 3: done.** Prototype `frontend/app/design-lab/ia4/` (site: top bar, tape hero, demo entry, footer; app: sidebar, phone bar
+  with More sheet, Ask home with 4 chips playing the recorded answers as a printing receipt slip, key figures from fixtures). 11 images
+  and README in `docs/design/IA-v4/`. Checks: frontend vitest 760 passed (79 files), tsc 0, lint 0 errors (17 warnings), build ok,
+  `design-lab-guard.spec.ts` 9 passed (ia4 paths added), `e2e-shots/ia4-shots.ts` 10 states: overflow 0, axe serious/critical 0,
+  slip animated with motion and not under reduced motion. First Load JS: lab app 312.0 kB vs lab index 308.3 kB (+3.7 kB);
+  `/dashboard` 389.6 kB.
 - **Step 2: done.** `docs/design/IA-v4/PROPOSAL.md`: sitemap (marketing 5 items; app sidebar of 9 nouns + bottom group), Ask home
   with 4 chips, page inventory with 308 redirects for every moved route, proposed DESIGN §12 "Numbers", interaction and bundle
   budgets, phone plan, open questions. The Ask answers for the prototype were recorded from the real `ask_flow` on the committed

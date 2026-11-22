@@ -9,6 +9,7 @@ export default function LabIndex() {
       <p className="mt-3 text-ui-graphite">Prototypes of design v3. Development only.</p>
       <ul className="mt-8 flex flex-col gap-2">
         <li><Link href="/design-lab/v3" className="text-ui-ink">Design v3: Tape &amp; Receipt and Grid &amp; Highlighter</Link></li>
+        <li><Link href="/design-lab/ia4" className="text-ui-ink">IA v4: a marketing site and an app with a sidebar</Link></li>
       </ul>
     </main>
   )
