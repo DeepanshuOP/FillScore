@@ -51,4 +51,5 @@ A short post in your own words: the problem, one result (the finding about the t
 
 - Do not claim compliance with MiCA or SEC Rule 605: the pack "supports your documentation" and nothing more (the research note says why).
 - Do not post a real account's numbers or screenshots without the owner's permission.
-- Do not describe the Council as better than a single call: that comparison is small and being re-recorded.
+- Do not describe the Council as better than a single call: that comparison is small, on synthetic users, and its re-recording is parked.
+- Do not describe the Council as an audit of the whole account: it audits one symbol and the page says which, with the fill counts.

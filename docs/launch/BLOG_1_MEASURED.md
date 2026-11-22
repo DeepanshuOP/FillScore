@@ -27,7 +27,7 @@ Every number carries lineage: the public data file it came from and its SHA-256,
 I want to be open about what I found when I tested my own work.
 
 1. **The timing score mostly measured volatility.** My first measured "timing" component ranked the three demo traders in the reverse order of their discipline, because a volatile hour looks expensive. I rebuilt it from the median cost of a taker event per hour (ADR-0013). Then I found that the hour barely changes the cost of a trade at all, so timing is now reported but not scored (v2.3.0).
-2. **The score does not tell my three synthetic traders apart.** Under v2.3.0 they all grade between 93 and 94 (A). The demo traders are synthetic, and I did not tune the score to separate them (ADR-0014).
+2. **The score does not tell my three synthetic traders apart.** Under v2.3.0 they all grade A, from 93.4 to 94.3 out of 100 (`ml-service/demo_v2/out/grades_v2.json`: 94.35, 93.68 and 93.41). The demo traders are synthetic, and I did not tune the score to separate them (ADR-0014).
 
 ## Try it and check it
 

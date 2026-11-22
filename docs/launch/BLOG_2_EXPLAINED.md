@@ -14,7 +14,9 @@ A language model that explains your trading will, sooner or later, make a number
 
 ## A Council, or one call?
 
-FillScore offers a Quick audit (one model call, the default) and a Deep audit (a nine-call Council: four specialists, a prosecution and a defence, a synthesis). I do not claim the Council is better. The comparison of the two is small and on synthetic users, and I am re-recording it on the rebuilt demo data. Until then, the honest claim is about the guardrails: the same grounding, claim check and verification apply to both.
+FillScore offers a Quick audit (one model call, the default) and a Deep audit (a nine-call Council: four specialists, a prosecution and a defence, a synthesis). I do not claim the Council is better. The comparison of the two is small and on synthetic users, and its re-recording on the rebuilt demo data is parked. The honest claim is about the guardrails: the same grounding, claim check and verification apply to both.
+
+One more limit, stated on the page itself: the Council audits one symbol (BTCUSDT, for the demos), not the whole account. The page prints its scope from counts the server sends, for example "BTCUSDT only: 344 of the account's 607 fills", and a packet built for one symbol holds no cross-symbol concentration values, so no specialist can describe the account's concentration from one symbol's trades. The three demo Council runs were recorded again on 2026-11-22 under this rule.
 
 ## What testing my own work found
 
