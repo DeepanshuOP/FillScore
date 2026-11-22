@@ -50,7 +50,8 @@ export async function mock(page: Page, signedIn: boolean, over: (p: string, url:
   })
   await page.route('**/health', (r) => r.fulfill(json({ status: 'ok' })))
   await page.route('**/ml/agents/council/stream', (r) => r.fulfill({ status: 200, contentType: 'text/event-stream',
-    body: `event: cited_values\ndata: ${JSON.stringify({ citedValues: CITED })}\n\nevent: complete\ndata: ${JSON.stringify({ ...COUNCIL, cached: true })}\n\n` }))
+    // the server's `scope` event: the symbol's fills from the recorded run's packet, the account's fills from the ledger counts
+    body: `event: scope\ndata: ${JSON.stringify({ scope: { symbol: 'BTCUSDT', symbolFills: COUNCIL.tradeContext.trade_count, accountFills: (fx['demo-moderate'].ledger as { counts: { fills: number } }).counts.fills } })}\n\nevent: cited_values\ndata: ${JSON.stringify({ citedValues: CITED })}\n\nevent: complete\ndata: ${JSON.stringify({ ...COUNCIL, cached: true })}\n\n` }))
   await page.route('**/ml/agents/council/budget**', (r) => r.fulfill(json({ remaining: 20, limit: 20 })))
 }
 

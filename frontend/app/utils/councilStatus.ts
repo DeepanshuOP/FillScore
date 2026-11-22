@@ -102,7 +102,7 @@ const AGENT_LABELS: Record<string, string> = {
     liquidity_scout: 'Liquidity Scout',
     alpha_architect: 'Benchmark Reviewer',
     risk_auditor: 'Risk Auditor',
-    fee_optimizer: 'Fee Optimizer',
+    fee_optimizer: 'Fee Reviewer',   // display only (2026-11-22); recorded text that says "Fee Optimizer" is not edited
 };
 
 export function agentLabel(agent: string): string {
@@ -141,6 +141,34 @@ export function flagText(tag: string): string {
 export function councilScopeLabel(symbol: string, tradeCount: number | null | undefined): string {
     if (typeof tradeCount !== 'number') return symbol;
     return `${symbol} · ${tradeCount.toLocaleString('en-US')} ${tradeCount === 1 ? 'trade' : 'trades'}`;
+}
+
+/** What the server's `scope` event says: the symbol the Council audited and the fill counts (both served). */
+export interface CouncilScope {
+    symbol: string;
+    symbolFills: number;
+    accountFills: number;
+}
+
+/** The scope event's payload as a CouncilScope, or null when it is missing or not made of whole counts. */
+export function parseCouncilScope(raw: unknown): CouncilScope | null {
+    const s = (raw as { scope?: Record<string, unknown> } | null | undefined)?.scope;
+    if (!s || typeof s.symbol !== 'string' || !s.symbol) return null;
+    const ok = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 0;
+    return ok(s.symbolFills) && ok(s.accountFills)
+        ? { symbol: s.symbol, symbolFills: s.symbolFills, accountFills: s.accountFills }
+        : null;
+}
+
+/**
+ * The Council's scope in one line, from the served counts: "BTCUSDT only: 344 of the account's 607 fills". Without
+ * counts it still says the audit covers one symbol and states no number. The page computes nothing.
+ */
+export function councilScopeStatement(symbol: string, scope: CouncilScope | null): string {
+    if (!scope) return `${symbol} only`;
+    const n = (v: number) => v.toLocaleString('en-US');
+    if (scope.symbolFills === scope.accountFills) return `${scope.symbol}: all ${n(scope.accountFills)} of the account's fills`;
+    return `${scope.symbol} only: ${n(scope.symbolFills)} of the account's ${n(scope.accountFills)} fills`;
 }
 
 export interface CouncilAgentCard {

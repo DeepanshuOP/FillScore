@@ -113,20 +113,27 @@ def test_specialist_prompt_examples_render_against_a_real_packet():
     from agents.synthesis import packet_ctx_of
     from tests.council_fakes import make_packets
 
-    ctx = packet_ctx_of(*make_packets())
+    ctx = packet_ctx_of(*make_packets())       # the fixture packets are built for one symbol (metrics 1.4.0: no concentration)
     ctx["liquidity"]["worst_hour_utc"] = 8     # the empty fixture packet has the -1 "unavailable" sentinel
-    for mod in (liquidity_scout, alpha_architect, fee_optimizer, risk_auditor):
-        line = next(ln for ln in mod.SYSTEM_PROMPT.splitlines() if ln.startswith("Example:"))
+    fee, risk_all, liq, alpha = make_packets()
+    risk_all.symbol = "ALL"                    # a packet built over every symbol carries the concentration keys
+    ctx_all = packet_ctx_of(fee, risk_all, liq, alpha)
+    ctx_all["liquidity"]["worst_hour_utc"] = 8
+    # (module, prompt, context the prompt's packet gives). The Risk Auditor has one prompt per scope (prompt 1.8.0).
+    cases = [(m, m.SYSTEM_PROMPT, ctx_all) for m in (liquidity_scout, alpha_architect, fee_optimizer, risk_auditor)]
+    cases.append((risk_auditor, risk_auditor.SYSTEM_PROMPT_ONE_SYMBOL, ctx))
+    for mod, prompt, c_ctx in cases:
+        line = next(ln for ln in prompt.splitlines() if ln.startswith("Example:"))
         good = line.split("  Wrong:")[0]
         phs = re.findall(r"\{\{([a-z_.0-9]+)\}\}", good)
         assert phs and all(p.startswith(mod.NAMESPACE + ".") for p in phs), mod.__name__
-        c = check(good, ctx)
+        c = check(good, c_ctx)
         assert c.violations == [] and c.n_rendered == len(phs), (mod.__name__, c.violations)
 
 
 def test_prompt_version_bumped():
     from config.versions import PROMPT_VERSION
-    assert PROMPT_VERSION == "1.7.0"      # M3: the synthesis prompt names the required-evidence placeholders
+    assert PROMPT_VERSION == "1.8.0"      # 2026-11-22: the Risk Auditor prompt for a one-symbol packet (1.7.0: M3 required-evidence placeholders)
 
 
 def test_pipeline_stray_numeral_in_both_scout_answers_does_not_degrade():

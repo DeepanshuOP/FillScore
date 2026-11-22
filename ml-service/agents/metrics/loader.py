@@ -65,6 +65,32 @@ async def load_trades(
             client.close()
 
 
+async def count_fills(user_id: str, symbol: str, db_name: str | None = None, collection_name: str = "trades",
+                      client=None) -> int:
+    """How many fills (trade documents) the user has for `symbol` ("ALL" = every symbol). Read only. The Council page
+    prints this beside the audit's own count, so a one-symbol audit says how much of the account it covers."""
+    db_name = db_name or os.getenv("MONGO_DB_NAME", "fillscore")
+    query = {"userId": user_id} if symbol == "ALL" else {"userId": user_id, "symbol": symbol}
+    own = client is None
+    client = client or _get_mongo_client()
+    try:
+        return int(await client[db_name][collection_name].count_documents(query))
+    finally:
+        if own:
+            client.close()
+
+
+async def scope_counts(user_id: str, symbol: str) -> dict:
+    """{"symbolFills", "accountFills"}: fills of the audited symbol, and of the whole account. Both are counts of
+    stored trade documents; the page prints them as served (the browser computes nothing)."""
+    client = _get_mongo_client()
+    try:
+        return {"symbolFills": await count_fills(user_id, symbol, client=client),
+                "accountFills": await count_fills(user_id, "ALL", client=client)}
+    finally:
+        client.close()
+
+
 async def load_measurements(user_id: str, symbol: str, db_name: str | None = None, client=None) -> list[dict]:
     """The account's measured order shortfalls (collection order_measurements, written by ml-service/measure) for
     `symbol` ("ALL" = every symbol). Read only. The packets summarise them (agents.metrics.measured)."""

@@ -14,8 +14,8 @@ from agents.claims import flag_hits_1_3_0, flag_terms_1_3_0, humanise_flag, new_
 from config.versions import CLAIM_RULES_VERSION
 
 
-def test_the_version_is_1_3_0():
-    assert CLAIM_RULES_VERSION == "1.3.0"
+def test_the_version_is_1_3_0_or_later():
+    assert CLAIM_RULES_VERSION in ("1.3.0", "1.4.0")   # 1.4.0 (2026-11-22) keeps every 1.3.0 rule
 
 
 @pytest.mark.parametrize("tag,shown", [

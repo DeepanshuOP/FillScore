@@ -18,6 +18,12 @@ test('sample dashboard Council: assessment without a letter, values cited, no ad
   await expect(heading).toBeVisible({ timeout: 45_000 })
   const panel = page.locator('section#agent-council', { has: heading })
 
+  // 2026-11-22: the scope sits beside the title, from counts the server sends in its `scope` event (the symbol's fills, then
+  // the account's); the fee specialist's display name is "Fee Reviewer"
+  await expect(page.getByTestId('council-scope')).toHaveText(/^BTCUSDT only: [\d,]+ of the account's [\d,]+ fills\.$/)
+  await expect(panel).toContainText('Fee Reviewer')
+  await expect(panel).not.toContainText('Fee Optimizer')
+
   // no A-F letter badge on the assessment (the panel locator must really match, or the zero count proves nothing)
   await expect(panel).toHaveCount(1)
   await expect(panel.locator('span', { hasText: /^[A-F][+-]?$/ })).toHaveCount(0)

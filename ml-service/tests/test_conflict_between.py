@@ -39,4 +39,4 @@ def test_string_between_unchanged():
 
 
 def test_prompt_version_bumped_for_the_between_example():
-    assert PROMPT_VERSION == "1.7.0"      # M3: the synthesis prompt names the required-evidence placeholders
+    assert PROMPT_VERSION == "1.8.0"      # 2026-11-22: the Risk Auditor prompt for a one-symbol packet (1.7.0: M3 required-evidence placeholders)

@@ -7,12 +7,18 @@ from __future__ import annotations
 import hashlib, json, math
 from dataclasses import dataclass, field, asdict
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from config.versions import METRICS_VERSION
 from agents.metrics.time_utils import utc_hour_key
+
+
+ALL_SYMBOLS = "ALL"   # the symbol argument of a packet built over every symbol of the account (agents.metrics.loader)
+# Cross-symbol concentration. Left out of a single-symbol packet (metrics 1.4.0), so no specialist can state the
+# account's concentration from one symbol's trades.
+CONCENTRATION_KEYS = ("symbol_hhi", "top_symbol_by_notional", "top_symbol_notional_fraction", "symbol_notional_shares")
 
 
 @dataclass
@@ -27,10 +33,12 @@ class RiskMetricsPacket:
     # HHI = sum of squared market-share fractions across symbols traded
     # Range: 1/N (perfectly diversified) to 1.0 (single symbol only)
     # HHI > 0.25 = high concentration (US DOJ standard)
-    symbol_hhi: float = 0.0
+    # Metrics 1.4.0: only a packet built for ALL symbols carries these. A packet built for one symbol would state
+    # 100% in one symbol whatever the account holds, so it holds None / empty and to_prompt_dict leaves the keys out.
+    symbol_hhi: Optional[float] = 0.0
     symbol_notional_shares: dict[str, float] = field(default_factory=dict)  # symbol → fraction of total notional
-    top_symbol_by_notional: str = ""
-    top_symbol_notional_fraction: float = 0.0
+    top_symbol_by_notional: Optional[str] = ""
+    top_symbol_notional_fraction: Optional[float] = 0.0
 
     # ── hour concentration ───────────────────────────────────────────────────
     # Same HHI logic applied to UTC hours → measures how clustered trading is in time
@@ -67,11 +75,22 @@ class RiskMetricsPacket:
         serialised = json.dumps(payload, sort_keys=True, default=str)
         return hashlib.sha256(serialised.encode()).hexdigest()[:16]
 
+    @property
+    def covers_all_symbols(self) -> bool:
+        return self.symbol == ALL_SYMBOLS
+
     def to_prompt_dict(self) -> dict[str, Any]:
+        out = self._prompt_dict_all()
+        if not self.covers_all_symbols:
+            for key in CONCENTRATION_KEYS:
+                out.pop(key, None)
+        return out
+
+    def _prompt_dict_all(self) -> dict[str, Any]:
         return {
-            "symbol_hhi": round(self.symbol_hhi, 4),
-            "top_symbol_by_notional": self.top_symbol_by_notional,
-            "top_symbol_notional_fraction": round(self.top_symbol_notional_fraction, 4),
+            "symbol_hhi": round(self.symbol_hhi or 0.0, 4),
+            "top_symbol_by_notional": self.top_symbol_by_notional or "",
+            "top_symbol_notional_fraction": round(self.top_symbol_notional_fraction or 0.0, 4),
             "symbol_notional_shares": {k: round(v, 4) for k, v in self.symbol_notional_shares.items()},
             "hour_hhi": round(self.hour_hhi, 4),
             "top_hour_utc": self.top_hour_utc,
@@ -204,14 +223,15 @@ def build_risk_packet(trades: list[dict], user_id: str, symbol: str) -> RiskMetr
     for sym_key, ids in symbol_trade_ids.items():
         evidence[f"symbol_{sym_key}"] = ids
 
+    all_symbols = symbol == ALL_SYMBOLS
     pkt = RiskMetricsPacket(
         user_id=user_id,
         symbol=symbol,
         computed_at=datetime.now(timezone.utc).isoformat(),
-        symbol_hhi=hhi_sym,
-        symbol_notional_shares={k: round(v, 6) for k, v in sym_shares.items()},
-        top_symbol_by_notional=top_sym,
-        top_symbol_notional_fraction=round(top_sym_frac, 6),
+        symbol_hhi=hhi_sym if all_symbols else None,
+        symbol_notional_shares={k: round(v, 6) for k, v in sym_shares.items()} if all_symbols else {},
+        top_symbol_by_notional=top_sym if all_symbols else None,
+        top_symbol_notional_fraction=round(top_sym_frac, 6) if all_symbols else None,
         hour_hhi=hhi_hour,
         top_hour_utc=int(top_hour_str) if top_hour_str is not None else -1,
         top_hour_trade_fraction=round(top_hour_frac, 6),

@@ -1,17 +1,17 @@
 {
   "account_id": "demo-aggressive",
   "symbol": "BTCUSDT",
-  "generated_at": "2026-11-19T19:40:52.346301+00:00",
+  "generated_at": "2026-11-22T10:31:42.826767+00:00",
   "council_result": {
     "tradeContext": {
       "userId": "demo-aggressive",
       "symbol": "BTCUSDT",
       "regime": null,
       "trade_count": 230,
-      "fee_packet_hash": "d180a3d8ab378523",
-      "risk_packet_hash": "5e7465b43cacbea0",
-      "liquidity_packet_hash": "7db9c23c307467f6",
-      "alpha_packet_hash": "6fde5abf5983f188"
+      "fee_packet_hash": "9fbd8f7fdd8a23ce",
+      "risk_packet_hash": "9881c47adcb4c5d8",
+      "liquidity_packet_hash": "ee5bccf60df3aab0",
+      "alpha_packet_hash": "e87d91767f35a166"
     },
     "liquidity": {
       "agent": "liquidity_scout",
@@ -32,11 +32,10 @@
       "alphaRating": "NEGATIVE",
       "bestAlternative": "Alpha verdict: NEGATIVE.",
       "cited_evidence": [],
-      "severity": "HIGH",
+      "severity": "MEDIUM",
       "confidence": 0.0,
       "flags": [
-        "high_market_order_ratio",
-        "low_limit_order_usage"
+        "high_market_order_ratio"
       ],
       "evidence_coverage_detail": {
         "cited_count": 0,
@@ -46,18 +45,17 @@
     },
     "risk": {
       "agent": "risk_auditor",
-      "riskLevel": "MEDIUM",
+      "riskLevel": "LOW",
       "cited_evidence": [],
-      "severity": "MEDIUM",
+      "severity": "LOW",
       "confidence": 0.0,
       "flags": [
-        "Notional was concentrated, with the top symbol at 100.0% of the total.",
-        "Symbol HHI was 1.00, indicating complete concentration in a single instrument.",
-        "Adverse selection rate was 0.0%, indicating no observed adverse fills in the sample."
+        "No adverse selection events were recorded in the past executions.",
+        "Trading activity was moderately concentrated in the top hour, at 22.6% of the trades."
       ],
       "evidence_coverage_detail": {
         "cited_count": 0,
-        "available_count": 16,
+        "available_count": 12,
         "coverage_score": 0.0
       }
     },
@@ -69,8 +67,8 @@
       "severity": "MEDIUM",
       "confidence": 0.0,
       "flags": [
-        "high_taker_frequency",
-        "low_maker_participation"
+        "high_taker_ratio",
+        "significant_fee_drag"
       ],
       "evidence_coverage_detail": {
         "cited_count": 0,
@@ -79,10 +77,15 @@
       }
     },
     "synthesis": {
-      "headline": "Trades concentrated in BTCUSDT incurred $21.10 in fees with minimal spread costs.",
-      "narrative": "The trader executed 230 trades, all in BTCUSDT, paying $21.10 in total fees. Notional was fully concentrated in a single instrument, representing 100.0% of total volume.",
+      "headline": "Overall verdict: POOR.",
+      "narrative": "The trader paid $21.10 in fees while the median spread paid was <0.01 bps.",
       "findings": [],
-      "observations": [],
+      "observations": [
+        {
+          "action_type": "none",
+          "text": "The liquidity scout rated the execution quality as good with a median execution impact of <0.01 bps. No adverse market conditions were recorded."
+        }
+      ],
       "conflictLedger": [
         {
           "between": "fee_optimizer vs liquidity_scout",
@@ -93,23 +96,28 @@
       "overallRating": "POOR",
       "estimatedMonthlyCostUSD": 21.103282
     },
-    "totalLatencyMs": 122370.97,
+    "totalLatencyMs": 77269.37,
     "modelUsage": {
       "specialists_model": "groq/qwen/qwen3.8-27b",
       "debate_model": "groq/openai/gpt-oss-20b",
       "synthesis_model": "groq/qwen/qwen3.8-27b"
     },
     "tokenUsage": {
-      "prompt_tokens": 20544,
-      "completion_tokens": 2491,
-      "total_tokens": 23035,
-      "n_calls": 13
+      "prompt_tokens": 16583,
+      "completion_tokens": 1918,
+      "total_tokens": 18501,
+      "n_calls": 11
     },
     "grounding": {
-      "violations_first_pass": 2,
-      "regenerations": 2,
+      "violations_first_pass": 0,
+      "regenerations": 0,
       "redactions": [],
       "fallbacks": [
+        {
+          "agent": "synthesis",
+          "field": "headline",
+          "fallback_text": true
+        },
         {
           "agent": "alpha_architect",
           "field": "bestAlternative",
@@ -122,8 +130,8 @@
         }
       ],
       "duplicates_stripped": 0,
-      "numbers_checked": 33,
-      "faithfulness_first_pass": 0.9394,
+      "numbers_checked": 30,
+      "faithfulness_first_pass": 1.0,
       "faithfulness_after": 1.0,
       "per_agent": {
         "alpha_architect": {
@@ -133,7 +141,7 @@
           "values_cited": 1,
           "fallback_text": true
         },
-        "risk_auditor": {
+        "liquidity_scout": {
           "violations_first_pass": 0,
           "regenerated": false,
           "faithfulness_after": 1.0,
@@ -144,43 +152,53 @@
           "violations_first_pass": 0,
           "regenerated": false,
           "faithfulness_after": 1.0,
-          "values_cited": 4,
+          "values_cited": 2,
           "fallback_text": true
         },
-        "liquidity_scout": {
-          "violations_first_pass": 1,
-          "regenerated": true,
+        "risk_auditor": {
+          "violations_first_pass": 0,
+          "regenerated": false,
           "faithfulness_after": 1.0,
-          "values_cited": 3,
+          "values_cited": 1,
           "fallback_text": false
         },
         "prosecution": {
           "violations_first_pass": 0,
           "regenerated": false,
           "faithfulness_after": 1.0,
-          "values_cited": 4,
+          "values_cited": 6,
           "fallback_text": false
         },
         "defense": {
           "violations_first_pass": 0,
           "regenerated": false,
           "faithfulness_after": 1.0,
-          "values_cited": 4,
+          "values_cited": 6,
           "fallback_text": false
         },
         "synthesis": {
-          "violations_first_pass": 1,
-          "regenerated": true,
+          "violations_first_pass": 0,
+          "regenerated": false,
           "faithfulness_after": 1.0,
-          "values_cited": 14,
-          "fallback_text": false
+          "values_cited": 11,
+          "fallback_text": true
         }
       }
     },
     "claims": {
-      "flagged_first_pass": 1,
+      "flagged_first_pass": 2,
       "regenerated": true,
       "redactions": [
+        {
+          "field": "headline",
+          "sentence_index": 0,
+          "terms": [
+            "drove"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
         {
           "field": "narrative",
           "sentence_index": 1,
@@ -190,13 +208,15 @@
           "action_types": []
         }
       ],
-      "debate_flagged": 6,
+      "debate_flagged": 10,
       "debate_redactions": [
         {
           "field": "prosecution_summary",
           "sentence_index": 0,
           "terms": [
-            "avoidable"
+            "could have",
+            "opportunities",
+            "unbacked: high"
           ],
           "action_types": [
             "maker_instead_of_taker"
@@ -206,11 +226,11 @@
           "field": "defense_summary",
           "sentence_index": 0,
           "terms": [
-            "exogenous",
-            "market-structure",
-            "whale"
+            "market-structure"
           ],
-          "action_types": []
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
         },
         {
           "field": "debate.claims.0",
@@ -223,10 +243,24 @@
           ]
         },
         {
+          "field": "debate.claims.1",
+          "sentence_index": 0,
+          "terms": [
+            "avoidable",
+            "missed",
+            "opportunities"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
+        {
           "field": "debate.claims.2",
           "sentence_index": 0,
           "terms": [
-            "avoidable"
+            "cont-kukanov-stoikov",
+            "exogenous",
+            "whale"
           ],
           "action_types": [
             "maker_instead_of_taker"
@@ -236,8 +270,28 @@
           "field": "debate.claims.3",
           "sentence_index": 0,
           "terms": [
-            "market-structure",
-            "unavoidable"
+            "missed",
+            "opportunities"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
+        {
+          "field": "debate.claims.4",
+          "sentence_index": 0,
+          "terms": [
+            "avoidable"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
+        {
+          "field": "debate.claims.5",
+          "sentence_index": 0,
+          "terms": [
+            "market-structure"
           ],
           "action_types": [
             "maker_instead_of_taker"
@@ -248,6 +302,18 @@
           "sentence_index": 0,
           "terms": [
             "avoidable"
+          ],
+          "action_types": [
+            "maker_instead_of_taker"
+          ]
+        },
+        {
+          "field": "key_dispute",
+          "sentence_index": 1,
+          "terms": [
+            "cont-kukanov-stoikov",
+            "exogenous",
+            "whale"
           ],
           "action_types": [
             "maker_instead_of_taker"
@@ -267,8 +333,7 @@
           "field": "fee.recommendedAction",
           "sentence_index": 0,
           "terms": [
-            "because",
-            "resulting in"
+            "because"
           ],
           "action_types": [
             "maker_instead_of_taker"
@@ -287,20 +352,12 @@
     "verification": {
       "proposed": 2,
       "passed": 0,
-      "observations": 0,
+      "observations": 1,
       "rejected": [
         {
           "action": "maker_instead_of_taker",
           "params": {
-            "target_ratio": 0.8
-          },
-          "reason": "immaterial"
-        },
-        {
-          "action": "smaller_clips",
-          "params": {
-            "symbol": "BTCUSDT",
-            "threshold": "median_trade_usd"
+            "target_ratio": 0.5
           },
           "reason": "immaterial"
         }
@@ -312,25 +369,28 @@
       "round_count": 2,
       "prosecution_summary": "Taker orders were 159 of 230 trades.",
       "defense_summary": "Maker orders were 71 of 230 trades.",
-      "key_dispute": "Defense counters: The trader executed 159 market orders, yet incurred a fee drag of only 10.0 bps, reflecting efficient cost management.",
-      "debate_latency_ms": 9324.46,
+      "key_dispute": "The two sides disagreed on the cause of the costs; the audited figures are in the findings.",
+      "debate_latency_ms": 9008.88,
       "turns_expected": 4,
       "turns_ok": 4,
       "failed_turns": [],
       "claims": [
-        {
-          "side": "defense",
-          "claim_id": "D1a",
-          "claim_text": "The trader executed 159 market orders, yet incurred a fee drag of only 10.0 bps, reflecting efficient cost management.",
-          "evidence_keys": [],
-          "rebuts": "P1a"
-        },
         {
           "side": "prosecution",
           "claim_id": "P0",
           "claim_text": "Taker orders were 159 of 230 trades.",
           "evidence_keys": [
             "taker_count",
+            "trade_count"
+          ],
+          "rebuts": null
+        },
+        {
+          "side": "defense",
+          "claim_id": "D0",
+          "claim_text": "Maker orders were 71 of 230 trades.",
+          "evidence_keys": [
+            "maker_count",
             "trade_count"
           ],
           "rebuts": null
@@ -349,65 +409,43 @@
         "provider": "groq",
         "model": "qwen/qwen3.8-27b",
         "attempt": 1,
-        "latency_ms": 788.04,
-        "tokens": 821,
+        "latency_ms": 636.75,
+        "tokens": 807,
         "prompt_tokens": 647,
-        "completion_tokens": 174,
-        "outcome": "ok"
-      },
-      {
-        "role": "specialist",
-        "provider": "groq",
-        "model": "qwen/qwen3.8-27b",
-        "attempt": 1,
-        "latency_ms": 789.5,
-        "tokens": 920,
-        "prompt_tokens": 725,
-        "completion_tokens": 195,
-        "outcome": "ok"
-      },
-      {
-        "role": "specialist",
-        "provider": "groq",
-        "model": "qwen/qwen3.8-27b",
-        "attempt": 1,
-        "latency_ms": 711.9,
-        "tokens": 1032,
-        "prompt_tokens": 846,
-        "completion_tokens": 186,
-        "outcome": "ok"
-      },
-      {
-        "role": "specialist",
-        "provider": "groq",
-        "model": "qwen/qwen3.8-27b",
-        "attempt": 1,
-        "latency_ms": 754.59,
-        "tokens": 872,
-        "prompt_tokens": 694,
-        "completion_tokens": 178,
-        "outcome": "ok"
-      },
-      {
-        "role": "specialist",
-        "provider": "groq",
-        "model": "qwen/qwen3.8-27b",
-        "attempt": 1,
-        "latency_ms": 508.24,
-        "tokens": 1056,
-        "prompt_tokens": 896,
         "completion_tokens": 160,
         "outcome": "ok"
       },
       {
-        "role": "debate",
+        "role": "specialist",
         "provider": "groq",
-        "model": "openai/gpt-oss-20b",
+        "model": "qwen/qwen3.8-27b",
         "attempt": 1,
-        "latency_ms": 466.21,
-        "tokens": 1557,
-        "prompt_tokens": 1415,
-        "completion_tokens": 142,
+        "latency_ms": 637.23,
+        "tokens": 1006,
+        "prompt_tokens": 846,
+        "completion_tokens": 160,
+        "outcome": "ok"
+      },
+      {
+        "role": "specialist",
+        "provider": "groq",
+        "model": "qwen/qwen3.8-27b",
+        "attempt": 1,
+        "latency_ms": 681.04,
+        "tokens": 864,
+        "prompt_tokens": 694,
+        "completion_tokens": 170,
+        "outcome": "ok"
+      },
+      {
+        "role": "specialist",
+        "provider": "groq",
+        "model": "qwen/qwen3.8-27b",
+        "attempt": 1,
+        "latency_ms": 699.13,
+        "tokens": 817,
+        "prompt_tokens": 667,
+        "completion_tokens": 150,
         "outcome": "ok"
       },
       {
@@ -415,10 +453,10 @@
         "provider": "groq",
         "model": "openai/gpt-oss-20b",
         "attempt": 1,
-        "latency_ms": 764.53,
-        "tokens": 1769,
-        "prompt_tokens": 1522,
-        "completion_tokens": 247,
+        "latency_ms": 788.27,
+        "tokens": 1590,
+        "prompt_tokens": 1358,
+        "completion_tokens": 232,
         "outcome": "ok"
       },
       {
@@ -426,10 +464,10 @@
         "provider": "groq",
         "model": "openai/gpt-oss-20b",
         "attempt": 1,
-        "latency_ms": 711.33,
-        "tokens": 1619,
-        "prompt_tokens": 1472,
-        "completion_tokens": 147,
+        "latency_ms": 821.73,
+        "tokens": 1771,
+        "prompt_tokens": 1501,
+        "completion_tokens": 270,
         "outcome": "ok"
       },
       {
@@ -437,10 +475,21 @@
         "provider": "groq",
         "model": "openai/gpt-oss-20b",
         "attempt": 1,
-        "latency_ms": 7214.32,
-        "tokens": 1777,
-        "prompt_tokens": 1556,
-        "completion_tokens": 221,
+        "latency_ms": 761.97,
+        "tokens": 1625,
+        "prompt_tokens": 1467,
+        "completion_tokens": 158,
+        "outcome": "ok"
+      },
+      {
+        "role": "debate",
+        "provider": "groq",
+        "model": "openai/gpt-oss-20b",
+        "attempt": 1,
+        "latency_ms": 6445.95,
+        "tokens": 1738,
+        "prompt_tokens": 1536,
+        "completion_tokens": 202,
         "outcome": "ok"
       },
       {
@@ -448,10 +497,10 @@
         "provider": "groq",
         "model": "qwen/qwen3.8-27b",
         "attempt": 1,
-        "latency_ms": 18557.75,
-        "tokens": 2933,
-        "prompt_tokens": 2603,
-        "completion_tokens": 330,
+        "latency_ms": 6659.94,
+        "tokens": 2870,
+        "prompt_tokens": 2544,
+        "completion_tokens": 326,
         "outcome": "ok"
       },
       {
@@ -459,20 +508,9 @@
         "provider": "groq",
         "model": "qwen/qwen3.8-27b",
         "attempt": 1,
-        "latency_ms": 30572.9,
-        "tokens": 3016,
-        "prompt_tokens": 2653,
-        "completion_tokens": 363,
-        "outcome": "ok"
-      },
-      {
-        "role": "synthesis",
-        "provider": "groq",
-        "model": "qwen/qwen3.8-27b",
-        "attempt": 1,
-        "latency_ms": 34327.22,
-        "tokens": 2738,
-        "prompt_tokens": 2727,
+        "latency_ms": 29494.89,
+        "tokens": 2642,
+        "prompt_tokens": 2631,
         "completion_tokens": 11,
         "outcome": "ok"
       },
@@ -481,16 +519,16 @@
         "provider": "groq",
         "model": "qwen/qwen3.8-27b",
         "attempt": 1,
-        "latency_ms": 27517.68,
-        "tokens": 2925,
-        "prompt_tokens": 2788,
-        "completion_tokens": 137,
+        "latency_ms": 31122.28,
+        "tokens": 2771,
+        "prompt_tokens": 2692,
+        "completion_tokens": 79,
         "outcome": "ok"
       }
     ],
-    "prompt_version": "1.7.0",
-    "metrics_version": "1.3.0",
-    "claim_rules_version": "1.3.0",
+    "prompt_version": "1.8.0",
+    "metrics_version": "1.4.0",
+    "claim_rules_version": "1.4.0",
     "route_config_hash": "9c3af0624a402f81"
   }
 }

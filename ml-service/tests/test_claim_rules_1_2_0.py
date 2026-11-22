@@ -21,7 +21,7 @@ def terms(text, rules="1.2.0", passed=frozenset()):
 
 
 def test_the_phrase_list_is_the_1_2_0_list():
-    assert CLAIM_RULES_VERSION in ("1.2.0", "1.3.0")   # 1.3.0 (2026-11-20) keeps every 1.2.0 rule
+    assert CLAIM_RULES_VERSION in ("1.2.0", "1.3.0", "1.4.0")   # 1.3.0 and 1.4.0 (2026-11-22) keep every 1.2.0 rule
     assert CAUSAL_PHRASES_1_2_0 == ["inherent to", "resulting in", "led to", "drove"]
 
 

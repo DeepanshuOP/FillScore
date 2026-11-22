@@ -152,6 +152,24 @@ async def serve_demo_run(account_id: str, symbol: str, hashes: Optional[dict] = 
 
 
 MODES = ("quick", "deep")
+SCOPE_TIMEOUT_S = 5.0
+
+
+async def emit_scope(on_event: EventSink, account_id: str, symbol: str) -> None:
+    """The `scope` event: which symbol the audit covers and how many fills that is of the account's (both counts
+    from the database, sent first). A count that cannot be read sends no event, so the page states no number."""
+    if on_event is None:
+        return
+    import asyncio
+
+    from agents.metrics import loader
+
+    try:
+        counts = await asyncio.wait_for(loader.scope_counts(account_id, symbol), SCOPE_TIMEOUT_S)
+    except Exception as exc:   # class name only: the text of a database error can hold a connection string
+        print(f"[council] scope counts unavailable: {type(exc).__name__}")
+        return
+    await on_event("scope", {"scope": {"symbol": symbol, **counts}})
 
 
 async def _replay_quick(result: dict, on_event: EventSink) -> None:
@@ -204,6 +222,7 @@ async def council_flow(account_id: str, symbol: str, on_event: EventSink = None,
 
     if mode not in MODES:
         raise ValueError(f"unknown audit mode {mode!r}; expected one of {MODES}")
+    await emit_scope(on_event, account_id, symbol)
     if account_id in VALID_DEMO_USERS:
         inputs = await current_demo_inputs(account_id, symbol)
         if inputs is None:

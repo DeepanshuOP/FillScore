@@ -13,6 +13,9 @@ import {
   councilVerdictView,
   flagText,
   councilScopeLabel,
+  councilScopeStatement,
+  parseCouncilScope,
+  type CouncilScope,
   verdictCardsFromResult,
   agentLabel,
   ratingWords,
@@ -172,6 +175,7 @@ export default function AgentCouncil({
   const [waking, setWaking] = useState(false);
   const [cached, setCached] = useState(false);
   const [tradeCount, setTradeCount] = useState<number | null>(null);
+  const [scope, setScope] = useState<CouncilScope | null>(null);   // served fill counts (the `scope` event); null until sent
   const [error, setError] = useState<string | null>(null);
 
   // Free hosting puts the service to sleep; ping it as soon as the panel mounts so it is
@@ -241,6 +245,9 @@ export default function AgentCouncil({
     } else if (eventType === "gate_done") {
       setVerification(payload.verification ?? null);
       setGrounding(payload.grounding ?? null);
+    } else if (eventType === "scope") {
+      // 2026-11-22: which symbol this audit covers and how many of the account's fills that is (counts from the server).
+      setScope(parseCouncilScope(payload));
     } else if (eventType === "cited_values") {
       // Design v3 fixes A7: the server's trace of each note's cited values, sent just before `complete`.
       cited.current = (payload as { citedValues?: unknown }).citedValues ?? null;
@@ -371,7 +378,10 @@ export default function AgentCouncil({
     <section id="agent-council" className="flex min-w-0 flex-col gap-5">
       <Panel
         title="Council"
-        description={`Execution audit of past trades, ${symbol}. ${COUNCIL_DISCLAIMER}`}
+        description={<>
+          <strong data-testid="council-scope" className="font-semibold text-ui-ink">{councilScopeStatement(symbol, scope?.symbol === symbol ? scope : null)}.</strong>
+          {" "}Execution audit of past trades. {COUNCIL_DISCLAIMER}
+        </>}
         actions={<>
           {!userId && <Segmented label="Audit mode" value={mode} onChange={setMode} disabled={running} options={[["quick", "Quick"], ["deep", "Deep"]]} />}
           {runButton}

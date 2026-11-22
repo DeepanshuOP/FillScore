@@ -155,31 +155,38 @@ def test_v2_is_a_pinned_historical_set():
         assert gg["required_evidence"]["synthesis"] is not None
 
 
-def test_newest_set_packets_deterministic():
-    """The newest set (v3) is the one the current versions own. Its edge packets are built from in-code trades, so
-    they must reproduce hash-identically from the current code, and every case's required_evidence is the one rule
-    applied to its packet. The three demo packets need a read-only Mongo read; they are checked when one is
-    reachable (evals/dump_golden_packets.py --check v3), else that part is skipped."""
+def test_v4_is_the_newest_set_and_holds_packets_only():
+    """Golden set v4 (third order 2026-11-22; metrics 1.4.0, prompt 1.8.0) owns the three re-recorded demo runs. It
+    is packets only: not recorded, so `dump_golden_packets` may still write it. Manifest and the metrics version
+    inside every packet are pinned; every case's required_evidence is the one rule applied to its stored packet."""
     from agents.required_evidence import golden_required_evidence
-    from config.versions import METRICS_VERSION, PROMPT_VERSION, SINGLE_PROMPT_VERSION
-    name = golden_sets.list_sets()[-1]
-    assert name == "v3"
+    assert golden_sets.list_sets()[-1] == "v4"
+    g = golden_sets.load_golden("v4")
+    assert set(g) >= {"demo-disciplined", "demo-moderate", "demo-aggressive"}
+    m = golden_sets.read_manifest("v4")
+    assert (m["prompt_version"], m["single_prompt_version"], m["metrics_version"], m["recorded"]) == \
+        ("1.8.0", "1.2.0", "1.4.0", False)
+    for gid, gg in g.items():
+        assert all(gg["packet"][k]["metrics_version"] == "1.4.0" for k in ("fee", "risk", "liquidity", "alpha")), gid
+        assert gg["required_evidence"] == golden_required_evidence(gg["packet"]), gid
+
+
+def test_v3_is_a_pinned_recorded_set():
+    """Golden set v3 was recorded on 2026-11-19 under prompt 1.7.0 and metrics 1.3.0 and stays exactly as
+    recorded (orders of 2026-11-22: research parked, none re-rolled). Metrics 1.4.0 (a one-symbol packet holds no
+    concentration; the metrics version is inside every packet hash) means the current code no longer reproduces its
+    hashes, as for v2 below; the manifest and the metrics version of every packet are pinned instead, and every
+    case's required_evidence is still the one rule applied to its stored packet."""
+    from agents.required_evidence import golden_required_evidence
+    name = "v3"
     g = golden_sets.load_golden(name)
     assert set(g) >= {"demo-disciplined", "demo-moderate", "demo-aggressive"}
-    for edge, trades in edge_trades().items():
-        ctx = packet_ctx(*build_all_packets(trades, edge, "BTCUSDT"))
-        for k in ("fee", "risk", "liquidity", "alpha"):
-            assert ctx[k]["content_hash"] == g[edge]["packet"][k]["content_hash"], (edge, k)
     m = golden_sets.read_manifest(name)
     assert (m["prompt_version"], m["single_prompt_version"], m["metrics_version"], m["recorded"]) == \
-        (PROMPT_VERSION, SINGLE_PROMPT_VERSION, METRICS_VERSION, True)   # recorded 2026-11-19 (18 runs, none re-rolled)
-    for gid, gg in g.items():   # every packet in the set was built by the current metrics code
-        assert all(gg["packet"][k]["metrics_version"] == METRICS_VERSION for k in ("fee", "risk", "liquidity", "alpha")), gid
+        ("1.7.0", "1.2.0", "1.3.0", True)   # recorded 2026-11-19 (18 runs, none re-rolled)
+    for gid, gg in g.items():
+        assert all(gg["packet"][k]["metrics_version"] == "1.3.0" for k in ("fee", "risk", "liquidity", "alpha")), gid
         assert gg["required_evidence"] == golden_required_evidence(gg["packet"]), gid
-    mismatches = dump_golden_packets.check_demo_hashes(name)
-    if mismatches is None:
-        pytest.skip("no reachable Mongo: demo packet determinism not checked here")
-    assert mismatches == []
 
 
 def test_v1_manifest_pins_the_ablation_versions():

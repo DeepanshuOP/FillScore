@@ -50,7 +50,7 @@ def test_an_unknown_rules_version_is_an_error_not_a_silent_default():
 
 
 def test_the_current_version_names_the_current_list():
-    assert CLAIM_RULES_VERSION == "1.3.0"   # 1.2.0 and 1.3.0 keep the 1.1.0 connective list: see test_claim_rules_1_2_0.py, _1_3_0.py
+    assert CLAIM_RULES_VERSION == "1.4.0"   # 1.2.0, 1.3.0 and 1.4.0 keep the 1.1.0 connective list: see test_claim_rules_1_2_0.py, _1_3_0.py
     assert set(CONNECTIVE_TERMS_1_0_0) < set(CONNECTIVE_TERMS)
     assert CONNECTIVE_TERMS_1_0_0 == ["due to", "because of", "resulting from", "caused by", "driven by", "led to",
                                       "as a result of"]

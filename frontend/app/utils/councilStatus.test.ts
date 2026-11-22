@@ -211,6 +211,33 @@ describe('councilScopeLabel', () => {
     });
 });
 
+import { councilScopeStatement, parseCouncilScope } from './councilStatus';
+describe('Council scope statement (served counts, printed as they are)', () => {
+    it('says how much of the account the one-symbol audit covers', () => {
+        const scope = { symbol: 'BTCUSDT', symbolFills: 344, accountFills: 607 };   // demo-moderate: served counts
+        expect(councilScopeStatement('BTCUSDT', scope)).toBe("BTCUSDT only: 344 of the account's 607 fills");
+        expect(councilScopeStatement('BTCUSDT', { symbol: 'BTCUSDT', symbolFills: 1234, accountFills: 12345 }))
+            .toBe("BTCUSDT only: 1,234 of the account's 12,345 fills");
+    });
+    it('does not say "only" when the symbol is the whole account', () => {
+        expect(councilScopeStatement('BTCUSDT', { symbol: 'BTCUSDT', symbolFills: 82, accountFills: 82 }))
+            .toBe("BTCUSDT: all 82 of the account's fills");
+    });
+    it('states no number without served counts', () => {
+        expect(councilScopeStatement('BTCUSDT', null)).toBe('BTCUSDT only');
+        expect(councilScopeStatement('BTCUSDT', null)).not.toMatch(/\d/);
+    });
+    it('reads the scope event and refuses anything that is not whole counts', () => {
+        const ok = { scope: { symbol: 'BTCUSDT', symbolFills: 344, accountFills: 607 } };
+        expect(parseCouncilScope(ok)).toEqual(ok.scope);
+        expect(parseCouncilScope(null)).toBeNull();
+        expect(parseCouncilScope({})).toBeNull();
+        expect(parseCouncilScope({ scope: { symbol: 'BTCUSDT', symbolFills: '344', accountFills: 607 } })).toBeNull();
+        expect(parseCouncilScope({ scope: { symbol: 'BTCUSDT', symbolFills: 3.5, accountFills: 607 } })).toBeNull();
+        expect(parseCouncilScope({ scope: { symbol: 'BTCUSDT', symbolFills: -1, accountFills: 607 } })).toBeNull();
+    });
+});
+
 // The Council panel must not render a letter grade; the only one on the page is the FillScore grade (2c.A6).
 import { readFileSync } from 'node:fs';
 describe('AgentCouncil panel source', () => {
@@ -236,7 +263,7 @@ describe('agentLabel', () => {
         expect(agentLabel('alpha_architect')).toBe('Benchmark Reviewer');
         expect(agentLabel('liquidity_scout')).toBe('Liquidity Scout');
         expect(agentLabel('risk_auditor')).toBe('Risk Auditor');
-        expect(agentLabel('fee_optimizer')).toBe('Fee Optimizer');
+        expect(agentLabel('fee_optimizer')).toBe('Fee Reviewer');   // display label since 2026-11-22; the stored key is unchanged
         expect(agentLabel('unknown_agent')).toBe('unknown_agent');
         expect(Object.keys(verdictCardsFromResult({ alpha: { alphaRating: 'NEUTRAL' } }))).toContain('alpha_architect');
     });

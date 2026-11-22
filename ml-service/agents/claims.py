@@ -41,7 +41,7 @@ CONNECTIVE_TERMS_1_0_0 = ["due to", "because of", "resulting from", "caused by",
 CONNECTIVE_TERMS = ["due to", "because of", "resulting from", "caused by", "driven by", "led to",
                     "as a result of", "because", "therefore", "thereby", "hence", "consequently"]
 CONNECTIVE_BY_RULES = {"1.0.0": CONNECTIVE_TERMS_1_0_0, "1.1.0": CONNECTIVE_TERMS, "1.2.0": CONNECTIVE_TERMS,
-                      "1.3.0": CONNECTIVE_TERMS}
+                      "1.3.0": CONNECTIVE_TERMS, "1.4.0": CONNECTIVE_TERMS}
 
 # 1.2.0 (2026-11-19), decided from the 18 ablation recordings; hand cases in tests/test_claim_rules_1_2_0.py.
 # (a) causal phrasings, in every text, never excused by a passed finding (no packet value supports a cause).
@@ -123,6 +123,18 @@ def extra_terms_1_2_0(sentence: str) -> set[str]:
     return out
 
 
+# 1.4.0 (2026-11-22; PROGRESS item 23, option C): a bare "rather than" joins "inherent to" and "resulting in" (both already
+# in 1.2.0's CAUSAL_PHRASES_1_2_0) as a causal phrasing. "A rather than B" contrasts a cause with an unstated one, which no
+# packet value supports. Never excused by a passed finding. Hand cases and guards: tests/test_claim_rules_1_4_0.py.
+CAUSAL_PHRASES_1_4_0 = ["inherent to", "resulting in", "rather than"]
+_CAUSAL_PHRASE_RE_1_4_0 = _rx(CAUSAL_PHRASES_1_4_0)
+
+
+def extra_terms_1_4_0(sentence: str) -> set[str]:
+    """Rules 1.4.0 only (on top of 1.2.0's): the causal phrasings of CAUSAL_PHRASES_1_4_0. Code-owned labels."""
+    return {_norm(m) for m in _CAUSAL_PHRASE_RE_1_4_0.finditer(sentence)}
+
+
 # 1.3.0 (2026-11-20): the specialists' flags, as the card shows them, go through the counterfactual and advice lists.
 # Same humanising as frontend/app/utils/councilStatus.ts flagLabel (fixed map, else snake_case title-cased, else as is).
 _TAG_LABELS = {"zero_market_orders": "No market orders", "single_symbol_concentration": "Single-symbol concentration",
@@ -189,7 +201,10 @@ def new_rule_hits(result: dict) -> list[str]:
     hits = []
     for field, text in result_texts(result):
         for i, s in enumerate(split_sentences(text)):
-            terms = extra_terms_1_2_0(_FOLD_RE.sub(lambda m: "-" if m.group(0) in _DASHES else " ", s))
+            folded = _FOLD_RE.sub(lambda m: "-" if m.group(0) in _DASHES else " ", s)
+            terms = extra_terms_1_2_0(folded)
+            if _at_least(_current_rules(), "1.4.0"):
+                terms |= extra_terms_1_4_0(folded)
             if terms:
                 hits.append(f"{field}:{'/'.join(sorted(terms))}")
     return hits + flag_hits_1_3_0(result)
@@ -229,6 +244,8 @@ def _flag_sentence(sentence: str, index: int, passed: set[str], field_name: str,
                              sorted(a for a, rx in _CUE_RES.items() if rx.search(sentence)))
     if _at_least(rules or _current_rules(), "1.2.0"):
         extra = extra_terms_1_2_0(sentence)
+        if _at_least(rules or _current_rules(), "1.4.0"):
+            extra |= extra_terms_1_4_0(sentence)
         if extra:   # never excused by a passed action: no packet value supports a cause or a number-free judgement
             return ClaimFlag(field_name, index, sorted(advice | counter | extra),
                              sorted(a for a, rx in _CUE_RES.items() if rx.search(sentence)))

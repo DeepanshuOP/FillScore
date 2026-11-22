@@ -12,6 +12,7 @@ ALL = ["fee.total_fee_paid_usd", "liquidity.median_slippage_bps", "alpha.pct_bea
 
 def _packets(with_data=True):
     fee, risk, liq, alpha = make_packets()
+    risk.symbol = "ALL"     # metrics 1.4.0: only a packet over every symbol carries risk.top_symbol_notional_fraction
     if with_data:
         liq.market_order_count, liq.median_slippage_bps = 5, 1.2
         alpha.vwap_trades_count, alpha.pct_beating_vwap = 4, 50.0
@@ -58,6 +59,17 @@ def test_each_specialist_prompt_names_its_areas_headline_placeholder():
                              (liquidity_scout, p[2], "liquidity.median_slippage_bps"), (alpha_architect, p[3], "alpha.pct_beating_vwap")):
         text = mod.build_user_prompt(_context(p[0]), packet, ctx)
         assert "{{" + key + "}}" in text.split("Your explanation must state this value")[1].split("\n")[0], mod.__name__
+
+
+def test_a_one_symbol_risk_packet_is_not_asked_for_account_concentration():
+    # Metrics 1.4.0: the packet built for one symbol has no risk.top_symbol_notional_fraction, so the rule asks for
+    # the other three areas' values only (and the Risk Auditor's own prompt line is empty).
+    p = _packets()
+    p[1].symbol = "BTCUSDT"
+    assert required_keys(_ctx(p)) == ALL[:3]
+    assert "risk." not in prompt_line(_ctx(p))
+    text = __import__("agents.risk_auditor", fromlist=["x"]).build_user_prompt(_context(p[0]), p[1], _ctx(p))
+    assert "Your explanation must state this value" not in text
 
 
 def test_an_area_without_data_is_not_asked_for_in_either_prompt():

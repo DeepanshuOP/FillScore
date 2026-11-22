@@ -2,7 +2,7 @@
 Tests for risk_packet.py — fixture values are hand-computed, not generated.
 """
 import pytest
-from agents.metrics.risk_packet import build_risk_packet, _hhi, _percentile
+from agents.metrics.risk_packet import CONCENTRATION_KEYS, build_risk_packet, _hhi, _percentile
 
 # ── Fixture: 6 trades across 2 symbols, 2 hours, 2 adverse ──────────────
 # Symbols: BTC×4 (notionals 100,200,150,300), ETH×2 (notionals 50,200)
@@ -51,24 +51,51 @@ class TestHelpers:
 
 
 class TestConcentration:
+    # Metrics 1.4.0: only a packet built for ALL symbols carries cross-symbol concentration (changed from "BTCUSDT"; the
+    # expected values are the same hand values above: HHI 0.625, top BTCUSDT at 0.75).
     def test_symbol_hhi(self):
-        pkt = build_risk_packet(FIXTURE_TRADES, "u1", "BTCUSDT")
+        pkt = build_risk_packet(FIXTURE_TRADES, "u1", "ALL")
         assert abs(pkt.symbol_hhi - 0.625) < 1e-4
 
     def test_top_symbol(self):
-        pkt = build_risk_packet(FIXTURE_TRADES, "u1", "BTCUSDT")
+        pkt = build_risk_packet(FIXTURE_TRADES, "u1", "ALL")
         assert pkt.top_symbol_by_notional == "BTCUSDT"
 
     def test_top_symbol_fraction(self):
-        pkt = build_risk_packet(FIXTURE_TRADES, "u1", "BTCUSDT")
+        pkt = build_risk_packet(FIXTURE_TRADES, "u1", "ALL")
         assert abs(pkt.top_symbol_notional_fraction - 0.75) < 1e-4
+
+    def test_all_symbols_packet_keeps_the_concentration_keys(self):
+        d = build_risk_packet(FIXTURE_TRADES, "u1", "ALL").to_prompt_dict()
+        for key in CONCENTRATION_KEYS:
+            assert key in d
+        assert d["symbol_hhi"] == 0.625 and d["top_symbol_notional_fraction"] == 0.75
+        assert d["symbol_notional_shares"] == {"BTCUSDT": 0.75, "ETHUSDT": 0.25}
+
+    def test_one_symbol_packet_has_no_concentration_keys(self):
+        # The packet for "BTCUSDT" alone (the Council's scope): the 4 BTC trades are 100% of THEIR notional, which says
+        # nothing about the account. The keys are absent, not 1.0, and the hash differs from the all-symbols one.
+        btc = [t for t in FIXTURE_TRADES if t["symbol"] == "BTCUSDT"]
+        pkt = build_risk_packet(btc, "u1", "BTCUSDT")
+        d = pkt.to_prompt_dict()
+        for key in CONCENTRATION_KEYS:
+            assert key not in d
+        assert pkt.symbol_hhi is None and pkt.top_symbol_notional_fraction is None
+        assert d["total_trades"] == 4                       # the other values stay: 4 BTC trades
+        assert "hour_hhi" in d
+        assert pkt.content_hash != build_risk_packet(btc, "u1", "ALL").content_hash
+
+    def test_one_symbol_packet_over_mixed_trades_still_omits_them(self):
+        # Even if the trade list holds two symbols, a packet built for one symbol states no concentration.
+        d = build_risk_packet(FIXTURE_TRADES, "u1", "BTCUSDT").to_prompt_dict()
+        assert not any(k in d for k in CONCENTRATION_KEYS)
 
     def test_hour_hhi(self):
         pkt = build_risk_packet(FIXTURE_TRADES, "u1", "BTCUSDT")
         assert abs(pkt.hour_hhi - 0.5) < 1e-4
 
     def test_symbol_shares_sum_to_one(self):
-        pkt = build_risk_packet(FIXTURE_TRADES, "u1", "BTCUSDT")
+        pkt = build_risk_packet(FIXTURE_TRADES, "u1", "ALL")
         total = sum(pkt.symbol_notional_shares.values())
         assert abs(total - 1.0) < 1e-4
 
