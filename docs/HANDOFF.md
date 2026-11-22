@@ -29,7 +29,13 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
-**2026-11-22 (latest, fourth order): Run 4 ready for Deepanshu's review (local commits, not pushed).** Placeholder-compliance table in the README and
+**2026-11-23 (latest, sixth order): IA v4 built: ready for Deepanshu's review (local commits, not pushed).** A marketing site (top bar, `/demo`,
+`/how-it-works`, `/docs`) and an app under `/app/*` (sidebar of nine nouns, page header with provenance, Home = "Ask FillScore", Fills tabs,
+308 redirects for every old address). Pages: `ARCHITECTURE.md` section 4. Report: `docs/milestones/M8.md` "IA v4 built"; images
+`docs/design/IA-v4/built/`; notes `docs/research/LOG.md` section AL. Needs from Deepanshu: the push, and a decision on the older open item (the
+published-rate fee line sits only in the receipt's NOTES fold). No setting outside the repo changes. Older text follows.
+
+**2026-11-22 (fourth order): Run 4 ready for Deepanshu's review (local commits, not pushed).** Placeholder-compliance table in the README and
 ADR-0018 (proposal); the Council's benchmark line is computed from the packet (demos read "insufficient data": their trades carry no `vwap5m`);
 the Council stream resumes after a dropped connection (single instance); exchange egress guard, one Binance weight governor, racing
 duplicate inserts counted; public prints on the demo receipt (681 windows, 1.69 MB). Report: `docs/research/LOG.md` §AI, details in

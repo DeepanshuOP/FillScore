@@ -81,7 +81,7 @@ function MethodSheet({ isDemo }: { isDemo: boolean }) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="quiet" size="sm" aria-label="Method"><BookOpen aria-hidden="true" /> <span className="hidden 2xl:inline">Method</span></Button>
+        <Button variant="quiet" size="sm" aria-label="Method" className="max-sm:min-h-11 max-sm:min-w-11"><BookOpen aria-hidden="true" /> <span className="hidden 2xl:inline">Method</span></Button>
       </SheetTrigger>
       <SheetContent className="w-full overflow-y-auto bg-ui-raised sm:max-w-md">
         <SheetHeader>
@@ -221,8 +221,8 @@ function DashboardContent({ view }: { view: View }) {
   const actions = audit ? (
     <>
       <MethodSheet isDemo={isDemoData} />
-      {dashboardMode === 'demo' ? <Button variant="quiet" size="sm" onClick={handleShare} aria-label="Copy share link"><Link2 aria-hidden="true" /><span className="hidden 2xl:inline">Copy share link</span></Button> : null}
-      <Button variant="secondary" size="sm" loading={downloading} onClick={handleDownloadReport} aria-label="Download report"><Download aria-hidden="true" /><span className="hidden 2xl:inline">Download report</span></Button>
+      {dashboardMode === 'demo' ? <Button variant="quiet" size="sm" onClick={handleShare} aria-label="Copy share link" className="max-sm:min-h-11 max-sm:min-w-11"><Link2 aria-hidden="true" /><span className="hidden 2xl:inline">Copy share link</span></Button> : null}
+      <Button variant="secondary" size="sm" loading={downloading} onClick={handleDownloadReport} aria-label="Download report" className="max-sm:min-h-11 max-sm:min-w-11"><Download aria-hidden="true" /><span className="hidden 2xl:inline">Download report</span></Button>
     </>
   ) : null;
 
@@ -265,7 +265,8 @@ function DashboardContent({ view }: { view: View }) {
               const headline = describeHeadline(ordersSummary, isDemoData)
               const grade = gradeView(scoreV2.status, scoreV2.body)
               const periodLabel = monthLabel(audit.period.start, audit.period.end)
-              const scope = scopeLine(periodLabel, headline?.orders ?? 0)
+              // a missing order count is never printed as 0 (review): without a measured total the scope is the period alone
+              const scope = headline ? scopeLine(periodLabel, headline.orders) : periodLabel
               return (
                 <div className="flex flex-col gap-16">
                   {dashboardMode === 'demo' && resolvedUserId

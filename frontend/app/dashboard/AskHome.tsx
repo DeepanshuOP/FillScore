@@ -8,6 +8,7 @@ import { Field } from '../ui/Field'
 import { describeAsk, type AskView } from './askView'
 import { recordedAnswers, type RecordedAnswer, type RecordedDoc } from './askRecorded'
 import { Fold } from './Overview'
+import { viewHref } from '../components/shell/nav'
 
 /**
  * "Ask FillScore", the app's Home (IA v4, step 3). Three states:
@@ -112,16 +113,18 @@ function RecordedAsk({ demoId, signedIn, scope }: { demoId: string; signedIn: bo
       <p className="mt-6 text-[16px] text-ui-ink">
         {answers.length ? 'Recorded questions. ' : doc ? 'No recorded questions for this demo trader. ' : ''}
         <span className="text-ui-graphite">
-          {doc && !answers.length ? 'Recorded answers exist for the mixed-orders trader. ' : ''}
+          {doc && !answers.length ? (
+            <>Recorded answers exist for <Link href={viewHref('home', 'demo-moderate', signedIn)} className="text-ui-ink underline underline-offset-2">the mixed-orders trader</Link>. </>
+          ) : ''}
           Demo accounts run no model on request;{' '}
           {signedIn
             ? <Link href="/app" className="text-ui-ink underline underline-offset-2">open your own account</Link>
-            : <Link href="/login" className="text-ui-ink underline underline-offset-2">sign in</Link>} to ask about your own executions.
+            : <><Link href="/signup" className="text-ui-ink underline underline-offset-2">sign up</Link> or <Link href="/login" className="text-ui-ink underline underline-offset-2">log in</Link></>} to ask about your own executions.
         </span>
       </p>
       {answers.length ? <Chips items={answers.map((x) => x.question)} onPick={setPicked} picked={picked} label="Recorded questions" /> : null}
       {/* screen readers hear the answer sentence once, not every printed line */}
-      <p className="sr-only" role="status">{a?.view.answer ? `Recorded answer: ${a.view.answer}` : ''}</p>
+      <p className="sr-only" role="status">{a?.view.answer ? `Recorded answer: ${a.view.answer}${a.view.note ? ` ${a.view.note}` : ''}` : ''}</p>
       <div className="mt-6 max-w-[640px]">
         {a && doc ? <Slip key={picked} scope={scope} slip={{ question: a.question, view: a.view, credit: a.credit, recorded: true, label: doc.label }} /> : null}
       </div>
@@ -162,7 +165,7 @@ function LiveAsk({ mlBaseUrl, accessToken, scope }: { mlBaseUrl: string; accessT
         <Button onClick={() => void send(question)} disabled={!question.trim()} loading={busy}>{busy ? 'Asking…' : 'Ask'}</Button>
       </div>
       <Chips items={LIVE_CHIPS} picked={null} disabled={busy} label="Suggested questions" onPick={(i) => { setQuestion(LIVE_CHIPS[i]); void send(LIVE_CHIPS[i]) }} />
-      <p className="sr-only" role="status">{view?.answer ?? ''}</p>
+      <p className="sr-only" role="status">{view?.answer ? `${view.answer}${view.note ? ` ${view.note}` : ''}` : ''}</p>
       {view?.error ? <div data-testid="ask-error" className="mt-4 max-w-[640px]"><Banner kind="refused" title={view.error} /></div> : null}
       <div className="mt-6 max-w-[640px]" data-testid="ask-answer">
         {view?.answer && asked ? <Slip key={n} scope={scope} slip={{ question: asked, view, credit: null, recorded: false, label: null }} /> : null}

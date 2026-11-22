@@ -676,3 +676,31 @@ usage counted in memory, no Atlas, no retry. Results kept verbatim:
 So 2 of 4 recorded answers passed (total, score) and 2 are degraded. The live-call budget is spent; no further recording. The demo chips
 order the two that passed first and the degraded ones last.
 
+### IA v4 build notes (steps 1 to 9)
+
+- **A date that the order got wrong.** The order asked for the tape label "One demo order, Jan 31, 2024". The hero order is from 28 January 2024
+  (`landing-order.inputs.json`: `tape.date` 2024-01-28, order `createdAt` 2024-01-28T20:41:40.962Z; the tape's own aria-label already said
+  28 January). The label reads the date from that fixture: "Jan 28, 2024". A wrong date would be a fabricated fact.
+- **A defect that was already there.** The ⌘K palette threw on open ("Cannot read properties of undefined (reading 'subscribe')"):
+  `components/ui/command.tsx` `CommandDialog` rendered cmdk's input and list without cmdk's root. The old palette had the same shape, so it
+  was broken before IA v4. Found by the keyboard-only pass (`e2e-shots/keys4.ts`); fixed (the root wraps the children); guarded by
+  `e2e/ia4-app.spec.ts` (opens in a real browser, lists the nine nouns with their glosses, no page error).
+- **Provenance prints once.** The overview's "Sample data" line was removed; the page header carries the stored provenance chip and, for demo
+  accounts, the demo note behind a pen mark. Four e2e specs that read the old text now read the header (selector changes only, each with its reason).
+- **Where the figures come from on Home.** Chapters 01 and 02 of the overview, through the same functions (`describeHeadline`, `totalSentence`,
+  `gradeView`); the scope line "January 2024, 245 orders" is built by code from the period and the server's order count; "Scoring v2.3.0
+  (measured), range 92.5 to 94.1" prints beside the small stamp. Fees at the published rate keep "Not independently measured".
+- **Ask on a demo.** The four recorded answers are verbatim output of `agents.ask.ask_flow` (2 passed, 2 degraded after the re-recording of step
+  0b). A degraded answer shows one fixed line and "Model calls: 2 · answer not used"; the server's internal reason is no longer printed
+  (it named an exception class). The chips list passed answers first.
+- **Orders on a phone.** The ledger gained a "Cost" column (the server's per-order cost, already on each row for the month tape): shown by
+  default at 390 and 320 px, one menu away on a desktop. At 320 px only time and cost show, the symbol is printed under the time.
+- **Bundle (gzip First Load JS, `scripts/first-load-js.mjs`).** `/dashboard` before: 389.6 kB. `/app` 397.9 kB and `/app/overview` 397.9 kB
+  (budget 404.6 kB); `/` 325.9, `/login` 313.9, `/demo` 317.3, `/how-it-works` 319.7. The recorded answers (about 10 kB of JSON) are their own chunk.
+- **Redirect behaviour measured with `next start`.** Next forwards the incoming query first and appends the destination's own (`/analytics?userId=x`
+  becomes `/app/fills?userId=x&tab=patterns`); the old `view` parameter stays in the forwarded query and the new pages ignore it. A 308 is cached
+  by browsers for good: a later rename of an `/app/*` page needs its own redirect and cannot reuse these addresses.
+- **QA tool fixes (not product).** The e2e-shots mock now pages `/audit/trades` like the real API (it returned all 607 rows); `checks()` cuts
+  each line's box to its scroll boxes and counts wrapped inline boxes per line (both made false overlaps). Three `sed -i` attempts and one
+  inline-Python write were stopped by the guard hook; each was redone with the Edit and Write tools.
+

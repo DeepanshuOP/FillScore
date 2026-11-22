@@ -10,7 +10,16 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
   routes and screens, redirects, qa3); README line, the MCP runbook (public, neutral, `/app/settings`), FIRST_REAL_USER, FREE_HOSTING and
   DEMO_SCRIPT paths updated in step 1; `scripts/smoke_prod.sh` has no page path (it checks API routes and the frontend's `/api` proxy), so it
   needed no change.
-- **Next concrete action: Step 9 (e2e specs to the new routes, qa3 pass, break-ui, keyboard pass, reduced motion, one reviewer, final checks, M8 report and images).** Earlier text: Step 8 (cleanup: ARCHITECTURE.md section 4, README and runbook paths, smoke script paths), then step 9 (e2e specs to the new routes, qa3 run, break-ui, keyboard pass, reduced motion, one reviewer, final checks, M8 report and images).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Next concrete action: IA v4 built: ready for Deepanshu's review.**
+- **Step 9: done.** e2e: full run 60 passed (first run 8 failed on old routes and the old "Sample data" text, fixed by selector and route changes
+  with a reason in each spec; new specs `ia4-app.spec.ts` 6 and `legacy-redirects.spec.ts` 11). qa3: 110 states, 0 problems, landing CLS 0, also
+  with reduced motion; keyboard pass 16 of 16 (found and fixed a palette defect that predates this order); break-ui 48 of 48; Ask print 17 of
+  17. One reviewer: 13 findings, 9 fixed, the rest kept with a reason, one older open item for Deepanshu (fee line on the receipt, M8.md
+  "Review"). Final checks: frontend vitest 796 passed, tsc 0, lint 0 errors, build ok; backend vitest 1125 passed (133 files), tsc 0; ml-service
+  pytest 1852 passed (9 deselected); mcp-server 26 passed; guard table 214 passed; roadmap ids ok. First Load JS: `/` 328.8, `/app` 400.9,
+  `/app/overview` 400.9 (budget 404.6), `/login` 316.8 kB. Live LLM calls this order: 4 (step 0b). Atlas writes: none. Nothing pushed.
+  Report: `docs/milestones/M8.md` "IA v4 built"; images `docs/design/IA-v4/built/`.
+- **Earlier text:** Step 8 (cleanup: ARCHITECTURE.md section 4, README and runbook paths, smoke script paths), then step 9 (e2e specs to the new routes, qa3 run, break-ui, keyboard pass, reduced motion, one reviewer, final checks, M8 report and images).** Steps 0 to 9 follow the order; each is committed locally when done.
 - **Step 7: done.** qa3 (`e2e-shots/qa3.ts`, rewritten for the new routes: 36 marketing and app states, apps also at 320, Carbon copy for Home,
   Overview, Orders receipt and Council): 110 states, landing CLS 0 at 1440 and 390, after fixes 0 with overflow, overlaps or axe problems on the
   states re-run. Fixes: Orders ledger default columns by width (`defaultOrderColumns`: 390 time, symbol, side, cost; 320 time and cost with

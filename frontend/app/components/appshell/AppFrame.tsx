@@ -42,7 +42,7 @@ function AccountSwitcher({ account, section, className }: { account: Account; se
   const to = section ?? 'home'
   return (
     <DropdownMenu onOpenChange={load}>
-      <DropdownMenuTrigger data-testid="account-switcher" className={cn('inline-flex h-9 min-w-0 max-w-full items-center gap-1.5 rounded-[8px] border border-ui-edge px-2.5 text-left text-[14px] font-bold text-ui-ink hover:bg-ui-overlay', className)}>
+      <DropdownMenuTrigger data-testid="account-switcher" className={cn('inline-flex h-9 max-lg:min-h-11 min-w-0 max-w-full items-center gap-1.5 rounded-[8px] border border-ui-edge px-2.5 text-left text-[14px] font-bold text-ui-ink hover:bg-ui-overlay', className)}>
         <span className="sr-only">Account: </span><span className="truncate">{account.label}</span>
         <ChevronDown aria-hidden="true" className="size-3.5 shrink-0 text-ui-graphite" />
       </DropdownMenuTrigger>
@@ -117,7 +117,7 @@ function Sidebar({ versions, rail, onToggleRail, onOpenPalette }: { versions: Sh
       </nav>
       <div className="mt-auto flex flex-col gap-3 border-t border-ui-rule pt-3">
         {rail ? null : <BottomGroup account={account} versions={versions} />}
-        <button type="button" onClick={onToggleRail} aria-label={rail ? 'Expand the sidebar' : 'Collapse the sidebar'} aria-pressed={!rail}
+        <button type="button" onClick={onToggleRail} aria-label={rail ? 'Expand the sidebar' : 'Collapse the sidebar'}
           className="inline-flex size-8 items-center justify-center self-start rounded-[4px] text-ui-graphite hover:text-ui-ink max-xl:inline-flex xl:hidden">
           {rail ? <ChevronsRight aria-hidden="true" className="size-4" /> : <ChevronsLeft aria-hidden="true" className="size-4" />}
         </button>

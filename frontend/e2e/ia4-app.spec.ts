@@ -15,7 +15,10 @@ test('a demo Home plays a recorded answer: labelled, scoped, with the language-m
   await page.getByTestId('ask-chip').first().click()
   const slip = page.getByTestId('ask-slip')
   await expect(slip).toContainText('RECORDED ANSWER, NOT LIVE')
-  await expect(slip).toContainText(/\d[\d,]* orders?/i)   // the scope line, placed by code (the e2e database has its own seeded counts)
+  // the scope line, placed by code: the period, and the order count when the orders were measured (the e2e database has its own seeded
+  // data; a missing count is never printed as 0)
+  await expect(slip).toContainText(/\d{4}/)
+  await expect(slip).not.toContainText(/\b0 orders\b/i)
   await expect(slip).toContainText('Explanation (language model; every number was checked against the audit)')
   await expect(slip).toContainText(/Answered by groq\//)
 })

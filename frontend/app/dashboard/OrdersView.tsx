@@ -12,6 +12,7 @@ import { Button, buttonClass } from '../ui/Button';
 import { OrderReplay } from './OrderReplay';
 import { countsLine, defaultOrderColumns, feesCell, feesTitle, formatUtc, ledgerRows, notionalCell, orderCountsOf, statusLabel, withParams, type OrderCounts, type OrderRow } from './ordersTable';
 import { formatUsd } from '../ui/format';
+import { formatBpsDisplay } from '../utils/formatBps';
 
 type Json = { status: number; body: unknown };
 interface Props {
@@ -44,7 +45,10 @@ const COLUMNS = [
     cell: (c) => <span className="font-ui-mono text-[12px]">{c.row.original.orderId || 'not recorded'}</span> }),
   // the server's total cost of the order (negative = price improvement); shown by default on a phone, one menu away on a desktop
   col.accessor((r) => r.cost?.usd ?? undefined, { id: 'cost', header: 'Cost', sortUndefined: 'last', meta: { label: 'Cost', numeric: true },
-    cell: (c) => (c.row.original.cost ? <span title={`${c.row.original.cost.bps.toFixed(1)} bps of the order's value`}>{formatUsd(c.row.original.cost.usd)}</span> : <span className="text-ui-graphite">not computed</span>) }),
+    cell: (c) => (c.row.original.cost
+      // the unit is printed, not only in a tooltip (a touch screen shows no tooltip): dollars, then the bps under them
+      ? <span title={`${c.row.original.cost.bps.toFixed(1)} bps of the order's value`}>{formatUsd(c.row.original.cost.usd)}<span className="block text-[11px] text-ui-graphite">{formatBpsDisplay(c.row.original.cost.bps)}</span></span>
+      : <span className="text-ui-graphite">not computed</span>) }),
   col.accessor('fills', { header: 'Fills', meta: { label: 'Fills', numeric: true }, cell: (c) => c.getValue() }),
   col.accessor('quantity', { header: 'Quantity', meta: { label: 'Quantity', numeric: true }, cell: (c) => fmtQty(c.getValue()) }),
   col.accessor('notionalUsd', { header: 'Notional', meta: { label: 'Notional', numeric: true }, cell: (c) => notionalCell(c.row.original) }),

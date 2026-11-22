@@ -296,7 +296,7 @@ function AnalyticsContent() {
 
   const exchange = tradeData[0]?.exchange;
   const shell = (children: ReactNode) => (
-    <AppPage dataSource={dashboardMode === 'demo' ? 'synthetic-demo' : 'real-user'}
+    <AppPage period="All stored fills" dataSource={dashboardMode === 'demo' ? 'synthetic-demo' : 'real-user'}
       venue={exchange ? (VENUE_NAME[exchange.toLowerCase()] ?? exchange) : null}>
       {children}
     </AppPage>

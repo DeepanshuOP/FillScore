@@ -382,7 +382,7 @@ function TradesContent() {
   const arrival = sel ? formatPrice(sel.arrivalPriceProxy) : null
 
   return (
-    <AppPage dataSource={dashboardMode === 'demo' ? 'synthetic-demo' : dashboardMode === 'real' ? 'real-user' : null}
+    <AppPage period="All stored fills" dataSource={dashboardMode === 'demo' ? 'synthetic-demo' : dashboardMode === 'real' ? 'real-user' : null}
       venue={exchangeRaw ? (VENUE_NAME[exchangeRaw.toLowerCase()] ?? displayExchange) : null} actions={actions}>
       <div className="flex flex-col gap-5">
         <p className="text-[13px] text-ui-graphite">{total} executions on {displayExchange}</p>

@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { cn } from '../../../lib/utils'
 import dynamic from 'next/dynamic'
@@ -19,6 +20,7 @@ import { DEMO_ENTRY, SITE_ITEMS } from './siteItems'
  */
 export function MarketingNav() {
   const { accessToken } = useAuth()
+  const pathname = usePathname()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuEver, setMenuEver] = useState(false)
@@ -35,7 +37,8 @@ export function MarketingNav() {
         <Link href="/" className="no-underline" aria-label="FillScore home"><Logo /></Link>
         <nav aria-label="Site" className="hidden items-center gap-1 md:flex">
           {SITE_ITEMS.map(([href, label]) => (
-            <Link key={href} href={href} className="px-3 py-1.5 text-[15px] font-medium text-ui-graphite no-underline transition-colors hover:text-ui-ink">{label}</Link>
+            <Link key={href} href={href} aria-current={pathname === href || pathname.startsWith(`${href}/`) ? 'page' : undefined}
+              className="px-3 py-1.5 text-[15px] font-medium text-ui-graphite no-underline transition-colors hover:text-ui-ink aria-[current=page]:font-bold aria-[current=page]:text-ui-ink">{label}</Link>
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
@@ -44,7 +47,7 @@ export function MarketingNav() {
           ) : (
             <>
               <Link href="/login" className="hidden rounded-md px-3 py-1.5 text-[14px] text-ui-graphite no-underline hover:text-ui-ink md:inline-block">Log in</Link>
-              <Link href={DEMO_ENTRY} className={buttonClass('primary', 'sm', 'no-underline')}>Open the demo</Link>
+              <Link href={DEMO_ENTRY} className={buttonClass('primary', 'sm', 'no-underline max-sm:min-h-11')}>Open the demo</Link>
             </>
           )}
           <button type="button" onClick={() => { setMenuEver(true); setMenuOpen(true) }} aria-haspopup="dialog"
