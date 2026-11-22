@@ -29,8 +29,10 @@ describe('rebuilt screens', () => {
     expect(hits(/[→↗↘←▶◈◆◉⬡⚖✓]/)).toEqual([]);
   });
   it('no "A · B · C" separator in a string or in text', () => {
-    expect(hits(/\S ·  ?\S|\S  · \S/)).toEqual([]);
-    expect(hits(/['"`>][^'"`<>]* · [^'"`<>]*['"`<]/)).toEqual([]);
+    // One line is exempt because the order of 2026-11-23 (sixth, step 3) fixes its wording: askView.ts "Model calls: N · answer not used".
+    const scanned = code.filter((l) => !/Model calls: \$\{[^}]+\} · answer not used/.test(l.text));
+    expect(hits(/\S ·  ?\S|\S  · \S/, scanned)).toEqual([]);
+    expect(hits(/['"`>][^'"`<>]* · [^'"`<>]*['"`<]/, scanned)).toEqual([]);
   });
   it('no inline colour, no hex literal, no old token or font variable', () => {
     expect(hits(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b(?![0-9a-fA-F])|rgba?\(/, code.filter((l) => !/\.ts$/.test(l.f) || /Panel|Headline/.test(l.f)))).toEqual([]);

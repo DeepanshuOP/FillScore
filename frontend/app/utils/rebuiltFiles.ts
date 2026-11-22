@@ -11,7 +11,7 @@ export const REBUILT_FILES = [
   'app/ui/GradeStamp.tsx', 'app/ui/charts/CostRuler.tsx', 'app/dashboard/MonthTape.tsx', 'app/dashboard/monthTape.ts',
   'app/dashboard/DashboardContent.tsx', 'app/dashboard/ScoreRecord.tsx',
   'app/dashboard/OrdersView.tsx', 'app/dashboard/OrderReplay.tsx', 'app/dashboard/RulesView.tsx', 'app/dashboard/RankingsView.tsx', 'app/dashboard/Overview.tsx',
-  'app/dashboard/ordersTable.ts', 'app/dashboard/rankingsView.ts', 'app/dashboard/AskPanel.tsx', 'app/dashboard/CsvCheckPanel.tsx', 'app/dashboard/SyncFreshness.tsx',
+  'app/dashboard/ordersTable.ts', 'app/dashboard/rankingsView.ts', 'app/dashboard/AskHome.tsx', 'app/dashboard/HomeFigures.tsx', 'app/dashboard/CsvCheckPanel.tsx', 'app/dashboard/SyncFreshness.tsx',
   'app/dashboard/headline.ts', 'app/dashboard/explainView.ts', 'app/dashboard/askView.ts', 'app/dashboard/csvCheckView.ts', 'app/dashboard/ordersView.ts',
   'app/components/AgentCouncil.tsx', 'app/components/EvidencePanel.tsx', 'app/components/ConnectPrompt.tsx',
   'app/components/SiteFooter.tsx', 'app/components/NotComputed.tsx', 'app/share/[userId]/measured.ts', 'app/components/AuthLayout.tsx', 'app/components/OAuthLinks.tsx',

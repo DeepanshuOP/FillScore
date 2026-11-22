@@ -6,7 +6,7 @@ tools, answerer call, code-placed numbers, claim rules) over the committed demo 
 committed routes and real free-tier providers. Usage is counted in an in-memory store: nothing is written to MongoDB.
 The output is written verbatim; it is never edited afterwards.
 
-    cd ml-service && .venv/bin/python scripts/record_ask_fixture.py demo-moderate ../frontend/app/design-lab/ia4/fixtures/ask-recorded.json
+    cd ml-service && .venv/bin/python scripts/record_ask_fixture.py demo-moderate ../frontend/app/lib/ask/ask-recorded.json
 """
 from __future__ import annotations
 

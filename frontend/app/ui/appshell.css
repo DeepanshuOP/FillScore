@@ -41,6 +41,25 @@
 .fa-bar [aria-current="page"] { color: var(--ui-ink); text-decoration: underline; text-decoration-color: var(--ui-pen); text-decoration-thickness: 2px; text-underline-offset: 6px; }
 @media (max-width: 359px) { .fa-bar a, .fa-bar button { font-size: 12px; letter-spacing: 0.02em; } }
 
+/* the Ask slip prints: the paper feeds out of the slot top-down while its lines print left to right, from the first frame.
+   Each line waits for its own turn (18 ms apart, at most 360 ms) hidden by its own keyframe, never behind a blank paper:
+   the paper is clipped from the same instant, so the slip is never blank for more than one frame. */
+.fa-slot { height: 6px; border-radius: 3px; background: var(--ui-ink); }
+.fa-slip { position: relative; margin: 0 10px; }
+@media (prefers-reduced-motion: no-preference) {
+  .fa-slip[data-print="true"] { animation: fa-feed 420ms cubic-bezier(0.32, 0.72, 0, 1) both; }
+  .fa-slip[data-print="true"] .fa-line { animation: fa-print 140ms linear backwards; animation-delay: var(--d, 0ms); }
+}
+@keyframes fa-feed { from { clip-path: inset(0 0 100% 0); transform: translateY(-14px); } to { clip-path: inset(0 0 0 0); transform: none; } }
+@keyframes fa-print { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* chips: complete questions, 44 px tall */
+.fa-chip { display: inline-block; max-width: 100%; min-height: 44px; text-align: left; padding: 9px 14px; border: 1px solid var(--ui-edge); border-radius: 999px;
+  font-size: 14px; color: var(--ui-ink); background: var(--ui-raised); cursor: pointer; }
+.fa-chip:hover:not(:disabled) { background: var(--ui-overlay); }
+.fa-chip[data-picked="true"] { border-color: var(--ui-ink); box-shadow: inset 0 0 0 1px var(--ui-ink); }
+.fa-chip:disabled { opacity: 0.6; cursor: not-allowed; }
+
 /* page change: 160 ms fade and 8 px, no exit; the key is the pathname, so tabs and filters never replay it */
 .fa-page { min-width: 0; }
 @media (prefers-reduced-motion: no-preference) { .fa-page { animation: fa-page-in 160ms ease-out both; } }

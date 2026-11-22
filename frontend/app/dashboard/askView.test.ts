@@ -19,9 +19,19 @@ describe('describeAsk', () => {
     expect(v.meta).toBe('No data was read. Used 1 model call.');
     expect(v.values).toEqual([]);
   });
-  it('a code-built answer is labelled as such, with its reason', () => {
+  it('a code-built answer says so in one line, and the meta line says the model answer was not used (sixth order, step 3)', () => {
     const v = describeAsk(200, ok({ degraded: true, fallback: 'the answer could not be produced (RuntimeError)' }));
-    expect(v.note).toBe('Written by code from the measured values, because the answer could not be produced (RuntimeError).');
+    expect(v.note).toBe("The model's answer did not pass the checks, so code wrote this sentence from the measured values.");
+    expect(v.meta).toBe('Model calls: 2 · answer not used');
+    expect(v.byModel).toBe(false);
+    // the server's internal reason is not printed
+    expect(JSON.stringify(v)).not.toContain('RuntimeError');
+  });
+  it('one model call and a degraded answer keeps the count it was given', () => {
+    expect(describeAsk(200, ok({ degraded: true, fallback: 'x', n_calls: 1 })).meta).toBe('Model calls: 1 · answer not used');
+  });
+  it('a passed answer is by the model: byModel is true', () => {
+    expect(describeAsk(200, ok()).byModel).toBe(true);
   });
   it('errors use the shared messages; nothing from the server body is shown', () => {
     expect(describeAsk(429, { detail: { code: 'RATE_LIMIT_EXHAUSTED', message: 'x' } }).error)

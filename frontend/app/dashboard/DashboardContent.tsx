@@ -29,6 +29,9 @@ import { type CurrentFigures } from './headerStats';
 import { describeHeadline, gradeView, scopeFacts } from './headline';
 import { DEMO_NOTE, type V2Response } from './scoreV2';
 import { Overview } from './Overview';
+import { AskHome } from './AskHome';
+import { HomeFigures } from './HomeFigures';
+import { scopeLine } from './askRecorded';
 import { orderCountsOf, type OrderRow } from './ordersTable';
 import SyncFreshness from './SyncFreshness';
 
@@ -40,7 +43,6 @@ const OrderReplay = dynamic(() => import('./OrderReplay').then((m) => m.OrderRep
 const RulesView = dynamic(() => import('./RulesView'), { loading: section });
 const RankingsView = dynamic(() => import('./RankingsView'), { loading: section });
 const AgentCouncil = dynamic(() => import('../components/AgentCouncil'), { loading: section });
-const AskPanel = dynamic(() => import('./AskPanel'));
 const CsvCheckPanel = dynamic(() => import('./CsvCheckPanel'));
 const ScoreRecord = dynamic(() => import('./ScoreRecord'), { loading: section });
 const EvidencePanel = dynamic(() => import('../components/EvidencePanel').then((m) => m.EvidencePanel), { loading: section });
@@ -226,7 +228,7 @@ function DashboardContent({ view }: { view: View }) {
   ) : null;
 
   return (
-    <AppPage dataSource={audit ? (isDemoData ? 'synthetic-demo' : 'real-user') : null} ownHeading={view === 'home'}
+    <AppPage dataSource={audit ? (isDemoData ? 'synthetic-demo' : 'real-user') : null} ownHeading={view === 'home' && (!!audit || dashboardMode === 'real')}
       period={audit ? formatPeriodLabel(audit.period.start, audit.period.end) : null}
       venue={audit ? VENUES[audit.exchange?.toLowerCase()] ?? audit.exchange : null} actions={actions}>
 
@@ -244,7 +246,12 @@ function DashboardContent({ view }: { view: View }) {
         </EmptyState>
       )}
 
-      {!audit && !loading && !error && dashboardMode === 'real' && <ConnectPrompt />}
+      {!audit && !loading && !error && dashboardMode === 'real' && (
+        <div className="flex flex-col gap-12">
+          {view === 'home' && <AskHome mode="blocked" />}
+          <ConnectPrompt />
+        </div>
+      )}
 
       {audit && !loading && (() => {
         const v1Computed = audit.v1Computed !== false;
@@ -254,6 +261,25 @@ function DashboardContent({ view }: { view: View }) {
           <div className="flex flex-col gap-5" data-view-body="">
             {/* design v3.1: on the overview the sample-data notice is one slim printed line in chapter 1 (Overview, sampleNote) */}
             {downloadError && <Banner kind="refused" title="The report was not downloaded">{downloadError}</Banner>}
+
+            {view === 'home' && dashboardMode !== null && (() => {
+              const headline = describeHeadline(ordersSummary, isDemoData)
+              const grade = gradeView(scoreV2.status, scoreV2.body)
+              const periodLabel = monthLabel(audit.period.start, audit.period.end)
+              const scope = scopeLine(periodLabel, headline?.orders ?? 0)
+              return (
+                <div className="flex flex-col gap-16">
+                  {dashboardMode === 'demo' && resolvedUserId
+                    ? <AskHome mode="demo" demoId={resolvedUserId} signedIn={!!accessToken} scope={scope} />
+                    : headline
+                      ? <AskHome mode="live" mlBaseUrl={ML_URL} accessToken={accessToken} scope={scope} />
+                      : <AskHome mode="blocked" />}
+                  <HomeFigures headline={headline} grade={grade} periodLabel={periodLabel} scope={scope}
+                    band={(v2Body as { result?: { band?: [number, number] | null } } | null)?.result?.band ?? null}
+                    overviewHref={viewHref('overview', shellUser, !!accessToken)} />
+                </div>
+              )
+            })()}
 
             {view === 'overview' && (
               <Overview
@@ -299,7 +325,6 @@ function DashboardContent({ view }: { view: View }) {
             {view === 'council' && (
               <div className="flex flex-col gap-5">
                 <AgentCouncil userId={dashboardMode === 'real' ? undefined : audit.userId} accessToken={accessToken} symbol="BTCUSDT" mlBaseUrl={ML_URL} />
-                {dashboardMode === 'real' && <AskPanel mlBaseUrl={ML_URL} accessToken={accessToken} />}
               </div>
             )}
 

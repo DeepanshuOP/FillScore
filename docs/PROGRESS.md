@@ -4,7 +4,17 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, sixth: IA v4 built in production (local commits)
 
-- **Next concrete action: Step 3 (Home: Ask FillScore).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Next concrete action: Step 4 (move the sections: Fills tabs, /app/check open signed out, Council without Ask, Evidence without the broker-file check).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Step 3: done.** Home (`/app`): `dashboard/AskHome.tsx` (demo: recorded chips, no input box, "Recorded answer, not live", code-built scope
+  line "January 2024, 245 orders", passed answers first and degraded last; live: the existing agent, 2 units, four suggestion chips;
+  blocked: disabled with "Ask needs measured orders." plus the connect empty state), `dashboard/HomeFigures.tsx` (chapters 01 total and
+  02 grade as the small stamp, "Scoring v2.3.0 (measured), range 92.5 to 94.1", fees "not independently measured", "Read the full
+  overview"). `askView.ts`: a degraded answer prints the one line and the meta "Model calls: 2 · answer not used", no model name, no LLM
+  heading; the heading only over model text. Recorded fixture moved to `app/lib/ask/ask-recorded.json` (own chunk, loaded on demo pages
+  only). Ask left the Council page (`AskPanel.tsx` deleted). Print CSS: paper and first line start in the same frame
+  (`e2e-shots/ask-print.ts`: 17 checks pass, motion and reduced motion; axe 0, overlaps 0). Design test `rebuiltCopy` has one exempt
+  line (the order's exact meta string). The IA v4 lab prototype `design-lab/ia4` is deleted (its tests asserted the old view model;
+  nothing imported it; the guard spec keeps its paths). Frontend vitest 777 passed, tsc 0, eslint 0 errors.
 - **Step 2: done.** Persistent frame in `app/app/(shell)/layout.tsx` -> `components/appshell/AppFrame.tsx`: sidebar (232 px; rail
   1024-1279 px with a toggle; account switcher only, no provenance), nine nouns with the pen underline (180 ms), bottom group
   (public score card for demo accounts, Methodology, Settings only when signed in, Carbon copy, versions read on the server from
