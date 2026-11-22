@@ -2,7 +2,7 @@
  * The receipt's explanatory sentences (design v3 fixes A5): sentence case, past tense. Only printed labels (ORDER,
  * MARKET, FILLS, COSTS, TOTAL, SOURCE) are uppercase. Figures come from the replay API, formatted by formatSignedBps.
  */
-import { formatSignedBps } from '../ui/format'
+import { formatSignedBps, formatUsd } from '../ui/format'
 
 export interface ExpectedCost { expectedBps: number | null; lowBps: number | null; highBps: number | null; level: number; reason?: string | null }
 
@@ -11,6 +11,15 @@ export function expectedLine(ec: ExpectedCost): string {
   const range = ec.lowBps !== null && ec.highBps !== null
     ? ` (${Math.round(ec.level * 100)}% range ${formatSignedBps(ec.lowBps)} to ${formatSignedBps(ec.highBps)})` : ''
   return `Orders like it were modelled to cost ${formatSignedBps(ec.expectedBps)}${range}.`
+}
+
+/**
+ * The receipt's unfilled-line note (fixes F2): the figure on the "Unfilled orders" line is a modelled cost, not money that
+ * left the account. null when the line has no figure or it is zero (nothing to explain).
+ */
+export function unfilledLineNote(usd: number | null | undefined): string | null {
+  if (typeof usd !== 'number' || !Number.isFinite(usd) || usd === 0) return null
+  return `Unfilled orders, ${formatUsd(usd)}: the market moved away from the part that never filled. No money left the account for it.`
 }
 
 export const NO_FILLS = 'No fills: the order did not trade.'

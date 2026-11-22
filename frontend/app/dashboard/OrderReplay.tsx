@@ -7,7 +7,7 @@ import { track } from '../lib/track';
 import { useToast } from '../ui/Toast';
 import { exactTitle, formatSignedBps, formatUsd } from '../ui/format';
 import { Fig } from '../ui/Fig';
-import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, expectedLine } from './receiptCopy';
+import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, expectedLine, unfilledLineNote } from './receiptCopy';
 import { bars, barsWidth, canonicalJson, sha256Hex } from '../ui/hash';
 import { describeReplay, type ReplayApi } from './explainView';
 import { formatUtc, withParams, type OrderRow } from './ordersTable';
@@ -112,6 +112,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
   const lines = body ? body.decomposition.filter((d) => d.key !== 'total' && d.label !== 'Total') : [];
   const total = body?.decomposition.find((d) => d.key === 'total' || d.label === 'Total');
   const ec = body?.expectedCost;
+  const unfilledNote = unfilledLineNote(lines.find((d) => d.key === 'unfilled')?.usd);
   const copy = () => {
     void navigator.clipboard?.writeText(orderId).catch(() => {});
     toast.show({ title: 'Order id copied', detail: orderId });
@@ -166,8 +167,9 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
           ) : <div className="fs-totalline"><span className="k">TOTAL</span><span className="b"><Fig text={cell(total?.bps, formatSignedBps)} exact={exactTitle(total?.bps, 'bps')} /></span><span className="u"><Fig text={cell(total?.usd, formatUsd)} exact={exactTitle(total?.usd, 'usd')} /></span></div>}
           {/* design v3.1: the footnotes (prints, expected cost, notes, sources, the record's hash) fold into NOTES; the
               total, NOT COMPUTED and the signature stamp are never folded */}
-          <ReceiptNotes count={(body.fills.length ? 1 : 0) + (ec ? 1 : 0) + view.notes.length + view.sources.length + 1}>
+          <ReceiptNotes count={(body.fills.length ? 1 : 0) + (ec ? 1 : 0) + (unfilledNote ? 1 : 0) + view.notes.length + view.sources.length + 1}>
             {body.fills.length ? <PrintsNote body={body} /> : null}
+            {unfilledNote ? <p className="g mt-1.5" data-testid="receipt-unfilled-note">{unfilledNote}</p> : null}
             {ec ? <p className="g mt-1.5">{expectedLine(ec)}</p> : null}
             {view.notes.map((n) => <p key={n} className="g mt-1">{n}</p>)}
             {view.sources.map((s) => (

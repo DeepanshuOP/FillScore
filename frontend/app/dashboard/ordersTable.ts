@@ -89,9 +89,12 @@ const ENDED_UNFILLED = new Set(['CANCELED', 'CANCELLED', 'EXPIRED', 'EXPIRED_IN_
 export function isUnfilled(r: Pick<OrderRow, 'status' | 'fills'>): boolean {
   return r.status !== null && ENDED_UNFILLED.has(r.status.toUpperCase()) && r.fills === 0;
 }
-/** The amount the tape's pen circles, with the outcome when the order never filled (its cost is modelled, not paid). */
+/**
+ * The amount the tape's pen circles. For an order that never filled the amount is the modelled cost of the missed fill,
+ * not money that left the account (F2), so it says the market moved away.
+ */
 export function circledLabel(amount: string, r: Pick<OrderRow, 'status' | 'fills'>): string {
-  return isUnfilled(r) ? `${amount}, unfilled` : amount;
+  return isUnfilled(r) ? `${amount}, unfilled: market moved away` : amount;
 }
 
 /** `YYYY-MM-DD HH:MM:SS` in UTC; "not recorded" for a value that is not a date. */

@@ -50,12 +50,19 @@ describe('totalSentence', () => {
   const withShare = (unfilledCost: unknown) => describeHeadline({ ...BODY, unfilledCost }, true)!
   it('says cost, names the unfilled share, and never says paid', () => {
     const s = totalSentence(withShare({ usd: 10.631536009963167, count: 11, measured: 11 }))
-    expect(s).toBe('The 245 orders cost $52.08, $10.63 of it in orders that never filled.')
+    // F2: money did not leave the account for an unfilled order, so the sentence says the market moved away from it
+    expect(s).toBe('The 245 orders cost $52.08, including $10.63 the market moved away from 11 orders that never filled.')
     expect(s).not.toMatch(/paid/i)
   })
-  it('hand fixture: $4.50 of $9.80', () => {
+  it('hand fixture: $4.50 of $9.80, from 2 orders', () => {
     const body = { ...BODY, unfilledCost: { usd: 4.5, count: 2, measured: 2 }, shortfall: { ...BODY.shortfall, totals: { ...BODY.shortfall.totals, total: { usd: 9.8, bps: 1, n: 5 } } } }
-    expect(totalSentence(describeHeadline(body, false)!)).toBe('The 5 orders cost $9.80, $4.50 of it in orders that never filled.')
+    expect(totalSentence(describeHeadline(body, false)!)).toBe('The 5 orders cost $9.80, including $4.50 the market moved away from 2 orders that never filled.')
+  })
+  it('counts the orders the dollars come from: 3 unfilled, 2 measured -> "2 orders" (F2)', () => {
+    expect(totalSentence(withShare({ usd: 4.5, count: 3, measured: 2 }))).toBe('The 245 orders cost $52.08, including $4.50 the market moved away from 2 orders that never filled.')
+  })
+  it('agrees in number for one unfilled order', () => {
+    expect(totalSentence(withShare({ usd: 2.5, count: 1, measured: 1 }))).toBe('The 245 orders cost $52.08, including $2.50 the market moved away from 1 order that never filled.')
   })
   it('leaves the clause out when no order went unfilled or the share was not measured (never a zero)', () => {
     expect(totalSentence(withShare({ usd: 0, count: 0, measured: 0 }))).toBe('The 245 orders cost $52.08 in total.')

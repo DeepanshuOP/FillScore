@@ -29,6 +29,8 @@ export interface Headline {
   unmeasuredOrders: number
   /** The server's dollars of the total that sit in orders that never filled (modelled, not paid); null when not measured. */
   unfilledUsd: number | null
+  /** The orders that never filled and were measured: the ones the dollars above come from; null when none. */
+  unfilledOrders: number | null
 }
 
 function totalsOf(body: unknown): Totals | null {
@@ -52,6 +54,7 @@ export function describeHeadline(body: unknown, isDemo: boolean): Headline | nul
     feesNotMeasured: split,
     unmeasuredOrders: (body as OrdersBody).shortfall?.unmeasured ?? 0,
     unfilledUsd: isNum((body as OrdersBody).unfilledCost?.usd) ? ((body as OrdersBody).unfilledCost!.usd as number) : null,
+    unfilledOrders: isNum((body as OrdersBody).unfilledCost?.measured) ? ((body as OrdersBody).unfilledCost!.measured as number) : null,
   }
 }
 
@@ -72,10 +75,14 @@ export function totalBpsLabel(h: Pick<Headline, 'totalBps'> | null): string | nu
  * which nobody paid, so it says "cost" and names that share as the server sent it. No share (none unfilled, or not
  * measured) leaves the clause out; it never prints a zero it was not sent.
  */
-export function totalSentence(h: Pick<Headline, 'orders' | 'totalUsd' | 'unfilledUsd'>): string {
+export function totalSentence(h: Pick<Headline, 'orders' | 'totalUsd' | 'unfilledUsd' | 'unfilledOrders'>): string {
   const noun = `The ${h.orders.toLocaleString('en-US')} ${h.orders === 1 ? 'order' : 'orders'} cost ${formatUsd(h.totalUsd)}`
-  return h.unfilledUsd !== null && h.unfilledUsd > 0 ? `${noun}, ${formatUsd(h.unfilledUsd)} of it in orders that never filled.` : `${noun} in total.`
+  if (h.unfilledUsd === null || !(h.unfilledUsd > 0) || !h.unfilledOrders) return `${noun} in total.`
+  return `${noun}, including ${formatUsd(h.unfilledUsd)} the market moved away from ${missedOrders(h.unfilledOrders)}.`
 }
+
+/** F2: "11 orders that never filled". Money did not leave the account for them: the market moved away from the order. */
+export const missedOrders = (n: number): string => `${n.toLocaleString('en-US')} ${n === 1 ? 'order that never filled' : 'orders that never filled'}`
 
 export interface Bars {
   title: string

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, expectedLine } from './receiptCopy'
+import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, expectedLine, unfilledLineNote } from './receiptCopy'
 
 // Design v3 fixes A5 (2026-11-21): on the receipt, explanatory sentences are in sentence case; only the printed labels
 // (ORDER, MARKET, FILLS, COSTS, TOTAL, SOURCE) are uppercase. Figures come from the replay API through formatSignedBps.
@@ -15,6 +15,13 @@ describe('receipt sentences', () => {
       .toBe('Expected cost: insufficient data (limit order: no expected cost model).')
     expect(expectedLine({ expectedBps: null, lowBps: null, highBps: null, level: 0.9, reason: null }))
       .toBe('Expected cost: insufficient data (no reason was stored).')
+  })
+  it('the unfilled line note says the market moved away and that no money left the account (F2)', () => {
+    const n = unfilledLineNote(3.3102)!
+    expect(n).toBe('Unfilled orders, $3.31: the market moved away from the part that never filled. No money left the account for it.')
+    expect(n).not.toMatch(/paid/i)
+    expect(unfilledLineNote(0)).toBeNull()      // nothing to explain
+    expect(unfilledLineNote(null)).toBeNull()   // not computed: no note, never a made-up figure
   })
   it('the fixed sentences are sentence case, not printed labels', () => {
     for (const s of [BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS]) {

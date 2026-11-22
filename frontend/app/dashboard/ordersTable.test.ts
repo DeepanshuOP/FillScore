@@ -85,7 +85,7 @@ describe('unfilled outcome of a ledger row', () => {
       .toEqual([false, false, false, false, false]);
   });
   it('labels the circled amount', () => {
-    expect(circledLabel('$3.31', row('CANCELED', 0))).toBe('$3.31, unfilled');
+    expect(circledLabel('$3.31', row('CANCELED', 0))).toBe('$3.31, unfilled: market moved away');
     expect(circledLabel('$3.31', row('FILLED', 1))).toBe('$3.31');
   });
 });
