@@ -19,7 +19,8 @@ import {
   verdictCardsFromResult,
   agentLabel,
   ratingWords,
-  alphaRatingPhrase,
+  alphaModelLabelNote,
+  parseBenchmarkLine,
   alphaBenchmarkNote,
   COUNCIL_DISCLAIMER,
   type CouncilAgentCard as AgentCard,
@@ -175,6 +176,7 @@ export default function AgentCouncil({
   const [waking, setWaking] = useState(false);
   const [cached, setCached] = useState(false);
   const [tradeCount, setTradeCount] = useState<number | null>(null);
+  const [benchmarkLine, setBenchmarkLine] = useState<string | null>(null);   // the server's benchmark sentence (the `cited_values` event)
   const [scope, setScope] = useState<CouncilScope | null>(null);   // served fill counts (the `scope` event); null until sent
   const [error, setError] = useState<string | null>(null);
 
@@ -187,6 +189,7 @@ export default function AgentCouncil({
   const cited = useRef<unknown>(null);
   const reset = useCallback(() => {
     cited.current = null;
+    setBenchmarkLine(null);
     setResultMode(null);
     setModeLabel(null);
     setOfferQuick(false);
@@ -251,6 +254,7 @@ export default function AgentCouncil({
     } else if (eventType === "cited_values") {
       // Design v3 fixes A7: the server's trace of each note's cited values, sent just before `complete`.
       cited.current = (payload as { citedValues?: unknown }).citedValues ?? null;
+      setBenchmarkLine(parseBenchmarkLine(payload));
     } else if (eventType === "complete") {
       // The final event carries the whole result, identical to the non-stream endpoint. It is
       // the source of truth: every number on the panel is re-read from it.
@@ -469,12 +473,17 @@ export default function AgentCouncil({
                 ) : card.status === "done" ? (
                   <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={FADE} className="space-y-2 text-[13px] leading-5 text-ui-graphite">
                     {card.failed && <p className="text-ui-danger">Unavailable for this run</p>}
-                    {!card.failed && card.rating && (
-                      <p className="text-sm text-ui-ink">
-                        {agent === "alpha_architect" ? alphaRatingPhrase(card.rating) : `Rating: ${ratingWords(card.rating)}`}
-                      </p>
+                    {!card.failed && agent !== "alpha_architect" && card.rating && (
+                      <p className="text-sm text-ui-ink">{`Rating: ${ratingWords(card.rating)}`}</p>
+                    )}
+                    {/* the benchmark verdict is the server's sentence from the packet, never the model's enum */}
+                    {!card.failed && agent === "alpha_architect" && benchmarkLine && (
+                      <p data-testid="council-benchmark-line" className="text-sm text-ui-ink">{benchmarkLine}</p>
                     )}
                     {benchmarkNote && <p>{benchmarkNote}</p>}
+                    {agent === "alpha_architect" && !card.failed && card.rating ? (
+                      <p data-testid="council-model-label" className="text-[12px]">{alphaModelLabelNote(card.rating)}</p>
+                    ) : null}
                     {/* the recorded finding, verbatim (recorded output is never edited) */}
                     {!card.failed && (card.finding || (card.sentences?.length ?? 0) > 0) ? (
                       <div data-testid="council-finding" className="space-y-1.5 font-ui text-[14px] leading-[1.45] text-ui-ink [overflow-wrap:anywhere]">

@@ -114,10 +114,25 @@ export function ratingWords(rating: string): string {
     return (rating ?? '').toLowerCase().split('_').join(' ');
 }
 
-/** The benchmark specialist's rating as a phrase; empty when there is no rating. */
-export function alphaRatingPhrase(rating: string): string {
+/**
+ * The model's benchmark label, as recorded. The enum has no defined direction (ml-service agents/schemas.py), so it is
+ * shown as the model's word in a note and never as the verdict; the verdict line is the server's (`parseBenchmarkLine`).
+ * Empty when there is no rating.
+ */
+export function alphaModelLabelNote(rating: string): string {
     const words = ratingWords(rating);
-    return words ? `Versus the benchmark: ${words}` : '';
+    return words ? `Model's label, as recorded: ${words}` : '';
+}
+
+/**
+ * The server's benchmark statement (ml-service agents/benchmark_line.py, in the `cited_values` event): the market-order
+ * fills' median against the 5-minute VWAP, with "better than", "worse than" or "equal to" decided by the server.
+ * The page prints the served sentence and computes nothing; null when it is missing or malformed.
+ */
+export function parseBenchmarkLine(raw: unknown): string | null {
+    const b = (raw as { benchmark?: { state?: unknown; statement?: unknown } | null } | null | undefined)?.benchmark;
+    if (!b || (b.state !== 'measured' && b.state !== 'insufficient')) return null;
+    return typeof b.statement === 'string' && b.statement.trim() ? b.statement : null;
 }
 
 /**

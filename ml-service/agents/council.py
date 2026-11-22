@@ -745,8 +745,10 @@ async def _run_council_pipeline(
     # cited_values: the values each specialist's text cites, traced to the packet fields (design v3 fixes A7); an event
     # of its own just before `complete`, not part of the result or the persisted run
     done = result.model_dump(mode="json")
+    from agents.benchmark_line import benchmark_line
     from agents.cited_values import safe_trace
-    await run.event("cited_values", {"citedValues": safe_trace(done, run.ctx)})
+    await run.event("cited_values", {"citedValues": safe_trace(done, run.ctx),
+                                     "benchmark": benchmark_line((run.ctx or {}).get("alpha"))})
     await run.event("complete", done)
     return result
 

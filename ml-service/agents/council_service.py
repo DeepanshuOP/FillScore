@@ -24,6 +24,7 @@ from agents.errors import (
     RATE_LIMIT_EXHAUSTED,
     CouncilError,
 )
+from agents.benchmark_line import benchmark_line
 from agents.cited_values import safe_trace
 from agents.render import packet_ctx
 from agents.schemas import CouncilResult
@@ -46,7 +47,8 @@ async def _replay(result: CouncilResult, on_event: EventSink, ctx: Optional[dict
         return
     for name, data in result_events(result):
         if name == "complete" and ctx is not None:
-            await on_event("cited_values", {"citedValues": safe_trace(data, ctx)})
+            await on_event("cited_values", {"citedValues": safe_trace(data, ctx),
+                                            "benchmark": benchmark_line(ctx.get("alpha"))})
         await on_event(name, data)
 
 

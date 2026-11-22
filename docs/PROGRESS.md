@@ -4,13 +4,20 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-22, fourth: honest AI layer, two hardened backend paths, prints on the receipt (local commits)
 
-- **Next concrete action: Step 2 (benchmark label, deterministic).**
+- **Next concrete action: Step 3 (resumable Council stream).**
 - **Step 1: done.** `ml-service/evals/placeholder_compliance.py` (offline; test `tests/test_placeholder_compliance.py`, hand-computed on
   3 small runs) and the table in README "Evaluation". Unit = one agent output (regeneration and fallback are recorded per agent, not per
   sentence). Synthesis text was used as the model wrote it in 2 of 21 council runs and 3 of 18 single-call runs. ADR-0018
   (proposal, not built) is at `docs/research/decisions/ADR-0018-structured-claims.md`, beside ADR-0000 to 0017 (the order named
   `docs/adr/`, which does not exist; the ADRs live in `docs/research/decisions/`). The README line "runner exits 1 with 3 violations"
   was stale (v4 exists) and now says exit 0.
+- **Step 2: done** (resolves the third order's BLOCKED benchmark label). `ml-service/agents/benchmark_line.py` builds the line from the alpha
+  packet's `median_vwap_deviation_bps` (positive = paid more than the 5-minute VWAP = "worse than"; negative = "better than"; a median that
+  prints as 0.0 = "equal to"; no VWAP fill = "insufficient data"), sent as `benchmark` in the `cited_values` event (live and replay; the
+  recorded result is unchanged). The page prints the served sentence; the model's enum moved to "Model's label, as recorded: ..." under it.
+  Tests: `tests/test_benchmark_line.py` (7, hand cases both signs, zero, rounding, singular, no packet), `test_cited_values.py`
+  (event), `councilStatus.test.ts` (40). **Finding:** the rebuilt demo trades carry no `vwap5m`, so for the three demos the served line reads
+  "insufficient data" (the model's enum had said negative, negative, positive); real accounts with `vwap5m` get the measured line.
 
 ## Orders of 2026-11-22, third: Council scope, four copy fixes, launch kit (local commits)
 

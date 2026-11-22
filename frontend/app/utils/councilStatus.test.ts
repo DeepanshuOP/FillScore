@@ -256,7 +256,7 @@ describe('AgentCouncil panel source', () => {
 });
 
 // ── 2026-11-20 display changes: labels and phrases only; stored keys are unchanged ──────────
-import { agentLabel, ratingWords, alphaRatingPhrase, alphaBenchmarkNote, flagText } from './councilStatus';
+import { agentLabel, ratingWords, alphaModelLabelNote, parseBenchmarkLine, alphaBenchmarkNote, flagText } from './councilStatus';
 
 describe('agentLabel', () => {
     it('shows the alpha specialist as Benchmark Reviewer; the stored key stays alpha_architect', () => {
@@ -269,16 +269,35 @@ describe('agentLabel', () => {
     });
 });
 
-describe('ratingWords and alphaRatingPhrase', () => {
+describe('ratingWords and the model label note', () => {
     it('writes a rating in words', () => {
         expect(ratingWords('SEVERELY_NEGATIVE')).toBe('severely negative');
         expect(ratingWords('POSITIVE')).toBe('positive');
         expect(ratingWords('')).toBe('');
     });
-    it('phrases the benchmark rating', () => {
-        expect(alphaRatingPhrase('NEUTRAL')).toBe('Versus the benchmark: neutral');
-        expect(alphaRatingPhrase('SEVERELY_NEGATIVE')).toBe('Versus the benchmark: severely negative');
-        expect(alphaRatingPhrase('')).toBe('');
+    it('shows the enum as the model\'s label, not as the verdict', () => {
+        expect(alphaModelLabelNote('NEUTRAL')).toBe("Model's label, as recorded: neutral");
+        expect(alphaModelLabelNote('SEVERELY_NEGATIVE')).toBe("Model's label, as recorded: severely negative");
+        expect(alphaModelLabelNote('')).toBe('');
+    });
+});
+
+describe('parseBenchmarkLine', () => {
+    const statement = 'Market-order fills: median 1.2 bps worse than the 5-minute VWAP (88 fills)';
+    it('prints the served sentence unchanged', () => {
+        expect(parseBenchmarkLine({ benchmark: { state: 'measured', statement } })).toBe(statement);
+    });
+    it('prints the served insufficient-data sentence', () => {
+        const s = 'Benchmark comparison: insufficient data (no market-order fill had a 5-minute VWAP)';
+        expect(parseBenchmarkLine({ benchmark: { state: 'insufficient', statement: s } })).toBe(s);
+    });
+    it('is null when missing, null, of an unknown state or without a sentence', () => {
+        expect(parseBenchmarkLine(null)).toBeNull();
+        expect(parseBenchmarkLine({})).toBeNull();
+        expect(parseBenchmarkLine({ benchmark: null })).toBeNull();
+        expect(parseBenchmarkLine({ benchmark: { state: 'guess', statement } })).toBeNull();
+        expect(parseBenchmarkLine({ benchmark: { state: 'measured', statement: '  ' } })).toBeNull();
+        expect(parseBenchmarkLine({ benchmark: { state: 'measured' } })).toBeNull();
     });
 });
 

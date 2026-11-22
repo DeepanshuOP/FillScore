@@ -108,6 +108,11 @@ def test_a_served_demo_run_carries_cited_values_beside_the_unchanged_recorded_re
     assert [ln["value"] for ln in fee["lines"]] == ["$328.00"]
     assert "fee.total_fee_paid_usd" in fee["lines"][0]["fields"]
     assert "citedValues" not in result.model_dump()            # the recorded result itself is not changed
+    # the benchmark line is computed from the packet (make_packets: one fill with VWAP, median deviation 0.0 -> "equal to")
+    bench = dict(events)["cited_values"]["benchmark"]
+    assert bench["direction"] == "equal to"
+    assert bench["statement"] == "Market-order fills: median equal to the 5-minute VWAP (1 fill)"
+    assert "benchmark" not in dict(events)["complete"] and "benchmark" not in result.model_dump()
     assert provider.calls == []
 
 
