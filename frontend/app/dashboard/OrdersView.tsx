@@ -10,7 +10,8 @@ import { Banner } from '../ui/Banner';
 import { EmptyState } from '../ui/EmptyState';
 import { Button, buttonClass } from '../ui/Button';
 import { OrderReplay } from './OrderReplay';
-import { countsLine, feesCell, feesTitle, formatUtc, ledgerRows, notionalCell, orderCountsOf, statusLabel, withParams, type OrderCounts, type OrderRow } from './ordersTable';
+import { countsLine, defaultOrderColumns, feesCell, feesTitle, formatUtc, ledgerRows, notionalCell, orderCountsOf, statusLabel, withParams, type OrderCounts, type OrderRow } from './ordersTable';
+import { formatUsd } from '../ui/format';
 
 type Json = { status: number; body: unknown };
 interface Props {
@@ -29,7 +30,11 @@ const NUM = 'text-right tabular-nums';
 const fmtQty = (n: number) => n.toLocaleString('en-US', { maximumFractionDigits: 8 });
 
 const COLUMNS = [
-  col.accessor((r) => Date.parse(r.when) || 0, { id: 'when', header: 'Placed (UTC)', meta: { label: 'Placed' }, cell: (c) => <span className="tabular-nums">{formatUtc(c.row.original.when)}</span> }),
+  col.accessor((r) => Date.parse(r.when) || 0, { id: 'when', header: 'Placed (UTC)', meta: { label: 'Placed' }, cell: (c) => (
+    <span className="tabular-nums">{formatUtc(c.row.original.when)}
+      {/* up to 360 px the symbol column is hidden by default and the symbol is printed under the time (IA v4 step 7) */}
+      <span className="block text-[12px] text-ui-graphite min-[361px]:hidden">{c.row.original.symbol}</span>
+    </span>) }),
   col.accessor('symbol', { header: 'Symbol', meta: { label: 'Symbol' }, cell: (c) => <span className="text-ui-ink">{c.getValue()}</span> }),
   col.accessor('side', { header: 'Side', meta: { label: 'Side' }, cell: (c) => (c.getValue() === 'BUY' ? 'Buy' : 'Sell') }),
   col.accessor('type', { header: 'Type', meta: { label: 'Type' }, cell: (c) => (c.getValue() === 'Not recorded' ? <span className="text-ui-graphite">Not recorded</span> : c.getValue()) }),
@@ -37,6 +42,9 @@ const COLUMNS = [
     cell: (c) => (c.row.original.fills === 0 || c.row.original.status === null ? <span className="text-ui-graphite">{c.getValue()}</span> : c.getValue()) }),
   col.accessor((r) => r.orderId || r.key, { id: 'orderId', header: 'Order id', meta: { label: 'Order id' },
     cell: (c) => <span className="font-ui-mono text-[12px]">{c.row.original.orderId || 'not recorded'}</span> }),
+  // the server's total cost of the order (negative = price improvement); shown by default on a phone, one menu away on a desktop
+  col.accessor((r) => r.cost?.usd ?? undefined, { id: 'cost', header: 'Cost', sortUndefined: 'last', meta: { label: 'Cost', numeric: true },
+    cell: (c) => (c.row.original.cost ? <span title={`${c.row.original.cost.bps.toFixed(1)} bps of the order's value`}>{formatUsd(c.row.original.cost.usd)}</span> : <span className="text-ui-graphite">not computed</span>) }),
   col.accessor('fills', { header: 'Fills', meta: { label: 'Fills', numeric: true }, cell: (c) => c.getValue() }),
   col.accessor('quantity', { header: 'Quantity', meta: { label: 'Quantity', numeric: true }, cell: (c) => fmtQty(c.getValue()) }),
   col.accessor('notionalUsd', { header: 'Notional', meta: { label: 'Notional', numeric: true }, cell: (c) => notionalCell(c.row.original) }),
@@ -69,7 +77,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
   const [side, setSide] = useState<'all' | 'BUY' | 'SELL'>('all');
   const [sorting, setSorting] = useState<SortingState>([{ id: 'when', desc: true }]);
   // v3.1 Part B: the default columns are the ones a reader scans (when, what, outcome, size, fees); the rest are one menu away
-  const [visibility, setVisibility] = useState<VisibilityState>({ orderId: false, fills: false, quantity: false, makerShare: false });
+  const [visibility, setVisibility] = useState<VisibilityState>(() => defaultOrderColumns(typeof window === 'undefined' ? 1440 : window.innerWidth));
   const [shown, setShown] = useState(PAGE);
   const [selected, setSelected] = useState<{ orderId: string; symbol: string; row?: OrderRow; origin?: DOMRect | null } | null>(null);
   const [open, setOpen] = useState(false);

@@ -72,7 +72,7 @@ export function EvidencePanel({ mode, auth }: { mode: 'demo' | 'real' | null; au
             const mine = busy?.kind === p.kind
             const progress = mine ? (busy!.phase === 'preparing' ? 0.35 : 0.85) : done[p.kind] ? 1 : 0
             return (
-              <div key={p.kind} className={`fs-envelope flex flex-col items-start gap-3 ${i ? 'sm:rotate-[0.6deg]' : 'sm:-rotate-[0.5deg]'}`}>
+              <div key={p.kind} className={`fs-envelope flex min-w-0 max-w-full flex-col items-start gap-3 [overflow-wrap:anywhere] ${i ?'sm:rotate-[0.6deg]' : 'sm:-rotate-[0.5deg]'}`}>
                 <span className="fs-env-stamp fs-word-stamp !text-[15px]" data-tone={demo ? 'ink' : undefined}>
                   {demo ? 'NOT ISSUED' : 'SIGNED'}<small>{demo ? 'demo account' : 'Ed25519'}</small>
                 </span>

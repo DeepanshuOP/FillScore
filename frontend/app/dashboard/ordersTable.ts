@@ -132,3 +132,16 @@ export function withParams(path: string, query: string, extra: Record<string, st
   const s = u.toString();
   return s ? `${path}?${s}` : path;
 }
+
+/**
+ * The ledger's columns shown by default at a screen width (IA v4 step 7). Returns the TanStack visibility state: a column set to false
+ * is hidden, an absent one shows. A desktop keeps the columns a reader scans (the cost, the order id, fills, quantity and maker share
+ * are one menu away); a phone shows time, symbol, side and cost; up to 360 px only time and cost, and the symbol is printed under
+ * the time (OrdersView).
+ */
+export function defaultOrderColumns(width: number): Record<string, boolean> {
+  const base = { orderId: false, fills: false, quantity: false, makerShare: false };
+  if (width >= 640) return { ...base, cost: false };
+  const phone = { ...base, type: false, status: false, notionalUsd: false, feesUsd: false };
+  return width <= 360 ? { ...phone, symbol: false, side: false } : phone;
+}

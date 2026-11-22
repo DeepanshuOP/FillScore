@@ -4,7 +4,14 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, sixth: IA v4 built in production (local commits)
 
-- **Next concrete action: Step 7 (phone layouts at 390 and 320 for every app section; no page-level horizontal scroll).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Next concrete action: Step 8 (cleanup: ARCHITECTURE.md section 4, README and runbook paths, smoke script paths), then step 9 (e2e specs to the new routes, qa3 run, break-ui, keyboard pass, reduced motion, one reviewer, final checks, M8 report and images).** Steps 0 to 9 follow the order; each is committed locally when done.
+- **Step 7: done.** qa3 (`e2e-shots/qa3.ts`, rewritten for the new routes: 36 marketing and app states, apps also at 320, Carbon copy for Home,
+  Overview, Orders receipt and Council): 110 states, landing CLS 0 at 1440 and 390, after fixes 0 with overflow, overlaps or axe problems on the
+  states re-run. Fixes: Orders ledger default columns by width (`defaultOrderColumns`: 390 time, symbol, side, cost; 320 time and cost with
+  the symbol under the time; a new "Cost" column from the server's per-order cost, one menu away on a desktop); the Settings evidence
+  envelope no longer forces 10 px of page overflow at 320. The receipt is a Vaul drawer on a phone, Council and Rankings stack, Fills has its
+  two tabs, the file check is the native file control, Settings has its own shell. Checker fixes (not product): text clipped by a scroll box
+  and wrapped inline boxes no longer count as overlaps.
 - **Step 6: done.** Receipt: first open of a session feeds in 420 ms on the drawer curve with its lines printing 18 ms apart (at most 360 ms),
   later opens 300 ms plain, tear 220 ms (`paper.css`; the phone drawer carries `data-enter` too); Ask slip prints (step 3); sidebar
   underline 180 ms; page fade 160 ms + 8 px keyed by pathname (a Fills tab change does not replay it); pen nib on the hero tape

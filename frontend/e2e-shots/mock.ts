@@ -82,18 +82,22 @@ export async function checks(page: Page, name: string) {
       let layered = false
       for (let a: HTMLElement | null = el; a; a = a.parentElement) { const pos = getComputedStyle(a).position; if (pos === 'fixed' || pos === 'sticky') { layered = true; break } }
       // text scrolled out of view inside its own scroll box (a table's box) is not drawn, so it cannot overlap anything
-      let clippedAway = false
+      // each line's box is cut to the scroll boxes around it, so a row half hidden at a box's edge only counts where it is drawn
+      const clips: DOMRect[] = []
       for (let a = el.parentElement; a && a !== document.body; a = a.parentElement) {
         const o = getComputedStyle(a).overflowY
-        if (o === 'auto' || o === 'scroll' || o === 'hidden' || o === 'clip') {
-          const ar = a.getBoundingClientRect()
-          const shown = Math.min(r.bottom, ar.bottom) - Math.max(r.top, ar.top)   // less than half of the line is inside the box: it is cut off
-          if (shown < r.height * 0.5) { clippedAway = true; break }
-        }
+        if (o === 'auto' || o === 'scroll' || o === 'hidden' || o === 'clip') clips.push(a.getBoundingClientRect())
       }
+      let ctop = r.top, cbottom = r.bottom   // (no named inner function here: tsx would inject a helper that page.evaluate cannot see)
+      for (const c of clips) { ctop = Math.max(ctop, c.top); cbottom = Math.min(cbottom, c.bottom) }
+      const clippedAway = clips.length > 0 && cbottom - ctop <= 1
       if (!layered && !clippedAway && r.top < window.innerHeight * 2 && el.children.length === 0 && (el.textContent ?? '').trim().length > 1 && !el.closest('[aria-hidden="true"],svg,.sr-only,[data-overlap-ok]')) {
         // one box per line of text: an inline element that wraps has a bounding box that covers its neighbours on the next line
-        for (const lr of Array.from(el.getClientRects())) if (lr.width > 0 && lr.height > 0) texts.push({ r: lr, t: (el.textContent ?? '').trim().slice(0, 24) })
+        for (const lr of Array.from(el.getClientRects())) {
+          let t2 = lr.top, b2 = lr.bottom
+          for (const c of clips) { t2 = Math.max(t2, c.top); b2 = Math.min(b2, c.bottom) }
+          if (lr.width > 0 && lr.height > 0 && b2 - t2 > 1) texts.push({ r: new DOMRect(lr.left, t2, lr.width, b2 - t2), t: (el.textContent ?? '').trim().slice(0, 24) })
+        }
       }
     }
     const overlaps: string[] = []
