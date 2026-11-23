@@ -88,6 +88,15 @@ class TokenBucketPacer:
         return wait
 
 
+# Providers to which a `response_format: json_schema` with `strict: true` (constrained decoding) is sent. Groq's structured-outputs page
+# (https://console.groq.com/docs/structured-outputs, "Models with Strict Mode", read 2026-11-23; ADR-0018) lists every Groq model in
+# llm_routes.yaml (checked against the page on that date). Chosen by provider, not by model name, because model names live only in the
+# YAML (tests/test_llm_router.py) and the YAML's hash keys the Council's cache. A model Groq refuses it for answers 400, the router moves to
+# the next candidate, and any other provider gets the prompt alone: every reply is held to the same shape by the Pydantic check and by the
+# caller's own validation whatever the API did.
+STRICT_SCHEMA_PROVIDERS = frozenset({"groq"})
+
+
 @dataclass(frozen=True)
 class Provider:
     name: str
@@ -385,7 +394,9 @@ class LLMRouter:
         max_tokens: int,
         temperature: float = 0.1,
         telemetry: list | None = None,
+        response_format: dict | None = None,
     ) -> BaseModel:
+        """`response_format`: an OpenAI-style `json_schema` object, sent only to candidates of a provider in STRICT_SCHEMA_PROVIDERS (ADR-0018)."""
         keyed = self.keyed_candidates(role)
         if not keyed:
             raise RouterExhausted(role, "no_provider")
@@ -402,7 +413,7 @@ class LLMRouter:
                     break
                 any_called = True
                 result = await self._attempt(role, c, client, system, user, schema, max_tokens,
-                                             temperature, telemetry, attempt)
+                                             temperature, telemetry, attempt, response_format)
                 attempt = result["attempt"]
                 if result["parsed"] is not None:
                     return result["parsed"]
@@ -413,7 +424,7 @@ class LLMRouter:
                 break  # this candidate is done: fall through to the next one
         raise RouterExhausted(role, "failed" if any_called else "budget")
 
-    async def _attempt(self, role, c, client, system, user, schema, max_tokens, temperature, telemetry, attempt):
+    async def _attempt(self, role, c, client, system, user, schema, max_tokens, temperature, telemetry, attempt, response_format=None):
         state = {"attempt": attempt, "t0": _clock()}
 
         def record(outcome: str, usage: dict | None = None, error: dict | None = None):
@@ -469,6 +480,8 @@ class LLMRouter:
             )
             if c.extra_body:
                 kwargs["extra_body"] = dict(c.extra_body)
+            if response_format is not None and c.provider in STRICT_SCHEMA_PROVIDERS:
+                kwargs["response_format"] = response_format
             return await client.chat.completions.create(**kwargs)
 
         try:

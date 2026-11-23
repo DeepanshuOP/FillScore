@@ -59,7 +59,9 @@ def test_a_signed_in_account_gets_an_answer_from_its_own_data():
     assert res.status_code == 200
     b = res.json()
     # one order: 4 bps x 20,000 USD / 10,000 = $8.00
-    assert b["mode"] == "ask" and b["answer"] == "The measured score was A at 93.4 and the orders cost $8.00."
+    # ADR-0018 (2026-11-23): production answers with typed claims, so the sentence is the code-owned template over the same two values
+    assert b["mode"] == "ask" and b["answer"] == "The measured score was A (93.4 / 100). The measured orders cost $8.00 in total."
+    assert b["answer_kind"] == "claims"
     assert b["tools_used"] == ["score", "costs"] and b["n_calls"] == 2 and len(provider.calls) == 2
     assert seen == [USER]                                                   # the data read is the token's account
 

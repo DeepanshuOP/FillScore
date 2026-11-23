@@ -172,8 +172,35 @@ def fallback_answer(used: list[str], ctx: dict) -> str:
     return " ".join(parts) if parts else NO_ANSWER
 
 
-async def ask_flow(question: str, load: Callable[[], Awaitable[tuple[dict | None, list[dict]]]], llm, telemetry: list | None = None) -> dict:
-    """`load` returns (latest v2 score doc or None, order measurement docs) of the account; reading them is the caller's job."""
+async def _claims_answer(base: dict, used: list[str], ctx: dict, model_ctx: dict, q: str, llm, telemetry: list | None) -> dict:
+    """ADR-0018 for Ask: the model returns typed claims (ids, no digits), code validates them and writes the sentences. Any failure is the
+    degraded answer of the free path, unchanged (`fallback_answer`). The planner call is already counted; this is the second call."""
+    from agents import ask_claims as ac
+    from config.versions import ASK_CLAIM_RULES_VERSION, ASK_PROMPT_VERSION
+
+    tel = telemetry if telemetry is not None else []
+    stamp = {"answer_kind": "claims", "ask_prompt_version": ASK_PROMPT_VERSION, "ask_claim_rules_version": ASK_CLAIM_RULES_VERSION, "claims": []}
+    listing = "\n".join(f"{p} = {s}" for p, s in catalog_entries(model_ctx, list(model_ctx)))
+    user = f"Values you may use (id = value):\n{listing}\n\nQuestion:\n{_wrap(q)}"
+    try:
+        claims = await llm.complete("synthesis", ac.CLAIMS_SYSTEM, user, ac.AskClaims, max_tokens=250, temperature=0.0, telemetry=tel,
+                                    response_format=ac.CLAIMS_RESPONSE_FORMAT)
+        base["n_calls"] = 2
+        res = ac.validate_claims(claims, ctx)
+        why = res.reason
+    except Exception:                  # a failed or unparsable claims call never reaches the user as free text
+        base["n_calls"] = max(base["n_calls"], 2)
+        res = None
+        why = "schema_invalid" if any(t.get("outcome") == "invalid_json" for t in tel if isinstance(t, dict) and t.get("role") == "synthesis") else "model_unavailable"
+    if why or res is None:
+        return {**base, **stamp, "answer": fallback_answer(used, ctx), "degraded": True, "fallback": why}
+    return {**base, **stamp, "claims": res.claims, "answer": " ".join(res.sentences), "values": [{"placeholder": p, "shown": s} for p, s in res.cited]}
+
+
+async def ask_flow(question: str, load: Callable[[], Awaitable[tuple[dict | None, list[dict]]]], llm, telemetry: list | None = None,
+                   mode: str = "free") -> dict:
+    """`load` returns (latest v2 score doc or None, order measurement docs) of the account; reading them is the caller's job.
+    `mode` "free" is the answerer that writes placeholder sentences (M5); "claims" is the typed-claims answerer (ADR-0018, Ask only)."""
     q = clean_question(question)
     base = {"mode": "ask", "claim_rules_version": CLAIM_RULES_VERSION, "tools_used": [], "values": [], "n_calls": 0, "degraded": False, "fallback": None}
     if not q:
@@ -192,6 +219,8 @@ async def ask_flow(question: str, load: Callable[[], Awaitable[tuple[dict | None
     model_ctx = copy.deepcopy(ctx)
     for i, o in enumerate(model_ctx.get("costliest", {}).get("orders", [])):
         o["order_id"] = f"order {i + 1}"
+    if mode == "claims":
+        return await _claims_answer(base, used, ctx, model_ctx, q, llm, telemetry)
     user = f"Values you may use:\n{catalog(model_ctx, list(model_ctx))}\n\nQuestion:\n{_wrap(q)}"
     ledger = GroundingLedger()
     answer, why = "", None

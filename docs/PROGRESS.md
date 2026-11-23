@@ -4,7 +4,15 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
 
-- **Next concrete action: B2 (build typed claims for Ask, TDD: `agents/ask_claims.py`, router `response_format`, tests with hand values).**
+- **Next concrete action: B3 (write and commit the 12 questions BEFORE any live call; then measure old path and new path, cap 60 live calls).**
+- **B2: done.** `ml-service/agents/ask_claims.py` (9 claim types, templates, validation, strict schema, prompt), `ask_flow(mode="claims")` in
+  `agents/ask.py` (the free path is the default and unchanged), `ask_service.ASK_MODE = "claims"` (production), `LLMRouter.complete(response_format=)`
+  sent to Groq candidates only (by provider, not model name: `tests/test_llm_router.py` forbids model names outside the YAML, and the YAML hash
+  keys the Council cache so the YAML was not touched), `ASK_PROMPT_VERSION` 2.0.0 and `ASK_CLAIM_RULES_VERSION` 1.0.0 in `config/versions.py`.
+  Tests `tests/test_ask_claims.py` (35, hand values $16.00 / 4.0 bps / 2.0 bps / $2.00 / order B $8.00): a valid set renders the exact
+  sentence; a digit in a value id, an unknown id, a unit mismatch (bps in a dollar slot), an empty set, 4 claims, a repeat, a mixed-rank order
+  claim, free text with a digit and extra keys each give the degraded answer unchanged. `test_ask_http.py` expectation moved to the claims sentence
+  (the same $8.00). ml-service targeted suites 268 passed; the full suite runs at the end.
 - **B1: done.** ADR-0018 is "Accepted (Ask only)" with the claim schema (9 claim types, 1 to 3 claims, ids and no digits), the validation, the
   Groq facts (strict `json_schema` listed for gpt-oss-20b, gpt-oss-120b, qwen3.8-27b; streaming and tool use unsupported with it; page read
   2026-11-23, first ~40k of ~75k characters verbatim), the unchanged degraded fallback, and the version bumps (Ask-only `ASK_PROMPT_VERSION`

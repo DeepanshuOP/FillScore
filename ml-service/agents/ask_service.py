@@ -13,6 +13,9 @@ from agents.errors import (ASK_NOT_AVAILABLE_FOR_DEMO, DAILY_BUDGET_EXHAUSTED, M
 from config.demo_users import VALID_DEMO_USERS
 
 
+ASK_MODE = "claims"     # ADR-0018 (accepted for Ask, 2026-11-23): typed claims, sentences written by code. "free" is the M5 answerer, kept to compare.
+
+
 def _router():
     from agents import llm_router
 
@@ -58,4 +61,4 @@ async def ask_account(account_id: str, question: str, llm=None) -> dict:
     async def load():
         return await load_account_data(account_id)
 
-    return await ask_flow(question, load, llm)
+    return await ask_flow(question, load, llm, mode=ASK_MODE)
