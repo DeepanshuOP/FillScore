@@ -4,7 +4,13 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
 
-- **Next concrete action: A4 (header actions: labels, theme control).**
+- **Next concrete action: A5 (Try the sample file on /app/check).**
+- **A4: done (code and unit tests; look and keyboard pass at QA).** The three icon-only header buttons (`DashboardContent.tsx`): **Method**
+  opens the "How this audit was measured" side sheet; **Copy share link** (demo accounts only) copies the public share link; **Download
+  report** downloads the PDF report. Each is now a `HeaderAction` (`appshell/HeaderAction.tsx`): visible text from 1024 px (`lg`, was `2xl`),
+  below that the icon with `aria-label`, a tooltip and a 44 px target. The theme control reads "Theme: Paper" / "Theme: Carbon copy" and is a
+  `role="switch"` with `aria-checked` (true = Carbon copy) (`shell/ThemeToggle.tsx`, words in `themeToggleView.ts`). Tests
+  `appshell/headerAction.test.tsx`.
 - **A3: done.** Removed: the "Synthetic trader, real prices" span in the Orders panel actions (`OrdersView.tsx`, under the Orders title; the
   header chip prints it) and the line under the hero's buttons (`TapeHero.tsx`; the tape label prints it). Test `provenance.test.tsx`
   (hero prints it twice: label and phone receipt). Kept, with a reason: the hero phone receipt, the `/how-it-works` receipt and its

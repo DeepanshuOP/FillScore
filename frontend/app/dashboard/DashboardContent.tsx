@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { BookOpen, Download, Link2 } from 'lucide-react';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { AppPage } from '../components/appshell/shellContext';
+import { HeaderAction } from '../components/appshell/HeaderAction';
 import { viewHref, type View } from '../components/shell/nav';
 import dynamic from 'next/dynamic';
 import ConnectPrompt from '../components/ConnectPrompt';
@@ -81,7 +82,7 @@ function MethodSheet({ isDemo }: { isDemo: boolean }) {
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <Button variant="quiet" size="sm" aria-label="Method" className="max-sm:min-h-11 max-sm:min-w-11"><BookOpen aria-hidden="true" /> <span className="hidden 2xl:inline">Method</span></Button>
+        <HeaderAction variant="quiet" label="Method" icon={<BookOpen aria-hidden="true" />} />
       </SheetTrigger>
       <SheetContent className="w-full overflow-y-auto bg-ui-raised sm:max-w-md">
         <SheetHeader>
@@ -221,8 +222,8 @@ function DashboardContent({ view }: { view: View }) {
   const actions = audit ? (
     <>
       <MethodSheet isDemo={isDemoData} />
-      {dashboardMode === 'demo' ? <Button variant="quiet" size="sm" onClick={handleShare} aria-label="Copy share link" className="max-sm:min-h-11 max-sm:min-w-11"><Link2 aria-hidden="true" /><span className="hidden 2xl:inline">Copy share link</span></Button> : null}
-      <Button variant="secondary" size="sm" loading={downloading} onClick={handleDownloadReport} aria-label="Download report" className="max-sm:min-h-11 max-sm:min-w-11"><Download aria-hidden="true" /><span className="hidden 2xl:inline">Download report</span></Button>
+      {dashboardMode === 'demo' ? <HeaderAction variant="quiet" onClick={handleShare} label="Copy share link" icon={<Link2 aria-hidden="true" />} /> : null}
+      <HeaderAction variant="secondary" loading={downloading} onClick={handleDownloadReport} label="Download report" icon={<Download aria-hidden="true" />} />
     </>
   ) : null;
 
