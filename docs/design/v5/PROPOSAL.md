@@ -4,6 +4,9 @@ Status: **proposal for Deepanshu's choice.** Nothing in production changes with 
 measured), `REFERENCES.md` (what others do, libraries and licenses), `FEATURES.md` (what is missing), the working prototype under
 `/design-lab/v5` (404 in production) and its images (`README.md` in this folder).
 
+Order of sections in this file: 0, 1, 2, 3, 5 to 9, 11 (review), 10 (before and after), then 4 (the not-computed policy, written
+first in step 4, stays at the end).
+
 ## 0. The case in six lines
 
 1. The audit (AUDIT.md) measured what Deepanshu saw: 3,670 text nodes under 12 px, 1,184 letter-spaced uppercase runs, a first screen
@@ -27,12 +30,12 @@ Every user-facing term that a visitor cannot decode, with its replacement and wh
 | Today | Proposed | Where | Why |
 |---|---|---|---|
 | Overview | **Costs** | sidebar, page title | the page answers "what did my trading cost"; "Overview" names nothing |
-| Rules | **Rule breaks** | sidebar | it lists orders that broke a stated rule |
+| Rules | **Flagged orders** | sidebar | it lists orders that met one of FillScore's fixed rules (`explainView.ts`); "breaks" would imply fault and a rule the user set (review) |
 | Rankings | **Comparisons** | sidebar | it compares groups (symbol, hour, venue); a ranking is one view of it |
 | Council | **AI review** | sidebar, title | says what it is; the specialists' names go |
-| Quick / Deep | **Short review (1 model call)** / **Full review (9 model calls)** | AI review | the cost of each is the difference that matters |
+| Quick / Deep | **Short review (1 AI call)** / **Full review (9 AI calls)** | AI review | the cost of each is the difference that matters; "model" is kept for nothing else in the UI (review: it meant three things) |
 | Liquidity Scout, Benchmark Reviewer, Risk Auditor, Fee Reviewer | **Liquidity**, **Benchmark**, **Risk**, **Fees** (section headings) | AI review | role names read as characters, not findings |
-| "Alpha verdict: NEGATIVE", "hourly HHI of 0.10" (model text) | unchanged (recorded output is never edited); a plain gloss beside the term: "HHI: how concentrated trading was across hours, 0 to 1" | AI review | recorded text stays verbatim (no fabricated data rule); the gloss is code's |
+| "Alpha verdict: NEGATIVE", "hourly HHI of 0.10" (model text) | every block of model text carries the language-model heading; the figures in it are placed by code (claim rules); a recorded text in which the model wrote a figure itself fails the claim rules and is not served, never edited (CLAUDE.md rules 2 and 6); a plain gloss beside a term ("HHI: how concentrated trading was across hours, 0 to 1") is code's | AI review | review: the earlier row kept a model-written figure on screen |
 | Evidence, evidence pack | **Reports**, **signed report** | sidebar, page | "Evidence" suggests a dispute |
 | NOT ISSUED (demo pack cards) | "Demo accounts have no signed report" (one line, no stamp) | Reports | a stamp that says "no" reads as an error |
 | Fills > Ledger / Patterns | **Fills** (one page; Patterns removed, §4 row 3) | Fills | |
@@ -44,9 +47,13 @@ Every user-facing term that a visitor cannot decode, with its replacement and wh
 | Download report | **Download PDF** | page header | names the file |
 | Public score card | **Share page** | sidebar foot | |
 | SCORING V2.3.0, MEASURE 1.0.0 (sidebar foot) | "Score version 2.3.0" in the grade card and in Settings > About | | fine print in the chrome helps nobody; the version stays printed on the grade |
-| 01 TOTAL, 02 GRADE ... (mono rails) | headings: **Total cost**, **Execution grade**, **Where the cost came from**, **Cost per order**, **Against the model estimate** | Costs | a scanner reads headings |
+| 01 TOTAL, 02 GRADE ... (mono rails) | headings: **Total cost**, **Execution grade**, **Where the cost came from**, **Cost per order**, **Against the cost estimate** | Costs | a scanner reads headings |
 | Where the money went | **Where the cost came from** | Costs | |
-| Cost against expected | **Against the model estimate** | Costs, receipt | "expected" sounds like a promise |
+| Cost against expected | **Against the cost estimate** | Costs, receipt | "expected" sounds like a promise; "model" is reserved (above) |
+| Total cost (tile) | **Total cost** with the sub-line "includes $X modelled for unfilled orders" (X served) | Home, Costs | review: $10.63 of the demo's $52.08 was never paid |
+| an unfilled order's cost in a table | the cost with "modelled, not paid" under it | Orders | review |
+| Fees column | **Fees (published rate)** when the fee was not independently measured | Orders, Fills | review |
+| Check a broker file | unchanged for now; decision D13 (crypto users say "exchange export") | sidebar | review |
 | Unfilled orders (modelled) **(kept)** | unchanged | receipt, Costs | the word "modelled" guards the claim |
 | Fees (published rate) **(kept)**, "not independently measured" **(kept)** | unchanged, at 14 px | receipt, Costs | invariant (DESIGN §12.6) |
 | NOT SIGNED **(kept)** | unchanged on the demo receipt | receipt | invariant |
@@ -100,7 +107,7 @@ One style per number kind:
   ≡  Orders
   ⇅  Fills
 REVIEW (12 px, sentence case: "Review")
-  ⚑  Rule breaks
+  ⚑  Flagged orders
   ⇄  Comparisons
   ✦  AI review
 TOOLS
@@ -131,7 +138,7 @@ calendar months, "Custom range" with a two-month calendar; "Compare to: previous
 
 ### 3.3 Cards, tables, empty states
 
-- **KPI tiles** (Plausible's row): label 13 px muted, value 28 px tabular, a sub-line 13 px ("of 245 orders", "against $44.05 in the
+- **KPI tiles** (Plausible's row): label 13 px muted, value 28 px tabular, a sub-line 13 px ("of 245 orders", "against <$X> in the
   previous 31 days" when comparing). At most four in a row; on phones two by two.
 - **Chart cards**: title 16 px, one sentence, the chart with axis titles and units, a source line 12 px ("Source: your orders,
   measured against Binance public trades").
@@ -164,7 +171,7 @@ row cards (time, symbol and side on the first line; cost on the right; price and
 | NOT SIGNED | on the demo receipt | unchanged |
 | "not independently measured" | 13 px under the total | 14 px under the fees figure and in the receipt |
 | Language-model heading | over model text in Ask and AI review | unchanged; the claims path keeps its line "The model chose which measured values to state; code wrote the sentence and placed the figures" |
-| Past tense, no advice | `adviceCopy.test.ts` | all new copy runs through it; comparisons are past facts ("against $44.05 in the previous 31 days"), never "improved" |
+| Past tense, no advice | `adviceCopy.test.ts` | all new copy runs through it; comparisons are past facts ("against <$X> in the previous <N> days", both served), never "improved"; group views stay past tense ("had the lowest median"), never "best hour to trade" |
 | Correlation, never causation | copy tests | unchanged |
 
 ## 5. Every page redesigned
@@ -177,9 +184,9 @@ App (the prototype builds the ones marked ●):
 | **Costs** (was Overview) ● | "Costs" · "What the N orders cost in <period>, and where the cost came from." · period, compare, Download PDF | tiles; "Where the cost came from" (stacked bar of fees, unfilled, execution with labels and dollars); "Cost per order" (bars over time, each bar one order, server values); "By order type" (market vs limit, grouped bars from `byType`); the grade card (stamp + score + range + version); "Against the model estimate" (market orders); scope facts in a small table |
 | **Orders** ● | "Orders" · "Every order, what it cost, and its receipt." · search, side filter, period, Export CSV | table with Cost $ and Cost bps by default; row → receipt sheet |
 | **Order receipt** ● | sheet title "Order <symbol> <side> <type>" | the printed receipt (kept, 14 px lines on a desktop, 13 px minimum on phones) beside a chart: public trades around the order (time × price), fills marked, arrival price line; NOTES as a normal disclosure; NOT SIGNED for demos |
-| Rule breaks | "Rule breaks" · "Orders that broke a rule you set." | table with the rule, the order, its cost; empty state "No order broke a rule in this period" |
+| Flagged orders | "Flagged orders" · "Orders that met one of FillScore's fixed rules." | table with the rule, the order, its cost; empty state "No order met a rule in this period" |
 | Comparisons | "Comparisons" · "Median execution cost per group, with a 90% interval." · Group by: Symbol / Hour / Venue | horizontal bars with interval whiskers, group names on the left, value labels at the bar end, a zero line; "Too few orders to compare" list with counts |
-| AI review | "AI review" · "A language model explains the measured figures. It writes no number." · Short / Full, Start review | a summary card first (the model's synthesis under the language-model heading); four sections (Liquidity, Benchmark, Risk, Fees) as cards in 14 px sans; cited figures as a small table placed by code |
+| AI review | "AI review" · "A language model explains the measured figures. It writes no number." · Short / Full, Start review | a summary card first (the model's synthesis under the language-model heading); four sections (Liquidity, Benchmark, Risk, Fees) as cards in 14 px sans, each block of model text under its own language-model heading; cited figures as a small table placed by code |
 | Reports | "Reports" · "Signed reports you can verify without us." | for real accounts: list of signed reports with Download and Verify; for demos one line; the grade record (version, hash) as a card |
 | **Fills** ● | "Fills" · "Each execution, with its price and fee." · symbol, side, period, Export CSV | table (time, symbol, side, price, size, notional, fee, maker/taker; later "Price vs public trades", §4 row 2); no not-computed sentence |
 | **Check a broker file** ● | "Check a broker file" · "Compare a broker's export with public prices. Nothing is stored." · Try the sample file | drop zone, format select, the result: tiles + table; the sample label |
@@ -190,7 +197,7 @@ Marketing:
 
 | Page | Proposal |
 |---|---|
-| **Landing** ● (hero) | headline and one sentence left, the receipt of one real demo order right, building line by line as the page loads; below: three steps (Connect read-only, We measure each fill against public trades, You get a receipt and a grade), a live demo strip, the giant total kept as the story's end; fixes the 393x659 overlap by never stacking the receipt under the headline on short screens |
+| **Landing** ● (hero) | headline and one sentence left, the receipt of one demo order (synthetic trader, real Binance prices) right, building line by line as the page loads; below: three steps (Connect read-only, We measure each fill against public trades, You get a receipt and a grade), a live demo strip, the giant total kept as the story's end; fixes the 393x659 overlap by never stacking the receipt under the headline on short screens |
 | How it works | the three printed objects as a pinned scroll story (GSAP), each with one sentence |
 | Demo | three cards (one per demo trader) with total cost, orders, period and a "Open" button; the synthetic line on each |
 | Verify | one drop zone, the verification receipt; plain words ("Check a signed report") |
@@ -204,7 +211,7 @@ Marketing:
 | One value per order over time (`/audit/orders-ledger` `cost.usd`, `placedAt`) | bar per order on a time axis | Recharts `BarChart` (already a dependency), loaded on the page | x: "Order placed (UTC)", y: "Cost ($)" · tooltip with order, symbol, cost, bps |
 | Totals by order type (`byType.market`, `byType.limit`) | grouped horizontal bars (execution, unfilled, fees) | Recharts | x: "Cost ($)" |
 | Median per group with a 90% interval (`/audit/rankings`) | horizontal bar to the median with an interval whisker, zero line | Recharts `ErrorBar` or SVG | x: "Median execution cost (bps)"; group names left; "N orders" right |
-| Public trades around one order (`demoPrints` / replay prints) | scatter of trades (time × price), buyer- and seller-initiated in two marks, fills as larger marks, arrival price as a reference line | Recharts `ScatterChart` (decision D4: or lightweight-charts with its attribution) | x: "Time (UTC, seconds)", y: "Price (USDT)" · "Source: Binance public trades, <file or window>, SHA-256 in Notes" |
+| Public trades around one order (`demoPrints` / replay prints) | scatter of trades (time × price), buyer- and seller-initiated in two marks, fills as larger marks, the order's placement time as a dashed line inside the axis range (an arrival-price line needs the served arrival mid, which the replay does not carry today); legend lists only the marks drawn | Recharts `ScatterChart` (decision D4: or lightweight-charts with its attribution) | x: "Time (UTC)" with millisecond ticks, y: "Price (USDT)" · "Source: Binance public trades, <file or window>, SHA-256 in Notes" |
 | Grade within its range (`v2` `composite`, `band`) | a 0 to 100 bullet bar with the score and the band | none (CSS) | "Score of 100, range from the measurement" |
 | Daily cost (proposed server route `/audit/cost-by-day`, not built) | column chart with the comparison period as a ghost series | Recharts | x: day, y: "Cost ($)" — the browser never sums orders |
 
@@ -240,8 +247,8 @@ Lighthouse mobile targets (same method as AUDIT.md): marketing **85+**, LCP **�
 
 | # | Decision | Options | Recommended |
 |---|---|---|---|
-| D1 | Sidebar names | (a) Home, Costs, Orders, Fills / Rule breaks, Comparisons, AI review / Reports, Check a broker file; (b) keep today's nine nouns | **(a)** |
-| D2 | App type | (a) Cabinet Grotesk for everything, Departure Mono only in the receipt, stamp and ids; (b) add a UI face (Inter or Geist, OFL) for body text | **(a)**: already loaded, tabular digits measured; the prototype shows it at 14 px |
+| D1 | Sidebar names | (a) Home, Costs, Orders, Fills / Flagged orders, Comparisons, AI review / Reports, Check a broker file; (b) keep today's nine nouns | **(a)** |
+| D2 | App type | (a) Cabinet Grotesk for everything, Departure Mono only in the receipt, stamp and ids; (b) add a UI face (Inter or Geist, OFL) for body text | **(a) for headings and figures, and test (b) for 12 to 14 px text before choosing**: the review saw cramped word spacing in Cabinet Grotesk at 12 to 13 px in the prototype's images; (a) costs nothing, (b) adds one font file |
 | D3 | Theme names and default | (a) Light / Dark / System, default System; (b) keep Paper / Carbon copy | **(a)** |
 | D4 | Receipt price chart | (a) Recharts (already a dependency); (b) TradingView lightweight-charts (62 kB, attribution logo or NOTICE + link) | **(a)** |
 | D5 | App surface | (a) neutral light grey with white cards (paper tone kept for the receipt and marketing); (b) paper tone everywhere | **(a)** |
@@ -253,9 +260,71 @@ Lighthouse mobile targets (same method as AUDIT.md): marketing **85+**, LCP **�
 | D11 | Safari coverage | (a) Deepanshu runs `sudo npx playwright install-deps webkit` once so the audit covers WebKit; (b) accept Chromium-only | **(a)** |
 | D12 | Feature order (FEATURES.md) | the top 8 in the ranked order, or another | the ranked order, starting with the period picker (D6) and fill vs public trades (D8) |
 
+| D13 | "Check a broker file" | (a) keep; (b) "Check an exchange export" (crypto users export from an exchange) | **(b)**, raised by the review |
+
+## 11. Review (step 7: one reviewer, Sonnet, read-only; one pass)
+
+Read as a first-time visitor and as a trader, over this file, README, AUDIT, FEATURES, 11 images and the prototype code. No advice,
+prediction or causal wording found. **Fixed:**
+- Provenance on every app page: the banner moved into the shell (Check had none); unknown provenance is never shown as the user's data.
+- "One real demo order" (landing) now reads "One demo order from a synthetic trader, measured against real Binance public trades"; the
+  hero headline no longer says "really cost".
+- "Measured cost" for per-order bars that include published-rate fees and modelled unfilled cost: the chart and list sentences say so;
+  the Total cost tile says "includes $10.63 modelled for unfilled orders"; an unfilled order's cost reads "modelled, not paid"; the fee
+  columns read "Fees (published rate)" for demos.
+- The receipt chart: the order's placement time is inside the axis range, ticks show milliseconds, the legend lists only drawn marks; §6
+  now describes what is drawn (placement time, not an arrival-price line).
+- The grade tile says "measured (score v2.3.0)"; the Costs grade card also prints the locked v1 grade (B, 84.8 for demo-moderate) so a
+  visitor never meets two letters unexplained (I4).
+- A missing headline reads "not computed" (production's state), not "insufficient data".
+- "not independently measured" at 14 px (tile sub-lines, receipt, landing).
+- Words: Rule breaks → Flagged orders (the rules are FillScore's, fixed); "model" kept for nothing in the UI ("AI call", "cost estimate");
+  a bps gloss on Costs; D13 added for "broker file".
+- Model text: every model block carries the language-model heading; a recorded text with a model-written figure is not served (§1).
+- Chart axes: money ticks with two decimals; the cost-per-order axis says it is evenly spaced, not to time scale.
+- Fills: quantities no longer rounded to 4 significant digits; phone cards label the notional; the class (a) sentence is printed.
+- Illustrative figures in §3.3 and FEATURES replaced by placeholders; D2 now recommends testing a UI face for 12 to 14 px text.
+- Notes summary shows a "+" marker; Ask chips are muted (layout only).
+
+**Kept, with a reason:**
+- "First 50 of N orders" counts the rows the browser filtered: a list length, not a measurement of trading.
+- The receipt sheet covers the page banner on a phone: the receipt itself prints "Synthetic trader, real prices" and NOT SIGNED.
+- "Download PDF" stays the primary action on demo pages: the PDF report exists for demos (production offers it); it is not a signed pack.
+- "By order type" separates its series by colour plus a legend and a table of the same values under the chart (the dataviz relief
+  for a pair under the CVD target); value labels can come with the build.
+- `bps()` prints "0.0 bps" for a value that rounds to zero while `money()` prints "<$0.01": bps are a rate, where 0.0 is the honest
+  one-decimal reading; the exact value is in the tooltip of the build.
+- Section 4 stays at the end of the file (noted at the top).
+- The prototype's disabled sidebar items and truncated account names: prototype limits, listed in README.
+
 ## 10. Before and after (filled in step 7)
 
-(The step 1 script run on the prototype pages, against the same pages today.)
+The step 1 script (`e2e-shots/audit5.ts`) on the seven prototype pages (`AUDIT_PREFIX=/design-lab/v5`), after the review fixes,
+against the same seven pages of today's app; each side 70 states (5 viewports x light and dark), same build method and fixtures.
+
+| Measure (7 pages, 70 states) | Before (today) | After (prototype) |
+|---|---|---|
+| Smallest visible text | 10 px | **12 px** |
+| Visible text nodes under 12 px | 2,508 (landing 952, Fills 650, receipt 298, Orders 288, Costs 240, Home 50, Check 30) | **0** |
+| Letter-spaced uppercase runs under 12 px | 220 | **0** (170 runs at 13 px and up remain, all in the receipt, the stamp and the hero receipt, the printed objects) |
+| axe color-contrast nodes (AA) | 0 | 0 |
+| "Not computed" / "insufficient data" shown | 10 / 0 (Fills sentence) | 0 / 0 (the Fills sentence became the class (a) line) |
+| Phone tap targets under 44 px | 232 | **0** |
+| Errors | 0 | 0 |
+
+Lighthouse mobile (`e2e-shots/lighthouse5.mjs`, medians of 3, same machine):
+
+| Page | Before: performance, LCP, TBT | Prototype: performance, LCP, TBT |
+|---|---|---|
+| `/` vs `/design-lab/v5` | 59, 4.27 s, 1,165 ms | 51, 7.21 s, 1,298 ms (an earlier run of the same page before the review fixes: 65, 5.88 s, 583 ms) |
+| `/app` vs `/design-lab/v5/app` | 50, 8.05 s, 1,212 ms | 60, 4.99 s, 984 ms |
+| `/app/orders` vs `/design-lab/v5/app/orders` | 49, 8.14 s, 1,334 ms | 69, 4.98 s, 471 ms |
+
+The app pages render their figures on the server, so LCP fell by about 3 seconds; neither side meets the §8 budgets (app 75+, LCP 3.0 s;
+marketing 85+, LCP 2.5 s). The prototype did no performance work: the lab layout renders on every request (`force-dynamic`), Recharts
+loads with the page, and the landing still carries the site-wide providers. Run-to-run spread on this WSL machine was up to 14 points on
+the same page, so the Lighthouse rows are indicative, not a pass. The budgets are for the production build of v5, checked with
+`scripts/first-load-js.mjs` and this script.
 
 ## 4. "Not computed" policy
 
@@ -269,7 +338,7 @@ missing, not as a dotted box.
 | # | Surface (what the reader sees) | Why (file:line) | Class | Proposal |
 |---|---|---|---|---|
 | 1 | Fills: the line "Not computed for this data: slippage, score, grade and the average score" (and the hidden columns) | the rebuilt demos have no per-trade v1 fields: `backend/src/routes/audit.ts:139-146` (`hasV1Trades`, `v1Flag` gives `v1Computed: false`); `frontend/app/trades/fillsView.ts:32-43`, `TradesLedger.tsx:388` | score and grade **(a)**; slippage **(b)** | Drop the sentence and the score/grade columns for accounts without v1 trades (the v1 per-trade score is frozen with v1 and was never stored for them). Replace "slippage" with **Price vs public trades** per fill, computed server-side (row 2) |
-| 2 | (new) Fills: price against the public price at the fill's second | demo print windows are stored (`backend/src/data/demoPrints.ts`, 681 windows); real accounts' measurement already fetches the same prints (`ml-service/measure/data/rest.py`) | **(b)** | ml-service computes, per fill, the mid from the last buyer- and seller-initiated print within 5 s before the fill (the rule of `csv_import/check.py`) and the fill's signed distance from it in bps; stored with a method version; a fill without a print on each side reads "insufficient data: no public trade on one side within 5 s". Coverage today: 82.9% (moderate), 84.0% (aggressive), 77.9% (disciplined) (LOG §AN). **Test plan:** hand fixtures in `ml-service/tests/measure/test_fill_vs_print.py`: buy at 100.10 with last buyer-initiated print 100.08 and seller-initiated 100.04 at -1 s and -2 s gives mid 100.06 and +4.0 bps (100.10 / 100.06 - 1 = 0.00039976, 4.0 bps to one decimal); a sell mirrors the sign; a print at exactly the fill's millisecond is excluded; a print 5.001 s old is excluded; one side missing gives insufficient data with that reason; window ids not consecutive raise the existing `DataGapError`. Backend: the trades route serves `fillVsPrint` with `methodVersion`; a test that a demo's served value equals the stored one. Frontend: a column test that `null` renders insufficient data, never 0 |
+| 2 | (new) Fills: price against the public price at the fill's second | demo print windows are stored (`backend/src/data/demoPrints.ts`, 681 windows); real accounts' measurement already fetches the same prints (`ml-service/measure/data/rest.py`) | **(b)** | ml-service computes, per fill, the mid from the last buyer- and seller-initiated print within 5 s before the fill (the rule of `csv_import/check.py`) and the fill's signed distance from it in bps; stored with a method version; a fill without a print on each side reads "insufficient data: no public trade on one side within 5 s". Coverage today: 82.9% (moderate), 84.0% (aggressive), 77.9% (disciplined) (LOG §AN). **Test plan:** hand fixtures in `ml-service/tests/measure/test_fill_vs_print.py`: buy at 100.10 with last buyer-initiated print 100.08 and seller-initiated 100.04 at -1 s and -2 s gives mid 100.06 and +4.0 bps (100.10 / 100.06 - 1 = 0.00039976, 4.0 bps to one decimal); sign convention: positive = the fill was worse than the mid (paid above it on a buy, sold below it on a sell), printed as "paid 4.0 bps above the mid"; a sell mirrors the sign; a print at exactly the fill's millisecond is excluded; a print 5.001 s old is excluded; one side missing gives insufficient data with that reason; window ids not consecutive raise the existing `DataGapError`. Backend: the trades route serves `fillVsPrint` with `methodVersion`; a test that a demo's served value equals the stored one. Frontend: a column test that `null` renders insufficient data, never 0 |
 | 3 | Fills > Patterns: a whole tab "Analytics: not computed for this data" | `/audit/analytics` needs `fillScore` on trades: `backend/src/routes/audit.ts:646-658`; `frontend/app/analytics/Patterns.tsx:325-330` | **(a)** for accounts without v1 trades; the useful part **(b)** | Remove the tab for those accounts. Its useful views come back from v2 data: cost by hour of day and by symbol already exist server-side as Rankings' groups (`/audit/rankings`, Symbol and Hour); the new Costs page shows them as bar charts (§5) |
 | 4 | Patterns: whale correlation "not computed" | whale enrichment exists only through scripts that are not run (`ml-service/whale/enrich.py`, approval list); `audit.ts:966-993` answers `not_available_for_account` or `not_computed_for_this_data`; `analytics/WhaleCorrelation.tsx:136` | **(a)** | Remove from the app; one sentence in Methodology ("Large-trade correlation is a research view, not part of the audit") |
 | 5 | Venue comparison: "Only one venue in this account, so there is nothing to compare." | `audit.ts:793-799` and the single-venue answer of `/audit/venue-comparison`; `dashboard/RankingsView.tsx:47` | **(c)** | Show only when two venues are connected; otherwise one line in Comparisons: "Connect a second exchange to compare venues" with the Connect action (real accounts only; demos are single-venue by construction, so the line is not shown to them) |

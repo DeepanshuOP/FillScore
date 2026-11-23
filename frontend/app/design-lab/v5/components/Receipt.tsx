@@ -50,9 +50,9 @@ export function Receipt({ replay, demo }: { replay: Replay; demo: boolean }) {
         <span className="lab">Total</span>
         {total && total.usd !== null ? <span className="text-[22px] font-bold" style={{ fontFamily: 'var(--f-cabinet)' }}>{money(total.usd)} <span className="text-[14px] font-normal">{bps(total.bps)}</span></span> : <span>NOT COMPUTED</span>}
       </div>
-      {demo ? <p className="mt-2 text-[13px]" style={{ fontFamily: 'var(--f-cabinet)' }}>Fees at the published rate: not independently measured.</p> : null}
+      {demo ? <p className="mt-2 text-[14px]" style={{ fontFamily: 'var(--f-cabinet)' }}>Fees at the published rate: not independently measured.</p> : null}
       <details className="mt-3">
-        <summary className="lab cursor-pointer py-2">Notes ({replay.notes.length + replay.sources.length})</summary>
+        <summary className="lab cursor-pointer py-2">+ Notes ({replay.notes.length + replay.sources.length})</summary>
         <ul className="flex flex-col gap-1 text-[13px]" style={{ fontFamily: 'var(--f-cabinet)' }}>
           {replay.notes.map((n) => <li key={n}>{n}</li>)}
           {replay.expectedCost && !replay.expectedCost.applies && replay.expectedCost.reason ? <li>Model estimate: does not apply ({replay.expectedCost.reason}).</li> : null}

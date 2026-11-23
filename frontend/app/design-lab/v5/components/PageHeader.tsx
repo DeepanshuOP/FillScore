@@ -4,7 +4,8 @@ import { Calendar, ChevronDown, Ellipsis, Info } from 'lucide-react'
 
 /** Provenance banner (PROPOSAL §3.6): every app page of a demo account, 14 px, full width. Words kept from the invariant. */
 export function DemoBanner({ dataSource }: { dataSource: string }) {
-  if (dataSource !== 'synthetic-demo') return null
+  // anything that is not stated to be the user's own data is shown as demo data (review fix: an unknown source never hides it)
+  if (dataSource === 'real-user') return null
   return (
     <div data-testid="provenance-banner" className="border-b border-[var(--v-banner-border)] bg-[var(--v-banner)] px-4 py-2 text-[14px] text-[var(--v-banner-text)] lg:px-8">
       <strong className="font-semibold">Demo account</strong> · synthetic trader, real Binance prices · read-only

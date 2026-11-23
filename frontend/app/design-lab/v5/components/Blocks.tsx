@@ -6,8 +6,8 @@ export function Tile({ label, value, sub, testid }: { label: string; value: Reac
   return (
     <div className="v-card flex min-w-0 flex-col gap-1 p-4" data-testid={testid}>
       <p className="text-[13px] font-medium text-[var(--v-text-2)]">{label}</p>
-      <p className="text-[28px] font-bold leading-tight tracking-[-0.02em]">{value}</p>
-      {sub ? <p className="text-[13px] text-[var(--v-text-2)]">{sub}</p> : null}
+      <p className="text-[24px] font-bold leading-tight tracking-[-0.02em] sm:text-[28px]">{value}</p>
+      {sub ? <p className="text-[14px] text-[var(--v-text-2)]">{sub}</p> : null}
     </div>
   )
 }

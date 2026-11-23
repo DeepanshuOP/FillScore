@@ -51,7 +51,7 @@ export interface Replay {
 }
 export interface Account {
   id: AccountId; label: string; dataSource: string; ordersBody: OrdersBody; ledger: { counts: OrdersBody['counts']; orders: LedgerOrder[] }
-  v2: V2Body; current: { fills: number; orders: number; notionalUsd: number; makerRatio: number }; trades: Trade[]; replays: Record<string, Replay>
+  v2: V2Body; v1: { grade: string; score: number }; current: { fills: number; orders: number; notionalUsd: number; makerRatio: number }; trades: Trade[]; replays: Record<string, Replay>
 }
 
 const root = process.cwd()   // frontend/
@@ -59,7 +59,7 @@ export function loadAccount(id: string | undefined): Account {
   const acc = (ACCOUNTS as readonly string[]).includes(id ?? '') ? (id as AccountId) : 'demo-moderate'
   const f = JSON.parse(readFileSync(join(root, 'e2e-shots', 'fixtures', `${acc}.json`), 'utf8'))
   return { id: acc, label: ACCOUNT_LABEL[acc], dataSource: f.trades.trades[0]?.dataSource ?? f.v2Body.demo?.dataSource ?? 'unknown',
-    ordersBody: f.ordersBody, ledger: f.ledger, v2: f.v2Body, current: f.current, trades: f.trades.trades, replays: f.replays }
+    ordersBody: f.ordersBody, ledger: f.ledger, v2: f.v2Body, v1: f.v1, current: f.current, trades: f.trades.trades, replays: f.replays }
 }
 
 export type Print = [aggId: number, tsMs: number, price: number, qty: number, isBuyerMaker: 0 | 1]

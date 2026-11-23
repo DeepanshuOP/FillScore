@@ -4,8 +4,20 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24: design v5 (step 0 Binance 418 fix, audit, research, proposal, prototype), local commits
 
-- **Next concrete action: step 7, one reviewer (read-only, Sonnet) on the proposal and images, fixes, the audit re-run on the prototype,
-  the before/after numbers in PROPOSAL §10, and the checks.**
+- **Next concrete action: Design v5 proposal ready: Deepanshu chooses (docs/design/v5/).** Decisions D1-D13 in PROPOSAL §9.
+- **Step 7: done.** One reviewer (Sonnet, read-only): 4 high, 12 medium, 11 low; fixed or kept with a reason (PROPOSAL §11). The audit
+  re-run on the seven prototype pages (70 states): smallest text 12 px (was 10), 0 text nodes under 12 px (was 2,508), 0 caps runs
+  under 12 px (was 220), 0 phone taps under 44 px (was 232), contrast 0 (was 0). Lighthouse mobile on the prototype: 51 / 60 / 69
+  (before 59 / 50 / 49); app LCP about 5.0 s (was 8.1 s); budgets not met (no performance work in the lab; PROPOSAL §10).
+  **Checks (2026-11-23):** frontend vitest 828 passed (88 files), tsc 0, lint 0 errors (21 warnings: the 19 before plus 2 unused
+  destructured names in `e2e-shots/audit5.ts` and `refs5.ts`), build ok; lab guard spec `e2e/design-lab-guard.spec.ts` 15 passed;
+  backend vitest 1145 passed (135 files), tsc 0. ml-service 1906 passed at step 0 (untouched after). Servers stopped; 2 e2e Mongo
+  temp folders deleted; Lighthouse's stray `C:\...` profile folders deleted (cause and fix in LOG §AN).
+- **Not verified:** Safari/WebKit (cannot start on this host, see step 1); the Ask answers, Flagged orders, Comparisons, AI review,
+  Reports, Docs and Settings pages were proposed, not prototyped; the period picker's presets need server windowing (D6).
+- **Waiting for Deepanshu:** the design choices (D1-D13); the push of the step 0 fix (production 418 relief; it changes Render and
+  Vercel behaviour: market data and the probe move to data-api.binance.vision); optionally `sudo npx playwright install-deps webkit`
+  so the audit covers Safari (D11).
 - **Step 6: done.** `frontend/app/design-lab/v5/`: landing hero, Home, Costs (route `/overview`), Orders with the receipt sheet and the
   public-trades chart, Fills, Check a broker file; sidebar of nouns with icons, page header with the period control, provenance banner,
   phone top bar and bottom bar with More sheet, Light / Dark / System. Data: the offline fixtures and the stored demo prints, through

@@ -50,14 +50,14 @@ export function OrdersClient({ orders, receipts, demo, initialOrder }: { orders:
       {/* desktop and tablet: table (one variant is rendered, chosen by the viewport, so a row has one target) */}
       {!phone ? <div className="mx-4 overflow-x-auto rounded-[10px] border border-[var(--v-border)] bg-[var(--v-surface)] lg:mx-8">
         <table className="v-table">
-          <thead><tr><th>Placed (UTC)</th><th>Symbol</th><th>Side</th><th>Type</th><th>Status</th><th className="num">Notional</th><th className="num">Fees</th><th className="num">Cost</th><th className="num">Cost (bps)</th></tr></thead>
+          <thead><tr><th>Placed (UTC)</th><th>Symbol</th><th>Side</th><th>Type</th><th>Status</th><th className="num">Notional</th><th className="num">{demo ? 'Fees (published rate)' : 'Fees'}</th><th className="num">Cost</th><th className="num">Cost (bps)</th></tr></thead>
           <tbody>
             {shown.map((o) => (
               <tr key={o.key} data-testid="orders-row" data-clickable tabIndex={0} onClick={(e) => pick(o.orderId, e.currentTarget)} onKeyDown={(e) => { if (e.key === 'Enter') pick(o.orderId, e.currentTarget) }}>
                 <td>{tableTime(o.placedAt)}</td><td className="font-medium">{o.symbol}</td><td>{sideWord(o.side)}</td><td>{typeWord(o.type)}</td>
                 <td className={o.status === 'FILLED' ? '' : 'text-[var(--v-text-2)]'}>{statusWord(o.status)}</td>
                 <td className="num">{money(o.notionalUsd)}</td><td className="num">{money(o.feesUsd)}</td>
-                <td className="num font-semibold">{money(o.cost.usd) ?? <span className="text-[var(--v-text-2)]">insufficient data</span>}</td>
+                <td className="num font-semibold">{money(o.cost.usd) ?? <span className="text-[var(--v-text-2)]">insufficient data</span>}{o.fills === 0 && o.cost.usd !== null ? <span className="block text-[12px] font-normal text-[var(--v-text-2)]">modelled, not paid</span> : null}</td>
                 <td className="num">{bps(o.cost.bps) ?? ''}</td>
               </tr>
             ))}
@@ -76,7 +76,7 @@ export function OrdersClient({ orders, receipts, demo, initialOrder }: { orders:
               </span>
               <span className="shrink-0 text-right">
                 <span className="block text-[15px] font-semibold">{money(o.cost.usd) ?? 'insufficient data'}</span>
-                <span className="block text-[13px] text-[var(--v-text-2)]">{bps(o.cost.bps) ?? ''}</span>
+                <span className="block text-[13px] text-[var(--v-text-2)]">{o.fills === 0 && o.cost.usd !== null ? 'modelled, not paid' : bps(o.cost.bps) ?? ''}</span>
               </span>
             </button>
           </li>

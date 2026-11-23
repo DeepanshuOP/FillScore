@@ -18,7 +18,9 @@ mkdirSync(out, { recursive: true })
 const pw = join(homedir(), '.cache/ms-playwright')
 const chromeDir = readdirSync(pw).filter((d) => /^chromium-\d+$/.test(d)).sort().pop()
 const chrome = process.env.CHROME_PATH ?? join(pw, chromeDir, 'chrome-linux64', 'chrome')
-const PAGES = [['landing', '/'], ['demo', '/demo'], ['app-home', '/app?userId=demo-moderate'], ['app-orders', '/app/orders?userId=demo-moderate']]
+const ALL = [['landing', '/'], ['demo', '/demo'], ['app-home', '/app?userId=demo-moderate'], ['app-orders', '/app/orders?userId=demo-moderate']]
+// LH_PAGES=name,name limits the pages (the design-lab prototype has no /demo page)
+const PAGES = process.env.LH_PAGES ? ALL.filter(([n]) => process.env.LH_PAGES.split(',').includes(n)) : ALL
 const RUNS = 3
 const median = (xs) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)] }
 
@@ -29,9 +31,10 @@ for (const [name, path] of PAGES) {
     const file = join(out, `${name}-${i}.json`)
     execFileSync('npx', ['-y', 'lighthouse@12.8.2', base + prefix + path, '--quiet', '--only-categories=performance', '--output=json', `--output-path=${file}`,
       '--chrome-flags=--headless=new --no-sandbox'],
-      // chrome-launcher puts its temporary profile under LOCALAPPDATA when set (WSL passes the Windows value, which becomes a
-      // relative folder here); point it at the OS temp folder instead
-      { env: { ...process.env, CHROME_PATH: chrome, LOCALAPPDATA: tmpdir() }, stdio: 'ignore', timeout: 180000 })
+      // On WSL chrome-launcher asks Windows for %LOCALAPPDATA% and creates its temporary profile at that path, which Linux reads as
+      // a relative folder ("C:\Users\...\lighthouse.*", with a socket inside that breaks the next build). Run it from the OS temp
+      // folder so those folders land there, never in the repo.
+      { cwd: tmpdir(), env: { ...process.env, CHROME_PATH: chrome }, stdio: 'ignore', timeout: 180000 })
     const lhr = JSON.parse(readFileSync(file, 'utf8'))
     const a = lhr.audits
     runs.push({ score: Math.round((lhr.categories.performance.score ?? 0) * 100), lcpMs: Math.round(a['largest-contentful-paint'].numericValue),

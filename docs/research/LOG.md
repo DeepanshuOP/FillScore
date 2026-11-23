@@ -891,3 +891,17 @@ Audit, references and features are in `docs/design/v5/AUDIT.md`, `REFERENCES.md`
 
   The 60-print cap can drop prints far from a fill, so these are lower bounds for what the daily files would give.
 
+### Steps 4 to 7 (policy, proposal, prototype, review)
+
+- PROPOSAL §4 classifies 17 not-computed or insufficient-data surfaces; §0-§3 and §5-§9 the proposal; §11 the review; §10 the numbers.
+- Prototype `frontend/app/design-lab/v5/`: data read on the server from `e2e-shots/fixtures/*.json` and `backend/src/data/demoPrints.ts`
+  (by path, at request time; the lab is 404 in production), passed through `describeHeadline` and `describeStrip`, formatted by
+  `lib/format.ts` (tested: true minus, never "-0.00", "<$0.01" under a cent). The pages order, filter and select served values only.
+- Palette: the dataviz reference palette, validated (`validate_palette.js`): light #2a78d6, #eb6834, #1baf7a pass with a contrast
+  warning for the aqua (relief: direct labels, legend, table); dark #3987e5, #d95926, #199e70 pass.
+- A second Lighthouse problem: on WSL chrome-launcher asks Windows for `%LOCALAPPDATA%` and creates `C:\Users\...\lighthouse.*` as a
+  relative folder in the working directory; one held a socket file, and the next `next build` failed (Turbopack "No such device or
+  address" reading it). Setting `LOCALAPPDATA` did not help; the runner now runs Lighthouse with `cwd` = the OS temp folder, and the
+  folders were deleted.
+- Review (one Sonnet reviewer, read-only): 4 high, 12 medium, 11 low; fixed or kept with a reason in PROPOSAL §11.
+

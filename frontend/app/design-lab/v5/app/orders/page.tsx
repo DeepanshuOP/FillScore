@@ -2,7 +2,7 @@ import { Download } from 'lucide-react'
 import { loadAccount, loadPrintWindow } from '../../lib/data'
 import { pageValues } from '../../lib/view'
 import { OrdersClient, type ReceiptData } from '../../components/OrdersClient'
-import { DemoBanner, PageHeader, PeriodPicker } from '../../components/PageHeader'
+import { PageHeader, PeriodPicker } from '../../components/PageHeader'
 
 export default async function V5Orders({ searchParams }: { searchParams: Promise<{ userId?: string; order?: string }> }) {
   const sp = await searchParams
@@ -23,7 +23,6 @@ export default async function V5Orders({ searchParams }: { searchParams: Promise
   }
   return (
     <main id="main">
-      <DemoBanner dataSource={a.dataSource} />
       <PageHeader title="Orders" description={`Every order, what it cost, and its receipt. ${a.ordersBody.counts.orders} orders, ${a.ordersBody.counts.withFills} with fills.`}
         controls={<PeriodPicker period={v.period} />}
         primary={<button type="button" className="v-btn"><Download size={16} aria-hidden="true" />Export CSV</button>} />

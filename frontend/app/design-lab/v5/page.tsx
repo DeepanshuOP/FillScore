@@ -34,7 +34,7 @@ export default function V5Landing() {
           <section className="mx-auto grid max-w-[1200px] items-center gap-10 px-5 pb-16 pt-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:pt-16">
             <div>
               <p className="mb-4 inline-flex rounded-full border border-[var(--v-border-strong)] bg-[var(--v-surface)] px-3 py-1 text-[13px] text-[var(--v-text-2)]">Trade cost audit for crypto traders · read-only keys</p>
-              <h1 className="text-[44px] font-black leading-[1.02] tracking-[-0.045em] sm:text-[64px]">See what every trade really cost.</h1>
+              <h1 className="text-[44px] font-black leading-[1.02] tracking-[-0.045em] sm:text-[64px]">See what each of your trades cost.</h1>
               <p className="mt-5 max-w-[46ch] text-[18px] leading-relaxed text-[var(--v-text-2)]">FillScore checks each of your fills against the exchange’s public trades and writes down what it cost: spread, impact, fees. It audits the past and never tells you how to trade.</p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link href="/design-lab/v5/app?userId=demo-moderate" className="v-btn v-btn-primary !min-h-[48px] !px-5 text-[16px]">Try the demo<ArrowRight size={18} aria-hidden="true" /></Link>
@@ -58,9 +58,9 @@ export default function V5Landing() {
                   <span className="lab">Total</span>
                   <span className="text-[28px] font-bold" style={{ fontFamily: 'var(--f-cabinet)' }}>{money(heroCosts.total.usd)} <span className="text-[14px] font-normal">{bps(heroCosts.total.bps)}</span></span>
                 </div>
-                <p className="v-line mt-2 text-[13px]" style={{ fontFamily: 'var(--f-cabinet)' }}>Fees at the published rate: not independently measured. Demo receipt: NOT SIGNED.</p>
+                <p className="v-line mt-2 text-[14px]" style={{ fontFamily: 'var(--f-cabinet)' }}>Fees at the published rate: not independently measured. Demo receipt: NOT SIGNED.</p>
               </article>
-              <figcaption className="mt-3 text-center text-[13px] text-[var(--v-text-2)]">One real demo order, measured against Binance public trades of {day}.</figcaption>
+              <figcaption className="mt-3 text-center text-[13px] text-[var(--v-text-2)]">One demo order from a synthetic trader, measured against real Binance public trades of {day}.</figcaption>
             </figure>
           </section>
         </HeroHalo>

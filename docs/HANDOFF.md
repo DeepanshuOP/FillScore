@@ -29,6 +29,12 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
+**2026-11-24 (design v5 order): Design v5 proposal ready: Deepanshu chooses (`docs/design/v5/`; local commits, not pushed).** Step 0
+moved Binance public market data (klines, exchangeInfo, aggTrades, the reachability probe) to data-api.binance.vision with its own
+governor; signed calls stay on api.binance.com; our traffic cannot explain the 418 (Render's outbound IPs are shared per region; LOG §AN).
+Audit (200 states), references, features (top 8), not-computed policy, proposal (D1-D13), prototype `/design-lab/v5` (404 in production),
+review, before/after numbers: `docs/design/v5/README.md`. Needs from Deepanshu: the choices, the push. Older text follows.
+
 **2026-11-23 (latest, seventh order): IA v4 polish and typed claims for Ask: ready for Deepanshu's review (local commits, not pushed).** Part A: fee lines read
 "Fees (published rate)", Fills hides columns that are not computed and says why, provenance prints once, header buttons have text from 1024 px and the theme control shows
 the theme, "Try the sample file" on `/app/check` (3 an hour per IP, 200 a day), the three dependency bumps as local commits (PRs #11 to #13 stay open for you to close).

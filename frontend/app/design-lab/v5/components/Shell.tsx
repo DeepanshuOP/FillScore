@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { ArrowLeftRight, BookOpen, ChartColumn, ChevronDown, CircleDollarSign, Ellipsis, FileCheck2, Flag, House, ListOrdered, Monitor, Moon,
   Search, Settings, ShieldCheck, Sparkles, Sun, X, type LucideIcon } from 'lucide-react'
 import { useV5Theme, type ThemeChoice } from '../ThemeRoot'
+import { DemoBanner } from './PageHeader'
 
 /** The v5 sidebar (PROPOSAL §3.1): nouns with icons in three groups; the pages not in this prototype are shown disabled. */
 const BASE = '/design-lab/v5/app'
@@ -14,7 +15,7 @@ const GROUPS: Array<{ title: string | null; items: Item[] }> = [
     { label: 'Home', path: '', icon: House }, { label: 'Costs', path: '/overview', icon: CircleDollarSign },
     { label: 'Orders', path: '/orders', icon: ListOrdered }, { label: 'Fills', path: '/fills', icon: ArrowLeftRight }] },
   { title: 'Review', items: [
-    { label: 'Rule breaks', path: null, icon: Flag }, { label: 'Comparisons', path: null, icon: ChartColumn }, { label: 'AI review', path: null, icon: Sparkles }] },
+    { label: 'Flagged orders', path: null, icon: Flag }, { label: 'Comparisons', path: null, icon: ChartColumn }, { label: 'AI review', path: null, icon: Sparkles }] },
   { title: 'Tools', items: [{ label: 'Reports', path: null, icon: ShieldCheck }, { label: 'Check a broker file', path: '/check', icon: FileCheck2 }] },
 ]
 const PHONE_BAR = ['Home', 'Costs', 'Orders']
@@ -107,7 +108,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
 
-      <div className="min-w-0 pb-20 lg:pb-0">{children}</div>
+      <div className="min-w-0 pb-20 lg:pb-0">
+        {/* provenance on every app page (review fix): every account this prototype serves is a demo account */}
+        <DemoBanner dataSource={account.startsWith('demo-') ? 'synthetic-demo' : 'real-user'} />
+        {children}
+      </div>
 
       {/* phone and tablet bottom bar: four items with icons and labels */}
       <nav aria-label="Main" className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 border-t border-[var(--v-border)] bg-[var(--v-surface)] pb-[env(safe-area-inset-bottom)] lg:hidden">

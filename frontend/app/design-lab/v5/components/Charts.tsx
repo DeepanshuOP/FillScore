@@ -26,8 +26,8 @@ export function OrderCostChart({ points, label }: { points: OrderPoint[]; label:
           <BarChart data={points} margin={{ top: 8, right: 8, bottom: 22, left: 8 }} barCategoryGap="12%">
             <CartesianGrid vertical={false} stroke="var(--v-grid)" />
             <XAxis dataKey="t" type="category" tickFormatter={dayFmt} tick={tick} stroke="var(--v-axis)" interval="preserveStartEnd" minTickGap={28}
-              label={{ value: 'Orders in the order they were placed (UTC, month/day)', position: 'insideBottom', offset: -14, fontSize: 12, fill: 'var(--v-text-2)' }} />
-            <YAxis tick={tick} stroke="var(--v-axis)" width={56} tickFormatter={(v: number) => `$${v}`}
+              label={{ value: 'Orders, oldest to newest (UTC date, month/day; evenly spaced, not to time scale)', position: 'insideBottom', offset: -14, fontSize: 12, fill: 'var(--v-text-2)' }} />
+            <YAxis tick={tick} stroke="var(--v-axis)" width={56} tickFormatter={(v: number) => money(v) ?? ''}
               label={{ value: 'Cost ($)', angle: -90, position: 'insideLeft', fontSize: 12, fill: 'var(--v-text-2)', dy: 30 }} />
             <ReferenceLine y={0} stroke="var(--v-axis)" />
             <Tooltip cursor={{ fill: 'var(--v-surface-2)' }} content={({ active, payload }) => {
@@ -73,7 +73,6 @@ export function TypeBars({ rows }: { rows: TypeRow[] }) {
 
 export interface TradePoint { t: number; price: number; side: 'buyer' | 'seller'; qty: number }
 export interface FillPoint { t: number; price: number; qty: number }
-const clock = (t: number) => new Date(t).toISOString().slice(11, 21)
 const clockMs = (t: number) => new Date(t).toISOString().slice(11, 23)
 /**
  * Public trades around one order (time in seconds from the order's arrival × price), buyer- and seller-initiated in two shapes,
@@ -87,7 +86,8 @@ export function PricePrintsChart({ trades, fills, quote, arrivalMs }: { trades: 
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 8, right: 12, bottom: 22, left: 8 }}>
             <CartesianGrid stroke="var(--v-grid)" />
-            <XAxis type="number" dataKey="t" tick={tick} stroke="var(--v-axis)" domain={['dataMin', 'dataMax']} tickFormatter={clock} tickCount={3}
+            <XAxis type="number" dataKey="t" tick={tick} stroke="var(--v-axis)" tickFormatter={clockMs} tickCount={3}
+              domain={[(lo: number) => Math.min(lo, arrivalMs), (hi: number) => Math.max(hi, arrivalMs)]}
               label={{ value: 'Time (UTC)', position: 'insideBottom', offset: -14, fontSize: 12, fill: 'var(--v-text-2)' }} />
             <YAxis type="number" dataKey="price" tick={tick} stroke="var(--v-axis)" domain={['auto', 'auto']} width={72}
               label={{ value: `Price (${quote})`, angle: -90, position: 'insideLeft', fontSize: 12, fill: 'var(--v-text-2)', dy: 36 }} />
@@ -106,8 +106,9 @@ export function PricePrintsChart({ trades, fills, quote, arrivalMs }: { trades: 
         </ResponsiveContainer>
       </div>
       <figcaption className="flex flex-wrap gap-x-4 gap-y-1 text-[13px] text-[var(--v-text-2)]">
-        <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" style={{ color: 'var(--v-s1)' }}>▲</span>Public trade, buyer-initiated</span>
-        <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" style={{ color: 'var(--v-s2)' }}>●</span>Public trade, seller-initiated</span>
+        {buyer.length ? <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" style={{ color: 'var(--v-s1)' }}>▲</span>Public trade, buyer-initiated</span> : null}
+        {seller.length ? <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" style={{ color: 'var(--v-s2)' }}>●</span>Public trade, seller-initiated</span> : null}
+        <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="inline-block h-3 border-l border-dashed border-current" />Order placed</span>
         <span className="inline-flex items-center gap-1.5"><span aria-hidden="true">◆</span>Your fill</span>
       </figcaption>
     </figure>

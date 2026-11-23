@@ -5,7 +5,7 @@ import { bps, count, money, share } from '../../lib/format'
 import { ordersSentence, pageValues } from '../../lib/view'
 import { Card, CostBreakdown, GradeRange, Tile } from '../../components/Blocks'
 import { OrderCostChart, TypeBars } from '../../components/Charts'
-import { DemoBanner, PageHeader, PeriodPicker } from '../../components/PageHeader'
+import { PageHeader, PeriodPicker } from '../../components/PageHeader'
 
 /** Costs (was Overview; PROPOSAL §5). Route kept as /overview so the audit script measures the same address. */
 export default async function V5Costs({ searchParams }: { searchParams: Promise<{ userId?: string }> }) {
@@ -18,7 +18,6 @@ export default async function V5Costs({ searchParams }: { searchParams: Promise<
   const g = a.v2.result
   return (
     <main id="main">
-      <DemoBanner dataSource={a.dataSource} />
       <PageHeader title="Costs" description={ordersSentence(a, v.period)}
         controls={<PeriodPicker period={v.period} />}
         primary={<button type="button" className="v-btn v-btn-primary"><Download size={16} aria-hidden="true" />Download PDF</button>}
@@ -38,7 +37,7 @@ export default async function V5Costs({ searchParams }: { searchParams: Promise<
           </Card>
         ) : null}
         <div className="grid gap-4 xl:grid-cols-2">
-          <Card title="Cost per order" sentence="Each bar is one order’s measured cost, by the time it was placed." id="cpo" source="Source: your orders, measured against Binance public trades.">
+          <Card title="Cost per order" sentence="Each bar is one order’s cost: execution, fees, and for an unfilled order its modelled cost. Oldest to newest." id="cpo" source="Source: your orders, measured against Binance public trades.">
             <OrderCostChart points={points} label={`Cost of each of ${points.length} orders over ${v.period}`} />
           </Card>
           <Card title="By order type" sentence="Market and limit orders, each total in its three parts." id="type" source="Source: /audit/orders-summary byType.">
@@ -55,16 +54,17 @@ export default async function V5Costs({ searchParams }: { searchParams: Promise<
             source={`Score version ${a.v2.scoringVersion.replace(/^v/, '')} · integrity hash ${a.v2.integrityHash.slice(0, 12)}…`}>
             <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-center">
               <GradeStamp grade={g.grade} score={g.composite} period={v.month} version={a.v2.scoringVersion} size="lg" />
-              <div className="w-full min-w-0 flex-1"><GradeRange score={g.composite} band={g.band} /><p className="mt-2 text-[14px] text-[var(--v-text-2)]">Range from the measurement: {g.band[0].toFixed(1)} to {g.band[1].toFixed(1)}.</p></div>
+              <div className="w-full min-w-0 flex-1"><GradeRange score={g.composite} band={g.band} /><p className="mt-2 text-[14px] text-[var(--v-text-2)]">Range from the measurement: {g.band[0].toFixed(1)} to {g.band[1].toFixed(1)}.</p>
+                <p className="mt-2 text-[14px] text-[var(--v-text-2)]">Earlier rule-based grade (scoring v1, published and locked): {a.v1.grade}, {a.v1.score.toFixed(1)} of 100. The two scores measure different things; neither replaces the other.</p></div>
             </div>
           </Card>
-          <Card title="Against the model estimate" sentence={`Market orders, ${count(ce.n, 'order')} inside the model.`} id="model"
+          <Card title="Against the cost estimate" sentence={`Market orders, ${count(ce.n, 'order')} inside the model.`} id="model"
             info="The model estimates what a market order of that size usually costs (square-root model, calibration ec1.0.0). It is an estimate, not a promise."
             source={`Source: /audit/v2 costVsExpected, version ${ce.version}.`}>
             {ce.insufficient ? <p className="text-[14px]">Insufficient data: fewer than 20 market orders inside the model.</p> : (
               <dl className="grid grid-cols-2 gap-3">
                 <div><dt className="text-[13px] text-[var(--v-text-2)]">Paid</dt><dd className="text-[22px] font-semibold">{bps(ce.paidBps)}</dd><dd className="text-[13px] text-[var(--v-text-2)]">{money(ce.paidUsd)}</dd></div>
-                <div><dt className="text-[13px] text-[var(--v-text-2)]">Model estimate</dt><dd className="text-[22px] font-semibold">{bps(ce.expectedBps)}</dd><dd className="text-[13px] text-[var(--v-text-2)]">{money(ce.expectedUsd)}</dd></div>
+                <div><dt className="text-[13px] text-[var(--v-text-2)]">Cost estimate</dt><dd className="text-[22px] font-semibold">{bps(ce.expectedBps)}</dd><dd className="text-[13px] text-[var(--v-text-2)]">{money(ce.expectedUsd)}</dd></div>
                 <div className="col-span-2 text-[14px] text-[var(--v-text-2)]">Difference {bps(ce.excessBps)}, 90% interval {bps(ce.lowBps)} to {bps(ce.highBps)}.</div>
               </dl>
             )}
@@ -77,6 +77,7 @@ export default async function V5Costs({ searchParams }: { searchParams: Promise<
             <div><dt className="text-[13px] text-[var(--v-text-2)]">Venue</dt><dd>Binance Spot</dd></div>
             <div><dt className="text-[13px] text-[var(--v-text-2)]">Data</dt><dd>{v.demo ? 'Synthetic trader, real prices' : 'Your exchange data'}</dd></div>
           </dl>
+          <p className="text-[14px] text-[var(--v-text-2)]">bps: basis points, hundredths of a percent of the order’s value (10 bps = 0.1%).</p>
         </Card>
       </div>
     </main>
