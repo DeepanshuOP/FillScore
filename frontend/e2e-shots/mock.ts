@@ -54,6 +54,11 @@ export async function mock(page: Page, signedIn: boolean, over: (p: string, url:
         fills: [fill(1, 1, 77609.12, 0.0021), fill(2, -1, 77635.06, 0.0034), fill(3, 1, 77620, 0.0048)], limits: { max_fills: 200, max_chars: 200000, market_data_deadline_s: 60 },
         sample: { label: 'Sample file: synthetic fills, real prices', sha256: 'x' } }))
     }
+    // Design v5 audit: the server's own answers for a rebuilt demo's v1-only views (backend/src/routes/audit.ts:657 analytics,
+    // :798 exchange comparison, :992 whale correlation), so Patterns shows what production shows instead of a fixture gap.
+    if (p === '/audit/analytics') return route.fulfill(json({ notComputed: true, reason: 'not_computed_for_this_data', totalTrades: (f.trades as { total: number }).total }))
+    if (p === '/audit/analytics/exchange-comparison') return route.fulfill(json({ notComputed: true, reason: 'not_computed_for_this_data', exchanges: [], bestExchange: null, worstExchange: null, venueAlphaBps: null, perSymbolRanking: [] }))
+    if (p === '/audit/analytics/whale-correlation') return route.fulfill(json({ available: false, reason: 'not_computed_for_this_data', symbols: [], summaryBySymbol: {}, trades: [] }))
     if (p === '/audit/orders-ledger') return route.fulfill(json(f.ledger))
     if (p === '/audit/exceptions') return route.fulfill(json(f.explain.exceptions))
     if (p === '/audit/rankings') return route.fulfill(json(f.explain.rankings))

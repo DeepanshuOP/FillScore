@@ -4,7 +4,12 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24: design v5 (step 0 Binance 418 fix, audit, research, proposal, prototype), local commits
 
-- **Next concrete action: step 1, the audit (`frontend/e2e-shots/audit5.ts` running over 20 pages x 5 viewports x 2 themes), then Lighthouse.**
+- **Next concrete action: step 2, finish `docs/design/v5/REFERENCES.md` (sites measured, libraries read) and commit it.**
+- **Step 1: done.** `docs/design/v5/AUDIT.md`: 200 states (20 pages x 5 viewports x light/dark), 0 errors; smallest text 10 px, 3,670 text
+  nodes under 12 px on 14 pages, 1,184 letter-spaced caps runs (280 under 12 px), axe contrast 0, 588 phone taps under 44 px; Lighthouse
+  mobile 59 / 66 / 50 / 49 (LCP 4.3 / 4.2 / 8.1 / 8.1 s) on `/`, `/demo`, `/app`, `/app/orders`. Top finding: the landing hero's receipt
+  overlaps the headline on a 393x659 phone. Scripts: `e2e-shots/audit5.ts`, `audit5-summary.mjs`, `lighthouse5.mjs`, `mock-server.ts`;
+  `mock.ts` gained the server's answers for a rebuilt demo's v1-only views (Patterns showed a fixture gap before).
 - **Step 0: done.** Public market data moved off api.binance.com to data-api.binance.vision (Binance lists aggTrades, exchangeInfo, klines
   and time there): backend klines (`MarketDataService.ts`), history-sync exchangeInfo (no key header), the reachability probe, the Vercel
   `/api/preflight` route, ml-service aggTrades and klines (`measure/data/rest.py`, `klines.py`; new refs say `data-api.binance.vision`), the
