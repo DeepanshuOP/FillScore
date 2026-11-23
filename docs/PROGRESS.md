@@ -4,7 +4,14 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
 
-- **Next concrete action: A6 (bundle: find the 3 kB rise, suspect cmdk in the shell).**
+- **Next concrete action: A7 (dependencies: lucide-react #11, jsdom #12, eslint 10 #13, one commit each).**
+- **A6: done, suspect not confirmed, no code change.** Clean rebuilds with `scripts/first-load-js.mjs` (gzip kB, `/app` = `/app/overview`):
+  step 6 (`339c5b0`) 397.8; IA v4 final (`178ed95`) 398.2; HEAD after A1-A5 398.9. The "400.9" in M8.md "IA v4 built" does not reproduce from a
+  clean build of `178ed95` (the rise from step 6 is 0.4 kB, not 3). The ⌘K fix (`120ceee`, `components/ui/command.tsx`) wrapped the dialog's
+  children in `<Command>`, a two-line change in a module the shell already imported: `cmdk` was in the `/app` first load before the fix
+  (chunk `1r5k8l2hq-ibn.js`, 11.7 kB gzip, named in `/app/(shell)/overview`'s client manifest), so it was not pulled in by it. Because the
+  suspect is not the cause the order's condition ("if so") is not met and the palette still loads with the shell; loading it on first open
+  would take 11.7 kB off `/app` (listed under ideas).
 - **A5: done.** "Try the sample file" on `/app/check` for everyone (signed out, demo, signed in). File: `ml-service/csv_import/sample/kraken_sample.csv`
   (24 synthetic Kraken rows, fee 0.1% of cost; times and prices are real BTCUSDT aggTrades prints of 2026-09-02 to 09-05, fetched
   2026-11-23 from api.binance.com; pinned by SHA-256 in `csv_import/sample.py`). Why not Jan 2024: Binance REST aggTrades answers `[]` for
