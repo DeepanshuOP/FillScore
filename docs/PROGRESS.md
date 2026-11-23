@@ -4,7 +4,23 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
 
-- **Next concrete action: A5 (Try the sample file on /app/check).**
+- **Next concrete action: A6 (bundle: find the 3 kB rise, suspect cmdk in the shell).**
+- **A5: done.** "Try the sample file" on `/app/check` for everyone (signed out, demo, signed in). File: `ml-service/csv_import/sample/kraken_sample.csv`
+  (24 synthetic Kraken rows, fee 0.1% of cost; times and prices are real BTCUSDT aggTrades prints of 2026-09-02 to 09-05, fetched
+  2026-11-23 from api.binance.com; pinned by SHA-256 in `csv_import/sample.py`). Why not Jan 2024: Binance REST aggTrades answers `[]` for
+  Jan 2024 today and its coverage rolls (BTCUSDT answered 2024-12-23, not 2024-09-14), so the file sits in Sept 2026 and will age out of the
+  REST source in about two years: the date to re-cut it is recorded in LOG. Path: browser -> `POST /api/check/sample` (backend, no login,
+  `routes/checkSample.ts`: per-IP 3 an hour then 200 a day overall, express-rate-limit, `req.ip` under `TRUST_PROXY_HOPS=2` from
+  `render.yaml`) -> ml-service `POST /internal/csv-sample` (service token for the label `sample-file`, same `run_check`, same `gate`: 2 at once and
+  a pause after a 418/429, one fixed Binance host) -> result plus `sample` marker; the page prints "Sample file: synthetic fills, real prices".
+  **Deviation to report:** the "egress allowlist and Binance governor" are Node-side objects (`exchangeEgress.ts`, `binanceGovernor.ts`) that guard
+  the backend's own exchange calls; the check's prints are fetched by the ml-service, so the equivalents that apply are its `gate` and its single
+  constant host (`measure/data/rest.py:20`). The backend route makes no exchange call. Nothing stored, no file content logged (the file is a
+  constant of the code; no upload). Tests: backend `checkSample.test.ts` (8: limiter hand cases 3+1, 3+2 then C, refused-IP-not-counted,
+  trust-proxy spoof), ml `test_sample.py` (6: 24 fills, pinned hash, hand tape 0.0 bps + 10.0 bps fee, service token, pause), frontend
+  `csvCheckView.test.ts` (+3), e2e `csv-sample.spec.ts` (3, with the answer mocked at the page; the real-backend one proves signed-out access, the
+  503 "not configured" sentence and the 4th-call refusal). Live: `run_sample(rest_source)` measured 24 of 24 in 8.8 s. ARCHITECTURE.md route and
+  limiter tables updated. Suites: ml-service 1858 passed, backend 1133 passed (134 files).
 - **A4: done (code and unit tests; look and keyboard pass at QA).** The three icon-only header buttons (`DashboardContent.tsx`): **Method**
   opens the "How this audit was measured" side sheet; **Copy share link** (demo accounts only) copies the public share link; **Download
   report** downloads the PDF report. Each is now a `HeaderAction` (`appshell/HeaderAction.tsx`): visible text from 1024 px (`lg`, was `2xl`),

@@ -19,6 +19,7 @@ import { accountRouter } from './routes/account';
 import { apiKeysRouter } from './routes/apiKeys';
 import { billingRouter, billingWebhook } from './routes/billing';
 import { resolveTrustProxyHops } from './utils/trustProxy';
+import { checkSampleRouter } from './routes/checkSample';
 
 export function createApp(): Application {
     const app = express();
@@ -58,6 +59,7 @@ export function createApp(): Application {
     app.use('/api/account', accountRouter);
     app.use('/api/keys', apiKeysRouter);                           // item 15: personal API keys for the MCP server
     app.use('/api/billing', billingRouter);                        // M9: checkout (404 while BILLING_ENABLED is not "true")
+    app.use('/api/check', checkSampleRouter);                      // A5: the committed sample broker file through the CSV check (3 an hour per IP, 200 a day)
     app.use('/api/preflight', availabilityLimiter, preflightRouter);
 
     app.use(errorHandler);

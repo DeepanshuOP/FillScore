@@ -93,6 +93,8 @@ aggregating so results are deterministic. `POST /api/audit/run` is the only writ
 | `authLimiter` | 15 min | 15 | sign-in, sign-up, reset, verify, exchange |
 | `connectLimiter` | 15 min | 5 | `POST /api/onboarding/connect` |
 | `availabilityLimiter` | 15 min | 20 | `/api/preflight` |
+| sample file, per IP | 60 min | 3 | `POST /api/check/sample` (no login; the committed sample file through the ml-service check) |
+| sample file, overall | 24 h | 200 | the same route, one count for everyone, run after the per-IP limit |
 
 All are per IP and held in memory, so they are per instance. See the gaps below.
 
@@ -151,6 +153,7 @@ Generated from the app (`npm run docs:routes`).
 | POST | `/api/auth/resend-verification` |
 | POST | `/api/auth/reset-password` |
 | POST | `/api/auth/verify-email` |
+| POST | `/api/check/sample` |
 | POST | `/api/connect/` |
 | GET | `/api/health` |
 | POST | `/api/onboarding/connect` |
@@ -181,6 +184,7 @@ Generated from the app (`npm run docs:routes`).
 | GET | `/ml/agents/council/telemetry` | Token and latency summary |
 | POST | `/internal/measure` | Measurement v2 of the account's pending fills and orders (service token `typ: measure` from the backend only; ADR-0011) |
 | POST | `/internal/score-v2` | Score the account under the current Scoring v2 version and store it in `scores_v2` (same service token) |
+| POST | `/internal/csv-sample` | Check the committed sample broker file (`csv_import/sample/kraken_sample.csv`) with the same check and market-data gate as `/ml/csv/check`; service token for the account label `sample-file` only; the backend's `POST /api/check/sample` calls it after its limits |
 | POST | `/internal/verify-v2` | Recompute the stored v2 score's integrity hash from its stored inputs and the version file (same service token) |
 | POST | `/ml/csv/check` | Check a broker file (`kraken` or `mapped`): each fill against the public price at its second. Signed-in accounts only (demo ids refused); 200,000 characters, 200 fills, 6 checks an hour and 20 a day per account, one at a time per account, 2 at once in the service; nothing stored; a 418 or 429 from the market-data source pauses all checks |
 

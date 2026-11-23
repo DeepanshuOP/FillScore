@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { describeCsvCheck, buildCsvRequest, fileIsTooLarge, CSV_COPY, type CsvCheckApi } from './csvCheckView';
+import { describeCsvCheck, describeSampleCheck, SAMPLE_LABEL, buildCsvRequest, fileIsTooLarge, CSV_COPY, type CsvCheckApi } from './csvCheckView';
 import { findAdviceTerms } from '../../../backend/src/constants/adviceTerms';
 
 /**
@@ -112,5 +112,29 @@ describe('buildCsvRequest', () => {
   it('mapped: empty optional fields are left out and the time format is kept', () => {
     const r = buildCsvRequest('mapped', 'x', { time: ' Time ', pair: 'Product', side: 'Side', price: 'Price', quantity: 'Size', fee: '', fee_currency: '', id: '', base: '', quote: '', time_format: 'epoch_ms' });
     expect(r).toEqual({ format: 'mapped', csv: 'x', mapping: { time: 'Time', pair: 'Product', side: 'Side', price: 'Price', quantity: 'Size', time_format: 'epoch_ms' } });
+  });
+});
+
+// A5 (orders of 2026-11-23): "Try the sample file". The backend's POST /api/check/sample answers with the ml-service's check result plus
+// `sample`, or with `{ code, message }`. The result is labelled; a user's own file is not.
+describe('describeSampleCheck', () => {
+  it('a result carries the label "Sample file: synthetic fills, real prices"; a user\'s own file carries none', () => {
+    expect(SAMPLE_LABEL).toBe('Sample file: synthetic fills, real prices');
+    const v = describeSampleCheck(200, { ...api(), sample: { label: SAMPLE_LABEL, sha256: 'x' } });
+    expect(v.error).toBeNull();
+    expect(v.sampleLabel).toBe(SAMPLE_LABEL);
+    expect(v.headline).toBe('2 of 2 fills were compared with the public price at their second.');
+    expect(describeCsvCheck(200, api()).sampleLabel).toBeNull();
+  });
+  it('a sample result without the sample marker is refused, never shown as a sample', () => {
+    expect(describeSampleCheck(200, api()).error).toBe('The sample file could not be checked. Please try again.');
+  });
+  it('limits and pauses read in plain words (3 an hour per IP, the day cap, a pause, not configured)', () => {
+    expect(describeSampleCheck(429, { code: 'SAMPLE_IP_LIMIT' }).error).toBe('The sample file can be checked 3 times an hour. Try again later.');
+    expect(describeSampleCheck(429, { code: 'SAMPLE_DAY_LIMIT' }).error).toBe('The sample file has been checked as often as it can be today. Try again tomorrow.');
+    expect(describeSampleCheck(503, { code: 'market_data_busy' }).error).toBe('The public market-data source asked for a pause. Try again in a few minutes.');
+    expect(describeSampleCheck(503, { code: 'sample_unavailable' }).error).toBe('The sample file cannot be checked right now.');
+    expect(describeSampleCheck(502, { code: 'sample_failed' }).error).toBe('The sample file could not be checked. Please try again.');
+    expect(describeSampleCheck(0, null).error).toBe('The sample file could not be checked. Please try again.');
   });
 });

@@ -8,7 +8,8 @@ import { Banner } from '../ui/Banner';
 import { Disclosure } from '../ui/Disclosure';
 import { DataTable, type Column } from '../ui/DataTable';
 import { ValueState } from '../ui/ValueState';
-import { CSV_COPY, buildCsvRequest, describeCsvCheck, fileIsTooLarge, type CsvCheckView, type CsvRow, type MappingInputs } from './csvCheckView';
+import { apiBase } from '../lib/apiBase';
+import { CSV_COPY, SAMPLE_HINT, buildCsvRequest, describeCsvCheck, describeSampleCheck, fileIsTooLarge, type CsvCheckView, type CsvRow, type MappingInputs } from './csvCheckView';
 
 interface Props { mlBaseUrl: string; accessToken: string | null | undefined; refreshAccessToken: () => Promise<string | null> }
 
@@ -70,6 +71,21 @@ export default function CsvCheckPanel({ mlBaseUrl, accessToken, refreshAccessTok
     }
   };
 
+  // A5: the committed sample file, for everyone (signed out and demo included). Nothing of the visitor's is sent; the server owns the file.
+  const trySample = async () => {
+    if (busy) return;
+    setBusy(true);
+    setView(null);
+    try {
+      const res = await fetch(`${apiBase()}/check/sample`, { method: 'POST' });
+      setView(describeSampleCheck(res.status, await res.json().catch(() => null)));
+    } catch {
+      setView(describeSampleCheck(0, null));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div data-testid="csv-check-panel">
       <Panel title={CSV_COPY.title} description={CSV_COPY.hint}>
@@ -105,13 +121,16 @@ export default function CsvCheckPanel({ mlBaseUrl, accessToken, refreshAccessTok
           )}
           <div className="flex flex-wrap items-center gap-3">
             <Button onClick={send} disabled={text === null} loading={busy}>{busy ? 'Checking…' : CSV_COPY.button}</Button>
+            <Button variant="secondary" onClick={trySample} disabled={busy} data-testid="try-sample">Try the sample file</Button>
             {fileName && <span className="text-sm text-ui-graphite">{fileName}</span>}
           </div>
+          <p className="max-w-[68ch] text-[13px] text-ui-graphite">{SAMPLE_HINT}</p>
         </div>
 
         {view?.error && <div data-testid="csv-error" className="mt-4"><Banner kind="refused" title={view.error} /></div>}
         {view && !view.error && (
           <div data-testid="csv-result" className="mt-6 flex flex-col gap-3">
+            {view.sampleLabel ? <p data-testid="sample-label" className="font-mono text-[13px] tracking-[0.04em] text-ui-ink uppercase">{view.sampleLabel}</p> : null}
             <h3 className="text-base font-semibold text-ui-ink">Findings</h3>
             <p className="text-sm text-ui-ink">{view.headline}</p>
             {view.lines.map(l => <p key={l} className="text-sm text-ui-graphite">{l}</p>)}

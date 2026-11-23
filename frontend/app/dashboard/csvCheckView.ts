@@ -28,6 +28,8 @@ export interface CsvRow { key: string; time: string; symbol: string; side: strin
 export interface CsvCheckView {
   error: string | null; headline: string | null; lines: string[]; rows: CsvRow[]; unmeasured: string[]; skipped: string[];
   provenance: string | null; assumptions: string[];
+  /** Set only on the sample file's result (A5); null for a user's own file. */
+  sampleLabel: string | null;
 }
 
 const NO_FEE_LINE = 'The file has no fee column, so fees were not part of this check.';
@@ -37,7 +39,7 @@ const usd = formatUsd;
 const num = (v: number): string => String(Number(v.toPrecision(10)));
 const when = (ms: number): string => `${new Date(ms).toISOString().slice(0, 19).replace('T', ' ')} UTC`;
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
-const empty = { headline: null, lines: [], rows: [], unmeasured: [], skipped: [], provenance: null, assumptions: [] };
+const empty = { headline: null, lines: [], rows: [], unmeasured: [], skipped: [], provenance: null, assumptions: [], sampleLabel: null };
 
 export function describeCsvCheck(status: number, body: unknown): CsvCheckView {
   const err = (error: string): CsvCheckView => ({ error, ...empty });
@@ -82,7 +84,29 @@ export function describeCsvCheck(status: number, body: unknown): CsvCheckView {
   const headline = s.measured > 0
     ? `${s.measured} of ${s.fills} ${s.fills === 1 ? 'fill was' : 'fills were'} compared with the public price at their second.`
     : 'Insufficient data: no fill could be compared with the public price.';
-  return { error: null, headline, lines, rows, unmeasured, skipped, provenance: b.provenance, assumptions: b.assumptions };
+  return { error: null, headline, lines, rows, unmeasured, skipped, provenance: b.provenance, assumptions: b.assumptions, sampleLabel: null };
+}
+
+export const SAMPLE_HINT = 'The sample file has 24 synthetic fills at real BTCUSDT prices from 2 to 5 September 2026. It needs no account and nothing of yours is sent. '
+  + 'It can be checked 3 times an hour.';
+
+/** The label printed on a sample result (A5). It is the one line that says the fills are synthetic and the prices real. */
+export const SAMPLE_LABEL = 'Sample file: synthetic fills, real prices';
+
+/**
+ * The answer of POST /api/check/sample: the check's result plus a `sample` marker, or `{ code, message }`. A result without the marker is
+ * not shown as a sample (and not at all: the page only calls this route for the sample). Limits and pauses read in fixed sentences.
+ */
+export function describeSampleCheck(status: number, body: unknown): CsvCheckView {
+  const err = (error: string): CsvCheckView => ({ error, ...empty });
+  const code = (body as { code?: string } | null)?.code;
+  if (status === 429 && code === 'SAMPLE_IP_LIMIT') return err('The sample file can be checked 3 times an hour. Try again later.');
+  if (status === 429 && code === 'SAMPLE_DAY_LIMIT') return err('The sample file has been checked as often as it can be today. Try again tomorrow.');
+  if (status === 429) return err('The service is busy with other checks. Try again in a minute.');
+  if (status === 503 && code === 'market_data_busy') return err('The public market-data source asked for a pause. Try again in a few minutes.');
+  if (status === 503) return err('The sample file cannot be checked right now.');
+  if (status !== 200 || !body || !(body as { sample?: unknown }).sample) return err('The sample file could not be checked. Please try again.');
+  return { ...describeCsvCheck(200, body), sampleLabel: SAMPLE_LABEL };
 }
 
 /** The service refuses a file of more than 200,000 characters; the page does not send one. */

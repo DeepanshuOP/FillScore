@@ -469,6 +469,40 @@ async def csv_check_endpoint(req: CsvCheckRequest, request: Request) -> Any:
         route_budget.release(account_id, refund=refund)
 
 
+@app.post("/internal/csv-sample")
+async def internal_csv_sample(body: MeasureRequest, request: Request) -> Any:
+    """Check the committed sample broker file (A5). Service token only: the backend calls this after its own limits (3 an hour per IP, 200
+    a day overall), so a visitor never reaches it directly. The same check and the same market-data gate as /ml/csv/check; nothing is
+    stored; the file is a constant of the code, so no row of a user's is read or logged."""
+    account_id = get_measure_account(request)
+    if body.accountId != account_id or account_id != "sample-file":
+        raise HTTPException(status_code=403, detail="Token is for another account")
+    request.state.account_id = account_id
+    from csv_import import gate
+    pause = gate.cooling()
+    if pause is not None:
+        raise HTTPException(status_code=503, headers={"Retry-After": str(pause)}, detail={
+            "code": "market_data_busy", "message": "The public market-data source asked for a pause. Try again in a few minutes."})
+    if not gate.try_enter():
+        raise HTTPException(status_code=429, detail={"code": "csv_check_busy", "message": "The service is busy with other checks. Try again in a minute."})
+    from starlette.concurrency import run_in_threadpool
+    import measure.service as svc
+    from csv_import.sample import run_sample
+    from csv_import.service import CsvCheckError
+    try:
+        return await run_in_threadpool(run_sample, svc.rest_source)
+    except CsvCheckError as e:
+        extra = dict(e.extra)
+        retry = extra.pop("retry_after", None)
+        raise HTTPException(status_code=503 if e.code == "market_data_busy" else 400, headers={"Retry-After": str(retry)} if retry else None,
+                            detail={"code": e.code, "message": e.message, **extra})
+    except Exception as e:
+        print(f"[csv_sample] failed type={type(e).__name__}")
+        raise HTTPException(status_code=500, detail={"code": "internal", "message": "The sample file could not be checked."})
+    finally:
+        gate.leave()
+
+
 @app.post("/ml/agents/ask")
 async def ask_endpoint(req: AskRequest, request: Request) -> Any:
     """Ask your execution (M5): a question about the caller's own past executions, answered from deterministic tools only. The
