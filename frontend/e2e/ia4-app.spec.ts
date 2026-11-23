@@ -8,7 +8,9 @@ import { test, expect } from '@playwright/test'
  *  - /app/check opens signed out and in demo mode;
  *  - the page header carries the provenance on every app page and the sidebar does not.
  */
-test('a demo Home plays a recorded answer: labelled, scoped, with the language-model heading, and no input box', async ({ page }) => {
+// 2026-11-23 (ADR-0018): the recorded answers are the typed-claims path's. The model chose claims and code wrote the sentence, so the
+// language-model heading does not show over them; one line says who chose and who wrote. The four recorded answers all passed.
+test('a demo Home plays a recorded answer: labelled, scoped, claims chosen by the model and written by code, and no input box', async ({ page }) => {
   await page.goto('/app?userId=demo-moderate')
   await expect(page.getByRole('heading', { name: 'Ask FillScore' })).toBeVisible()
   await expect(page.getByRole('textbox')).toHaveCount(0)
@@ -19,18 +21,22 @@ test('a demo Home plays a recorded answer: labelled, scoped, with the language-m
   // data; a missing count is never printed as 0)
   await expect(slip).toContainText(/\d{4}/)
   await expect(slip).not.toContainText(/\b0 orders\b/i)
-  await expect(slip).toContainText('Explanation (language model; every number was checked against the audit)')
-  await expect(slip).toContainText(/Answered by groq\//)
+  await expect(slip).toContainText('The model chose which measured values to state; code wrote the sentence and placed the figures.')
+  await expect(slip).toContainText(/Claims chosen by groq\//)
+  await expect(slip).not.toContainText('Explanation (language model')
 })
 
-test('a degraded recorded answer is the last chip, says so in one line and credits no model', async ({ page }) => {
+test('every recorded chip is answered by the claims path: none degraded, none carries the language-model heading', async ({ page }) => {
   await page.goto('/app?userId=demo-moderate')
-  await page.getByTestId('ask-chip').last().click()
-  const slip = page.getByTestId('ask-slip')
-  await expect(slip).toContainText("The model's answer did not pass the checks, so code wrote this sentence from the measured values.")
-  await expect(slip).toContainText('Model calls: 2 · answer not used')
-  await expect(slip).not.toContainText('Explanation (language model')
-  await expect(slip).not.toContainText(/groq|qwen/i)
+  const n = await page.getByTestId('ask-chip').count()
+  expect(n).toBe(4)
+  for (let i = 0; i < n; i++) {
+    await page.getByTestId('ask-chip').nth(i).click()
+    const slip = page.getByTestId('ask-slip')
+    await expect(slip).toContainText('RECORDED ANSWER, NOT LIVE')
+    await expect(slip).not.toContainText('answer not used')
+    await expect(slip).not.toContainText('Explanation (language model')
+  }
 })
 
 test('a signed-out visitor to /app without a demo account goes to log in', async ({ page }) => {

@@ -103,7 +103,8 @@ function RecordedAsk({ demoId, signedIn, scope }: { demoId: string; signedIn: bo
   useEffect(() => {
     let live = true
     // the recorded answers are their own chunk: only a demo page fetches them
-    void import('../lib/ask/ask-recorded.json').then((m) => { if (live) setDoc(m.default as unknown as RecordedDoc) }).catch(() => undefined)
+    // 2026-11-23 (ADR-0018): the answers recorded with the typed-claims path; the first recording (ask-recorded.json) stays beside it, unchanged
+    void import('../lib/ask/ask-recorded-claims.json').then((m) => { if (live) setDoc(m.default as unknown as RecordedDoc) }).catch(() => undefined)
     return () => { live = false }
   }, [])
   const answers: RecordedAnswer[] = doc && doc.account === demoId ? recordedAnswers(doc) : []

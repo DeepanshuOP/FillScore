@@ -61,6 +61,14 @@ How to read it, plainly:
 | single | synthesis | groq/qwen/qwen3.8-27b | 18 | 18 | 3 (16.7%) | 15 (83.3%) | 0 (0.0%) | 8 | 0 |
 
   Read: synthesis text reached the user as the model wrote it in 2 of 21 council runs and 3 of 18 single-call runs; specialists did so in about 70% of outputs. The debate roles rarely fall back to code text (1 of 42) but carry most claim-rule redactions (158 sentences).
+- **Ask: typed claims instead of sentences** (ADR-0018, accepted for the Ask answer only; the Council is unchanged). In the new path the model returns claims (a claim type and the ids of measured values, never a digit); code validates them, formats the numbers and writes the sentence from a fixed template; any invalid claim gives the same code-built answer as before. Measured on 2026-11-23 on 12 fixed questions over `demo-moderate` (`ml-service/evals/ask_questions.py`, committed before any live call), the same model (groq/qwen/qwen3.8-27b), one run per question, 48 of the 60 live calls allowed, command `python ml-service/scripts/compare_ask_paths.py`; raw runs in `ml-service/evals/ask_claims_runs/`:
+
+| Ask path | Questions | Answers used as the model wrote them | Degraded | Schema-invalid | Mean live calls per question |
+|---|---|---|---|---|---|
+| Old: the model writes placeholder sentences | 12 | 5 | 7 | 0 | 2.00 |
+| New: the model returns typed claims | 12 | 12 | 0 | 0 | 2.00 |
+
+  Read: this is one account, one model and one run per question, so it shows the mechanism works, not how often. "As the model wrote them" means the code changed nothing in the old path, and for the new path that the claims passed every check (the words are code's). The new path can be partial: it has no claim for an order count (the answer to "how many orders were measured and what did they cost" gave the cost only) and caps a set at three claims. Details: `docs/research/LOG.md` §AM.
 - Source files: `ml-service/evals/ablation_results_v3.md`, `ml-service/evals/ablation_notes_v3.md`.
 
 Tests, run on 2026-11-22 (after the fourth order): ml-service pytest 1852 passed (9 deselected); backend vitest 1102 passed (131 files), tsc clean; frontend vitest 752 passed (78 files), tsc clean, lint 0 errors, build ok; end-to-end 40 passed; MCP server 26 passed. The route table in `ARCHITECTURE.md` is checked against the code by a test.

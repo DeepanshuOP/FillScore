@@ -704,3 +704,69 @@ order the two that passed first and the degraded ones last.
   each line's box to its scroll boxes and counts wrapped inline boxes per line (both made false overlaps). Three `sed -i` attempts and one
   inline-Python write were stopped by the guard hook; each was redone with the Edit and Write tools.
 
+## AM. IA v4 polish and typed claims for Ask (orders of 2026-11-23, seventh)
+
+### A. Polish: findings that are not in the code or the commit messages
+
+- **A2, why a Fills column is not computed (read from the code that decides it).** `backend/src/routes/audit.ts:139-142` (`hasV1Trades`: no trade of the
+  account has a non-null `fillScore`) and `:146` (`v1Flag`: applies to demo accounts only) give `v1Computed: false` on `GET /audit/trades`
+  (`:602`). The comment at `:139-141` states the reason: the rebuilt demos have no v1 per-trade fields because "v1 enrichment needed invented
+  arrival prices". The page reads the rule per loaded row set (`frontend/app/trades/fillsView.ts`): a column no loaded row has is left out; the
+  sentence under the count says which and why, and says none was invented. On `demo-moderate` that is slippage, score, grade and the average-score tile.
+- **A1, plain fee lines left as they were** (not receipt lines of the decision): Orders "Where the money went" totals row (`ordersView.ts:44`), Orders
+  Fees column (`OrdersView.tsx:55`), cost strip part (`costStrip.ts:42`; its dashed part carries the published-rate caption), Overview rows
+  (`Overview.tsx:201`, footnote `:218`), month-tape tooltip (`MonthTape.tsx:225`), score v2 shortfall term (`scoreV2.ts:81`), the hero tape's
+  pen-note title (`TapeHero.tsx:23`), the Fills ledger "Fee" column (`TradesLedger.tsx`). The PDF report, evidence packs and goldens are untouched.
+- **A5, the sample file and the print source.** Binance REST `aggTrades` (the source the check uses at run time, `measure/data/rest.py:20`) answered
+  `[]` for every January 2024 window on 2026-11-23 and answered for 2024-12-23 onward (BTCUSDT; tested 7, 30, 90, 180, 365, 400, 500, 600, 700 days
+  back; empty at 800 and 900), so the committed file is dated 2026-09-02 to 09-05 and **will age out of the REST source: re-cut it before about
+  September 2028** (the exact rolling limit was not measured). A live `run_sample(rest_source)` on 2026-11-23 measured 24 of 24 fills in 8.8 s
+  (median half-spread 0.0006 bps: the fills are real prints, so they sit on the tape). The "egress allowlist and governor" named in the order are
+  backend objects for the backend's own exchange calls; the check's market-data calls are made by the ml-service (its `gate`: 2 at once, a pause
+  after a 418 or 429, and one fixed host), so those are what bound this route. The backend route makes no exchange call.
+- **A6, the bundle rise did not reproduce.** Clean rebuilds, `/app`: step 6 397.8, IA v4 final 398.2, now 398.9 kB (the "400.9" of the earlier
+  report is not what a clean build of that commit gives). `cmdk` (chunk `1r5k8l2hq-ibn.js`, 11.7 kB gzip) was already in the shell before the ⌘K
+  fix, which only wrapped the dialog's children in cmdk's root. No change made.
+- **A7, dependency outcomes.** lucide-react 1.75.0, jsdom 31.0.1 and eslint 10.15.0 applied one commit each with frontend checks after each; eslint
+  10 works with `eslint-config-next@16.4.5` (lint 0 errors, the same 19 warnings) though that config's plugins declare peers up to eslint 9.
+
+### B. Typed claims for Ask (ADR-0018, accepted for Ask only)
+
+**Facts checked 2026-11-23.** Groq's structured-outputs page (<https://console.groq.com/docs/structured-outputs>; first ~40,000 of ~75,000
+characters read verbatim) lists `openai/gpt-oss-20b`, `openai/gpt-oss-120b`, `qwen/qwen3.8-27b` and `meta-models/muse-spark-open` under strict mode
+(`strict: true`, constrained decoding, every field required, `additionalProperties: false`) and says streaming and tool use are not supported with it.
+The router sends the strict schema to Groq candidates only.
+
+**Method.** `ml-service/evals/ask_questions.py` (12 questions over `demo-moderate`: the 4 Home questions and 8 written for this, committed in
+`4dc47d6` before any live call), run by `ml-service/scripts/compare_ask_paths.py`: for each question the old path (`mode="free"`, the answerer writes
+placeholder sentences) and then the new path (`mode="claims"`), both through `agents.ask.ask_flow` over the committed demo files, the committed
+routes and the real free tier (groq/qwen/qwen3.8-27b served every call), usage in a mongomock store, nothing written to Atlas. Cap 60 live calls for all of
+Part B; a 429 would be waited out once, a second one would stop the run. Raw runs: `ml-service/evals/ask_claims_runs/{free_runs,claims_runs,summary}.json`.
+
+| Path | Questions | Answers used as the model wrote them | Altered by code, then shown | Degraded | Schema-invalid | Mean live calls per question |
+|---|---|---|---|---|---|---|
+| Old: the model writes placeholder sentences | 12 | 5 | 0 | 7 | 0 | 2.00 (24 calls) |
+| New: the model returns typed claims | 12 | 12 | not applicable | 0 | 0 | 2.00 (24 calls) |
+
+**Live calls used: 48 of 60** (no 429, no stop, no retry: every attempt was an `ok`). Definitions: *used as written*, old path: the placeholders
+rendered by code equal the shown answer (code removed and changed nothing), new path: the claims passed every check, and the sentences are the
+templates over them (so "as written" means "as chosen": the words are code's). *Schema-invalid*: an invalid reply of the answering call, or a
+fallback of that name. The two columns of the old path that are not "written" are the 7 degraded (reasons recorded by the flow): the model's answer was empty after
+the checks 3 times (all three are the costliest-orders questions: a sentence naming an order id lost its id), "looked forward, advised or assigned a cause" 3 times,
+"held a number that is not a measured value" once. Whether a degraded old answer had a good sentence in it is not judged.
+
+**Read plainly.** On these 12 questions the new path was used 12 times and the old 5; both used 2 calls each. That is one model (qwen3.8-27b),
+one account, one run per question: it shows the mechanism works, not how often it will, and it is not a model comparison.
+**What the new path costs, found in the same runs:**
+1. *It omits what it has no claim for, silently.* "How many orders were measured and what did they cost in total?" was answered with the cost only:
+   the closed list has no count claim, and the answer does not say the count was left out. "What did my five costliest orders cost?" lists three,
+   because a claim set is capped at 3 (the cap is the validator's, not Groq's). On the count question the old path's answer did include the count
+   ("A total of 245 orders were measured, and they cost $52.08 in total."), so there the old path said more; on the five-costliest question the old path degraded. The new path's answers are true but can be partial.
+2. *The formatter's small-value form reads oddly in a sentence:* "The median execution cost was >-0.01 bps." (`agents/render.format_value`: a nonzero value
+   under 0.01 bps prints as `<0.01 bps` or `>-0.01 bps`; it was written for tables). The number is the code's and is right; the wording is not natural.
+3. *Sentences are uniform* (the ADR's predicted risk): every cost answer reads "The measured orders cost $X in total."
+
+**B4. The four Home answers, re-recorded with the new path** (the four new-path runs of the Home questions above are the recording: verbatim,
+`frontend/app/lib/ask/ask-recorded-claims.json`, no extra call; the first file `ask-recorded.json` is unchanged beside it). All four passed, so the chips
+keep their recorded order and none is degraded. The degraded display stays covered by `askView.test.ts`, `askRecorded.test.ts` and the old fixture.
+

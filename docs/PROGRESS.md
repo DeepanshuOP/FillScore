@@ -4,7 +4,13 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
 
-- **Next concrete action: B3 (write and commit the 12 questions BEFORE any live call; then measure old path and new path, cap 60 live calls).**
+- **Next concrete action: QA (qa3 at 1440, 390, 320; keyboard pass for A4 and A5; break-ui on Fills and Check), then the reviewer, the final checks, the M8 section "IA v4 polish" and its images.**
+- **B3 and B4: done.** 12 questions committed first (`4dc47d6`), then 48 live calls of the cap of 60 (no 429, no stop): old path 5 written, 7
+  degraded, 0 schema-invalid, 2.00 calls; new path 12 used, 0 degraded, 0 schema-invalid, 2.00 calls. Table in README Evaluation, LOG §AM, M5.md.
+  Found: the new path omits what it has no claim for (no count claim; 3 claims at most) and prints `>-0.01 bps` for a tiny value. B4: the four
+  new-path runs of the Home questions are the recording, verbatim, `frontend/app/lib/ask/ask-recorded-claims.json` (old file untouched); all four
+  passed. UI: a claims answer has no language-model heading, one line says "The model chose which measured values to state; code wrote the
+  sentence and placed the figures", the credit reads "Claims chosen by <model>"; `askView`/`askRecorded` tests; e2e `ia4-app.spec.ts` updated.
 - **B2: done.** `ml-service/agents/ask_claims.py` (9 claim types, templates, validation, strict schema, prompt), `ask_flow(mode="claims")` in
   `agents/ask.py` (the free path is the default and unchanged), `ask_service.ASK_MODE = "claims"` (production), `LLMRouter.complete(response_format=)`
   sent to Groq candidates only (by provider, not model name: `tests/test_llm_router.py` forbids model names outside the YAML, and the YAML hash

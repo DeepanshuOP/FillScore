@@ -1,0 +1,218 @@
+{
+ "recorded": true,
+ "label": "Recorded answers of the Ask agent on demo data (synthetic trader, real prices); not a live answer.",
+ "answerKind": "claims",
+ "account": "demo-moderate",
+ "recordedAt": "2026-11-23T13:04:59+00:00",
+ "claimRulesVersion": "1.4.0",
+ "askPromptVersion": "2.0.0",
+ "askClaimRulesVersion": "1.0.0",
+ "scoringVersion": "v2.3.0",
+ "source": "ml-service/scripts/compare_ask_paths.py over ml-service/demo_v2/out (committed demo files), new path (typed claims)",
+ "runs": [
+  {
+   "question": "Which orders cost the most?",
+   "result": {
+    "mode": "ask",
+    "claim_rules_version": "1.4.0",
+    "tools_used": [
+     "costliest"
+    ],
+    "values": [
+     {
+      "placeholder": "costliest.orders.0.order_id",
+      "shown": "ord-moderate-BTCUSDT-319184"
+     },
+     {
+      "placeholder": "costliest.orders.0.cost_usd",
+      "shown": "$3.31"
+     },
+     {
+      "placeholder": "costliest.orders.1.order_id",
+      "shown": "ord-moderate-BTCUSDT-350407"
+     },
+     {
+      "placeholder": "costliest.orders.1.cost_usd",
+      "shown": "$1.42"
+     },
+     {
+      "placeholder": "costliest.orders.2.order_id",
+      "shown": "ord-moderate-ETHUSDT-687601"
+     },
+     {
+      "placeholder": "costliest.orders.2.cost_usd",
+      "shown": "$1.36"
+     }
+    ],
+    "n_calls": 2,
+    "degraded": false,
+    "fallback": null,
+    "answer_kind": "claims",
+    "ask_prompt_version": "2.0.0",
+    "ask_claim_rules_version": "1.0.0",
+    "claims": [
+     {
+      "claim_type": "COSTLIEST_ORDER",
+      "value_ids": [
+       "costliest.orders.0.order_id",
+       "costliest.orders.0.cost_usd"
+      ]
+     },
+     {
+      "claim_type": "COSTLIEST_ORDER",
+      "value_ids": [
+       "costliest.orders.1.order_id",
+       "costliest.orders.1.cost_usd"
+      ]
+     },
+     {
+      "claim_type": "COSTLIEST_ORDER",
+      "value_ids": [
+       "costliest.orders.2.order_id",
+       "costliest.orders.2.cost_usd"
+      ]
+     }
+    ],
+    "answer": "The costliest order was ord-moderate-BTCUSDT-319184, at $3.31. Order ord-moderate-BTCUSDT-350407 was among the costliest, at $1.42. Order ord-moderate-ETHUSDT-687601 was among the costliest, at $1.36."
+   },
+   "models": [
+    "groq/qwen/qwen3.8-27b",
+    "groq/qwen/qwen3.8-27b"
+   ],
+   "recordedAt": "2026-11-23T13:01:08+00:00"
+  },
+  {
+   "question": "What did my orders cost in total?",
+   "result": {
+    "mode": "ask",
+    "claim_rules_version": "1.4.0",
+    "tools_used": [
+     "costs"
+    ],
+    "values": [
+     {
+      "placeholder": "costs.total_cost_usd",
+      "shown": "$52.08"
+     }
+    ],
+    "n_calls": 2,
+    "degraded": false,
+    "fallback": null,
+    "answer_kind": "claims",
+    "ask_prompt_version": "2.0.0",
+    "ask_claim_rules_version": "1.0.0",
+    "claims": [
+     {
+      "claim_type": "COST_TOTAL",
+      "value_ids": [
+       "costs.total_cost_usd"
+      ]
+     }
+    ],
+    "answer": "The measured orders cost $52.08 in total."
+   },
+   "models": [
+    "groq/qwen/qwen3.8-27b",
+    "groq/qwen/qwen3.8-27b"
+   ],
+   "recordedAt": "2026-11-23T13:01:09+00:00"
+  },
+  {
+   "question": "How did my market orders compare with the modelled cost?",
+   "result": {
+    "mode": "ask",
+    "claim_rules_version": "1.4.0",
+    "tools_used": [
+     "cost_vs_expected"
+    ],
+    "values": [
+     {
+      "placeholder": "expected.paid_bps",
+      "shown": "-0.1 bps"
+     },
+     {
+      "placeholder": "expected.expected_bps",
+      "shown": "0.1 bps"
+     },
+     {
+      "placeholder": "expected.interval_low_bps",
+      "shown": "-0.3 bps"
+     },
+     {
+      "placeholder": "expected.interval_high_bps",
+      "shown": "-0.1 bps"
+     }
+    ],
+    "n_calls": 2,
+    "degraded": false,
+    "fallback": null,
+    "answer_kind": "claims",
+    "ask_prompt_version": "2.0.0",
+    "ask_claim_rules_version": "1.0.0",
+    "claims": [
+     {
+      "claim_type": "EXPECTED_COMPARE",
+      "value_ids": [
+       "expected.paid_bps",
+       "expected.expected_bps"
+      ]
+     },
+     {
+      "claim_type": "EXPECTED_INTERVAL",
+      "value_ids": [
+       "expected.interval_low_bps",
+       "expected.interval_high_bps"
+      ]
+     }
+    ],
+    "answer": "Market orders cost -0.1 bps against a modelled 0.1 bps. The modelled cost's interval ran from -0.3 bps to -0.1 bps."
+   },
+   "models": [
+    "groq/qwen/qwen3.8-27b",
+    "groq/qwen/qwen3.8-27b"
+   ],
+   "recordedAt": "2026-11-23T13:01:21+00:00"
+  },
+  {
+   "question": "What score did my execution get?",
+   "result": {
+    "mode": "ask",
+    "claim_rules_version": "1.4.0",
+    "tools_used": [
+     "score"
+    ],
+    "values": [
+     {
+      "placeholder": "score.grade",
+      "shown": "A"
+     },
+     {
+      "placeholder": "score.composite_score",
+      "shown": "93.4"
+     }
+    ],
+    "n_calls": 2,
+    "degraded": false,
+    "fallback": null,
+    "answer_kind": "claims",
+    "ask_prompt_version": "2.0.0",
+    "ask_claim_rules_version": "1.0.0",
+    "claims": [
+     {
+      "claim_type": "SCORE_GRADE",
+      "value_ids": [
+       "score.grade",
+       "score.composite_score"
+      ]
+     }
+    ],
+    "answer": "The measured score was A (93.4 / 100)."
+   },
+   "models": [
+    "groq/qwen/qwen3.8-27b",
+    "groq/qwen/qwen3.8-27b"
+   ],
+   "recordedAt": "2026-11-23T13:01:45+00:00"
+  }
+ ]
+}

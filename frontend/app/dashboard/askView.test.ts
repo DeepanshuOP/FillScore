@@ -33,6 +33,23 @@ describe('describeAsk', () => {
   it('a passed answer is by the model: byModel is true', () => {
     expect(describeAsk(200, ok()).byModel).toBe(true);
   });
+  // ADR-0018 (Ask only): a claims answer is a sentence code wrote from claims the model chose, so the model heading never shows over it
+  it('a claims answer is written by code: byModel is false, byClaims true, and one line says who chose and who wrote', () => {
+    const v = describeAsk(200, ok({ answer_kind: 'claims', claims: [{ claim_type: 'SCORE_GRADE', value_ids: ['score.grade', 'score.composite_score'] }] }));
+    expect(v.byModel).toBe(false);
+    expect(v.byClaims).toBe(true);
+    expect(v.note).toBe('The model chose which measured values to state; code wrote the sentence and placed the figures.');
+    expect(v.meta).toBe('Read: score. Used 2 model calls.');
+    expect(v.answer).toBe('The measured score was A at 93.4.');
+  });
+  it('a degraded claims answer reads exactly like a degraded free answer', () => {
+    const v = describeAsk(200, ok({ answer_kind: 'claims', degraded: true, fallback: 'unit_mismatch' }));
+    expect(v.byModel).toBe(false);
+    expect(v.byClaims).toBe(false);
+    expect(v.note).toBe("The model's answer did not pass the checks, so code wrote this sentence from the measured values.");
+    expect(v.meta).toBe('Model calls: 2 · answer not used');
+    expect(JSON.stringify(v)).not.toContain('unit_mismatch');
+  });
   it('errors use the shared messages; nothing from the server body is shown', () => {
     expect(describeAsk(429, { detail: { code: 'RATE_LIMIT_EXHAUSTED', message: 'x' } }).error)
       .toBe('The Council is at capacity right now. Please try again in a few minutes.');

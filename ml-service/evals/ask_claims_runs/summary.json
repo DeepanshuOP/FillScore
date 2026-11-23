@@ -1,0 +1,29 @@
+{
+ "account": "demo-moderate",
+ "cap": 60,
+ "live_calls_used": 48,
+ "stopped": null,
+ "questions_run": 12,
+ "askPromptVersion": "2.0.0",
+ "askClaimRulesVersion": "1.0.0",
+ "free": {
+  "questions": 12,
+  "written": 5,
+  "altered": 0,
+  "degraded": 7,
+  "refused": 0,
+  "schema_invalid": 0,
+  "calls_total": 24,
+  "calls_mean": 2.0
+ },
+ "claims": {
+  "questions": 12,
+  "written": 12,
+  "altered": 0,
+  "degraded": 0,
+  "refused": 0,
+  "schema_invalid": 0,
+  "calls_total": 24,
+  "calls_mean": 2.0
+ }
+}

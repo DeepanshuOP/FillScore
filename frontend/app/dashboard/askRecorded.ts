@@ -31,7 +31,9 @@ export function recordedAnswers(doc: RecordedDoc): RecordedAnswer[] {
       const view = describeAsk(200, r.result)
       const recordedOn = (r.recordedAt ?? doc.recordedAt).slice(0, 10)
       const models = [...new Set(r.models)].join(', ')
-      return { question: r.question, view, recordedOn, credit: view.byModel && models ? `Answered by ${models}, recorded ${recordedOn}.` : `Recorded ${recordedOn}.` }
+      const credit = models && view.byModel ? `Answered by ${models}, recorded ${recordedOn}.`
+        : models && view.byClaims ? `Claims chosen by ${models}, recorded ${recordedOn}.` : `Recorded ${recordedOn}.`
+      return { question: r.question, view, recordedOn, credit }
     })
 }
 

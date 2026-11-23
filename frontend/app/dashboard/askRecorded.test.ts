@@ -28,6 +28,12 @@ describe('recordedAnswers', () => {
     expect(costliest.credit).toBe('Recorded 2026-11-22.')
     expect(costliest.credit).not.toContain('groq')
   })
+  it('a claims answer credits the model for choosing the claims, not for the sentence', () => {
+    const d: RecordedDoc = { ...doc, runs: [run('costs?', false, { result: { answer: 'The measured orders cost $16.00 in total.', tools_used: ['costs'], n_calls: 2, degraded: false, fallback: null, values: [], answer_kind: 'claims' } })] }
+    const [a] = recordedAnswers(d)
+    expect(a.view.byModel).toBe(false)
+    expect(a.credit).toBe('Claims chosen by groq/qwen/qwen3.8-27b, recorded 2026-11-22.')
+  })
   it('a run carries its own recording date when it has one (a re-recorded question), else the document date', () => {
     const [costs, , costliest] = recordedAnswers(doc)
     expect(costs.recordedOn).toBe('2026-11-22')
