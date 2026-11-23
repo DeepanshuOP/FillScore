@@ -140,8 +140,7 @@ export function TapeHero() {
             <Link href={DEMO_ENTRY} className={buttonClass('primary', 'lg', 'no-underline')}>Open the demo</Link>
             <Link href="/how-it-works" className={buttonClass('secondary', 'lg', 'no-underline')}>How it works</Link>
           </div>
-          {/* the tape's order is a synthetic trader's (DESIGN.md invariant 4); a phone prints it under the tape */}
-          <p className="mt-4 font-mono text-[13px] tracking-[0.04em] text-ui-graphite max-md:hidden">SYNTHETIC TRADER, REAL PRICES</p>
+          {/* A3: the tape's own label above prints the provenance (DESIGN.md invariant 4); no repeat under the buttons */}
         </div>
       </div>
     </section>

@@ -4,7 +4,14 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
 
-- **Next concrete action: A3 (provenance once per page).**
+- **Next concrete action: A4 (header actions: labels, theme control).**
+- **A3: done.** Removed: the "Synthetic trader, real prices" span in the Orders panel actions (`OrdersView.tsx`, under the Orders title; the
+  header chip prints it) and the line under the hero's buttons (`TapeHero.tsx`; the tape label prints it). Test `provenance.test.tsx`
+  (hero prints it twice: label and phone receipt). Kept, with a reason: the hero phone receipt, the `/how-it-works` receipt and its
+  chapter line, the landing's end figure line (`StoryEnd`), the `/demo` slips and `DemoCards` (printed objects that can be screenshotted
+  alone), the share card and its OG image, the order receipt, the Overview facts table "Data" row (a printed spec table), the account
+  switcher's menu label (a menu, not page copy), the `/demo` intro sentence (the marketing bar has no chip). Dead code left: the Overview's
+  `sampleNote` line is no longer passed (`DashboardContent.tsx:291`).
 - **A2: done.** Fills: heading "Fills", "N fills on <venue>", tile "Fills", time `YYYY-MM-DD HH:MM:SS` under "TIME (UTC)" (Orders' `formatUtc` and
   header style), full symbol. Rules in `trades/fillsView.ts` (tests `fillsView.test.ts`, 10): a measure every loaded row lacks (slippage, score,
   grade; the score also takes the Average score tile) is left out, and the line `fills-not-computed` says which and why. The reason is read from

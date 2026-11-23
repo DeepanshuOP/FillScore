@@ -139,8 +139,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
     <div data-testid="orders-view" className="flex flex-col gap-5">
       <Panel title="Orders"
         description={loaded ? countsLine(loaded.counts) : 'Loading the orders.'}
-        note={{ label: 'how to read the ledger', text: 'Select a row to print its receipt. Sort by a column heading; the Columns menu adds the order id, fills, quantity and maker share.' }}
-        actions={mode === 'demo' ? <span className="text-[12px] text-ui-graphite">Synthetic trader, real prices</span> : null}>
+        note={{ label: 'how to read the ledger', text: 'Select a row to print its receipt. Sort by a column heading; the Columns menu adds the order id, fills, quantity and maker share.' }}>
         {load === 'error' ? <Banner kind="refused" title="The orders could not be loaded" />
           : !loaded ? (
             <div className="flex flex-col gap-2" aria-hidden="true">
