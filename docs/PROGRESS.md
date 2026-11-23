@@ -4,8 +4,14 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24: design v5 (step 0 Binance 418 fix, audit, research, proposal, prototype), local commits
 
-- **Next concrete action: step 6, the prototype under `frontend/app/design-lab/v5/` (landing hero, Home, Costs, Orders with the receipt,
-  Fills, Check; desktop and phone; light and dark).**
+- **Next concrete action: step 7, one reviewer (read-only, Sonnet) on the proposal and images, fixes, the audit re-run on the prototype,
+  the before/after numbers in PROPOSAL §10, and the checks.**
+- **Step 6: done.** `frontend/app/design-lab/v5/`: landing hero, Home, Costs (route `/overview`), Orders with the receipt sheet and the
+  public-trades chart, Fills, Check a broker file; sidebar of nouns with icons, page header with the period control, provenance banner,
+  phone top bar and bottom bar with More sheet, Light / Dark / System. Data: the offline fixtures and the stored demo prints, through
+  the production view models; formatter tested (`lib/format.test.ts`, 5). 22 images and `docs/design/v5/README.md` (before beside
+  after). The e2e guard spec lists the six v5 paths. First after-run of the audit on the prototype: 70 states, 0 errors, smallest text
+  12 px, 0 under 12 px, 0 contrast nodes, 0 phone targets under 44 px.
 - **Step 5: done.** PROPOSAL §0-§3, §5-§9: word table (33 terms, invariant words kept), readability rules and one style per number kind,
   the shell (sidebar groups, page header with period and one action, cards, tables, empty states, settings, phone), every page, charts
   per data shape, motion, budgets (`/` 300 kB, `/app` 340 kB; Lighthouse marketing 85+, app 75+), 12 decisions with recommendations.
