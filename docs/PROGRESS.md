@@ -4,8 +4,11 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24: design v5 (step 0 Binance 418 fix, audit, research, proposal, prototype), local commits
 
-- **Next concrete action: step 5, the rest of `docs/design/v5/PROPOSAL.md` (words, readability, shell, pages, charts, motion, budgets,
-  decisions).**
+- **Next concrete action: step 6, the prototype under `frontend/app/design-lab/v5/` (landing hero, Home, Costs, Orders with the receipt,
+  Fills, Check; desktop and phone; light and dark).**
+- **Step 5: done.** PROPOSAL §0-§3, §5-§9: word table (33 terms, invariant words kept), readability rules and one style per number kind,
+  the shell (sidebar groups, page header with period and one action, cards, tables, empty states, settings, phone), every page, charts
+  per data shape, motion, budgets (`/` 300 kB, `/app` 340 kB; Lighthouse marketing 85+, app 75+), 12 decisions with recommendations.
 - **Step 4: done.** PROPOSAL §4: 17 surfaces with file:line and class: (a) remove for accounts that never have it (v1 per-fill score and
   grade, Patterns tab, whale correlation, Council VWAP line for now), (b) compute server-side (each fill against the public price, test
   plan with hand values), (c) designed empty states with the next action (header figures, fees pending, receipts, venue comparison);
