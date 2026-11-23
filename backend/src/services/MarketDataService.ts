@@ -2,7 +2,7 @@ import axios from 'axios';
 import { MarketCache } from '../models/MarketCache';
 import { Trade, EnrichedTradeDocument } from '../models/Trade';
 import { BinanceKline } from '../types';
-import { binanceGovernor } from './binanceGovernor';
+import { binanceDataGovernor } from './binanceGovernor';
 import { assertAllowedUrl } from './exchangeEgress';
 
 // GET /api/v3/klines is IP weight 2 (https://developers.binance.com/docs/binance-spot-api-docs/rest-api/market-data-endpoints)
@@ -22,9 +22,10 @@ export class MarketDataService {
             return cached.data as unknown as BinanceKline[];
         }
 
-        const url = `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1m&startTime=${startTime}&endTime=${endTime}&limit=${limit}`;
-        // shared weight budget with every other Binance call; host allow-list, no redirects (exchangeEgress.ts)
-        const response = await binanceGovernor.run(KLINES_WEIGHT, () => {
+        // Public market data host (Binance lists GET /api/v3/klines on data-api.binance.vision: faqs/market_data_only.md,
+        // read 2026-11-23); its own governor, so a ban of api.binance.com does not stop it. Host allow-list, no redirects.
+        const url = `https://data-api.binance.vision/api/v3/klines?symbol=${symbol}&interval=1m&startTime=${startTime}&endTime=${endTime}&limit=${limit}`;
+        const response = await binanceDataGovernor.run(KLINES_WEIGHT, () => {
             assertAllowedUrl(url);
             return axios.get<BinanceKline[]>(url, { maxRedirects: 0 });
         });

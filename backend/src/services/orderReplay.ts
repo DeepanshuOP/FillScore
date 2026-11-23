@@ -7,7 +7,10 @@
 import { formatBps } from '../utils/formatBps';
 
 const VISION_BASE = 'https://data.binance.vision/data/spot/daily/aggTrades';
-const REST_AGG_TRADES = 'https://api.binance.com/api/v3/aggTrades';
+// Design v5 step 0: the public link opens data-api.binance.vision (Binance lists GET /api/v3/aggTrades there,
+// faqs/market_data_only.md, read 2026-11-23), for windows stored as 'api.binance.com' (before the move) and after it.
+const REST_AGG_TRADES = 'https://data-api.binance.vision/api/v3/aggTrades';
+const REST_SOURCES = new Set(['api.binance.com', 'data-api.binance.vision']);
 
 export interface ReplayOrder {
     orderId: string; symbol: string; exchange?: string; type: string | null; side: string; origQty: number; executedQty: number; status: string;
@@ -42,7 +45,7 @@ function sourceOf(ref: Record<string, any>): ReplaySource | null {
         return { kind: 'public-market-data', label: `Binance daily trades file, ${ref.symbol}, ${ref.date}`, sha256: ref.sha256,
             url: `${VISION_BASE}/${ref.symbol}/${ref.symbol}-aggTrades-${ref.date}.zip` };
     }
-    if (ref.source === 'api.binance.com' && Array.isArray(ref.window) && ref.window.length === 2 && ref.symbol && ref.window.every(num)) {
+    if (REST_SOURCES.has(ref.source) && Array.isArray(ref.window) && ref.window.length === 2 && ref.symbol && ref.window.every(num)) {
         const [a, b] = ref.window as [number, number];
         return { kind: 'public-market-data', label: `Binance public trades window, ${ref.symbol}, ${iso(a)} to ${iso(b)}`, sha256: ref.sha256,
             url: `${REST_AGG_TRADES}?symbol=${ref.symbol}&startTime=${a}&endTime=${b}` };

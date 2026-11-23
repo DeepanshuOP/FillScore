@@ -120,7 +120,7 @@ def test_window_fetches_whole_hour_blocks_with_limit_and_weight():
     assert [(c["startTime"], c["endTime"], c["limit"], c["interval"], c["symbol"]) for c in fake.calls] == [
         (T_1400 - 2 * HOUR, T_1400 - HOUR - 1, 60, "1m", "BTCUSDT"), (T_1400 - HOUR, T_1400 - 1, 60, "1m", "BTCUSDT")]
     assert st.requests == 2 and st.weight == 4          # two requests, weight 2 each
-    assert {r.dataset for r in w.refs} == {"api/v3/klines"} and all(r.source == "api.binance.com" for r in w.refs)
+    assert {r.dataset for r in w.refs} == {"api/v3/klines"} and all(r.source == "data-api.binance.vision" for r in w.refs)
     assert [r.window for r in w.refs] == [(T_1400 - 2 * HOUR, T_1400 - HOUR - 1), (T_1400 - HOUR, T_1400 - 1)]
     block = [r for r in fake.rows if T_1400 - HOUR <= r[0] < T_1400]
     assert w.refs[1].sha256 == hashlib.sha256(json.dumps(block, separators=(",", ":")).encode()).hexdigest()

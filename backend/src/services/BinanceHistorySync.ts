@@ -3,7 +3,7 @@ import { Trade } from '../models/Trade';
 import { BinanceRawTrade } from '../types';
 import { TradeIngestionService, storeTradeIfAbsent } from './TradeIngestionService';
 import { SignedCall, syncBinanceOrders, syncBinanceCommission } from './orders/binanceOrders';
-import { BinanceBanError, BinanceGovernor, binanceGovernor } from './binanceGovernor';
+import { BinanceBanError, BinanceGovernor, binanceGovernor, binanceDataGovernor } from './binanceGovernor';
 import { guardedFetch } from './exchangeEgress';
 
 /**
@@ -20,6 +20,9 @@ export const MYTRADES_LIMIT = 1000;
 export const MAX_REQUESTS_PER_SYNC = 400;
 const MS_PER_DAY = 86_400_000;
 const BASE = 'https://api.binance.com';
+// Public market data (exchangeInfo): Binance lists it on data-api.binance.vision
+// (https://github.com/binance/binance-spot-api-docs/blob/master/faqs/market_data_only.md, read 2026-11-23; design v5 step 0).
+const DATA_BASE = 'https://data-api.binance.vision';
 
 export type PartialReason = 'rate_limited' | 'request_cap' | 'banned' | 'time_cap';
 
@@ -28,6 +31,8 @@ export interface HistorySyncOptions {
     extraSymbols?: string[];
     /** The weight governor; the process-wide one unless a test gives its own `sleep`/`now` (then a private one is built). */
     governor?: BinanceGovernor;
+    /** The market-data governor for data-api.binance.vision; the process-wide one unless a test gives `sleep`/`now`. */
+    dataGovernor?: BinanceGovernor;
     sleep?: (ms: number) => Promise<void>;
     now?: () => number;
     maxRequests?: number;
@@ -66,6 +71,8 @@ interface SymbolInfo { symbol: string; baseAsset: string; quoteAsset: string; st
 export class BinanceHistorySync {
     private requests = 0;
     private gov: BinanceGovernor;
+    /** Unsigned public calls (exchangeInfo) go to data-api.binance.vision under this governor (design v5 step 0). */
+    private dataGov: BinanceGovernor;
     private now: () => number;
     private maxRequests: number;
     private ingestion = new TradeIngestionService();
@@ -94,17 +101,22 @@ export class BinanceHistorySync {
     constructor(private apiKey: string, private apiSecret: string, private userId: string, private opts: HistorySyncOptions) {
         this.now = opts.now ?? Date.now;
         this.gov = opts.governor ?? (opts.sleep || opts.now ? new BinanceGovernor({ sleep: opts.sleep, now: opts.now }) : binanceGovernor);
+        this.dataGov = opts.dataGovernor ?? (opts.sleep || opts.now ? new BinanceGovernor({ sleep: opts.sleep, now: opts.now }) : binanceDataGovernor);
         this.maxRequests = opts.maxRequests ?? MAX_REQUESTS_PER_SYNC;
         this.coverage = { ...(opts.coverage ?? {}) };
     }
 
     private async call<T>(path: string, params: Record<string, string | number>, signed: boolean, weight: number): Promise<T> {
+        // signed account calls: api.binance.com with the key header; public calls: data-api.binance.vision, no key, own governor
+        const gov = signed ? this.gov : this.dataGov;
+        const base = signed ? BASE : DATA_BASE;
+        const headers: Record<string, string> = signed ? { 'X-MBX-APIKEY': this.apiKey } : {};
         for (let attempt = 0; attempt < 3; attempt++) {
             if (this.requests >= this.maxRequests) throw new StopSync('request_cap');
             if (this.opts.deadlineMs !== undefined && this.now() > this.opts.deadlineMs) throw new StopSync('time_cap');
             // the shared governor: waits for the weight budget, refuses during a 418 ban (binanceGovernor.ts)
             try {
-                await this.gov.acquire(weight);
+                await gov.acquire(weight);
             } catch (e) {
                 if (e instanceof BinanceBanError) throw new StopSync('banned');
                 throw e;
@@ -119,17 +131,17 @@ export class BinanceHistorySync {
                 let qs = Object.entries(all).map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
                 if (signed) qs += `&signature=${crypto.createHmac('sha256', this.apiSecret).update(qs).digest('hex')}`;
                 sent = true;
-                res = await guardedFetch(`${BASE}${path}${qs ? `?${qs}` : ''}`, { headers: { 'X-MBX-APIKEY': this.apiKey } });
+                res = await guardedFetch(`${base}${path}${qs ? `?${qs}` : ''}`, { headers });
             } catch (e) {
                 // a request that may have reached Binance counts its weight; one that was never sent frees its reservation
-                if (sent) this.gov.release(weight); else this.gov.cancel(weight);
+                if (sent) gov.release(weight); else gov.cancel(weight);
                 throw e;
             }
-            this.gov.record(weight, res);   // used weight from X-MBX-USED-WEIGHT-1M; a 429 pauses, a 418 bans, for Retry-After
+            gov.record(weight, res);   // used weight from X-MBX-USED-WEIGHT-1M; a 429 pauses, a 418 bans, for Retry-After
 
             if (res.status === 418) throw new StopSync('banned');
             if (res.status === 429) {
-                await this.gov.waitIfPaused();
+                await gov.waitIfPaused();
                 continue; // back off, retry
             }
             if (!res.ok) throw new Error(`binance_http_${res.status}`);
@@ -226,7 +238,8 @@ export class BinanceHistorySync {
         try {
             const info = await this.call<{ symbols: SymbolInfo[]; rateLimits?: Array<{ rateLimitType: string; interval: string; intervalNum: number; limit: number }> }>('/api/v3/exchangeInfo', {}, false, 20);
             const rl = info.rateLimits?.find(r => r.rateLimitType === 'REQUEST_WEIGHT' && r.interval === 'MINUTE' && r.intervalNum === 1);
-            if (rl?.limit) this.gov.setLimit(rl.limit);
+            // exchangeInfo's rateLimits describe the spot REST API's limits; applied to both governors
+            if (rl?.limit) { this.gov.setLimit(rl.limit); this.dataGov.setLimit(rl.limit); }
             const account = await this.call<{ balances: Array<{ asset: string; free: string; locked: string }> }>('/api/v3/account', { omitZeroBalances: 'true' }, true, 20);
             const stored: string[] = await Trade.distinct('symbol', { userId: this.userId, exchange: 'binance' });
             const found = BinanceHistorySync.discoverSymbols(info.symbols ?? [], account.balances ?? [], this.opts.extraSymbols ?? [], stored);

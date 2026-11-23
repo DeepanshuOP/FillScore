@@ -134,6 +134,29 @@ else:
 verdict=${verdict:-"FAIL could not parse the response"}
 report "${verdict%% *}" "backend reaches Binance" "${verdict#* }"
 
+# Design v5 step 0: the probe above goes to data-api.binance.vision (public market data). api.binance.com serves only the
+# signed account calls (sync); it is not probed, its state comes from the backend's governor (a 418/429 a sync received).
+acct=$(printf '%s' "$body" | python3 -c '
+import json, sys
+try:
+    data = json.load(sys.stdin)
+except Exception:
+    print("FAIL no JSON from /api/preflight/exchanges"); sys.exit()
+items = data if isinstance(data, list) else next((v for v in data.values() if isinstance(v, list)), []) if isinstance(data, dict) else []
+b = next((i for i in items if isinstance(i, dict) and i.get("exchange") == "binance"), None) or {}
+a = b.get("accountApi")
+if not isinstance(a, dict):
+    print("FAIL not reported by this backend (older than design v5 step 0)")
+elif not a.get("paused"):
+    print("PASS api.binance.com: no pause held (not probed; read from the governor)")
+else:
+    ra = a.get("retryAfterS")
+    print("FAIL api.binance.com: HTTP %s received by a signed call, nothing sent, Retry-After %s, pause %s s left" % (
+        a.get("httpStatus"), "absent" if ra is None else "%s s as received" % ra, a.get("pauseRemainingS")))
+' 2>/dev/null)
+acct=${acct:-"FAIL could not parse the response"}
+report "${acct%% *}" "Binance account API (signed sync)" "${acct#* }"
+
 # Demo report through the FRONTEND origin (the /api proxy path the browser uses): must be a real PDF.
 pdf_tmp=$(mktemp)
 pdf_head=$(curl -s -L --max-time "$WAKE_TIMEOUT" -o "$pdf_tmp" -w '%{http_code} %{content_type}' "$ORIGIN/api/audit/report?userId=demo-disciplined" 2>/dev/null || true)

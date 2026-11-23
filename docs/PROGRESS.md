@@ -2,6 +2,25 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-24: design v5 (step 0 Binance 418 fix, audit, research, proposal, prototype), local commits
+
+- **Next concrete action: step 1, the audit (`frontend/e2e-shots/audit5.ts` running over 20 pages x 5 viewports x 2 themes), then Lighthouse.**
+- **Step 0: done.** Public market data moved off api.binance.com to data-api.binance.vision (Binance lists aggTrades, exchangeInfo, klines
+  and time there): backend klines (`MarketDataService.ts`), history-sync exchangeInfo (no key header), the reachability probe, the Vercel
+  `/api/preflight` route, ml-service aggTrades and klines (`measure/data/rest.py`, `klines.py`; new refs say `data-api.binance.vision`), the
+  receipt's source link. A second governor (`binanceDataGovernor`) holds the market-data budget and pauses; signed calls stay on
+  api.binance.com under `binanceGovernor`, whose state the probe now reports as `accountApi` without sending anything. Smoke prints a
+  second line for the account API. Finding: our own traffic cannot explain the ban (no real account syncs; the probe sent one weight-1
+  request); Render's outbound ranges are shared across the region. LOG §AN step 0 (callers table, what a user sees during a ban, what
+  to look for in the Render logs). Tests red first (21 backend, 4 ml, 1 frontend), then: backend 1145 passed (one existing case updated)
+  and tsc 0; ml-service 1906 passed; frontend 823 tests, 822 passed in the full run and the one failure (`MarginNote.test.tsx`, timing,
+  run under the audit's load) passed 2 of 2 alone; tsc 0.
+- **Deviation (step 1):** WebKit cannot start on this host (missing GTK 4 and GStreamer libraries; `sudo npx playwright install-deps webkit`
+  needs a password, which this run does not handle). The iPhone 15 profile is measured in Chromium with the same viewport, user agent
+  and touch, and each row records its engine.
+- **cal.com app:** Deepanshu logged in to the headed browser (temporary profile, deleted after); 12 captures of the app were taken. They
+  show his username and avatar, so they stay in `.work/refs-private/` (gitignored); REFERENCES describes them in words.
+
 ## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
 
 - **Next concrete action: IA v4 polish and typed claims for Ask: ready for Deepanshu's review.**

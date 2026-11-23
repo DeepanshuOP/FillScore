@@ -121,15 +121,51 @@ describe('BinanceHistorySync', () => {
     });
 
     it('waits out the minute when the used-weight header passes 50% of the limit', async () => {
-        // limit 6000 -> budget 3000; header reports 2990 used, next call (+20) would exceed it
+        // limit 6000 -> budget 3000; the account answer (api.binance.com) reports 2990 used, the next signed call (+20) would
+        // exceed it. Design v5 step 0: the header moved from exchangeInfo to account because exchangeInfo now goes to
+        // data-api.binance.vision, which has its own governor (its header no longer counts against api.binance.com).
         fetchMock.mockImplementation(async (url: string) => {
             const u = new URL(url);
-            if (u.pathname === '/api/v3/exchangeInfo') return json(INFO, 200, { 'x-mbx-used-weight-1m': '2990' });
-            if (u.pathname === '/api/v3/account') return json(ACCOUNT, 200, { 'x-mbx-used-weight-1m': '1' });
+            if (u.pathname === '/api/v3/exchangeInfo') return json(INFO, 200, { 'x-mbx-used-weight-1m': '1' });
+            if (u.pathname === '/api/v3/account') return json(ACCOUNT, 200, { 'x-mbx-used-weight-1m': '2990' });
             return json([]);
         });
         await run(365);
         expect(sleeps).toEqual([61_000]);
+    });
+
+    it('exchangeInfo goes to data-api.binance.vision without the API key header; account and myTrades stay on api.binance.com', async () => {
+        // Binance lists GET /api/v3/exchangeInfo on data-api.binance.vision (faqs/market_data_only.md, read 2026-11-23);
+        // account and myTrades are signed USER_DATA calls and are not listed there.
+        const seen: Array<{ host: string; path: string; key: string | null }> = [];
+        fetchMock.mockImplementation(async (url: string, init?: { headers?: Record<string, string> }) => {
+            const u = new URL(url);
+            seen.push({ host: u.host, path: u.pathname, key: init?.headers?.['X-MBX-APIKEY'] ?? null });
+            if (u.pathname === '/api/v3/exchangeInfo') return json(INFO);
+            if (u.pathname === '/api/v3/account') return json(ACCOUNT);
+            return json([]);
+        });
+        await run(365);
+        const info = seen.filter(s => s.path === '/api/v3/exchangeInfo');
+        expect(info).toEqual([{ host: 'data-api.binance.vision', path: '/api/v3/exchangeInfo', key: null }]);
+        const signed = seen.filter(s => s.path !== '/api/v3/exchangeInfo');
+        expect(signed.length).toBeGreaterThan(1);
+        expect(signed.every(s => s.host === 'api.binance.com' && s.key === 'k')).toBe(true);
+    });
+
+    it('a 418 ban on api.binance.com does not stop the exchangeInfo request; the sync then stops as banned at account', async () => {
+        const { BinanceGovernor } = await import('../binanceGovernor');
+        const account = new BinanceGovernor({ now: () => NOW, sleep });
+        account.observe(20, { status: 418, headers: { 'retry-after': '418' } });
+        const hosts: string[] = [];
+        fetchMock.mockImplementation(async (url: string) => {
+            const u = new URL(url);
+            hosts.push(`${u.host}${u.pathname}`);
+            return u.pathname === '/api/v3/exchangeInfo' ? json(INFO) : json(ACCOUNT);
+        });
+        const r = await new BinanceHistorySync('k', 's', UID, { lookbackDays: 365, sleep, now: () => NOW, governor: account }).run();
+        expect(hosts).toEqual(['data-api.binance.vision/api/v3/exchangeInfo']);
+        expect(r.partialReason).toBe('banned');
     });
 
     describe('discoverSymbols', () => {

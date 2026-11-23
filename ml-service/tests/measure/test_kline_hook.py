@@ -48,8 +48,8 @@ def test_lineage_refs_name_the_kline_hours_with_their_hashes():
     r = _hook(Fake())(_info())
     assert r["contextSource"] == "api/v3/klines"
     assert [(x["source"], x["dataset"], x["symbol"], tuple(x["window"])) for x in r["contextRefs"]] == [
-        ("api.binance.com", "api/v3/klines", "BTCUSDT", (T_1400 - 2 * HOUR, T_1400 - HOUR - 1)),
-        ("api.binance.com", "api/v3/klines", "BTCUSDT", (T_1400 - HOUR, T_1400 - 1))]
+        ("data-api.binance.vision", "api/v3/klines", "BTCUSDT", (T_1400 - 2 * HOUR, T_1400 - HOUR - 1)),
+        ("data-api.binance.vision", "api/v3/klines", "BTCUSDT", (T_1400 - HOUR, T_1400 - 1))]
     hour13 = [x for x in json.loads(FIXTURE.read_bytes()) if T_1400 - HOUR <= x[0] < T_1400]
     assert r["contextRefs"][1]["sha256"] == hashlib.sha256(json.dumps(hour13, separators=(",", ":")).encode()).hexdigest()
 

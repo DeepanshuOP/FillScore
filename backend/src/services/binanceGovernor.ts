@@ -215,5 +215,13 @@ export class BinanceGovernor {
     }
 }
 
-/** The governor every Binance call in this process goes through. */
+/** The governor every api.binance.com call in this process goes through (signed account calls). */
 export const binanceGovernor = new BinanceGovernor();
+
+/**
+ * The governor for public market data on data-api.binance.vision (klines, exchangeInfo, the reachability probe). Design v5
+ * step 0 (2026-11-23): Binance lists those endpoints on that host (faqs/market_data_only.md, read 2026-11-23). The docs do not
+ * say whether it shares api.binance.com's IP limits, so it gets its own budget and its own 418/429 pause: a ban answered by
+ * one host pauses only that host's callers.
+ */
+export const binanceDataGovernor = new BinanceGovernor();

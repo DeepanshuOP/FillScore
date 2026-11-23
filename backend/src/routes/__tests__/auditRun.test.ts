@@ -84,7 +84,10 @@ describe('POST /api/audit/run for a real account', () => {
         expect(res.body.dataSource).toBe('real-user');
         // the stored (decrypted) key signed the history requests
         expect(fetchMock).toHaveBeenCalled();
-        expect((fetchMock.mock.calls[0] as any)[1].headers['X-MBX-APIKEY']).toBe('real-key');
+        // design v5 step 0: the first call is exchangeInfo on data-api.binance.vision (public, no key); the signed calls carry it
+        const signed = fetchMock.mock.calls.filter((c: any) => String(c[0]).startsWith('https://api.binance.com/'));
+        expect(signed.length).toBeGreaterThan(0);
+        expect((signed[0] as any)[1].headers['X-MBX-APIKEY']).toBe('real-key');
     });
 
     it('returns 404 when the account has no exchange connection', async () => {

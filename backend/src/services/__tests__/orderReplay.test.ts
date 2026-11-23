@@ -46,8 +46,17 @@ describe('buildOrderReplay', () => {
     it('the market data behind the figures opens its public source with its SHA-256', () => {
         expect(r.sources[0]).toEqual({ kind: 'public-market-data', label: 'Binance daily trades file, BTCUSDT, 2024-01-15', sha256: 'a'.repeat(64),
             url: 'https://data.binance.vision/data/spot/daily/aggTrades/BTCUSDT/BTCUSDT-aggTrades-2024-01-15.zip' });
-        expect(r.sources[1].url).toBe('https://api.binance.com/api/v3/aggTrades?symbol=BTCUSDT&startTime=1705327200000&endTime=1705327230000');
+        // design v5 step 0: the public link opens the same endpoint on data-api.binance.vision (listed there by Binance,
+        // faqs/market_data_only.md, read 2026-11-23), for windows stored before the move (source api.binance.com) and after it
+        expect(r.sources[1].url).toBe('https://data-api.binance.vision/api/v3/aggTrades?symbol=BTCUSDT&startTime=1705327200000&endTime=1705327230000');
         expect(r.sources[1].sha256).toBe('b'.repeat(64));
+    });
+    it('a window stored with source data-api.binance.vision opens the same link and label', () => {
+        const ref = { source: 'data-api.binance.vision', dataset: 'api/v3/aggTrades', symbol: 'BTCUSDT', date: null, window: [1705327200000, 1705327230000], sha256: 'd'.repeat(64) };
+        const r2 = buildOrderReplay({ order, fills, measurement: { ...m, marketDataRefs: [ref] } });
+        expect(r2.sources[0]).toEqual({ kind: 'public-market-data', sha256: 'd'.repeat(64),
+            label: 'Binance public trades window, BTCUSDT, 2024-01-15T14:00:00.000Z to 2024-01-15T14:00:30.000Z',
+            url: 'https://data-api.binance.vision/api/v3/aggTrades?symbol=BTCUSDT&startTime=1705327200000&endTime=1705327230000' });
     });
     it('lists the fills with price, size, notional, time and fee, in time order', () => {
         expect(r.fills.map(f => [f.tradeId, f.notional, f.feeUsd])).toEqual([['t1', 12000, 9], ['t2', 8002, 6]]);

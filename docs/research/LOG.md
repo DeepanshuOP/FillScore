@@ -801,3 +801,73 @@ The four answers, verbatim (rules 1.1.0, groq/qwen/qwen3.8-27b, recorded 2026-11
   scoring v1 file, recorded output, golden set or evidence pack changed. Four existing tests were rewritten to follow the ordered changes (selector and
   expectation changes, each with its reason in the spec).
 
+## AN. Design v5 (orders of 2026-11-24)
+
+### Step 0. Binance 418 on the smoke run of 178ed95
+
+Reported: "HTTP 418 from Binance just now (binance_sent), Retry-After 418 s". `binance_sent` means the probe's own request to
+`api.binance.com/api/v3/time` (weight 1) was answered 418; the governor held no earlier pause (otherwise the line reads `governor_paused`).
+(Retry-After 418 equal to the status code is a coincidence of the ban length, about 7 minutes.)
+
+Sources read 2026-11-23:
+- Binance, "Market Data Only URLs", https://github.com/binance/binance-spot-api-docs/blob/master/faqs/market_data_only.md: the REST endpoints
+  served on `data-api.binance.vision` are aggTrades, avgPrice, depth, **exchangeInfo, klines**, ping, ticker (4 kinds), **time**, trades,
+  uiKlines; no key needed; user data is not served there. The page does not say whether that host shares api.binance.com's IP limits.
+- Render, "Outbound IP addresses", https://render.com/docs/outbound-ip-addresses: "Outbound IP ranges are shared across all services in the
+  same region." Dedicated outbound IPs are a paid workspace add-on.
+- Binance limits page (read 2026-11-22, §AK 0c): limits are per IP; 418 = auto-ban after continuing past 429s; bans scale from 2 minutes
+  to 3 days for repeat offenders.
+
+Every production caller of api.binance.com at 178ed95 (weights from the Binance docs cited in each file):
+
+| Caller (file:line at 178ed95) | Endpoint, weight | Schedule | After this step |
+|---|---|---|---|
+| Reachability probe, `backend/src/services/ExchangeReachability.ts:5,49` | `GET /api/v3/time`, 1 | only when `GET /api/preflight/exchanges` is requested; 60 s cache; smoke runs it once | **data-api.binance.vision**, market-data governor; api.binance.com state read from its governor, not probed |
+| Klines, `backend/src/services/MarketDataService.ts:25` | `GET /api/v3/klines`, 2 | during a sync's enrichment and the audit's feeUsd retry (`routes/audit.ts:99`), cached per minute in Mongo | **data-api.binance.vision**, market-data governor |
+| History sync exchangeInfo, `backend/src/services/BinanceHistorySync.ts:227` (base `:22`) | `GET /api/v3/exchangeInfo`, 20 | first call of each sync (manual, or scheduled: at most 3 stale accounts a tick, >24 h old) | **data-api.binance.vision**, no key header, market-data governor |
+| History sync, signed, `BinanceHistorySync.ts:183,212,230` | `myTrades` 20, `account` 20 | each sync | stays (signed) |
+| Orders and commission, `services/orders/binanceOrders.ts:104,127` (via the sync's signed call) | `allOrders` (weight in file), `account/commission` 20 | each sync | stays (signed) |
+| `BinanceClient.ts:35,72,135` | `myTrades` 20, `account/commission` 20 | each sync | stays (signed) |
+| Key validation, `services/keyValidation.ts:41` | `GET /sapi/v1/account/apiRestrictions`, 1 | key submission and the start of each sync | stays (signed) |
+| Vercel `frontend/app/api/preflight/route.ts:13` (a throwaway diagnostic, public, `force-dynamic`, no cache) | `GET /api/v3/time`, 1 | every visit to `/api/preflight`, from Vercel's IPs | **data-api.binance.vision** |
+| ml-service aggTrades, `ml-service/measure/data/rest.py:20` | `GET /api/v3/aggTrades`, 4 per page | after a real account's sync (measurement), each CSV check, each "Try the sample file" (3 an hour per IP, 200 a day) | **data-api.binance.vision**; new refs carry `source: data-api.binance.vision` |
+| ml-service klines, `ml-service/measure/data/klines.py:35` | `GET /api/v3/klines`, 2 | after a real account's sync (cost vs expected), cached per finished hour, 40 requests a job at most | **data-api.binance.vision** |
+| Not production: `backend/src/scripts/probeBinanceKey.ts`, `ml-service/whale/aggtrades_window.py` (scripts), `orderReplay.ts:10` (builds a link, sends nothing; the link now opens data-api, old refs included) | | | |
+
+**Could our own traffic explain the ban? No, on the evidence in the code.** No real user trade has been scored, so the scheduler finds no
+stale real account and sends nothing; the backend's only api.binance.com request in steady state was the probe, at most one of weight 1
+a minute. The ml-service's heaviest public path is the sample file: 24 windows, a few aggTrades pages each at weight 4, about 100 weight in
+~9 s, capped at 3 runs an hour per visitor IP and 200 a day overall; the documented limit is 6000 a minute. A 418 needs requests that
+continue after 429s, and every caller stops on a 429 (governor, kline job stop, ml `gate` pause). With Render's outbound ranges shared by
+every service in the Frankfurt region, the IP that answered 418 was most likely banned by other tenants' traffic. This cannot be proven from
+the repo; Render logs can only rule our services in or out.
+
+**What a real user's sync shows while api.binance.com bans the IP:** the signed calls still go to api.binance.com, so the ban still stops
+them. History sync: the governor refuses (`BinanceBanError`) or the response is 418, the sync stops with `partialReason: 'banned'` and the
+message "Binance temporarily blocked this IP for too many requests, so the sync stopped early. Sync again later." (`BinanceHistorySync.ts`
+message map); trades already stored stay. `BinanceClient` calls raise `BinanceApiError(..., 418)`. Connecting a key during a ban fails as
+`network_error` (`keyValidation.ts`: the generic connection-error message; it does not say "banned"). What changes now: klines and
+exchangeInfo no longer share the ban, so enrichment of stored trades (arrival price, fee in USD) keeps working, and the smoke check reports
+market data (data-api) and the account API (governor state) on two lines instead of one ambiguous FAIL.
+
+**For Deepanshu in the Render logs** (backend `fillscore-api`, around the smoke time): any `[resync] started` or `[SyncJob]` line before the
+smoke (if none, our backend sent nothing but the probe); `[keyValidation] Binance request failed: BinanceBanError` or `Binance rejected:
+status=418`; `binance_http_418`; in `fillscore-ml`, `KlineUnavailable` or a `market_data_busy` 503 and `POST /internal/csv-sample` counts in
+the hour before. Also the service's outbound IP (Render dashboard, Connect > Outbound) to compare with the ban if it repeats. A dedicated
+outbound IP is a paid option (needs his approval; not proposed as needed).
+
+Tests (red first: 21 backend and 4 ml-service failures before the code, then green): `ExchangeReachabilityGovernor.test.ts` rewritten (8:
+four targets and no request to api.binance.com; api.binance.com banned with Retry-After 418 at T0, 30 s later market data still reachable and
+`accountApi` 418 with 418 - 30 = 388 s left; no pause; market-data ban 120 s, 30 s later 90 s and no request; 429 Retry-After 7, ceil(4.5) =
+5 s; a data-api 418 Retry-After 600 bans market data only; no Retry-After gives null and 120 s; weight 1 on the market-data governor, 0 on the
+account one); `ExchangeReachability.test.ts` (5 targets became 4, the URL, the Binance keys gain `host` and `accountApi`; case 13 removed with
+the `binance-data` entry); `BinanceHistorySync.test.ts` (2 new: exchangeInfo on data-api without the key header, signed calls on api.binance.com
+with it; an api.binance.com ban still lets exchangeInfo go and stops at account as `banned`; the 50% wait case moved its 2990 header to the
+account answer, because exchangeInfo's header now counts on the other governor); `MarketDataServiceHost.test.ts` (2: host; a ban on
+api.binance.com does not stop klines, weight 2 on the market-data governor and 0 on the account one); `orderReplay.test.ts` (the link host; a
+`data-api.binance.vision` ref gives the same link and label); ml `test_data_rest_cache.py` (hosts and sources), `test_klines.py`,
+`test_kline_hook.py` (source names); frontend `app/api/preflight/preflight.test.ts` (host). `smokeBinance.test.ts` (3 new for the account API
+line; the script line was written before these tests, not red-first). The full backend run then failed one existing case,
+`routes/__tests__/auditRun.test.ts` ("the stored key signed the history requests" read the first fetch call's key header; the first call is
+now the public exchangeInfo without a key): it now reads the first api.binance.com call.
+

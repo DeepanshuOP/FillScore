@@ -1,8 +1,12 @@
 import axios from 'axios';
 import { assertAllowedUrl } from './exchangeEgress';
-import { BinanceGovernor, SettledResponse, binanceGovernor } from './binanceGovernor';
+import { BinanceGovernor, SettledResponse, binanceGovernor, binanceDataGovernor } from './binanceGovernor';
 
-const BINANCE_TIME_URL = 'https://api.binance.com/api/v3/time';
+// Design v5 step 0 (2026-11-23): the Binance probe goes to the public market-data host. Binance lists GET /api/v3/time on
+// data-api.binance.vision (https://github.com/binance/binance-spot-api-docs/blob/master/faqs/market_data_only.md, read
+// 2026-11-23). api.binance.com (signed account calls only) is never probed: its state is read from its governor.
+const BINANCE_DATA_HOST = 'data-api.binance.vision';
+const BINANCE_TIME_URL = `https://${BINANCE_DATA_HOST}/api/v3/time`;
 type Probed = ExchangeReachabilityResult & { retryAfterHeader?: string | null };
 
 /** Retry-After from axios headers (AxiosHeaders has a case-insensitive get) or a plain object; null when absent. */
@@ -15,7 +19,7 @@ function retryAfterOf(h: unknown): string | null {
     return k === undefined || bag[k] == null ? null : String(bag[k]);
 }
 
-export type ExchangeName = 'binance' | 'binance-data' | 'bybit' | 'bybit-alt' | 'okx';
+export type ExchangeName = 'binance' | 'bybit' | 'bybit-alt' | 'okx';
 
 export type ReachabilityStatus =
     | 'reachable'
@@ -32,15 +36,29 @@ export interface ExchangeReachabilityResult {
     latencyMs: number;
     checkedAt: string;
     detail: string;
-    /** api.binance.com only (it shares the governor with every Binance caller; fifth order, step 0c):
+    /** Binance only: the host this entry probed (data-api.binance.vision). */
+    host?: string;
+    /** Binance only (the market-data governor; fifth order step 0c, design v5 step 0):
      *  'binance_sent' = this probe sent the request and httpStatus is Binance's answer;
-     *  'governor_paused' = nothing was sent because the governor holds a pause from an earlier 418/429 (httpStatus is
-     *  that earlier status). */
+     *  'governor_paused' = nothing was sent because the market-data governor holds a pause from an earlier 418/429
+     *  (httpStatus is that earlier status). */
     source?: 'binance_sent' | 'governor_paused';
-    /** Seconds the governor will still refuse or hold api.binance.com requests (0 when none). */
+    /** Seconds the market-data governor will still refuse or hold requests (0 when none). */
     pauseRemainingS?: number;
     /** Retry-After in seconds as Binance sent it (the earlier block's for 'governor_paused'); null when absent. */
     retryAfterS?: number | null;
+    /** Binance only: api.binance.com (signed account calls) as its governor sees it. No request is sent to probe it. */
+    accountApi?: AccountApiState;
+}
+
+export interface AccountApiState {
+    host: 'api.binance.com';
+    /** true while the account governor refuses (418) or holds (429) every signed call */
+    paused: boolean;
+    /** the 418/429 that set the pause; null when there is none */
+    httpStatus: 418 | 429 | null;
+    pauseRemainingS: number;
+    retryAfterS: number | null;
 }
 
 const TIMEOUT_MS = 5000;
@@ -50,7 +68,6 @@ const PROBE_TARGETS: { exchange: ExchangeName; url: string }[] = [
     { exchange: 'binance', url: BINANCE_TIME_URL },
     { exchange: 'bybit', url: 'https://api.bybit.com/v5/market/time' },
     { exchange: 'okx', url: 'https://www.okx.com/api/v5/public/time' },
-    { exchange: 'binance-data', url: 'https://data-api.binance.vision/api/v3/time' },
     { exchange: 'bybit-alt', url: 'https://api.bytick.com/v5/market/time' },
 ];
 
@@ -122,31 +139,45 @@ const TIME_WEIGHT = 1;   // GET /api/v3/time, IP weight 1 (https://developers.bi
 
 const pauseMs = (gov: BinanceGovernor) => { const s = gov.snapshot(); return Math.max(s.bannedForMs, s.pausedForMs); };
 
+/** api.binance.com as its governor sees it (a 418 or 429 answered to a signed call); nothing is sent. */
+function accountApiState(acct: BinanceGovernor): AccountApiState {
+    const s = acct.snapshot();
+    const waiting = pauseMs(acct);
+    return {
+        host: 'api.binance.com', paused: waiting > 0,
+        httpStatus: waiting > 0 ? (s.bannedForMs > 0 ? 418 : 429) : null,
+        pauseRemainingS: Math.ceil(waiting / 1000),
+        retryAfterS: waiting > 0 ? s.lastBlock?.retryAfterS ?? null : null,
+    };
+}
+
 /**
- * The api.binance.com probe goes through the shared governor: during a pause it sends nothing (no weight spent, the ban
- * is not extended) and says so; otherwise it sends and records the answer, so a 418/429 it receives pauses every caller.
- * data-api.binance.vision is probed plainly: the docs do not say whether it shares api.binance.com's IP limits.
+ * The Binance probe goes to data-api.binance.vision through the market-data governor: during a pause it sends nothing (no
+ * weight spent, the ban is not extended) and says so; otherwise it sends and records the answer, so a 418/429 it receives
+ * pauses the market-data callers (klines, exchangeInfo), not the signed account calls.
  */
-async function probeBinance(gov: BinanceGovernor): Promise<ExchangeReachabilityResult> {
-    const waiting = pauseMs(gov);
+async function probeBinance(data: BinanceGovernor, acct: BinanceGovernor): Promise<ExchangeReachabilityResult> {
+    const accountApi = accountApiState(acct);
+    const waiting = pauseMs(data);
     if (waiting > 0) {
-        const s = gov.snapshot();
+        const s = data.snapshot();
         const code = s.bannedForMs > 0 ? 418 : 429;
         return {
             exchange: 'binance', status: 'rate_limited', httpStatus: code, latencyMs: 0, checkedAt: new Date().toISOString(),
-            detail: `HTTP ${code} received earlier; paused, no request sent`,
-            source: 'governor_paused', pauseRemainingS: Math.ceil(waiting / 1000), retryAfterS: s.lastBlock?.retryAfterS ?? null,
+            detail: `HTTP ${code} received earlier; paused, no request sent`, host: BINANCE_DATA_HOST,
+            source: 'governor_paused', pauseRemainingS: Math.ceil(waiting / 1000), retryAfterS: s.lastBlock?.retryAfterS ?? null, accountApi,
         };
     }
-    const r = await probeOne('binance', BINANCE_TIME_URL, (res) => gov.observe(TIME_WEIGHT, res));
+    const r = await probeOne('binance', BINANCE_TIME_URL, (res) => data.observe(TIME_WEIGHT, res));
     const header = Number(r.retryAfterHeader);
     const { retryAfterHeader: _h, ...out } = r;
-    return { ...out, source: 'binance_sent', pauseRemainingS: Math.ceil(pauseMs(gov) / 1000), retryAfterS: Number.isFinite(header) && header > 0 ? header : null };
+    return { ...out, host: BINANCE_DATA_HOST, source: 'binance_sent', pauseRemainingS: Math.ceil(pauseMs(data) / 1000),
+        retryAfterS: Number.isFinite(header) && header > 0 ? header : null, accountApi };
 }
 
-export async function probeAllExchanges(gov: BinanceGovernor = binanceGovernor): Promise<ExchangeReachabilityResult[]> {
+export async function probeAllExchanges(data: BinanceGovernor = binanceDataGovernor, acct: BinanceGovernor = binanceGovernor): Promise<ExchangeReachabilityResult[]> {
     const settled = await Promise.allSettled(PROBE_TARGETS.map(({ exchange, url }) =>
-        exchange === 'binance' ? probeBinance(gov) : probeOne(exchange, url).then(({ retryAfterHeader: _h, ...r }) => r)));
+        exchange === 'binance' ? probeBinance(data, acct) : probeOne(exchange, url).then(({ retryAfterHeader: _h, ...r }) => r)));
 
     return settled.map((outcome, i) => {
         if (outcome.status === 'fulfilled') return outcome.value;

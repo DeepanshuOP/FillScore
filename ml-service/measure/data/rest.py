@@ -17,8 +17,11 @@ from typing import Callable
 from .aggtrades import AggTradeWindow, MarketDataRef
 from .vision import check_names
 
-URL = "https://api.binance.com/api/v3/aggTrades"
-SOURCE = "api.binance.com"
+# Public market-data host (design v5 step 0, 2026-11-23): Binance lists GET /api/v3/aggTrades on data-api.binance.vision
+# (https://github.com/binance/binance-spot-api-docs/blob/master/faqs/market_data_only.md, read 2026-11-23). Windows stored
+# before the move keep source "api.binance.com"; the same endpoint and rows on either host give the same rows_sha256.
+URL = "https://data-api.binance.vision/api/v3/aggTrades"
+SOURCE = "data-api.binance.vision"
 DATASET = "api/v3/aggTrades"
 WEIGHT_PER_CALL = 4
 PAGE_LIMIT = 1000

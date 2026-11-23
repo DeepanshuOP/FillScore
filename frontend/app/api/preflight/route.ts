@@ -10,7 +10,8 @@ export const dynamic = 'force-dynamic';
 const TIMEOUT_MS = 5000;
 
 const ENDPOINTS = [
-  { exchange: 'binance', url: 'https://api.binance.com/api/v3/time' },
+  // design v5 step 0: the public market-data host, so this uncached route never adds traffic to api.binance.com
+  { exchange: 'binance', url: 'https://data-api.binance.vision/api/v3/time' },
   { exchange: 'bybit', url: 'https://api.bybit.com/v5/market/time' },
   { exchange: 'okx', url: 'https://www.okx.com/api/v5/public/time' },
 ] as const;

@@ -66,6 +66,31 @@ describe('smoke_prod.sh: the Binance reachability line', () => {
     expect(line).toMatch(/^FAIL\s+backend reaches Binance\s+status rate_limited, HTTP 418, source not reported by this backend$/);
   }, 60000);
 
+  // Design v5 step 0: a second line for api.binance.com, read from the governor (accountApi), never probed.
+  function acctLine(base: string): Promise<string> {
+    return new Promise((resolve) => {
+      execFile('bash', [script, base, base, base], { env: { ...process.env, SMOKE_WAKE_TIMEOUT: '2', SMOKE_TIMEOUT: '2' } }, (_e, stdout) =>
+        resolve(stdout.split('\n').find((l) => l.includes('Binance account API')) ?? ''));
+    });
+  }
+
+  it('account API banned: FAIL with the status a signed call received, 418 - 30 = 388 s left, Retry-After 418 s', async () => {
+    s = await serve({ status: 'reachable', httpStatus: 200, source: 'binance_sent', pauseRemainingS: 0, retryAfterS: null,
+      accountApi: { host: 'api.binance.com', paused: true, httpStatus: 418, pauseRemainingS: 388, retryAfterS: 418 } });
+    expect(await acctLine(url(s))).toMatch(/^FAIL\s+Binance account API \(signed sync\)\s+api\.binance\.com: HTTP 418 received by a signed call, nothing sent, Retry-After 418 s as received, pause 388 s left$/);
+  }, 60000);
+
+  it('account API without a pause: PASS, says it was not probed', async () => {
+    s = await serve({ status: 'reachable', httpStatus: 200, source: 'binance_sent', pauseRemainingS: 0, retryAfterS: null,
+      accountApi: { host: 'api.binance.com', paused: false, httpStatus: null, pauseRemainingS: 0, retryAfterS: null } });
+    expect(await acctLine(url(s))).toMatch(/^PASS\s+Binance account API \(signed sync\)\s+api\.binance\.com: no pause held \(not probed; read from the governor\)$/);
+  }, 60000);
+
+  it('a backend without accountApi: FAIL, not reported', async () => {
+    s = await serve({ status: 'reachable', httpStatus: 200 });
+    expect(await acctLine(url(s))).toMatch(/not reported by this backend/);
+  }, 60000);
+
   it('reachable: PASS unchanged', async () => {
     s = await serve({ status: 'reachable', httpStatus: 200, source: 'binance_sent', pauseRemainingS: 0, retryAfterS: null });
     const { line } = await binanceLine(url(s));

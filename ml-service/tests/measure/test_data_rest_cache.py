@@ -80,7 +80,18 @@ def test_rest_ref_hash_is_stable_and_content_bound():
     b = rest.fetch_window("BTCUSDT", t0, t0 + 100, FakeApi(10, t0))
     c = rest.fetch_window("BTCUSDT", t0, t0 + 100, FakeApi(11, t0))
     assert a.refs[0].sha256 == b.refs[0].sha256 != c.refs[0].sha256
-    assert a.refs[0].source == "api.binance.com" and a.refs[0].dataset == "api/v3/aggTrades" and a.refs[0].date is None
+    assert a.refs[0].source == "data-api.binance.vision" and a.refs[0].dataset == "api/v3/aggTrades" and a.refs[0].date is None
+
+
+def test_public_market_data_hosts_are_data_api_binance_vision():
+    # Design v5 step 0 (2026-11-23): Binance lists GET /api/v3/aggTrades and GET /api/v3/klines among the endpoints served on
+    # data-api.binance.vision (https://github.com/binance/binance-spot-api-docs/blob/master/faqs/market_data_only.md,
+    # read 2026-11-23). No production market-data call goes to api.binance.com (that host serves the signed account calls).
+    from urllib.parse import urlparse
+    from measure.data import klines
+    assert urlparse(rest.URL).netloc == "data-api.binance.vision" and urlparse(rest.URL).path == "/api/v3/aggTrades"
+    assert urlparse(klines.URL).netloc == "data-api.binance.vision" and urlparse(klines.URL).path == "/api/v3/klines"
+    assert rest.SOURCE == klines.SOURCE == "data-api.binance.vision"
 
 
 def test_rest_page_cap_raises():

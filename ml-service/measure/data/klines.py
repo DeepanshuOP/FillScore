@@ -32,8 +32,10 @@ import numpy as np
 from .aggtrades import MarketDataRef
 from .vision import check_names
 
-URL = "https://api.binance.com/api/v3/klines"
-SOURCE = "api.binance.com"
+# Public market-data host (design v5 step 0, 2026-11-23): Binance lists GET /api/v3/klines on data-api.binance.vision
+# (https://github.com/binance/binance-spot-api-docs/blob/master/faqs/market_data_only.md, read 2026-11-23).
+URL = "https://data-api.binance.vision/api/v3/klines"
+SOURCE = "data-api.binance.vision"
 DATASET = "api/v3/klines"
 WEIGHT_PER_CALL = 2
 WEIGHT_LIMIT_1M = 6000
