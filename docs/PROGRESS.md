@@ -4,7 +4,11 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24: design v5 (step 0 Binance 418 fix, audit, research, proposal, prototype), local commits
 
-- **Next concrete action: step 2, finish `docs/design/v5/REFERENCES.md` (sites measured, libraries read) and commit it.**
+- **Next concrete action: step 3 (features, `docs/design/v5/FEATURES.md`), then step 4 (the not-computed policy).**
+- **Step 2: done.** `docs/design/v5/REFERENCES.md`: 21 public pages captured and measured at 1440 and on a Pixel 8 (`e2e-shots/refs5.ts`,
+  `refs/measures.json`; Koinly and CoinTracker desktop pages were Cloudflare checks, deleted); the cal.com app seen through Deepanshu's
+  login (described in words, captures private); 16 libraries read with license, version and size (one read-only Sonnet research
+  subagent). Not verified, so not adopted: Origin UI, Aceternity and 21st.dev licenses; Tremor on React 19.
 - **Step 1: done.** `docs/design/v5/AUDIT.md`: 200 states (20 pages x 5 viewports x light/dark), 0 errors; smallest text 10 px, 3,670 text
   nodes under 12 px on 14 pages, 1,184 letter-spaced caps runs (280 under 12 px), axe contrast 0, 588 phone taps under 44 px; Lighthouse
   mobile 59 / 66 / 50 / 49 (LCP 4.3 / 4.2 / 8.1 / 8.1 s) on `/`, `/demo`, `/app`, `/app/orders`. Top finding: the landing hero's receipt

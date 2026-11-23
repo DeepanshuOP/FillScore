@@ -1,0 +1,737 @@
+[
+ {
+  "name": "cal-home",
+  "group": "cal.com",
+  "url": "https://cal.com/",
+  "viewport": "1440",
+  "minFontPx": 11,
+  "under12": 3,
+  "textNodes": 455,
+  "capsRuns": 1,
+  "capsUnder12": 1,
+  "bodyPx": 16,
+  "commonSizes": [
+   "13px:1517",
+   "14px:1406",
+   "12px:547"
+  ]
+ },
+ {
+  "name": "cal-home",
+  "group": "cal.com",
+  "url": "https://cal.com/",
+  "viewport": "phone",
+  "minFontPx": 8.1,
+  "under12": 7,
+  "textNodes": 419,
+  "capsRuns": 1,
+  "capsUnder12": 1,
+  "smallTargets": 208,
+  "bodyPx": 16,
+  "commonSizes": [
+   "14px:589",
+   "13px:455",
+   "12px:229"
+  ]
+ },
+ {
+  "name": "cal-pricing",
+  "group": "cal.com",
+  "url": "https://cal.com/pricing",
+  "viewport": "1440",
+  "minFontPx": 10,
+  "under12": 11,
+  "textNodes": 386,
+  "capsRuns": 2,
+  "capsUnder12": 2,
+  "bodyPx": 16,
+  "commonSizes": [
+   "15px:1458",
+   "14px:433",
+   "16px:210"
+  ]
+ },
+ {
+  "name": "cal-pricing",
+  "group": "cal.com",
+  "url": "https://cal.com/pricing",
+  "viewport": "phone",
+  "minFontPx": 10,
+  "under12": 11,
+  "textNodes": 370,
+  "capsRuns": 2,
+  "capsUnder12": 2,
+  "smallTargets": 248,
+  "bodyPx": 16,
+  "commonSizes": [
+   "15px:888",
+   "14px:228",
+   "16px:137"
+  ]
+ },
+ {
+  "name": "cal-docs",
+  "group": "cal.com",
+  "url": "https://cal.com/docs",
+  "viewport": "1440",
+  "minFontPx": 12,
+  "under12": 0,
+  "textNodes": 169,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:2193",
+   "14px:1719",
+   "24px:111"
+  ]
+ },
+ {
+  "name": "cal-docs",
+  "group": "cal.com",
+  "url": "https://cal.com/docs",
+  "viewport": "phone",
+  "minFontPx": 14,
+  "under12": 0,
+  "textNodes": 88,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 28,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:1787",
+   "14px:121",
+   "24px:63"
+  ]
+ },
+ {
+  "name": "linear-home",
+  "group": "app shells",
+  "url": "https://linear.app/",
+  "viewport": "1440",
+  "minFontPx": 10,
+  "under12": 26,
+  "textNodes": 620,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "12px:527",
+   "15px:379",
+   "13px:376"
+  ]
+ },
+ {
+  "name": "linear-home",
+  "group": "app shells",
+  "url": "https://linear.app/",
+  "viewport": "phone",
+  "minFontPx": 11,
+  "under12": 3,
+  "textNodes": 180,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 83,
+  "bodyPx": 16,
+  "commonSizes": [
+   "12px:908",
+   "15px:530",
+   "13px:266"
+  ]
+ },
+ {
+  "name": "vercel-home",
+  "group": "app shells",
+  "url": "https://vercel.com/",
+  "viewport": "1440",
+  "minFontPx": 11,
+  "under12": 5,
+  "textNodes": 152,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:322",
+   "14px:319",
+   "20px:309"
+  ]
+ },
+ {
+  "name": "vercel-home",
+  "group": "app shells",
+  "url": "https://vercel.com/",
+  "viewport": "phone",
+  "minFontPx": 11,
+  "under12": 5,
+  "textNodes": 141,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 90,
+  "bodyPx": 16,
+  "commonSizes": [
+   "18px:309",
+   "14px:216",
+   "48px:166"
+  ]
+ },
+ {
+  "name": "stripe-dashboard-docs",
+  "group": "app shells",
+  "url": "https://docs.stripe.com/dashboard/basics",
+  "viewport": "1440",
+  "minFontPx": 12,
+  "under12": 0,
+  "textNodes": 378,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 14,
+  "commonSizes": [
+   "16px:4383",
+   "14px:1305",
+   "12px:63"
+  ]
+ },
+ {
+  "name": "stripe-dashboard-docs",
+  "group": "app shells",
+  "url": "https://docs.stripe.com/dashboard/basics",
+  "viewport": "phone",
+  "minFontPx": 12,
+  "under12": 0,
+  "textNodes": 293,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 19,
+  "bodyPx": 14,
+  "commonSizes": [
+   "16px:2487",
+   "14px:239",
+   "24px:57"
+  ]
+ },
+ {
+  "name": "mercury-home",
+  "group": "app shells",
+  "url": "https://mercury.com/",
+  "viewport": "1440",
+  "minFontPx": 12,
+  "under12": 0,
+  "textNodes": 148,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:651",
+   "12px:276",
+   "21px:83"
+  ]
+ },
+ {
+  "name": "mercury-home",
+  "group": "app shells",
+  "url": "https://mercury.com/",
+  "viewport": "phone",
+  "minFontPx": 10,
+  "under12": 68,
+  "textNodes": 149,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 86,
+  "bodyPx": 16,
+  "commonSizes": [
+   "14px:628",
+   "10px:276",
+   "16px:183"
+  ]
+ },
+ {
+  "name": "ramp-home",
+  "group": "app shells",
+  "url": "https://ramp.com/",
+  "viewport": "1440",
+  "minFontPx": 10,
+  "under12": 9,
+  "textNodes": 198,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "24px:216",
+   "10px:193",
+   "14px:139"
+  ]
+ },
+ {
+  "name": "ramp-home",
+  "group": "app shells",
+  "url": "https://ramp.com/",
+  "viewport": "phone",
+  "minFontPx": 10,
+  "under12": 9,
+  "textNodes": 144,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 48,
+  "bodyPx": 16,
+  "commonSizes": [
+   "10px:193",
+   "22px:104",
+   "15px:76"
+  ]
+ },
+ {
+  "name": "dub-home",
+  "group": "app shells",
+  "url": "https://dub.co/",
+  "viewport": "1440",
+  "minFontPx": 7,
+  "under12": 45,
+  "textNodes": 297,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "12px:585",
+   "30px:313",
+   "14px:291"
+  ]
+ },
+ {
+  "name": "dub-home",
+  "group": "app shells",
+  "url": "https://dub.co/",
+  "viewport": "phone",
+  "minFontPx": 5.1,
+  "under12": 36,
+  "textNodes": 273,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 92,
+  "bodyPx": 16,
+  "commonSizes": [
+   "12px:401",
+   "30px:334",
+   "16px:239"
+  ]
+ },
+ {
+  "name": "resend-home",
+  "group": "app shells",
+  "url": "https://resend.com/",
+  "viewport": "1440",
+  "minFontPx": 12,
+  "under12": 0,
+  "textNodes": 927,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "14px:514",
+   "18px:332",
+   "16px:42"
+  ]
+ },
+ {
+  "name": "resend-home",
+  "group": "app shells",
+  "url": "https://resend.com/",
+  "viewport": "phone",
+  "minFontPx": 12,
+  "under12": 0,
+  "textNodes": 466,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 37,
+  "bodyPx": 16,
+  "commonSizes": [
+   "14px:455",
+   "16px:374",
+   "64px:19"
+  ]
+ },
+ {
+  "name": "plausible-live",
+  "group": "readable data",
+  "url": "https://plausible.io/plausible.io",
+  "viewport": "1440",
+  "minFontPx": 12,
+  "under12": 0,
+  "textNodes": 143,
+  "capsRuns": 4,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "14px:484",
+   "16px:372",
+   "12px:316"
+  ]
+ },
+ {
+  "name": "plausible-live",
+  "group": "readable data",
+  "url": "https://plausible.io/plausible.io",
+  "viewport": "phone",
+  "minFontPx": 12,
+  "under12": 0,
+  "textNodes": 120,
+  "capsRuns": 4,
+  "capsUnder12": 0,
+  "smallTargets": 35,
+  "bodyPx": 16,
+  "commonSizes": [
+   "12px:275",
+   "14px:187",
+   "19px:25"
+  ]
+ },
+ {
+  "name": "posthog-home",
+  "group": "readable data",
+  "url": "https://posthog.com/",
+  "viewport": "1440",
+  "minFontPx": 9,
+  "under12": 58,
+  "textNodes": 402,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "15px:2290",
+   "14px:1152",
+   "12px:966"
+  ]
+ },
+ {
+  "name": "posthog-home",
+  "group": "readable data",
+  "url": "https://posthog.com/",
+  "viewport": "phone",
+  "minFontPx": 8,
+  "under12": 87,
+  "textNodes": 336,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 38,
+  "bodyPx": 16,
+  "commonSizes": [
+   "14px:837",
+   "18px:728",
+   "8px:636"
+  ]
+ },
+ {
+  "name": "tradingview-chart",
+  "group": "readable data",
+  "url": "https://www.tradingview.com/chart/",
+  "viewport": "1440",
+  "minFontPx": 10,
+  "under12": 52,
+  "textNodes": 221,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 14,
+  "commonSizes": [
+   "13px:559",
+   "12px:520",
+   "14px:461"
+  ]
+ },
+ {
+  "name": "tradingview-chart",
+  "group": "readable data",
+  "url": "https://www.tradingview.com/chart/",
+  "viewport": "phone",
+  "minFontPx": 10,
+  "under12": 3,
+  "textNodes": 21,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 48,
+  "bodyPx": 14,
+  "commonSizes": [
+   "14px:320",
+   "12px:108",
+   "13px:32"
+  ]
+ },
+ {
+  "name": "koinly-home",
+  "group": "readable data",
+  "url": "https://koinly.io/",
+  "viewport": "1440",
+  "minFontPx": 12,
+  "under12": 0,
+  "textNodes": 8,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:140",
+   "12px:67",
+   "24px:32"
+  ]
+ },
+ {
+  "name": "koinly-home",
+  "group": "readable data",
+  "url": "https://koinly.io/",
+  "viewport": "phone",
+  "minFontPx": 11.9,
+  "under12": 1,
+  "textNodes": 116,
+  "capsRuns": 1,
+  "capsUnder12": 1,
+  "smallTargets": 15,
+  "bodyPx": 17,
+  "commonSizes": [
+   "17px:585",
+   "13px:289",
+   "15px:242"
+  ]
+ },
+ {
+  "name": "cointracker-home",
+  "group": "readable data",
+  "url": "https://www.cointracker.io/",
+  "viewport": "1440",
+  "minFontPx": 12,
+  "under12": 0,
+  "textNodes": 8,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:140",
+   "12px:67",
+   "24px:32"
+  ]
+ },
+ {
+  "name": "cointracker-home",
+  "group": "readable data",
+  "url": "https://www.cointracker.io/",
+  "viewport": "phone",
+  "minFontPx": 3.5,
+  "under12": 23,
+  "textNodes": 283,
+  "capsRuns": 11,
+  "capsUnder12": 0,
+  "smallTargets": 27,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:536",
+   "14px:410",
+   "18px:143"
+  ]
+ },
+ {
+  "name": "talos-tca",
+  "group": "crypto TCA",
+  "url": "https://www.talos.com/",
+  "viewport": "1440",
+  "minFontPx": 10,
+  "under12": 6,
+  "textNodes": 78,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "20px:492",
+   "15px:470",
+   "12px:299"
+  ]
+ },
+ {
+  "name": "talos-tca",
+  "group": "crypto TCA",
+  "url": "https://www.talos.com/",
+  "viewport": "phone",
+  "minFontPx": 10,
+  "under12": 6,
+  "textNodes": 88,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 56,
+  "bodyPx": 16,
+  "commonSizes": [
+   "15px:446",
+   "16px:317",
+   "12px:299"
+  ]
+ },
+ {
+  "name": "kaiko-home",
+  "group": "crypto TCA",
+  "url": "https://www.kaiko.com/",
+  "viewport": "1440",
+  "minFontPx": 14,
+  "under12": 0,
+  "textNodes": 152,
+  "capsRuns": 15,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:2099",
+   "20px:152",
+   "14px:64"
+  ]
+ },
+ {
+  "name": "kaiko-home",
+  "group": "crypto TCA",
+  "url": "https://www.kaiko.com/",
+  "viewport": "phone",
+  "minFontPx": 14,
+  "under12": 0,
+  "textNodes": 143,
+  "capsRuns": 15,
+  "capsUnder12": 0,
+  "smallTargets": 43,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:1530",
+   "14px:64",
+   "40px:54"
+  ]
+ },
+ {
+  "name": "amberdata-home",
+  "group": "crypto TCA",
+  "url": "https://www.amberdata.io/",
+  "viewport": "1440",
+  "minFontPx": 14,
+  "under12": 0,
+  "textNodes": 95,
+  "capsRuns": 6,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:5206",
+   "20px:218",
+   "14px:165"
+  ]
+ },
+ {
+  "name": "amberdata-home",
+  "group": "crypto TCA",
+  "url": "https://www.amberdata.io/",
+  "viewport": "phone",
+  "minFontPx": 14,
+  "under12": 0,
+  "textNodes": 86,
+  "capsRuns": 6,
+  "capsUnder12": 0,
+  "smallTargets": 25,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:3601",
+   "20px:167",
+   "14px:141"
+  ]
+ },
+ {
+  "name": "bestex-home",
+  "group": "crypto TCA",
+  "url": "https://www.bestexresearch.com/",
+  "viewport": "1440",
+  "minFontPx": 14,
+  "under12": 0,
+  "textNodes": 86,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:4668",
+   "14px:3125",
+   "22px:821"
+  ]
+ },
+ {
+  "name": "bestex-home",
+  "group": "crypto TCA",
+  "url": "https://www.bestexresearch.com/",
+  "viewport": "phone",
+  "minFontPx": 12,
+  "under12": 0,
+  "textNodes": 80,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 59,
+  "bodyPx": 16,
+  "commonSizes": [
+   "16px:4591",
+   "13px:2268",
+   "18px:1073"
+  ]
+ },
+ {
+  "name": "awwwards-saas",
+  "group": "awwwards",
+  "url": "https://www.awwwards.com/websites/saas/",
+  "viewport": "1440",
+  "minFontPx": 7.5,
+  "under12": 12,
+  "textNodes": 94,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 14,
+  "commonSizes": [
+   "14px:912",
+   "13px:736",
+   "15px:530"
+  ]
+ },
+ {
+  "name": "awwwards-saas",
+  "group": "awwwards",
+  "url": "https://www.awwwards.com/websites/saas/",
+  "viewport": "phone",
+  "minFontPx": 7.5,
+  "under12": 10,
+  "textNodes": 81,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 20,
+  "bodyPx": 14,
+  "commonSizes": [
+   "14px:792",
+   "15px:163",
+   "10px:38"
+  ]
+ },
+ {
+  "name": "awwwards-fintech",
+  "group": "awwwards",
+  "url": "https://www.awwwards.com/websites/finance/",
+  "viewport": "1440",
+  "minFontPx": 7.5,
+  "under12": 34,
+  "textNodes": 131,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "bodyPx": 14,
+  "commonSizes": [
+   "14px:1128",
+   "13px:1105",
+   "15px:466"
+  ]
+ },
+ {
+  "name": "awwwards-fintech",
+  "group": "awwwards",
+  "url": "https://www.awwwards.com/websites/finance/",
+  "viewport": "phone",
+  "minFontPx": 7.5,
+  "under12": 32,
+  "textNodes": 118,
+  "capsRuns": 0,
+  "capsUnder12": 0,
+  "smallTargets": 35,
+  "bodyPx": 14,
+  "commonSizes": [
+   "14px:863",
+   "15px:157",
+   "10px:38"
+  ]
+ }
+]
