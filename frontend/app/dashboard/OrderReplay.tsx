@@ -7,7 +7,7 @@ import { track } from '../lib/track';
 import { useToast } from '../ui/Toast';
 import { exactTitle, formatSignedBps, formatUsd } from '../ui/format';
 import { Fig } from '../ui/Fig';
-import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, PRINTS_LEGEND, expectedLine, unfilledLineNote } from './receiptCopy';
+import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, PRINTS_LEGEND, costLineLabel, expectedLine, unfilledLineNote } from './receiptCopy';
 import { bars, barsWidth, canonicalJson, sha256Hex } from '../ui/hash';
 import { describeReplay, type ReplayApi } from './explainView';
 import { PrintsTape } from './PrintsTape';
@@ -164,7 +164,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
               {lines.map((d, i) => (
                 <div key={`${d.label}:${d.source.field}`} className="contents">
                   <span className="g">{String(i + 1).padStart(2, '0')}</span>
-                  <span className={d.partOf ? 'lab sub' : 'lab'} title={`Source field: ${String(d.source.field)}`}><span className="t">{d.label}{d.key === 'unfilled' ? ' (modelled)' : ''}</span></span>
+                  <span className={d.partOf ? 'lab sub' : 'lab'} title={`Source field: ${String(d.source.field)}`}><span className="t">{costLineLabel(d)}</span></span>
                   <span className="num g"><Fig text={cell(d.bps, formatSignedBps)} exact={exactTitle(d.bps, 'bps')} /></span><span className="num"><Fig text={cell(d.usd, formatUsd)} exact={exactTitle(d.usd, 'usd')} /></span>
                 </div>
               ))}

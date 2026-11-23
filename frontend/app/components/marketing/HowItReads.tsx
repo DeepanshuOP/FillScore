@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { GradeStamp } from '../../ui/GradeStamp'
 import { apiBase } from '../../lib/apiBase'
+import { FEE_LINE } from '../../dashboard/receiptCopy'
 import { gradeView, type GradeView } from '../../dashboard/headline'
 import { formatPrice, formatQty, formatUsd, heroCosts, heroEntries, heroTape, utcTime } from '../../lib/landing/heroData'
 
@@ -92,7 +93,7 @@ export function HowItReads() {
             <div className="fs-lines">
               <span className="g">01</span><span className="lab">Spread</span><span className="num" /><span className="num">{formatUsd(heroCosts.spread.usd)}</span>
               <span className="g">02</span><span className="lab">Impact and timing</span><span className="num" /><span className="num">{formatUsd(heroCosts.impactTiming.usd)}</span>
-              <span className="g">03</span><span className="lab">Fees</span><span className="num" /><span className="num">{formatUsd(heroCosts.fees.usd)}</span>
+              <span className="g">03</span><span className="lab">{FEE_LINE}</span><span className="num" /><span className="num">{formatUsd(heroCosts.fees.usd)}</span>
             </div>
             <div className="fs-perf" aria-hidden="true" />
             <div className="fs-totalline"><span className="k">TOTAL</span><span className="b" /><span className="u">{formatUsd(heroCosts.total.usd)}</span></div>

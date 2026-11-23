@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, PRINTS_LEGEND, expectedLine, unfilledLineNote } from './receiptCopy'
+import { BARS_NOTE, CHART_NOTE, FEE_LINE, NO_COST_TERMS, NO_FILLS, PRINTS_LEGEND, costLineLabel, expectedLine, unfilledLineNote } from './receiptCopy'
+
+// Deepanshu's decision 2026-11-23: a fee line says on the line that the rate is the published one; the unfilled line says modelled.
+describe('receipt cost line labels', () => {
+  it('fees read "Fees (published rate)", unfilled "Unfilled orders (modelled)", the rest as the server named them', () => {
+    expect(costLineLabel({ key: 'fees', label: 'Fees' })).toBe(FEE_LINE)
+    expect(FEE_LINE).toBe('Fees (published rate)')
+    expect(costLineLabel({ key: 'unfilled', label: 'Unfilled orders' })).toBe('Unfilled orders (modelled)')
+    expect(costLineLabel({ key: 'spread', label: 'Spread' })).toBe('Spread')
+    expect(costLineLabel({ label: 'Fees' })).toBe('Fees (published rate)')   // an API row without a key is still the fee line by its label
+  })
+})
 
 // Design v3 fixes A5 (2026-11-21): on the receipt, explanatory sentences are in sentence case; only the printed labels
 // (ORDER, MARKET, FILLS, COSTS, TOTAL, SOURCE) are uppercase. Figures come from the replay API through formatSignedBps.

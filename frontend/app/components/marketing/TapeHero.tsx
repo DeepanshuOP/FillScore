@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { buttonClass } from '../../ui/buttonClass'
 import { MarginNote } from '../../ui/MarginNote'
 import { formatPct, formatPrice, formatQty, formatSignedBps, formatUsd, heroCosts, heroEntries, heroTape, utcTime } from '../../lib/landing/heroData'
+import { FEE_LINE } from '../../dashboard/receiptCopy'
 import { heroGeometry, type HeroGeo, type LayoutName } from './heroGeometry'
 import { startPinnedStory } from './v3/pinnedStory'
 import { DEMO_ENTRY } from './siteItems'
@@ -117,7 +118,7 @@ export function TapeHero() {
         <dl className="fs-hero-list" aria-hidden="true">
           <dt>SPREAD</dt><dd>{formatUsd(heroCosts.spread.usd)}</dd>
           <dt>IMPACT AND TIMING</dt><dd>{formatUsd(heroCosts.impactTiming.usd)}</dd>
-          <dt>FEES</dt><dd>{formatUsd(heroCosts.fees.usd)}</dd>
+          <dt>{FEE_LINE.toUpperCase()}</dt><dd>{formatUsd(heroCosts.fees.usd)}</dd>
           <dt className="col-span-2 mt-1">SYNTHETIC TRADER, REAL PRICES</dt>
         </dl>
       </div>

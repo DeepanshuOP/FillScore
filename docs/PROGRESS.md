@@ -2,6 +2,16 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
+
+- **Next concrete action: A2 (Fills: heading, count line, time, full symbol, hide not-computed columns).**
+- **A1: done.** Fee line reads "Fees (published rate)" on the order receipt (`costLineLabel`, `receiptCopy.ts`), the `/how-it-works` mini
+  receipt and the hero's phone receipt; tests `receiptCopy.test.ts`, `components/marketing/feeLine.test.tsx`. Other plain fee lines found and
+  left (not receipt lines of the decision): Orders "Where the money went" totals row (`ordersView.ts:44`), Orders Fees column header
+  (`OrdersView.tsx:55`), cost strip part label (`costStrip.ts:42`, its dashed part prints the published-rate caption), Overview rows
+  (`Overview.tsx:201`, footnote at `:218`), month-tape tooltip FEES (`MonthTape.tsx:225`), score v2 shortfall term (`scoreV2.ts:81`),
+  the hero tape's pen-note title "Fees" (`TapeHero.tsx:23`), Fills ledger "Fee" column (`TradesLedger.tsx:422`).
+
 ## Orders of 2026-11-23, sixth: IA v4 built in production (local commits)
 
 - **Step 8: done.** The dashboard tab bar and "More" menu code left with `shell/AppShell.tsx` (step 2). The lab prototype `design-lab/ia4` is

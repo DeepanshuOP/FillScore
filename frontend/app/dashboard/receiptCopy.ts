@@ -22,6 +22,16 @@ export function unfilledLineNote(usd: number | null | undefined): string | null 
   return `Unfilled orders, ${formatUsd(usd)}: the market moved away from the part that never filled. No money left the account for it.`
 }
 
+/** Deepanshu's decision 2026-11-23: a fee line says on the line that the rate is the published one (the unfilled line says modelled). */
+export const FEE_LINE = 'Fees (published rate)'
+
+/** The printed label of one cost line on the order receipt. */
+export function costLineLabel(d: { key?: string; label: string }): string {
+  if (d.key === 'fees' || (d.key === undefined && d.label === 'Fees')) return FEE_LINE
+  if (d.key === 'unfilled') return 'Unfilled orders (modelled)'
+  return d.label
+}
+
 export const NO_FILLS = 'No fills: the order did not trade.'
 export const NO_COST_TERMS = 'Insufficient data: no cost terms were stored.'
 export const CHART_NOTE = 'Fills only; the public prints are in the source file.'
