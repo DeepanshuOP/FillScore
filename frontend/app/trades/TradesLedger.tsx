@@ -24,6 +24,8 @@ import { buildQuery } from '../utils/queryBuilder'
 import { apiBase } from '../lib/apiBase';
 import { showCsvExport } from '../utils/csvExport';
 import { NOT_COMPUTED } from '../utils/notComputed';
+import { formatUtc } from '../dashboard/ordersTable';
+import { FILLS_TITLE, fillsColumns, fillsCountLine, hiddenMeasures, notComputedLine } from './fillsView';
 
 interface Trade {
   _id: string
@@ -51,6 +53,8 @@ interface Trade {
 }
 
 interface TradesResponse {
+  /** The trades route's flag: false = a demo whose trades carry no v1 measures (backend audit.ts:139-146). */
+  v1Computed?: boolean
   trades: Trade[]
   total: number
   page: number
@@ -93,6 +97,7 @@ function StatCell({ label, children }: { label: string; children: React.ReactNod
 function TradesContent() {
   const [trades, setTrades] = useState<Trade[]>([])
   const [total, setTotal] = useState(0)
+  const [v1Computed, setV1Computed] = useState<boolean | undefined>(undefined)
   const [pages, setPages] = useState(1)
   const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
@@ -238,6 +243,7 @@ function TradesContent() {
 
       const data: TradesResponse = await res.json()
       setTrades(data.trades)
+      setV1Computed(data.v1Computed)
       setTotal(data.total)
       setPages(data.pages)
       // Derive the exchange label from the loaded trades.
@@ -273,19 +279,6 @@ function TradesContent() {
       : p.toFixed(4)
   }
 
-  const formatDate = (d: string) => {
-    const dt = new Date(d)
-    return {
-      date: dt.toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric'
-      }),
-      time: dt.toLocaleTimeString('en-US', {
-        hour: '2-digit', minute: '2-digit',
-        hour12: false
-      })
-    }
-  }
-
   const handleSort = (col: string) => {
     if (sortBy === col) {
       setSortDir(d => d === 'asc' ? 'desc' : 'asc')
@@ -294,6 +287,11 @@ function TradesContent() {
       setSortDir('desc')
     }
   }
+
+  // A2: a measure that no loaded row has is left out of the table, and one line says so and why (fillsView.ts)
+  const hidden = hiddenMeasures(trades)
+  const notComputed = notComputedLine(hidden, v1Computed)
+  const columnCount = fillsColumns(hidden).length
 
   const sortedTrades = [...trades].sort((a, b) => {
     let av: number, bv: number
@@ -360,7 +358,7 @@ function TradesContent() {
 
   const sortHead = (col: string, label: string, numeric = false) => (
     <th scope="col" aria-sort={sortBy === col ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-      className={cn('sticky top-0 z-10 bg-ui-raised px-3 py-2 text-[12px] font-medium whitespace-nowrap text-ui-graphite shadow-[inset_0_-1px_0_var(--ui-rule)]', numeric ? 'text-right' : 'text-left')}>
+      className={cn('sticky top-0 z-10 bg-ui-raised px-3 py-2 font-mono text-[11px] font-normal tracking-[0.06em] whitespace-nowrap text-ui-graphite uppercase shadow-[inset_0_-1px_0_var(--ui-rule)]', numeric ? 'text-right' : 'text-left')}>
       <button type="button" onClick={() => handleSort(col)}
         className={cn('inline-flex items-center gap-1 rounded-[6px] hover:text-ui-ink focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]', sortBy === col && 'text-ui-ink')}>
         {label}
@@ -369,7 +367,7 @@ function TradesContent() {
     </th>
   )
   const plainHead = (label: string, numeric = false) => (
-    <th scope="col" className={cn('sticky top-0 z-10 bg-ui-raised px-3 py-2 text-[12px] font-medium whitespace-nowrap text-ui-graphite shadow-[inset_0_-1px_0_var(--ui-rule)]', numeric ? 'text-right' : 'text-left')}>{label}</th>
+    <th scope="col" className={cn('sticky top-0 z-10 bg-ui-raised px-3 py-2 font-mono text-[11px] font-normal tracking-[0.06em] whitespace-nowrap text-ui-graphite uppercase shadow-[inset_0_-1px_0_var(--ui-rule)]', numeric ? 'text-right' : 'text-left')}>{label}</th>
   )
 
   const actions = showCsvExport(dashboardMode) ? (
@@ -385,26 +383,31 @@ function TradesContent() {
     <AppPage period="All stored fills" dataSource={dashboardMode === 'demo' ? 'synthetic-demo' : dashboardMode === 'real' ? 'real-user' : null}
       venue={exchangeRaw ? (VENUE_NAME[exchangeRaw.toLowerCase()] ?? displayExchange) : null} actions={actions}>
       <div className="flex flex-col gap-5">
-        <p className="text-[13px] text-ui-graphite">{total} executions on {displayExchange}</p>
+        <div className="flex flex-col gap-1">
+          <p className="text-[13px] text-ui-graphite">{fillsCountLine(total, displayExchange)}</p>
+          {notComputed ? <p data-testid="fills-not-computed" className="max-w-[72ch] text-[13px] text-ui-graphite">{notComputed}</p> : null}
+        </div>
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatCell label="Executions">{total}</StatCell>
+        <div className={cn('grid grid-cols-2 gap-3', hidden.score ? 'lg:grid-cols-3' : 'lg:grid-cols-4')}>
+          <StatCell label="Fills">{total}</StatCell>
           <StatCell label="Buys and sells">{totalBuys} buys, {totalSells} sells</StatCell>
-          <StatCell label="Average score, this page">
-            {avgScore === null
-              ? <span data-testid="trades-avg-score" title={NOT_COMPUTED}>—</span>
-              : <span data-testid="trades-avg-score">{avgScore}</span>}
-            {avgScore === null ? <span className="mt-0.5 block text-[13px] font-normal tracking-normal text-ui-graphite">{NOT_COMPUTED.charAt(0).toUpperCase() + NOT_COMPUTED.slice(1)}</span> : null}
-          </StatCell>
+          {hidden.score ? null : (
+            <StatCell label="Average score, this page">
+              {avgScore === null
+                ? <span data-testid="trades-avg-score" title={NOT_COMPUTED}>—</span>
+                : <span data-testid="trades-avg-score">{avgScore}</span>}
+              {avgScore === null ? <span className="mt-0.5 block text-[13px] font-normal tracking-normal text-ui-graphite">{NOT_COMPUTED.charAt(0).toUpperCase() + NOT_COMPUTED.slice(1)}</span> : null}
+            </StatCell>
+          )}
           <StatCell label="Maker fills">{totalMakers}</StatCell>
         </div>
 
-        <Panel title="Trade ledger" note={{ label: 'how to read the ledger', text: 'Every fill, newest first by default. Select a row for its details.' }} bodyClassName="flex flex-col gap-4"
+        <Panel title={FILLS_TITLE} note={{ label: 'how to read the ledger', text: 'Every fill, newest first by default. Select a row for its details.' }} bodyClassName="flex flex-col gap-4"
           actions={filtered ? <Button variant="quiet" size="sm" onClick={clearFilters}>Clear filters</Button> : undefined}>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             {filterSelect('Symbol', symbolFilter, ['ALL', 'BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT'], setSymbolFilter)}
             {filterSelect('Side', sideFilter, ['ALL', 'BUY', 'SELL'], setSideFilter)}
-            {filterSelect('Grade', gradeFilter, ['ALL', 'A', 'B', 'C', 'D', 'F'], setGradeFilter)}
+            {hidden.grade ? null : filterSelect('Grade', gradeFilter, ['ALL', 'A', 'B', 'C', 'D', 'F'], setGradeFilter)}
           </div>
 
           {/* relative: the table's visually hidden caption stays inside the scroller instead of widening the page */}
@@ -413,26 +416,25 @@ function TradesContent() {
               <thead>
                 <tr>
                   {plainHead('No.')}
-                  {sortHead('executedAt', 'Time')}
+                  {sortHead('executedAt', 'Time (UTC)')}
                   {plainHead('Symbol')}
                   {plainHead('Venue')}
                   {plainHead('Side')}
                   {sortHead('notionalValue', 'Notional', true)}
                   {sortHead('executionPrice', 'Price', true)}
                   {sortHead('feePaid', 'Fee', true)}
-                  {sortHead('slippageBps', 'Slippage', true)}
+                  {hidden.slippage ? null : sortHead('slippageBps', 'Slippage', true)}
                   {plainHead('Order')}
-                  {sortHead('fillScore', 'Score', true)}
-                  {plainHead('Grade')}
+                  {hidden.score ? null : sortHead('fillScore', 'Score', true)}
+                  {hidden.grade ? null : plainHead('Grade')}
                 </tr>
               </thead>
               <tbody>
                 {loading ? [...Array(8)].map((_, i) => (
                   <tr key={i} aria-hidden="true">
-                    <td colSpan={12} className="px-3 py-3"><div className="h-4 w-full rounded-[6px] bg-ui-overlay/60" /></td>
+                    <td colSpan={columnCount} className="px-3 py-3"><div className="h-4 w-full rounded-[6px] bg-ui-overlay/60" /></td>
                   </tr>
                 )) : sortedTrades.map((trade, i) => {
-                  const { date, time } = formatDate(trade.executedAt)
                   const price = formatPrice(trade.executionPrice)
                   const isSel = selectedTrade?._id === trade._id
                   const scored = trade.fillScore != null && trade.fillScore > 0
@@ -443,11 +445,11 @@ function TradesContent() {
                       className={cn('cursor-pointer border-b border-ui-rule transition-colors hover:bg-ui-overlay/60 focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-[var(--ui-focus)]', isSel && 'bg-ui-overlay')}>
                       <td className="px-3 py-2 text-ui-graphite tabular-nums">{String((page-1)*50 + i + 1).padStart(3, '0')}</td>
                       <td className="px-3 py-2 whitespace-nowrap">
-                        <span>{date}</span> <span className="text-ui-graphite tabular-nums">{time}</span>
+                        <span className="tabular-nums">{formatUtc(trade.executedAt)}</span>
                       </td>
                       <td className="px-3 py-2">
                         <div title={trade.symbol} className="inline-flex items-center gap-1.5 font-medium">
-                          {trade.symbol.replace('USDT', '')}
+                          {trade.symbol}
                           {trade.note ? <StickyNote aria-hidden="true" className="size-3.5 text-ui-graphite" /> : null}
                           {trade.note ? <span className="sr-only">Has note</span> : null}
                         </div>
@@ -457,21 +459,22 @@ function TradesContent() {
                       <td className="px-3 py-2 text-right tabular-nums">{formatUsd(trade.notionalValue)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{price ?? none('Price')}</td>
                       <td className="px-3 py-2 text-right tabular-nums text-ui-graphite">{trade.feePaid != null ? `$${trade.feePaid.toFixed(4)}` : none('Fee')}</td>
-                      <td className="px-3 py-2 text-right tabular-nums" title={trade.slippageBps === null ? NOT_COMPUTED : undefined}>
-                        {trade.slippageBps == null ? none('Slippage') : formatSignedBps(trade.slippageBps)}
-                      </td>
+                      {hidden.slippage ? null : (
+                        <td className="px-3 py-2 text-right tabular-nums" title={trade.slippageBps === null ? NOT_COMPUTED : undefined}>
+                          {trade.slippageBps == null ? none('Slippage') : formatSignedBps(trade.slippageBps)}
+                        </td>
+                      )}
                       <td className="px-3 py-2"><OrderTypeBadge isMaker={trade.isMaker} /></td>
-                      <td className="px-3 py-2 text-right tabular-nums font-medium">
-                        {scored ? Math.round(trade.fillScore as number) : none('Fill score')}
-                      </td>
-                      <td className="px-3 py-2">
-                        {trade.fillGrade ? <GradeChip grade={trade.fillGrade} size="sm" label={`Grade ${trade.fillGrade}`} /> : (
-                          <>
-                            <span aria-hidden="true" className="inline-block h-[1.5px] w-2.5 bg-ui-graphite align-middle" />
-                            <span className="sr-only">{NOT_COMPUTED}</span>
-                          </>
-                        )}
-                      </td>
+                      {hidden.score ? null : (
+                        <td className="px-3 py-2 text-right tabular-nums font-medium">
+                          {scored ? Math.round(trade.fillScore as number) : none('Fill score')}
+                        </td>
+                      )}
+                      {hidden.grade ? null : (
+                        <td className="px-3 py-2">
+                          {trade.fillGrade ? <GradeChip grade={trade.fillGrade} size="sm" label={`Grade ${trade.fillGrade}`} /> : none('Grade')}
+                        </td>
+                      )}
                     </tr>
                   )
                 })}
@@ -514,7 +517,7 @@ function TradesContent() {
                 <div className="flex flex-wrap items-center gap-3 text-[13px]">
                   <SideMark side={sel.side} />
                   <OrderTypeBadge isMaker={sel.isMaker} />
-                  <span className="text-ui-graphite tabular-nums">{formatDate(sel.executedAt).date} {formatDate(sel.executedAt).time}</span>
+                  <span className="text-ui-graphite tabular-nums">{formatUtc(sel.executedAt)} UTC</span>
                 </div>
               </header>
 

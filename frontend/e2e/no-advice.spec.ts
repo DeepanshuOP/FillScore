@@ -13,7 +13,7 @@ const READY: Record<string, (page: Page) => Promise<void>> = {
     await expect(page.getByRole('button', { name: /download report/i })).toBeVisible()
   },
   '/app/fills': async (page) => {
-    await expect(page.getByRole('heading', { name: 'Trade ledger' })).toBeAttached()
+    await expect(page.getByRole('heading', { name: 'Fills' })).toBeAttached()
     await expect(page.locator('div[title$="USDT"]').first()).toBeVisible() // first ledger row's symbol cell
   },
   '/app/fills?tab=patterns': async (page) => {

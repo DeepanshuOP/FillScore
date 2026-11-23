@@ -145,7 +145,11 @@ test('analytics of a rebuilt demo says not computed instead of drawing empty cha
 test('trades list of a rebuilt demo shows no slippage figure that was never computed', async ({ page }) => {
   await page.goto(`/trades?userId=${ID}`)
   await expect(page.getByText('TAKER').first()).toBeVisible({ timeout: 30_000 })    // a trade row has rendered
-  await expect(page.getByTestId('trades-avg-score')).toHaveText('—')                 // never "0"
+  // A2 (2026-11-23): a measure no loaded fill has is left out of the table and one line says so and why (never a "0")
+  await expect(page.getByTestId('trades-avg-score')).toHaveCount(0)
+  await expect(page.getByTestId('fills-not-computed')).toContainText(/Not computed for this data: slippage, score, grade and the average score/)
+  await expect(page.getByRole('columnheader', { name: 'Slippage' })).toHaveCount(0)
+  await expect(page.getByRole('columnheader', { name: /Time \(UTC\)/i })).toBeVisible()
   const res = await page.request.get(`http://localhost:3001/api/audit/trades?userId=${ID}`)
   const body = await res.json()
   expect(body.v1Computed).toBe(false)

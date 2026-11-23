@@ -4,7 +4,13 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
 
-- **Next concrete action: A2 (Fills: heading, count line, time, full symbol, hide not-computed columns).**
+- **Next concrete action: A3 (provenance once per page).**
+- **A2: done.** Fills: heading "Fills", "N fills on <venue>", tile "Fills", time `YYYY-MM-DD HH:MM:SS` under "TIME (UTC)" (Orders' `formatUtc` and
+  header style), full symbol. Rules in `trades/fillsView.ts` (tests `fillsView.test.ts`, 10): a measure every loaded row lacks (slippage, score,
+  grade; the score also takes the Average score tile) is left out, and the line `fills-not-computed` says which and why. The reason is read from
+  the code that decides it: `backend/src/routes/audit.ts:139-142` (`hasV1Trades`) and `:146` (`v1Flag`) give `v1Computed: false` on the trades
+  route (`:602`) for a demo none of whose trades has a v1 score, because v1 enrichment "needed invented arrival prices" (`:139-141`); the
+  sentence says none was invented. Mixed columns keep their per-cell ValueState. e2e `rebuilt-demo` and `no-advice` selectors updated.
 - **A1: done.** Fee line reads "Fees (published rate)" on the order receipt (`costLineLabel`, `receiptCopy.ts`), the `/how-it-works` mini
   receipt and the hero's phone receipt; tests `receiptCopy.test.ts`, `components/marketing/feeLine.test.tsx`. Other plain fee lines found and
   left (not receipt lines of the decision): Orders "Where the money went" totals row (`ordersView.ts:44`), Orders Fees column header
