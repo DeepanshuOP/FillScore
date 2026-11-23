@@ -4,7 +4,12 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
 
-- **Next concrete action: A7 (dependencies: lucide-react #11, jsdom #12, eslint 10 #13, one commit each).**
+- **Next concrete action: B1 (plan: ADR-0018 Accepted (Ask only), claim schema, Groq structured-output facts).**
+- **A7: done.** PR #11 lucide-react 0.577.0 -> 1.75.0 = `f59bf51`; PR #12 jsdom 29.1.1 -> 31.0.1 = `2e5f336`; PR #13 eslint 9.39.4 -> 10.15.0 =
+  the "Bump eslint to 10.15.0" commit after them. After each: tsc 0, vitest 818 passed, build ok; lint 0 errors, 19 warnings (the same 19 as before)
+  after lucide and jsdom and after eslint 10. The PRs stay open for Deepanshu to close (nothing merged, nothing pushed). Caveat on #13: eslint
+  10 runs with `eslint-config-next@16.4.5`, but its plugins (`eslint-plugin-import`, `jsx-a11y`, `react`, `react-hooks`) declare peer ranges up to
+  eslint 9, so `npm ls` shows them as "invalid"; `npm ci --dry-run` passes and the warnings did not change. If CI complains, revert that one commit.
 - **A6: done, suspect not confirmed, no code change.** Clean rebuilds with `scripts/first-load-js.mjs` (gzip kB, `/app` = `/app/overview`):
   step 6 (`339c5b0`) 397.8; IA v4 final (`178ed95`) 398.2; HEAD after A1-A5 398.9. The "400.9" in M8.md "IA v4 built" does not reproduce from a
   clean build of `178ed95` (the rise from step 6 is 0.4 kB, not 3). The ⌘K fix (`120ceee`, `components/ui/command.tsx`) wrapped the dialog's
