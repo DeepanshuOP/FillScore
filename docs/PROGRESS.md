@@ -4,7 +4,12 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24: design v5 (step 0 Binance 418 fix, audit, research, proposal, prototype), local commits
 
-- **Next concrete action: step 4, the not-computed policy (a table in `docs/design/v5/PROPOSAL.md`).**
+- **Next concrete action: step 5, the rest of `docs/design/v5/PROPOSAL.md` (words, readability, shell, pages, charts, motion, budgets,
+  decisions).**
+- **Step 4: done.** PROPOSAL §4: 17 surfaces with file:line and class: (a) remove for accounts that never have it (v1 per-fill score and
+  grade, Patterns tab, whale correlation, Council VWAP line for now), (b) compute server-side (each fill against the public price, test
+  plan with hand values), (c) designed empty states with the next action (header figures, fees pending, receipts, venue comparison);
+  true findings keep "insufficient data" with the missing count.
 - **Step 3: done.** `docs/design/v5/FEATURES.md`, top 8: period picker with comparison to the previous period; each fill against the
   public price at its second (demo print coverage 82.9% / 84.0% / 77.9%, LOG §AN); onboarding checklist; sample-data switch; changelog
   with scoring versions; usage page; saved views; status page. Weekly email ranked 9th (needs an email provider: approval).
