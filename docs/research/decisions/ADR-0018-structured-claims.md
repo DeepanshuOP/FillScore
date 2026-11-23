@@ -1,8 +1,84 @@
-# ADR-0018: Structured claims instead of free sentences (proposal, not built)
+# ADR-0018: Structured claims instead of free sentences (Accepted, Ask only)
 
-- **Status:** proposed (nothing in this ADR is implemented; no code, prompt, golden set or UI changed)
-- **Date:** 2026-11-22
-- **Phase:** Council honesty (fourth order, step 1)
+- **Status:** **Accepted (Ask only)**, 2026-11-23, by Deepanshu (seventh order, Part B). The Council, the single-call synthesis and every recorded
+  run stay as they are: the sections below the line "Original proposal" are the 2026-11-22 text, kept unchanged, and apply to the Council only
+  as a proposal that is still not built. The section "Accepted scope: the Ask answer" is what was decided and built.
+- **Date:** 2026-11-22 (proposal); 2026-11-23 (acceptance for Ask)
+- **Phase:** Council honesty (fourth order, step 1); typed claims for Ask (seventh order, Part B)
+
+## Accepted scope: the Ask answer (2026-11-23)
+
+**What is decided.** The Ask answerer (`agents/ask.py`) stops writing sentences. It returns typed claims that name *which measured values to
+state*, by value id, and never a digit; code validates them, formats every number with the existing formatter (`agents/render.format_value`),
+and writes the sentence from a code-owned template. Any invalid claim sends the whole answer to the degraded path that exists today, unchanged
+(`fallback_answer`: a code-built sentence over the tool values, `degraded: true`, the meta line "answer not used"). The free-text answer path
+stays in the code as `mode="free"` so the two can be measured side by side (B3); production (`ask_service`) uses `mode="claims"`.
+
+**Claim schema** (`agents/ask_claims.py`; JSON the model returns, nothing else):
+
+```
+{ "claims": [ { "claim_type": <one of 9 names>, "value_ids": [ "<id>", ... ] }, ... ] }     1 to 3 claims, no other key anywhere
+```
+
+`value_ids` are ids of the value catalog the model is shown (`costs.total_cost_usd`, `score.grade`, `costliest.orders.0.order_id`, the same
+paths the placeholders use); a value is cited by id, so the model never writes a numeral. Code owns the closed list of `claim_type`s; each has
+typed slots and one past-tense template. A slot's unit is read from the id's key name by the same suffix rule the formatter uses (`_usd`, `_bps`,
+`_score`, `_count`, `grade`, `order_id`); an id of another unit than its slot is rejected (the old "bps in bps" failure becomes impossible: a
+bps value cannot sit in a dollar slot and the unit word is part of the formatter's output, never of model text).
+
+| claim_type | tool | slots (unit) | sentence (code-owned) |
+|---|---|---|---|
+| `SCORE_GRADE` | score | grade, score | The measured score was {grade} ({score} / 100). |
+| `SCORE_RANGE` | score | score, score | The score's range ran from {low} to {high}. |
+| `COST_TOTAL` | costs | usd | The measured orders cost {usd} in total. |
+| `COST_MEDIAN` | costs | bps | The median order cost {bps}. |
+| `COST_EXECUTION_MEDIAN` | costs | bps | The median execution cost was {bps}. |
+| `FEES_TOTAL` | costs | usd | Fees came to {usd}. |
+| `COSTLIEST_ORDER` | costliest | order, usd (same rank) | The costliest order was {id}, at {usd}. (rank 0); Order {id} was among the costliest, at {usd}. (other ranks) |
+| `EXPECTED_COMPARE` | cost_vs_expected | bps, bps | Market orders cost {paid} against a modelled {expected}. |
+| `EXPECTED_INTERVAL` | cost_vs_expected | bps, bps | The modelled cost's interval ran from {low} to {high}. |
+
+**Validation (all of it in code, none by the model):** the reply must parse as exactly this shape (any extra key, a free-text field or a wrong type
+is *schema-invalid*); 1 to 3 claims (an empty list is invalid); each `claim_type` is in the table and its tool was run; `value_ids` has exactly the
+slots' length; every id exists in the tool results and has the slot's unit; the two ids of an order claim are of the same rank; no claim repeats.
+The templates are checked once at build time by a test that enumerates them (no digit, no forward-looking, advising or cause word; the same
+lists as `agents/ask.py` and `agents/claims.py`). The order of the sentences is the order of the claims.
+
+**Which model and API feature enforces it (checked 2026-11-23).** Groq's structured-outputs page
+(<https://console.groq.com/docs/structured-outputs>, read 2026-11-23; the first ~40,000 of ~75,000 characters were read verbatim, the rest through a
+summary that disagreed with the verbatim text on the model lists, so the verbatim text is used) lists under "Models with Strict Mode
+(`strict: true`)" `openai/gpt-oss-20b`, `openai/gpt-oss-120b`, `qwen/qwen3.8-27b` and `meta-models/muse-spark-open`, "constrained decoding to
+guarantee schema-compliant output"; and under "Best-effort Mode (`strict: false`)" the same four plus `openai/gpt-oss-safeguard-20b`
+("may occasionally error", 400 on a schema mismatch). Request: `response_format: {type: "json_schema", json_schema: {name, strict: true,
+schema}}`. Strict mode needs every field in `required` and `additionalProperties: false` on every object; enums are supported (the page's
+example uses one). "Streaming and tool use are not currently supported with Structured Outputs": Ask uses neither. So **both models the
+Ask answerer can be routed to (qwen3.8-27b first, gpt-oss-20b and gpt-oss-120b after it) support strict `json_schema`**; the router sends
+`response_format` with `strict: true` to Groq candidates only (`LLMRouter.complete(..., response_format=...)`); a Gemini candidate gets the
+prompt alone and is held to the same shape by the Pydantic check and by the validation above. Strict mode is a convenience (fewer invalid
+replies); the safety does not rest on it, because every reply is validated in code whatever the provider did. Not checked: whether `maxItems`
+is honoured in strict mode (the page does not mention it), so the 1 to 3 limit is enforced by the validator, not trusted to the API.
+
+**Fallback on any validation failure.** Exactly today's degraded answer: `fallback_answer(used, ctx)` (code-built sentences over the tool values),
+`degraded: true`, and `fallback` carrying the reason class (`schema_invalid`, `unknown_value_id`, `unit_mismatch`, `empty_claims`, ...). The UI line
+and meta ("Model calls: n · answer not used") are unchanged. A failed or exhausted model call keeps today's behaviour. Calls: the planner call
+and one claims call per question as before; the router's own retry on an invalid reply (`MAX_INVALID_REPLIES = 2` per candidate) is unchanged and
+counted by B3 as live calls.
+
+**Version bumps.** The Council's `PROMPT_VERSION` 1.8.0 and `CLAIM_RULES_VERSION` 1.4.0 are **not** moved (golden sets, recordings and
+`test_golden_sets.py` pin them, and the Council is out of scope). Ask gets its own: `ASK_PROMPT_VERSION = "2.0.0"` (1.x = the free-text answerer,
+which had no stamp; a major step because the output shape changed) and `ASK_CLAIM_RULES_VERSION = "1.0.0"` (the template table and the
+validation above; a template change is a new version). A result of the claims path stamps both and `answer_kind: "claims"`; a free-text result
+stamps neither and has no `answer_kind`. Recorded fixtures keep the stamps they were made with.
+
+**UI consequence (Ask only).** A claims answer is a sentence written by code from claims the model chose. The Ask slip says so ("Claims chosen by
+the model; sentence and figures written by code") instead of presenting the sentence as the model's text; the language-model heading shows only
+over free text, so for the claims path it does not appear. Figures are placed by code on both paths, as before (DESIGN section 12 rule 7).
+
+**Cost and measurement.** Live calls only, $0 (free tier); Part B's cap is 60 live calls in total, usage counted in memory, nothing written to
+Atlas, one wait for `Retry-After` on a 429 and then a stop. The comparison of the two paths is in `docs/research/LOG.md` and the README's
+Evaluation section; the four Home answers are re-recorded with the new path as new fixture files beside the old ones.
+
+## Original proposal (2026-11-22, unchanged; applies to the Council only, still not built)
 
 ## Context
 

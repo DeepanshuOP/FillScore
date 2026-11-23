@@ -4,7 +4,11 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
 
-- **Next concrete action: B1 (plan: ADR-0018 Accepted (Ask only), claim schema, Groq structured-output facts).**
+- **Next concrete action: B2 (build typed claims for Ask, TDD: `agents/ask_claims.py`, router `response_format`, tests with hand values).**
+- **B1: done.** ADR-0018 is "Accepted (Ask only)" with the claim schema (9 claim types, 1 to 3 claims, ids and no digits), the validation, the
+  Groq facts (strict `json_schema` listed for gpt-oss-20b, gpt-oss-120b, qwen3.8-27b; streaming and tool use unsupported with it; page read
+  2026-11-23, first ~40k of ~75k characters verbatim), the unchanged degraded fallback, and the version bumps (Ask-only `ASK_PROMPT_VERSION`
+  2.0.0 and `ASK_CLAIM_RULES_VERSION` 1.0.0; the Council's 1.8.0 and 1.4.0 are not moved because the goldens pin them).
 - **A7: done.** PR #11 lucide-react 0.577.0 -> 1.75.0 = `f59bf51`; PR #12 jsdom 29.1.1 -> 31.0.1 = `2e5f336`; PR #13 eslint 9.39.4 -> 10.15.0 =
   the "Bump eslint to 10.15.0" commit after them. After each: tsc 0, vitest 818 passed, build ok; lint 0 errors, 19 warnings (the same 19 as before)
   after lucide and jsdom and after eslint 10. The PRs stay open for Deepanshu to close (nothing merged, nothing pushed). Caveat on #13: eslint
