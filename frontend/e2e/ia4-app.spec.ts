@@ -28,6 +28,7 @@ test('a demo Home plays a recorded answer: labelled, scoped, claims chosen by th
 
 test('every recorded chip is answered by the claims path: none degraded, none carries the language-model heading', async ({ page }) => {
   await page.goto('/app?userId=demo-moderate')
+  await page.getByTestId('ask-chip').first().waitFor()          // the recorded answers load as their own chunk
   const n = await page.getByTestId('ask-chip').count()
   expect(n).toBe(4)
   for (let i = 0; i < n; i++) {
@@ -51,7 +52,7 @@ test('a signed-out visitor to /app without a demo account goes to log in', async
 test('/app/check opens signed out and in demo mode, and says the check needs a signed-in account', async ({ page }) => {
   await page.goto('/app/check')
   await expect(page).toHaveURL(/\/app\/check$/)
-  await expect(page.getByText('Checking a file needs a signed-in account')).toBeVisible()
+  await expect(page.getByText('Checking your own file needs a signed-in account')).toBeVisible()   // A5 (2026-11-23): the sample file below needs none
   await expect(page.getByTestId('csv-check-panel')).toBeVisible()
   await page.goto('/app/check?userId=demo-moderate')
   await expect(page).toHaveURL(/\/app\/check\?userId=demo-moderate/)

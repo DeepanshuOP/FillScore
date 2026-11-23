@@ -478,17 +478,17 @@ async def internal_csv_sample(body: MeasureRequest, request: Request) -> Any:
     if body.accountId != account_id or account_id != "sample-file":
         raise HTTPException(status_code=403, detail="Token is for another account")
     request.state.account_id = account_id
+    from starlette.concurrency import run_in_threadpool      # imports first: a failing import must not leave a gate slot taken (review 2026-11-23)
+    import measure.service as svc
     from csv_import import gate
+    from csv_import.sample import run_sample
+    from csv_import.service import CsvCheckError
     pause = gate.cooling()
     if pause is not None:
         raise HTTPException(status_code=503, headers={"Retry-After": str(pause)}, detail={
             "code": "market_data_busy", "message": "The public market-data source asked for a pause. Try again in a few minutes."})
     if not gate.try_enter():
         raise HTTPException(status_code=429, detail={"code": "csv_check_busy", "message": "The service is busy with other checks. Try again in a minute."})
-    from starlette.concurrency import run_in_threadpool
-    import measure.service as svc
-    from csv_import.sample import run_sample
-    from csv_import.service import CsvCheckError
     try:
         return await run_in_threadpool(run_sample, svc.rest_source)
     except CsvCheckError as e:

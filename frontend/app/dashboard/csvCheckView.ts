@@ -106,7 +106,11 @@ export function describeSampleCheck(status: number, body: unknown): CsvCheckView
   if (status === 503 && code === 'market_data_busy') return err('The public market-data source asked for a pause. Try again in a few minutes.');
   if (status === 503) return err('The sample file cannot be checked right now.');
   if (status !== 200 || !body || !(body as { sample?: unknown }).sample) return err('The sample file could not be checked. Please try again.');
-  return { ...describeCsvCheck(200, body), sampleLabel: SAMPLE_LABEL };
+  const v = describeCsvCheck(200, body);
+  // the sample's fees are made up with the file (0.1% of cost): "stated in the file" would read as a broker's statement
+  const lines = v.lines.map((l) => l.startsWith('Fees stated in the file:')
+    ? l.replace('Fees stated in the file:', 'Fees in the sample file:').replace(/\.$/, '. They were set when the file was made; no broker stated them.') : l);
+  return { ...v, lines, sampleLabel: SAMPLE_LABEL };
 }
 
 /** The service refuses a file of more than 200,000 characters; the page does not send one. */

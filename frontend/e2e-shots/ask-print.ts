@@ -1,9 +1,10 @@
 /**
  * Home's recorded Ask (IA v4 step 3), against a production server on QA_BASE (default http://localhost:3101), answers from the mock:
  *   npx tsx e2e-shots/ask-print.ts
- * Checks: chip order (answers that passed first, a degraded one last); a passed answer carries the language-model heading, the
- * "Recorded answer, not live" label and the scope line; a degraded answer carries the one-line note and "Model calls: 2 · answer not
- * used", no LLM heading and no model name; the slip's paper and its first line start at the same instant (no blank slip beyond one
+ * Checks (updated 2026-11-23 for the typed-claims recordings, ADR-0018: all four recorded answers passed): chip order (answers that
+ * passed first, a degraded one last; none is degraded now, so the recorded order); a claims answer carries the "Recorded answer, not
+ * live" label, the scope line and the line "The model chose which measured values to state; code wrote the sentence and placed the
+ * figures", never the language-model heading; the slip's paper and its first line start at the same instant (no blank slip beyond one
  * frame); under reduced motion nothing animates. Writes JPEGs to .work/look/.
  */
 import { chromium } from 'playwright'
@@ -27,7 +28,7 @@ async function main() {
     await page.getByTestId('ask-chip').first().waitFor()
     const chips = await page.getByTestId('ask-chip').allInnerTexts()
     const tag = reduce ? 'reduced' : 'motion'
-    if (!reduce) ok(chips.length === 4 && chips[2] === 'Which orders cost the most?' && chips[3].startsWith('How did my market orders'), `chip order, passed first, degraded last: ${JSON.stringify(chips)}`)
+    if (!reduce) ok(chips.length === 4 && chips[0] === 'Which orders cost the most?' && chips[3] === 'What score did my execution get?', `chip order (all passed: the recorded order): ${JSON.stringify(chips)}`)
     ok(await page.getByRole('textbox').count() === 0, `${tag}: no input box on a demo Home`)
 
     // a passed answer
@@ -36,7 +37,7 @@ async function main() {
     await slip.waitFor()
     const txt1 = await slip.innerText()
     ok(txt1.includes('RECORDED ANSWER, NOT LIVE') && txt1.includes('JANUARY 2024, 245 ORDERS'), `${tag}: label and scope line on a passed answer`)
-    ok(txt1.includes('Explanation (language model; every number was checked against the audit)'), `${tag}: the LLM heading over the model's text`)
+    ok(txt1.includes('The model chose which measured values to state; code wrote the sentence and placed the figures.') && !txt1.includes('Explanation (language model'), `${tag}: the claims line, and no language-model heading over code's sentence`)
     const anim = await page.evaluate(() => {
       const s = document.querySelector('[data-testid="ask-slip"]')!
       const slipAnim = s.getAnimations().map((a) => ({ name: (a as CSSAnimation).animationName, delay: a.effect!.getComputedTiming().delay }))
@@ -52,11 +53,9 @@ async function main() {
     await page.getByTestId('ask-chip').last().click()
     await page.waitForTimeout(700)
     const txt2 = await page.getByTestId('ask-slip').innerText()
-    ok(txt2.includes("The model's answer did not pass the checks, so code wrote this sentence from the measured values."), `${tag}: the one-line degraded note`)
-    ok(txt2.includes('Model calls: 2 · answer not used'), `${tag}: meta line "Model calls: 2 · answer not used"`)
-    ok(!txt2.includes('Explanation (language model') && !/groq|qwen|no model/i.test(txt2), `${tag}: no LLM heading, no model name, no "no model text" on a degraded answer`)
-    ok(txt2.includes('Market orders cost -0.1 bps against a modelled 0.1 bps.'), `${tag}: the recorded code-built sentence, verbatim (no doubled unit)`)
-    await page.screenshot({ path: resolve(OUT, `ask-degraded-${tag}.jpg`), type: 'jpeg', quality: 60 })
+    ok(txt2.includes('The measured score was A (93.4 / 100).') && !txt2.includes('answer not used'), `${tag}: the last chip's recorded claims sentence, verbatim, not degraded`)
+    ok(/Claims chosen by groq\//.test(txt2) && !txt2.includes('Explanation (language model'), `${tag}: credit names the model for choosing claims, no language-model heading`)
+    await page.screenshot({ path: resolve(OUT, `ask-claims-${tag}.jpg`), type: 'jpeg', quality: 60 })
     console.log(JSON.stringify(await checks(page, `ask-${tag}`)))
     await ctx.close()
   }

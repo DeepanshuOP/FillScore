@@ -33,11 +33,13 @@ export function createCheckSampleRouter(opts: CheckSampleOptions = {}): Router {
     const ipLimiter = rateLimit({
         windowMs: 60 * 60 * 1000,
         max: opts.perIp ?? SAMPLE_PER_IP_PER_HOUR,
+        skipFailedRequests: true,    // a check that failed (a pause, a busy service, an unreachable ml-service) does not use one of the 3 tries
         message: { error: 'The sample file can be checked 3 times an hour. Try again later.', code: 'SAMPLE_IP_LIMIT' },
     });
     const dayLimiter = rateLimit({
         windowMs: 24 * 60 * 60 * 1000,
         max: opts.perDay ?? SAMPLE_PER_DAY,
+        skipFailedRequests: true,
         keyGenerator: () => 'all',
         message: { error: 'The sample file has been checked as often as it can be today. Try again tomorrow.', code: 'SAMPLE_DAY_LIMIT' },
     });

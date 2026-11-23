@@ -29,7 +29,8 @@ for (const [name, url] of [['signed out', '/app/check'], ['in demo mode', '/app/
     await expect(page.getByTestId('sample-label')).toHaveText(/Sample file: synthetic fills, real prices/i)
     const out = page.getByTestId('csv-result')
     await expect(out).toContainText('1 of 1 fill was compared with the public price at their second.')
-    await expect(out).toContainText('Fees stated in the file: $0.16')
+    await expect(out).toContainText('Fees in the sample file: $0.16')                          // a sample's fees are not "stated in the file" (review 2026-11-23)
+    await expect(out).toContainText('no broker stated them')
     expect(seen!.method).toBe('POST')
     expect(seen!.auth).toBeUndefined()
     expect(seen!.body).toBeNull()
@@ -37,13 +38,14 @@ for (const [name, url] of [['signed out', '/app/check'], ['in demo mode', '/app/
   })
 }
 
-test('sample file against the real backend: unconfigured here so it says so; the 4th call in the hour is refused by the limit', async ({ page, request }) => {
-  // The e2e backend has no ml-service address, so the route answers 503 sample_unavailable. Every request counts toward the 3 an hour per IP.
+test('sample file against the real backend: unconfigured here so it says so, and a failed check does not use up the 3 tries an hour', async ({ page, request }) => {
+  // The e2e backend has no ml-service address, so the route answers 503 sample_unavailable. A failed check is not counted (review 2026-11-23):
+  // five calls in a row, more than the 3 an hour, are all answered 503 and none is refused by the limit. The refusal itself (3 successes,
+  // then 429) is tested in backend/src/routes/__tests__/checkSample.test.ts, where the check can succeed.
   await page.goto('/app/check')
   await page.getByTestId('try-sample').click()                                               // call 1
   await expect(page.getByTestId('csv-error')).toContainText('The sample file cannot be checked right now.')
-  for (let i = 2; i <= 3; i++) expect((await request.post('http://localhost:3001/api/check/sample')).status(), `call ${i}`).toBe(503)
-  await page.getByTestId('try-sample').click()                                               // call 4
-  await expect(page.getByTestId('csv-error')).toContainText('The sample file can be checked 3 times an hour. Try again later.')
-  expect((await request.post('http://localhost:3001/api/check/sample')).status()).toBe(429)
+  for (let i = 2; i <= 4; i++) expect((await request.post('http://localhost:3001/api/check/sample')).status(), `call ${i}`).toBe(503)
+  await page.getByTestId('try-sample').click()                                               // call 5
+  await expect(page.getByTestId('csv-error')).toContainText('The sample file cannot be checked right now.')
 })

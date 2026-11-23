@@ -36,11 +36,13 @@ bps value cannot sit in a dollar slot and the unit word is part of the formatter
 | `FEES_TOTAL` | costs | usd | Fees came to {usd}. |
 | `COSTLIEST_ORDER` | costliest | order, usd (same rank) | The costliest order was {id}, at {usd}. (rank 0); Order {id} was among the costliest, at {usd}. (other ranks) |
 | `EXPECTED_COMPARE` | cost_vs_expected | bps, bps | Market orders cost {paid} against a modelled {expected}. |
-| `EXPECTED_INTERVAL` | cost_vs_expected | bps, bps | The modelled cost's interval ran from {low} to {high}. |
+| `EXPECTED_INTERVAL` | cost_vs_expected | bps, bps | The interval of paid minus modelled cost ran from {low} to {high}. (rules 1.0.0 said "The modelled cost's interval", which was wrong: the interval bounds the excess; found in review, fixed in 1.1.0) |
 
 **Validation (all of it in code, none by the model):** the reply must parse as exactly this shape (any extra key, a free-text field or a wrong type
 is *schema-invalid*); 1 to 3 claims (an empty list is invalid); each `claim_type` is in the table and its tool was run; `value_ids` has exactly the
-slots' length; every id exists in the tool results and has the slot's unit; the two ids of an order claim are of the same rank; no claim repeats.
+slots' length; every id exists in the tool results and has the slot's unit; **from rules 1.1.0 each slot names its one exact id** (`SLOT_IDS` in
+`agents/ask_claims.py`: a matching unit is not a matching meaning, so total fees cannot fill the total-cost slot and the ends of a range cannot swap;
+reason `value_mismatch`); the two ids of an order claim are of the same rank; no claim repeats.
 The templates are checked once at build time by a test that enumerates them (no digit, no forward-looking, advising or cause word; the same
 lists as `agents/ask.py` and `agents/claims.py`). The order of the sentences is the order of the claims.
 
@@ -66,8 +68,8 @@ counted by B3 as live calls.
 
 **Version bumps.** The Council's `PROMPT_VERSION` 1.8.0 and `CLAIM_RULES_VERSION` 1.4.0 are **not** moved (golden sets, recordings and
 `test_golden_sets.py` pin them, and the Council is out of scope). Ask gets its own: `ASK_PROMPT_VERSION = "2.0.0"` (1.x = the free-text answerer,
-which had no stamp; a major step because the output shape changed) and `ASK_CLAIM_RULES_VERSION = "1.0.0"` (the template table and the
-validation above; a template change is a new version). A result of the claims path stamps both and `answer_kind: "claims"`; a free-text result
+which had no stamp; a major step because the output shape changed) and `ASK_CLAIM_RULES_VERSION` (the template table and the
+validation above; a template change is a new version): 1.0.0 at the first build, **1.1.0** after the review of 2026-11-23 (exact ids per slot; the interval claim reworded). A result of the claims path stamps both and `answer_kind: "claims"`; a free-text result
 stamps neither and has no `answer_kind`. Recorded fixtures keep the stamps they were made with.
 
 **UI consequence (Ask only).** A claims answer is a sentence written by code from claims the model chose. The Ask slip says so ("Claims chosen by

@@ -126,6 +126,15 @@ describe('describeSampleCheck', () => {
     expect(v.headline).toBe('2 of 2 fills were compared with the public price at their second.');
     expect(describeCsvCheck(200, api()).sampleLabel).toBeNull();
   });
+  it('the fee line of a sample says the fees were set when the file was made, not stated by a broker (review 2026-11-23)', () => {
+    const v = describeSampleCheck(200, { ...api(), sample: { label: SAMPLE_LABEL, sha256: 'x' } });
+    expect(v.lines).toEqual([
+      'Median cost against the mid-price just before each fill: 2.0 bps (weighted by size: 2.0 bps).',
+      'Together, the fills cost $0.04 against the mid-price.',
+      'Fees in the sample file: $0.32 (16.0 bps of the traded value, weighted). They were set when the file was made; no broker stated them.',
+    ]);
+    expect(describeCsvCheck(200, api()).lines[2]).toBe('Fees stated in the file: $0.32 (16.0 bps of the traded value, weighted).');   // a user's file is unchanged
+  });
   it('a sample result without the sample marker is refused, never shown as a sample', () => {
     expect(describeSampleCheck(200, api()).error).toBe('The sample file could not be checked. Please try again.');
   });

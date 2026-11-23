@@ -4,7 +4,17 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-23, seventh: IA v4 polish (Part A) and typed claims for Ask (Part B), local commits
 
-- **Next concrete action: QA (qa3 at 1440, 390, 320; keyboard pass for A4 and A5; break-ui on Fills and Check), then the reviewer, the final checks, the M8 section "IA v4 polish" and its images.**
+- **Next concrete action: IA v4 polish and typed claims for Ask: ready for Deepanshu's review.**
+- **Status of every step:** A1 done, A2 done, A3 done, A4 done, A5 done (deviation: no Node egress guard or governor applies, the ml-service gate does; see A5 below), A6 done
+  (suspect not confirmed, no code change), A7 done (3 commits), B1 done, B2 done, B3 done, B4 done. Nothing BLOCKED. **Live calls for Part B: 56 of 60** (48 for B3, 8 for the
+  re-recording after the review), no 429, no stop, usage in memory, no Atlas write, nothing pushed.
+- **QA and review: done.** qa3 pass 8 on the post-review build: 117 states, 0 problems, landing CLS 0 (1440 and 390); keyboard pass 29 of 29; break-ui all OK; Ask print 13 of 13.
+  One reviewer (Sonnet): 2 high findings (a false interval sentence in the claims path; a validator matching by unit only), a limiter that counted failed checks, and smaller
+  items: fixed, with tests, claim rules 1.1.0 and the four Home answers recorded again (`ask-recorded-claims-1.1.0.json`); the rest kept with a reason (LOG §AM).
+- **Final checks (2026-11-23):** frontend vitest 822 passed, tsc 0, lint 0 errors (19 warnings), build ok; e2e full 61 passed, 2 failed on my fee wording, fixed, 17 passed over
+  the four specs touched; backend vitest 1136 passed (134 files), tsc 0; ml-service pytest 1905 passed (9 deselected); evals offline 0 violations, ablation --check exit 0;
+  mcp-server 26 passed; guard table 214 passed; roadmap ids ok. First Load JS: `/` 329.5, `/app` 401.6 (budget 404.6), `/app/overview` 401.6, `/login` 317.0 kB.
+- Report: `docs/milestones/M8.md` "IA v4 polish"; images `docs/design/IA-v4/polish/` (8); ADR-0018 final state; README Evaluation; LOG §AM.
 - **B3 and B4: done.** 12 questions committed first (`4dc47d6`), then 48 live calls of the cap of 60 (no 429, no stop): old path 5 written, 7
   degraded, 0 schema-invalid, 2.00 calls; new path 12 used, 0 degraded, 0 schema-invalid, 2.00 calls. Table in README Evaluation, LOG §AM, M5.md.
   Found: the new path omits what it has no claim for (no count claim; 3 claims at most) and prints `>-0.01 bps` for a tiny value. B4: the four

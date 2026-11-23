@@ -100,6 +100,60 @@ async function main() {
     ok(await page.getByRole('dialog').count() === 0 && (await page.evaluate(() => document.activeElement?.textContent?.trim())) === 'Menu', 'phone: the site Menu sheet closes with Escape and returns focus')
   }
 
+  // ---- A4 and A5 of the seventh order (2026-11-23): header action labels, the theme switch, the sample file ----
+  {
+    const page = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage()
+    await mock(page, false)
+    await page.goto(`${BASE}/app/overview?userId=demo-moderate`, { waitUntil: 'networkidle' })
+    const method = page.getByRole('button', { name: 'Method' })
+    await method.waitFor({ timeout: 30000 })
+    for (const n of ['Method', 'Copy share link', 'Download report']) {
+      ok((await page.getByRole('button', { name: n }).innerText()).trim() === n, `1440: "${n}" has its text label visible`)
+    }
+    await method.focus()
+    ok(!(await active(page)).endsWith('|none|0px'), '1440: the Method button shows a focus outline')
+    await page.keyboard.press('Enter')
+    await page.getByRole('dialog').waitFor({ timeout: 5000 })
+    await page.keyboard.press('Escape')
+    await page.waitForTimeout(600)
+    ok(await page.getByRole('dialog').count() === 0 && (await page.evaluate(() => document.activeElement?.getAttribute('aria-label'))) === 'Method', '1440: Enter opens the Method sheet, Escape closes it and returns focus to the button')
+    const sw = page.getByRole('switch', { name: /^Theme:/ })
+    await sw.first().waitFor({ timeout: 10000 })
+    await sw.first().focus()
+    ok((await sw.first().getAttribute('aria-checked')) === 'false' && (await sw.first().innerText()) === 'Theme: Paper', 'theme switch reads "Theme: Paper", aria-checked false')
+    await page.keyboard.press('Space')
+    await page.waitForTimeout(500)
+    ok((await sw.first().getAttribute('aria-checked')) === 'true' && (await sw.first().innerText()) === 'Theme: Carbon copy' && (await page.evaluate(() => document.documentElement.dataset.theme ?? document.documentElement.className)).includes('carbon'), 'Space switches it: "Theme: Carbon copy", aria-checked true, the page is in Carbon copy')
+    await page.keyboard.press('Space')
+    await page.waitForTimeout(500)
+    ok((await sw.first().getAttribute('aria-checked')) === 'false', 'Space again returns to Paper')
+
+    // the sample file, keyboard only, signed out
+    await page.goto(`${BASE}/app/check`, { waitUntil: 'networkidle' })
+    const sample = page.getByTestId('try-sample')
+    await sample.waitFor({ timeout: 30000 })
+    let reached = false
+    for (let i = 0; i < 40 && !reached; i++) { await page.keyboard.press('Tab'); reached = await page.evaluate(() => document.activeElement?.getAttribute('data-testid') === 'try-sample') }
+    ok(reached, 'signed out: "Try the sample file" is reached by Tab')
+    ok(!(await active(page)).endsWith('|none|0px'), 'signed out: it shows a focus outline')
+    await page.keyboard.press('Enter')
+    await page.getByTestId('sample-label').waitFor({ timeout: 15000 })
+    ok((await page.getByTestId('sample-label').innerText()).toLowerCase() === 'sample file: synthetic fills, real prices', 'Enter prints the result labelled "Sample file: synthetic fills, real prices"')
+  }
+  {
+    const page = await (await b.newContext({ viewport: { width: 390, height: 844 } })).newPage()
+    await mock(page, false)
+    await page.goto(`${BASE}/app/overview?userId=demo-moderate`, { waitUntil: 'networkidle' })
+    const dl = page.getByRole('button', { name: 'Download report' })
+    await dl.waitFor({ timeout: 30000 })
+    ok((await dl.innerText()).trim() === '', '390: the header actions are icon-only (named by aria-label)')
+    const box = await dl.boundingBox()
+    ok(!!box && box.width >= 44 && box.height >= 44, `390: the Download report target is at least 44 px (${box?.width}x${box?.height})`)
+    await dl.focus()
+    await page.waitForTimeout(500)
+    ok(await page.getByRole('tooltip').first().isVisible().catch(() => false), '390: focusing an icon shows its tooltip')
+  }
+
   await b.close()
   console.log(failed ? `FAILED: ${failed}` : 'ALL PASS')
   process.exit(failed ? 1 : 0)

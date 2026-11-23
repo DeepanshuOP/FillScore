@@ -766,7 +766,38 @@ one account, one run per question: it shows the mechanism works, not how often i
    under 0.01 bps prints as `<0.01 bps` or `>-0.01 bps`; it was written for tables). The number is the code's and is right; the wording is not natural.
 3. *Sentences are uniform* (the ADR's predicted risk): every cost answer reads "The measured orders cost $X in total."
 
-**B4. The four Home answers, re-recorded with the new path** (the four new-path runs of the Home questions above are the recording: verbatim,
-`frontend/app/lib/ask/ask-recorded-claims.json`, no extra call; the first file `ask-recorded.json` is unchanged beside it). All four passed, so the chips
+**B4. The four Home answers, re-recorded with the new path.** First, the four new-path runs of the Home questions above were the recording
+(`frontend/app/lib/ask/ask-recorded-claims.json`, rules 1.0.0, no extra call). The review (below) then found that one sentence in it was false, so the
+four questions were asked again under rules 1.1.0 (`scripts/record_ask_claims_fixture.py`, 8 more live calls): `frontend/app/lib/ask/ask-recorded-claims-1.1.0.json`,
+which the app uses. Both files and the first recording `ask-recorded.json` stay in the repository unchanged. All four passed in both recordings, so the chips
 keep their recorded order and none is degraded. The degraded display stays covered by `askView.test.ts`, `askRecorded.test.ts` and the old fixture.
+**Live calls for all of Part B: 56 of the 60 allowed** (48 in B3, 8 in the re-recording; no 429, no retry, no stop).
+
+The four answers, verbatim (rules 1.1.0, groq/qwen/qwen3.8-27b, recorded 2026-11-23):
+
+| Question | Answer |
+|---|---|
+| Which orders cost the most? | The costliest order was ord-moderate-BTCUSDT-319184, at $3.31. Order ord-moderate-BTCUSDT-350407 was among the costliest, at $1.42. Order ord-moderate-ETHUSDT-687601 was among the costliest, at $1.36. |
+| What did my orders cost in total? | The measured orders cost $52.08 in total. |
+| How did my market orders compare with the modelled cost? | Market orders cost -0.1 bps against a modelled 0.1 bps. The interval of paid minus modelled cost ran from -0.3 bps to -0.1 bps. |
+| What score did my execution get? | The measured score was A (93.4 / 100). |
+
+**Review of this order (one reviewer, Sonnet, read-only; images and diff), one pass.**
+- *Fixed.* (1) The interval claim said "The modelled cost's interval ran from X to Y", but `expected_cost/aggregate.py` `lowBps`/`highBps` bound the mean of paid
+  minus modelled cost: the recorded sentence put an interval that excludes the modelled 0.1 bps beside it. Template reworded ("The interval of paid minus modelled
+  cost ran from X to Y"), rules 1.1.0, the four answers re-recorded. (2) The validator matched a slot by unit only, so total fees could fill the total-cost slot or the
+  two ends of a range could swap: each slot now names its exact id (`value_mismatch`), with tests for those five cases; the twelve claim sets of B3 pass the
+  stricter rules offline (a test), so the measurement stands. (3) A failed check (503, 502) used one of a visitor's 3 tries an hour: both limiters now skip
+  failed requests (tests: three failures then a success is answered; refusals still refuse). (4) Header chip of the check page said "Your file" over a sample: now
+  "Broker file, public prices". (5) A sample's fee line said "stated in the file": now "Fees in the sample file: ... They were set when the file was made; no broker
+  stated them." (6) The check banner called a demo account a "sample account": reworded. (7) `/internal/csv-sample` imported modules between taking the gate slot and
+  the `try`: imports moved first, so a failing import cannot leak a slot.
+- *Kept, with a reason.* The sample screenshots come from a 3-fill mock (the page and its checks are what the screenshots test; the real 24-fill result is in §A above).
+  The Fills page hides a column from the loaded page of 50 rows, as the order states ("every row in the loaded data"); on the rebuilt demos the server flag
+  `v1Computed: false` makes it the same on every page, and the sentence says "loaded". The receipt's "−0.00 bps" and "−$0.00" are the earlier order's
+  rule (a tiny negative reads −0.00, true minus). The Fills "Fee" column says nothing of the published rate: the decision covers receipt-style lines only.
+  The limiters are in memory, so per instance, like every limiter in the backend (ARCHITECTURE).
+- *No finding:* nothing the model writes reaches a user in the claims path; trust-proxy handling and the ml-service route's auth and logging; no locked grade,
+  scoring v1 file, recorded output, golden set or evidence pack changed. Four existing tests were rewritten to follow the ordered changes (selector and
+  expectation changes, each with its reason in the spec).
 

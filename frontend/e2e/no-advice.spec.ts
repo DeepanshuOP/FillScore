@@ -13,7 +13,8 @@ const READY: Record<string, (page: Page) => Promise<void>> = {
     await expect(page.getByRole('button', { name: /download report/i })).toBeVisible()
   },
   '/app/fills': async (page) => {
-    await expect(page.getByRole('heading', { name: 'Fills' })).toBeAttached()
+    // level 2 = the panel's heading; the page header also carries an h1 "Fills"
+    await expect(page.getByRole('heading', { name: 'Fills', level: 2 })).toBeAttached()
     await expect(page.locator('div[title$="USDT"]').first()).toBeVisible() // first ledger row's symbol cell
   },
   '/app/fills?tab=patterns': async (page) => {

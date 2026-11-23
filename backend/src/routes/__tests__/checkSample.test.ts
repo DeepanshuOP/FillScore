@@ -58,6 +58,36 @@ describe('limits', () => {
     });
 });
 
+describe('a failed check does not use a try (review 2026-11-23)', () => {
+    const outcomes = (codes: Array<'fail503' | 'fail502' | 'ok'>) => {
+        let i = 0;
+        return (async () => {
+            const c = codes[Math.min(i++, codes.length - 1)];
+            if (c === 'fail502') throw new Error('down');
+            return c === 'fail503'
+                ? new Response(JSON.stringify({ detail: { code: 'market_data_busy' } }), { status: 503, headers: { 'Content-Type': 'application/json' } })
+                : new Response(JSON.stringify(ML_OK), { status: 200, headers: { 'Content-Type': 'application/json' } });
+        }) as typeof fetch;
+    };
+    it('three failures (503, 502, 503) from one IP, then a success: the 4th call is answered, not refused by the limit', async () => {
+        const { app } = build({ fetchImpl: outcomes(['fail503', 'fail502', 'fail503', 'ok']) });
+        const codes: number[] = [];
+        for (let i = 0; i < 4; i++) codes.push((await post(app, '203.0.113.7')).status);
+        expect(codes).toEqual([503, 502, 503, 200]);
+    });
+    it('the same for the overall count: with a cap of 2 a day, two failures leave the cap whole for the next visitor', async () => {
+        const { app } = build({ perDay: 2, fetchImpl: outcomes(['fail503', 'fail503', 'ok']) });
+        expect([(await post(app, '203.0.113.1')).status, (await post(app, '203.0.113.2')).status]).toEqual([503, 503]);
+        expect((await post(app, '203.0.113.3')).status).toBe(200);
+    });
+    it('a refused call (over the limit) is still refused: failures are not counted, successes are', async () => {
+        const { app } = build({ perIp: 3 });
+        for (let i = 0; i < 3; i++) expect((await post(app, '203.0.113.7')).status).toBe(200);
+        expect((await post(app, '203.0.113.7')).status).toBe(429);
+        expect((await post(app, '203.0.113.7')).status).toBe(429);
+    });
+});
+
 describe('the route', () => {
     it('opens signed out: no token needed, the ml-service is called once with a service token for the sample account and the result is returned as is', async () => {
         const { app, calls } = build();

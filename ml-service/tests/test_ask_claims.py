@@ -51,7 +51,7 @@ def test_a_valid_claim_set_renders_the_exact_sentences_from_the_templates():
     out, provider = _ask({"claims": [C("SCORE_GRADE", "score.grade", "score.composite_score"), C("COST_TOTAL", "costs.total_cost_usd")]})
     assert out["answer"] == "The measured score was A (93.4 / 100). The measured orders cost $16.00 in total."
     assert out["degraded"] is False and out["fallback"] is None
-    assert out["answer_kind"] == "claims" and out["ask_prompt_version"] == "2.0.0" and out["ask_claim_rules_version"] == "1.0.0"
+    assert out["answer_kind"] == "claims" and out["ask_prompt_version"] == "2.0.0" and out["ask_claim_rules_version"] == "1.1.0"
     assert out["n_calls"] == 2 and len(provider.calls) == 2
     assert out["claims"] == [C("SCORE_GRADE", "score.grade", "score.composite_score"), C("COST_TOTAL", "costs.total_cost_usd")]
     assert out["values"] == [{"placeholder": "score.grade", "shown": "A"}, {"placeholder": "score.composite_score", "shown": "93.4"},
@@ -71,7 +71,8 @@ def test_each_claim_type_with_its_hand_value():
         (C("COSTLIEST_ORDER", "costliest.orders.0.order_id", "costliest.orders.0.cost_usd"), "The costliest order was B, at $8.00."),
         (C("COSTLIEST_ORDER", "costliest.orders.1.order_id", "costliest.orders.1.cost_usd"), "Order C was among the costliest, at $6.00."),
         (C("EXPECTED_COMPARE", "expected.paid_bps", "expected.expected_bps"), "Market orders cost 2.3 bps against a modelled 1.3 bps."),
-        (C("EXPECTED_INTERVAL", "expected.interval_low_bps", "expected.interval_high_bps"), "The modelled cost's interval ran from 0.5 bps to 2.0 bps."),
+        # the interval is a bootstrap interval of the mean excess (paid minus modelled): expected_cost/aggregate.py lowBps and highBps (review 2026-11-23)
+        (C("EXPECTED_INTERVAL", "expected.interval_low_bps", "expected.interval_high_bps"), "The interval of paid minus modelled cost ran from 0.5 bps to 2.0 bps."),
     ]
     for claim, sentence in cases:
         r = ac.validate_claims({"claims": [claim]}, ctx)
@@ -96,6 +97,12 @@ BAD = [
     ("a unit mismatch: a bps value in a dollar slot (the old bps-in-bps)", {"claims": [C("COST_TOTAL", "costs.median_total_bps")]}, "unit_mismatch"),
     ("a unit mismatch: dollars in a bps slot", {"claims": [C("COST_MEDIAN", "costs.total_cost_usd")]}, "unit_mismatch"),
     ("the wrong number of ids", {"claims": [C("SCORE_GRADE", "score.grade")]}, "slot_count"),
+    # review 2026-11-23: the unit matches but the value is not the one the sentence says it is (rules 1.1.0: each slot names its exact id)
+    ("total fees stated as the total cost", {"claims": [C("COST_TOTAL", "costs.total_fees_usd")]}, "value_mismatch"),
+    ("the execution median stated as the median cost", {"claims": [C("COST_MEDIAN", "costs.median_execution_bps")]}, "value_mismatch"),
+    ("the low end of the range stated as the score", {"claims": [C("SCORE_GRADE", "score.grade", "score.band_low_score")]}, "value_mismatch"),
+    ("the ends of a range swapped", {"claims": [C("SCORE_RANGE", "score.band_high_score", "score.band_low_score")]}, "value_mismatch"),
+    ("the same end of a range twice", {"claims": [C("SCORE_RANGE", "score.band_low_score", "score.band_low_score")]}, "value_mismatch"),
     ("an unknown claim type", {"claims": [C("PREDICT_COST", "costs.total_cost_usd")]}, "schema_invalid"),
     ("an empty claim set", {"claims": []}, "empty_claims"),
     ("more than three claims", {"claims": [C("COST_TOTAL", "costs.total_cost_usd")] * 4}, "too_many_claims"),
@@ -113,6 +120,24 @@ def test_every_invalid_claim_set_goes_to_the_degraded_path_unchanged(name, paylo
     assert out["answer"] == FALLBACK_SCORE_COSTS               # exactly the code-built answer that exists today
     assert out["answer_kind"] == "claims"
     assert not re.search(r"500", out["answer"])
+
+
+def test_compare_with_the_interval_ids_and_an_interval_with_the_compare_ids_are_value_mismatches():
+    ctx = {"expected": {"paid_bps": 2.34, "expected_bps": 1.26, "interval_low_bps": 0.5, "interval_high_bps": 2.04}}
+    assert ac.validate_claims({"claims": [C("EXPECTED_COMPARE", "expected.interval_low_bps", "expected.interval_high_bps")]}, ctx).reason == "value_mismatch"
+    assert ac.validate_claims({"claims": [C("EXPECTED_INTERVAL", "expected.paid_bps", "expected.expected_bps")]}, ctx).reason == "value_mismatch"
+
+
+def test_the_twelve_recorded_claim_sets_of_the_first_measurement_still_pass_the_stricter_rules():
+    """B3's runs (ml-service/evals/ask_claims_runs/claims_runs.json) were made under rules 1.0.0; every claim set in them names the exact ids,
+    so rules 1.1.0 accept all twelve and the measurement stands."""
+    import json
+    import pathlib
+    runs = json.loads((pathlib.Path(__file__).resolve().parents[1] / "evals" / "ask_claims_runs" / "claims_runs.json").read_text())
+    assert len(runs) == 12
+    for r in runs:
+        res = ac.validate_claims({"claims": r["result"]["claims"]}, r["ctx"])
+        assert res.reason is None, (r["question"], res.reason)
 
 
 def test_an_order_claim_that_mixes_ranks_is_degraded_with_the_code_built_costliest_sentence():

@@ -29,7 +29,13 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
-**2026-11-23 (latest, sixth order): IA v4 built: ready for Deepanshu's review (local commits, not pushed).** A marketing site (top bar, `/demo`,
+**2026-11-23 (latest, seventh order): IA v4 polish and typed claims for Ask: ready for Deepanshu's review (local commits, not pushed).** Part A: fee lines read
+"Fees (published rate)", Fills hides columns that are not computed and says why, provenance prints once, header buttons have text from 1024 px and the theme control shows
+the theme, "Try the sample file" on `/app/check` (3 an hour per IP, 200 a day), the three dependency bumps as local commits (PRs #11 to #13 stay open for you to close).
+Part B: Ask answers with typed claims (ADR-0018 accepted for Ask only; claim rules 1.1.0; 56 of 60 live calls). Report: `docs/milestones/M8.md` "IA v4 polish", `docs/research/LOG.md`
+§AM, README Evaluation. Needs from Deepanshu: the push, closing the three Dependabot PRs, and the decision on re-cutting the sample file before about September 2028. Older text follows.
+
+**2026-11-23 (sixth order): IA v4 built: ready for Deepanshu's review (local commits, not pushed).** A marketing site (top bar, `/demo`,
 `/how-it-works`, `/docs`) and an app under `/app/*` (sidebar of nine nouns, page header with provenance, Home = "Ask FillScore", Fills tabs,
 308 redirects for every old address). Pages: `ARCHITECTURE.md` section 4. Report: `docs/milestones/M8.md` "IA v4 built"; images
 `docs/design/IA-v4/built/`; notes `docs/research/LOG.md` section AL. Needs from Deepanshu: the push, and a decision on the older open item (the

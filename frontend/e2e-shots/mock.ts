@@ -42,6 +42,18 @@ export async function mock(page: Page, signedIn: boolean, over: (p: string, url:
       const all = (f.trades as { trades: unknown[] }).trades
       return route.fulfill(json({ ...(f.trades as object), trades: all.slice((pg - 1) * limit, pg * limit), page: pg, pages: Math.max(1, Math.ceil(all.length / limit)) }))
     }
+    if (p === '/check/sample') {
+      // A5: the answer of POST /api/check/sample (shape of the ml-service check result plus the sample marker); QA fixture, hand-sized: 3 fills
+      const fill = (n: number, side: number, price: number, qty: number) => ({
+        txid: `SAMPLE-T0${n}`, order_id: `SAMPLE-O0${n}`, symbol: 'BTCUSDT', side, ts_ms: 1788332833047 + n * 60000, price, qty, cost: price * qty, fee_bps: 10, fee_usd: price * qty * 0.001,
+        taker: true, mid: price, quote_quality: 'both_sides', eff_half_bps: 0.2 * n, total_bps: 10 + 0.2 * n, cost_usd: 0.02 * n, unmeasured_reason: null, market_data: [] })
+      return route.fulfill(json({
+        format: 'kraken', provenance: 'Read with the column layout of Kraken\'s documented Trades export. That reading is built from Kraken\'s documentation and is not yet checked against a real file.',
+        fee_known: true, stored: false, skipped: [], assumptions: ['The reference market is Binance\'s USDT market. That is an assumption.'],
+        summary: { fills: 3, measured: 3, unmeasured: 0, unmeasured_reasons: {}, median_eff_half_bps: 0.4, weighted_eff_half_bps: 0.4, total_eff_cost_usd: 0.12, total_fee_usd: 0.65, weighted_fee_bps: 10 },
+        fills: [fill(1, 1, 77609.12, 0.0021), fill(2, -1, 77635.06, 0.0034), fill(3, 1, 77620, 0.0048)], limits: { max_fills: 200, max_chars: 200000, market_data_deadline_s: 60 },
+        sample: { label: 'Sample file: synthetic fills, real prices', sha256: 'x' } }))
+    }
     if (p === '/audit/orders-ledger') return route.fulfill(json(f.ledger))
     if (p === '/audit/exceptions') return route.fulfill(json(f.explain.exceptions))
     if (p === '/audit/rankings') return route.fulfill(json(f.explain.rankings))

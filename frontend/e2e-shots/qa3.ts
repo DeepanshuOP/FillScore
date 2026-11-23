@@ -68,7 +68,7 @@ const STATES: State[] = [
   // ---- the app (also at 320) ----
   { name: 'app-home', path: `/app${D}`, prepare: async (p) => { await p.getByTestId('home-total').waitFor({ timeout: 30000 }); await p.waitForTimeout(1000) } },
   { name: 'app-home-ask', path: `/app${D}`, prepare: async (p) => { await p.getByTestId('home-total').waitFor({ timeout: 30000 }); await p.getByTestId('ask-chip').first().click(); await p.waitForTimeout(1200) } },
-  { name: 'app-home-ask-degraded', path: `/app${D}`, prepare: async (p) => { await p.getByTestId('home-total').waitFor({ timeout: 30000 }); await p.getByTestId('ask-chip').last().click(); await p.waitForTimeout(1200) } },
+  { name: 'app-home-ask-last', path: `/app${D}`, prepare: async (p) => { await p.getByTestId('home-total').waitFor({ timeout: 30000 }); await p.getByTestId('ask-chip').last().click(); await p.waitForTimeout(1200) } },
   { name: 'app-home-signed-in', path: '/app', signedIn: true, prepare: async (p) => { await p.getByTestId('ask-panel').waitFor({ timeout: 30000 }); await p.waitForTimeout(800) } },
   { name: 'app-more-sheet', path: `/app${D}`, prepare: async (p) => { if ((p.viewportSize()?.width ?? 0) < 1024) { await p.getByRole('button', { name: 'More' }).click(); await p.waitForTimeout(900) } else await settle(p) } },
   { name: 'app-overview', path: `/app/overview${D}`, prepare: async (p) => { await p.getByText('Where the').first().waitFor({ timeout: 30000 }); await p.waitForTimeout(1200) } },
@@ -99,6 +99,9 @@ const STATES: State[] = [
   { name: 'app-fills-patterns', path: `/app/fills${D}&tab=patterns`, prepare: async (p) => { await p.waitForLoadState('networkidle'); await p.waitForTimeout(1500) } },
   { name: 'app-check', path: '/app/check', prepare: settle },
   { name: 'app-check-demo', path: `/app/check${D}`, prepare: settle },
+  // A5 (seventh order): the sample file, signed out and in demo mode; the result is labelled
+  { name: 'app-check-sample', path: '/app/check', prepare: async (p) => { await p.getByTestId('try-sample').click(); await p.getByTestId('sample-label').waitFor({ timeout: 15000 }); await p.waitForTimeout(800) } },
+  { name: 'app-check-sample-demo', path: `/app/check${D}`, prepare: async (p) => { await p.getByTestId('try-sample').click(); await p.getByTestId('sample-label').waitFor({ timeout: 15000 }); await p.waitForTimeout(800) } },
   { name: 'app-settings', path: '/app/settings', signedIn: true, prepare: settle },
   { name: 'app-connect-refusal', path: '/app/connect', signedIn: true, prepare: async (p) => {
     await p.getByRole('button', { name: /Binance/ }).first().click()
@@ -110,6 +113,7 @@ const STATES: State[] = [
 
   // ---- Carbon copy (1440) ----
   { name: 'carbon-home', path: `/app${D}`, carbon: true, only1440: true, prepare: async (p) => { await p.getByTestId('home-total').waitFor({ timeout: 30000 }); await p.getByTestId('ask-chip').first().click(); await p.waitForTimeout(1200) } },
+  { name: 'carbon-fills', path: `/app/fills${D}`, carbon: true, only1440: true, prepare: async (p) => { await p.getByTestId('fills-tabs').waitFor({ timeout: 30000 }); await p.waitForTimeout(1200) } },
   { name: 'carbon-overview', path: `/app/overview${D}`, carbon: true, only1440: true, prepare: async (p) => { await p.getByText('Where the').first().waitFor({ timeout: 30000 }); await p.waitForTimeout(1200) } },
   { name: 'carbon-orders-receipt', path: `/app/orders${D}`, carbon: true, only1440: true, prepare: async (p) => receipt(p) },
   { name: 'carbon-council', path: `/app/council${D}`, carbon: true, only1440: true, prepare: async (p) => {

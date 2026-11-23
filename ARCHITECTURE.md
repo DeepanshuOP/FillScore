@@ -93,7 +93,7 @@ aggregating so results are deterministic. `POST /api/audit/run` is the only writ
 | `authLimiter` | 15 min | 15 | sign-in, sign-up, reset, verify, exchange |
 | `connectLimiter` | 15 min | 5 | `POST /api/onboarding/connect` |
 | `availabilityLimiter` | 15 min | 20 | `/api/preflight` |
-| sample file, per IP | 60 min | 3 | `POST /api/check/sample` (no login; the committed sample file through the ml-service check) |
+| sample file, per IP | 60 min | 3 | `POST /api/check/sample` (no login; the committed sample file through the ml-service check; a failed check is not counted) |
 | sample file, overall | 24 h | 200 | the same route, one count for everyone, run after the per-IP limit |
 
 All are per IP and held in memory, so they are per instance. See the gaps below.
