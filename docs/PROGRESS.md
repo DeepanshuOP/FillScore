@@ -4,7 +4,10 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24: design v5 (step 0 Binance 418 fix, audit, research, proposal, prototype), local commits
 
-- **Next concrete action: step 3 (features, `docs/design/v5/FEATURES.md`), then step 4 (the not-computed policy).**
+- **Next concrete action: step 4, the not-computed policy (a table in `docs/design/v5/PROPOSAL.md`).**
+- **Step 3: done.** `docs/design/v5/FEATURES.md`, top 8: period picker with comparison to the previous period; each fill against the
+  public price at its second (demo print coverage 82.9% / 84.0% / 77.9%, LOG §AN); onboarding checklist; sample-data switch; changelog
+  with scoring versions; usage page; saved views; status page. Weekly email ranked 9th (needs an email provider: approval).
 - **Step 2: done.** `docs/design/v5/REFERENCES.md`: 21 public pages captured and measured at 1440 and on a Pixel 8 (`e2e-shots/refs5.ts`,
   `refs/measures.json`; Koinly and CoinTracker desktop pages were Cloudflare checks, deleted); the cal.com app seen through Deepanshu's
   login (described in words, captures private); 16 libraries read with license, version and size (one read-only Sonnet research

@@ -871,3 +871,23 @@ line; the script line was written before these tests, not red-first). The full b
 `routes/__tests__/auditRun.test.ts` ("the stored key signed the history requests" read the first fetch call's key header; the first call is
 now the public exchangeInfo without a key): it now reads the first api.binance.com call.
 
+### Steps 1 to 3 (audit, research, features)
+
+Audit, references and features are in `docs/design/v5/AUDIT.md`, `REFERENCES.md` and `FEATURES.md`. Notes that belong here:
+- WebKit could not start on this host (GTK 4, GStreamer missing; `npx playwright install-deps webkit` needs sudo). The iPhone 15 profile
+  ran in Chromium; Safari-only issues are not covered by this audit.
+- Lighthouse's chrome-launcher created its temporary profiles under `LOCALAPPDATA`, which WSL passes as the Windows path, so 12 folders
+  named `C:\Users\...\lighthouse.*` appeared inside `frontend/` (deleted; the runner now sets `LOCALAPPDATA` to the OS temp folder).
+- **Print coverage of the demo fills** (for feature 2 and the not-computed policy, step 4). Script (read-only, not committed):
+  for each fill in each stored demo window (`backend/src/data/demoPrints.ts`, rule "arrival - 5 s to last fill + 5 s, at most 60 prints"),
+  is there a buyer-initiated and a seller-initiated print strictly before the fill and at most 5 s older (the broker-file check's rule,
+  `ml-service/csv_import/check.py`)? Every demo fill lies in a window (721, 385, 607).
+
+  | Account | Fills | Both sides within 5 s | One side only | None | Covered |
+  |---|---|---|---|---|---|
+  | demo-aggressive | 721 | 606 | 94 | 21 | 84.0% |
+  | demo-disciplined | 385 | 300 | 73 | 12 | 77.9% |
+  | demo-moderate | 607 | 503 | 83 | 21 | 82.9% |
+
+  The 60-print cap can drop prints far from a fill, so these are lower bounds for what the daily files would give.
+
