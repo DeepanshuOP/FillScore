@@ -16,9 +16,9 @@ import CsvCheckPanel from '../dashboard/CsvCheckPanel';
 export default function CheckFile() {
   const { isLoading, accessToken, refreshAccessToken } = useAuth();
   return (
-    <AppPage sourceText="Broker file, public prices">
+    <AppPage title="Check an exchange export" description="Compare an exchange's export with public prices. Nothing is stored." sourceText="Your file, measured against Binance public trades">
       <div className="flex max-w-[900px] flex-col gap-6">
-        <p className="max-w-[68ch] text-[15px] text-ui-graphite">Choose a broker export. Each fill is read and compared with the public price at its time.</p>
+        <p className="max-w-[68ch] text-[14px] text-ui-graphite">Choose an exchange export. Each fill is read and compared with the public price at its time.</p>
         {!isLoading && !accessToken ? (
           <Banner kind="info" title="Checking your own file needs a signed-in account"
             action={<Link href="/login" className={buttonClass('secondary', 'sm', 'no-underline')}>Log in</Link>}>

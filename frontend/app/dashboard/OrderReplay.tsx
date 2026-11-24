@@ -10,7 +10,8 @@ import { Fig } from '../ui/Fig';
 import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, PRINTS_LEGEND, costLineLabel, expectedLine, unfilledLineNote } from './receiptCopy';
 import { bars, barsWidth, canonicalJson, sha256Hex } from '../ui/hash';
 import { describeReplay, type ReplayApi } from './explainView';
-import { PrintsTape } from './PrintsTape';
+import dynamic from 'next/dynamic';
+const PricePrintsChart = dynamic(() => import('../ui/charts/AppCharts').then((m) => m.PricePrintsChart), { ssr: false, loading: () => <div className="h-[280px]" aria-hidden="true" /> });
 import { parsePrintsWindow } from './printsTape';
 import { formatUtc, withParams, type OrderRow } from './ordersTable';
 
@@ -62,8 +63,8 @@ function PrintsNote({ body }: { body: ReplayBody }) {
   if (!body.fills.length) return <p className="g">{NO_FILLS}</p>;
   // Step 5 (fourth order): a demo order's payload carries its window of prints, drawn above; the note then explains the marks.
   // A real account's payload has no `prints`, and its receipt keeps this line.
-  if (parsePrintsWindow(body.prints)) return <p className="g mt-1 text-[11px]" data-testid="receipt-prints-note">{PRINTS_LEGEND}</p>;
-  return <p className="g mt-1 text-[11px]" data-testid="receipt-prints-note">{CHART_NOTE}</p>;
+  if (parsePrintsWindow(body.prints)) return <p className="g mt-1 text-[12px]" data-testid="receipt-prints-note">{PRINTS_LEGEND}</p>;
+  return <p className="g mt-1 text-[12px]" data-testid="receipt-prints-note">{CHART_NOTE}</p>;
 }
 
 /** The receipt's printed NOTES fold (design v3.1): a mono button with aria-expanded; the lines stay in the document. */
@@ -155,7 +156,17 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
           ) : null}
           {(() => {
             const pw = body.fills.length ? parsePrintsWindow(body.prints) : null;
-            return pw ? <PrintsTape window={pw} fills={body.fills.map((f) => ({ timeMs: new Date(f.time).getTime(), price: f.price }))} /> : null;
+            if (!pw) return null;
+            // design v5 (PROPOSAL §6, D4): a Recharts chart of the stored public trades around the order, the fills marked
+            const quote = /(USDT|USDC|FDUSD|BUSD|BTC|ETH|BNB)$/.exec(symbol)?.[1] ?? '';
+            return (
+              <div className="mt-2 rounded-md bg-ui-raised p-1">
+                <PricePrintsChart arrivalMs={pw.arrivalMs} quote={quote}
+                  trades={pw.prints.map((r) => ({ t: r[1], price: r[2], qty: r[3], side: r[4] === 0 ? 'buyer' as const : 'seller' as const }))}
+                  fills={body.fills.map((f) => ({ t: new Date(f.time).getTime(), price: f.price, qty: f.quantity }))}
+                  source={`Source: Binance public trades${pw.files.length ? `, ${pw.files.map((f) => f.date).join(' and ')}` : ''}; SHA-256 in Notes.`} />
+              </div>
+            );
           })()}
           {body.fills.length ? null : <PrintsNote body={body} />}
           <p className="sec">COSTS</p>
@@ -182,11 +193,11 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
             {ec ? <p className="g mt-1.5">{expectedLine(ec)}</p> : null}
             {view.notes.map((n) => <p key={n} className="g mt-1">{n}</p>)}
             {view.sources.map((s) => (
-              <p key={s.hash + s.label} className="g mt-1 text-[11.5px] [overflow-wrap:anywhere]">
+              <p key={s.hash + s.label} className="g mt-1 text-[12px] [overflow-wrap:anywhere]">
                 SOURCE {s.url ? <a href={s.url} target="_blank" rel="noopener noreferrer" className="text-ui-ink">{s.label}</a> : s.label}, SHA-256 {s.hash}
               </p>
             ))}
-            <p className="g mt-1 text-[10.5px] leading-[1.35] [overflow-wrap:anywhere]">{hex ?? (o ? 'HASHING' : 'NO ORDER RECORD')}<br />{BARS_NOTE}</p>
+            <p className="g mt-1 text-[12px] leading-[1.35] [overflow-wrap:anywhere]">{hex ?? (o ? 'HASHING' : 'NO ORDER RECORD')}<br />{BARS_NOTE}</p>
           </ReceiptNotes>
           {/* below 400 px the bars and the stamp stack, so neither squeezes the other (break-ui, 2026-11-21) */}
           <div className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4 max-[400px]:grid-cols-1">

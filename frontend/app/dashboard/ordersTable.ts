@@ -140,8 +140,8 @@ export function withParams(path: string, query: string, extra: Record<string, st
  * the time (OrdersView).
  */
 export function defaultOrderColumns(width: number): Record<string, boolean> {
-  const base = { orderId: false, fills: false, quantity: false, makerShare: false };
-  if (width >= 640) return { ...base, cost: false };
-  const phone = { ...base, type: false, status: false, notionalUsd: false, feesUsd: false };
-  return width <= 360 ? { ...phone, symbol: false, side: false } : phone;
+  // design v5 (PROPOSAL §3.3): the cost, in dollars and in bps, is a default column on every width; below 640 px the page draws
+  // row cards instead of the table (OrdersView), so the visibility state is the same one everywhere.
+  void width;
+  return { orderId: false, fills: false, quantity: false, makerShare: false };
 }

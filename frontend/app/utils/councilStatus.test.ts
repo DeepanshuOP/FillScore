@@ -260,10 +260,11 @@ import { agentLabel, ratingWords, alphaModelLabelNote, parseBenchmarkLine, alpha
 
 describe('agentLabel', () => {
     it('shows the alpha specialist as Benchmark Reviewer; the stored key stays alpha_architect', () => {
-        expect(agentLabel('alpha_architect')).toBe('Benchmark Reviewer');
-        expect(agentLabel('liquidity_scout')).toBe('Liquidity Scout');
-        expect(agentLabel('risk_auditor')).toBe('Risk Auditor');
-        expect(agentLabel('fee_optimizer')).toBe('Fee Reviewer');   // display label since 2026-11-22; the stored key is unchanged
+        // design v5 words (PROPOSAL §1): section headings Liquidity, Benchmark, Risk, Fees; the stored keys are unchanged
+        expect(agentLabel('alpha_architect')).toBe('Benchmark');
+        expect(agentLabel('liquidity_scout')).toBe('Liquidity');
+        expect(agentLabel('risk_auditor')).toBe('Risk');
+        expect(agentLabel('fee_optimizer')).toBe('Fees');
         expect(agentLabel('unknown_agent')).toBe('unknown_agent');
         expect(Object.keys(verdictCardsFromResult({ alpha: { alphaRating: 'NEUTRAL' } }))).toContain('alpha_architect');
     });

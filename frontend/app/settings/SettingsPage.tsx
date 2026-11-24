@@ -27,7 +27,7 @@ const MESSAGES: Record<string, string> = {
 };
 
 /** Account settings: disconnect an exchange, download a copy of your data, evidence packs, API keys, delete your account. */
-export default function SettingsPage() {
+export default function SettingsPage({ versions }: { versions?: { scoring: string; measure: string } }) {
   const router = useRouter();
   const { user, isLoading, accessToken, refreshAccessToken, logout } = useAuth();
   const auth = { accessToken, refreshAccessToken };
@@ -193,6 +193,15 @@ export default function SettingsPage() {
             </div>
           </div>
         </Panel>
+
+        {versions ? (
+          <Panel id="settings-about" title="About" description="The versions behind every grade and measurement.">
+            <dl className="grid max-w-md grid-cols-[auto_minmax(0,1fr)] gap-x-6 gap-y-1 text-[14px]" data-testid="settings-versions">
+              <dt className="text-ui-graphite">Score version</dt><dd className="text-ui-ink">{versions.scoring}</dd>
+              <dt className="text-ui-graphite">Measurement version</dt><dd className="text-ui-ink">{versions.measure}</dd>
+            </dl>
+          </Panel>
+        ) : null}
 
         <Panel id="settings-delete" title="Delete account" description="Permanently removes your account, exchange connections, trades, audits and history. This cannot be undone.">
           <div className="flex max-w-md flex-col gap-4">

@@ -4,25 +4,26 @@ import { auditModeLabel, councilErrorMessage, verdictCardsFromResult, quickOffer
 // M3 §3 and §4: the Quick audit (one model call, the default) and the Deep audit (the 9-call Council, opt-in).
 describe('auditModeLabel', () => {
     it('names the mode and the number of model calls actually made', () => {
-        expect(auditModeLabel({ mode: 'quick', n_calls_ok: 1 })).toBe('Quick audit · 1 model call');
-        expect(auditModeLabel({ mode: 'quick', n_calls_ok: 2 })).toBe('Quick audit · 2 model calls');
-        expect(auditModeLabel({ n_calls_ok: 9, liquidity: {} })).toBe('Deep audit · 9 model calls');
+        // design v5 words (PROPOSAL §1): Short review (1 AI call) and Full review (9 AI calls)
+        expect(auditModeLabel({ mode: 'quick', n_calls_ok: 1 })).toBe('Short review, 1 AI call');
+        expect(auditModeLabel({ mode: 'quick', n_calls_ok: 2 })).toBe('Short review, 2 AI calls');
+        expect(auditModeLabel({ n_calls_ok: 9, liquidity: {} })).toBe('Full review, 9 AI calls');
     });
-    it('says when the result came from an earlier identical audit (no call made now)', () => {
-        expect(auditModeLabel({ mode: 'quick', n_calls_ok: 1, cached: true })).toBe('Quick audit · from an earlier identical audit, no new model call');
-        expect(auditModeLabel({ n_calls_ok: 9, cached: true, liquidity: {} })).toBe('Deep audit · from an earlier identical audit, no new model call');
+    it('says when the result came from an earlier identical review (no call made now)', () => {
+        expect(auditModeLabel({ mode: 'quick', n_calls_ok: 1, cached: true })).toBe('Short review, from an earlier identical review, no new AI call');
+        expect(auditModeLabel({ n_calls_ok: 9, cached: true, liquidity: {} })).toBe('Full review, from an earlier identical review, no new AI call');
     });
-    it('a degraded run is not presented as a complete audit', () => {
-        expect(auditModeLabel({ mode: 'quick', n_calls_ok: 0, degraded: true })).toBe('Quick audit · incomplete');
+    it('a degraded run is not presented as a complete review', () => {
+        expect(auditModeLabel({ mode: 'quick', n_calls_ok: 0, degraded: true })).toBe('Short review, incomplete');
     });
 });
 
 describe('a refused Deep audit offers the Quick audit, or says it cannot', () => {
     it('adds the offer to the message', () => {
         expect(councilErrorMessage('RATE_LIMIT_EXHAUSTED', true))
-            .toBe('The Council is at capacity right now. Please try again in a few minutes. A Quick audit (one model call) is still available.');
+            .toBe('The Council is at capacity right now. Please try again in a few minutes. A short review (1 AI call) is still available.');
         expect(councilErrorMessage('DAILY_BUDGET_EXHAUSTED', false))
-            .toBe('The daily AI budget has been reached. Please try again tomorrow. A Quick audit is not available either.');
+            .toBe('The daily AI budget has been reached. Please try again tomorrow. A short review is not available either.');
     });
     it('adds nothing when the server did not say', () => {
         expect(councilErrorMessage('RATE_LIMIT_EXHAUSTED')).toBe('The Council is at capacity right now. Please try again in a few minutes.');

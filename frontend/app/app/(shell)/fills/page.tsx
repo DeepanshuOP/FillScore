@@ -1,19 +1,9 @@
 import type { Metadata } from 'next'
-import { Suspense } from 'react'
 import TradesLedger from '@/app/trades/TradesLedger'
-import Patterns from '@/app/analytics/Patterns'
-import { FillsTabs } from './FillsTabs'
 
 export const metadata: Metadata = { title: 'Fills' }
 
-/** Fills (IA v4): today's Trades and Analytics as two tabs, Ledger and Patterns. */
-export default async function Page({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
-  const { tab } = await searchParams
-  const active = tab === 'patterns' ? 'patterns' : 'ledger'
-  return (
-    <>
-      <Suspense fallback={<div className="mb-6 h-11 border-b border-ui-rule" aria-hidden="true" />}><FillsTabs active={active} /></Suspense>
-      {active === 'patterns' ? <Patterns /> : <TradesLedger />}
-    </>
-  )
+/** Fills (design v5): one page. The Patterns tab is gone (not-computed policy, PROPOSAL §4 row 3); its old address opens this page. */
+export default function Page() {
+  return <TradesLedger />
 }

@@ -30,6 +30,9 @@ export function hiddenMeasures(rows: readonly FillMeasures[]): HiddenMeasures {
  * Otherwise no loaded fill simply carries a value.
  */
 export function notComputedLine(hidden: HiddenMeasures, v1Computed: boolean | undefined): string | null {
+  // design v5, D8 class (a) (PROPOSAL §4 row 1): an account whose trades never carried the v1 per-fill measures does not get a
+  // "not computed" sentence: the columns are simply not drawn. The per-fill v1 score is frozen with v1 and was never stored for it.
+  if (v1Computed === false) return null
   const names: string[] = []
   if (hidden.slippage) names.push('slippage')
   if (hidden.score) names.push('score')
@@ -37,9 +40,7 @@ export function notComputedLine(hidden: HiddenMeasures, v1Computed: boolean | un
   if (hidden.score) names.push('the average score')   // the tile that averages the score goes with it
   if (names.length === 0) return null
   const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`
-  const why = v1Computed === false
-    ? 'The per-fill v1 measures need an arrival price, and this data has none; none was invented.'
-    : `No loaded fill carries a value for ${names.length === 1 ? 'it' : 'them'}.`
+  const why = `No loaded fill carries a value for ${names.length === 1 ? 'it' : 'them'}.`
   return `Not computed for this data: ${list}. ${why}`
 }
 

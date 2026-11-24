@@ -6,7 +6,7 @@
 import { formatSignedBps as formatBps, formatUsd } from '../ui/format';
 
 export const CSV_COPY = {
-  title: 'Check a broker file against public prices',
+  title: 'Check an exchange export against public prices',   // design v5, D13: crypto users say "exchange export"
   hint: 'Choose a trade-history CSV from Kraken, or map the columns of another broker\'s file. Each fill is compared with the public price at its second. '
     + 'The file is read once to make this check and is not stored.',
   button: 'Check the file',

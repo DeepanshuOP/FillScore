@@ -1,11 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Panel } from '../ui/Panel';
+import { Card } from '../ui/blocks';
 import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/EmptyState';
 import { Banner } from '../ui/Banner';
-import { PenCircle } from '../ui/PenMarks';
 import { describeQueue, nextStates, PANEL_COPY, type QueueApi } from './explainView';
 import { OrderReplay } from './OrderReplay';
 import { withParams } from './ordersTable';
@@ -19,22 +18,22 @@ interface Props {
   request: (path: string, init?: { method?: string; body?: unknown }) => Promise<Json>;
 }
 
-/** Review state as a printed mark: open (filled square), reviewed (a struck tick), dismissed (dashed box). Words carry it. */
+/** Review state as a mark and a word: open (filled square), reviewed (a tick), dismissed (dashed box). The word carries it. */
 function StateMark({ state, label }: { state: string; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 font-mono text-[12px] text-ui-ink">
+    <span className="inline-flex items-center gap-1.5 text-[13px] font-medium text-ui-ink">
       {state === 'open' ? <span aria-hidden="true" className="size-2 bg-ui-ink" />
         : state === 'reviewed' ? <span aria-hidden="true" className="h-2 w-3 -translate-y-px -rotate-45 border-b-2 border-l-2 border-ui-ink" />
           : <span aria-hidden="true" className="size-2.5 border border-dashed border-ui-graphite" />}
-      {label.toUpperCase()}
+      {label}
     </span>
   );
 }
 
 /**
- * Rules (design v3): the queue of orders that met a rule, as ledger rows. The pen circles the cost that met the rule and
- * the rule is written beside it in pen-ink words (the circle never states anything alone). Signed-in accounts get the
- * review actions; a demo account is read-only. Every number comes from GET /api/audit/exceptions.
+ * Flagged orders (design v5; was Rules): the orders that met one of FillScore's fixed rules, with the rule, the order and its
+ * cost. Signed-in accounts get the review actions; a demo account is read-only. Every number comes from GET /api/audit/exceptions.
+ * Without a measured order, or with too few for a threshold rule, the page says what is missing and the number needed (PROPOSAL §4 row 16).
  */
 export default function RulesView({ query, readOnly, request }: Props) {
   const [queue, setQueue] = useState<Json | null>(null);
@@ -61,43 +60,44 @@ export default function RulesView({ query, readOnly, request }: Props) {
   const counts = queue && queue.status === 200 ? (queue.body as QueueApi).reviewCounts : undefined;
 
   return (
-    <div data-testid="explain-panel" className="flex flex-col gap-5">
-      <Panel title={PANEL_COPY.queueTitle} description={q?.summary ?? (q && q.kind !== 'error' ? 'No rule was checked.' : q ? undefined : 'Loading the queue.')}
-        note={q?.threshold ? { label: 'the rules', text: <>Orders whose stored measurements met one of the account&rsquo;s rules. {q.threshold}</> } : { label: 'the rules', text: "Orders whose stored measurements met one of the account's rules." }}
-        actions={
-          <label className="inline-flex min-h-8 items-center gap-2 text-sm text-ui-ink">
-            <input type="checkbox" checked={showDismissed} onChange={(e) => setShowDismissed(e.target.checked)} className="size-4 accent-[var(--ui-ink)]" /> {PANEL_COPY.showDismissed}
-          </label>
-        }>
+    <div data-testid="explain-panel" className="flex flex-col gap-4">
+      <Card title={PANEL_COPY.queueTitle} id="flagged" sentence={q?.summary ?? (q && q.kind !== 'error' ? 'No rule was checked.' : q ? undefined : 'Loading the orders.')}
+        info={q?.threshold ? `Orders whose stored measurements met one of the account's rules. ${q.threshold}` : "Orders whose stored measurements met one of the account's rules."}
+        source="Your orders, measured against Binance public trades.">
+        <label className="inline-flex min-h-8 w-fit items-center gap-2 text-[14px] text-ui-ink pointer-coarse:min-h-11">
+          <input type="checkbox" checked={showDismissed} onChange={(e) => setShowDismissed(e.target.checked)} className="size-4 accent-[var(--ui-ink)]" /> {PANEL_COPY.showDismissed}
+        </label>
         {!q ? (
-          <p className="font-mono text-[12px] text-ui-graphite">READING THE QUEUE</p>
-        ) : q.kind === 'error' ? <Banner kind="refused" title={q.note ?? 'The exception queue could not be loaded.'} /> : (
+          <p className="text-[14px] text-ui-graphite">Reading the orders.</p>
+        ) : q.kind === 'error' ? <Banner kind="refused" title={q.note ?? 'The flagged orders could not be loaded.'} /> : (
           <div className="flex flex-col gap-4">
-            {q.note && <p className="text-sm text-ui-graphite" data-testid="explain-queue-note">{q.note}</p>}
+            {q.kind === 'insufficient' && q.note ? (
+              <p className="text-[14px] text-ui-ink" data-testid="explain-queue-note">{q.note}{q.threshold ? ` ${q.threshold}` : ''}</p>
+            ) : q.note ? <p className="text-[14px] text-ui-graphite" data-testid="explain-queue-note">{q.note}</p> : null}
             {counts && (
-              <dl className="flex flex-wrap gap-x-8 gap-y-1 font-mono text-[12px]" aria-label="Review states">
-                <div className="flex gap-2"><dt className="text-ui-graphite">OPEN</dt><dd className="text-ui-ink">{counts.open}</dd></div>
-                <div className="flex gap-2"><dt className="text-ui-graphite">REVIEWED</dt><dd className="text-ui-ink">{counts.reviewed}</dd></div>
-                <div className="flex gap-2"><dt className="text-ui-graphite">DISMISSED</dt><dd className="text-ui-ink">{counts.dismissed}</dd></div>
+              <dl className="flex flex-wrap gap-x-8 gap-y-1 text-[14px]" aria-label="Review states">
+                <div className="flex gap-2"><dt className="text-ui-graphite">Open</dt><dd className="text-ui-ink">{counts.open}</dd></div>
+                <div className="flex gap-2"><dt className="text-ui-graphite">Reviewed</dt><dd className="text-ui-ink">{counts.reviewed}</dd></div>
+                <div className="flex gap-2"><dt className="text-ui-graphite">Dismissed</dt><dd className="text-ui-ink">{counts.dismissed}</dd></div>
               </dl>
             )}
             <div data-testid="explain-queue">
-              {q.kind === 'empty' ? <EmptyState title="No order met a rule." /> : q.items.length > 0 && (
-                <ul className="border-t border-ui-ink">
-                  {q.items.map((i, n) => (
+              {q.kind === 'empty' ? <EmptyState title="No order met a rule in this period" /> : q.items.length > 0 && (
+                <ul className="border-t border-ui-rule">
+                  {q.items.map((i) => (
                     <li key={`${i.symbol}:${i.orderId}`} data-testid="explain-item" tabIndex={0}
                       onClick={() => pick(i.orderId, i.symbol)}
                       onKeyDown={(e) => { if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pick(i.orderId, i.symbol); } }}
-                      className="grid cursor-pointer gap-x-6 gap-y-2 border-b border-dashed border-ui-rule py-4 hover:bg-ui-raised focus-visible:outline-2 focus-visible:-outline-offset-2 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_auto] md:items-start">
-                      <div className="min-w-0 font-mono text-[12px]">
-                        <p className="truncate text-ui-ink">{i.orderId}</p>
+                      className="grid cursor-pointer gap-x-6 gap-y-2 border-b border-ui-rule py-4 hover:bg-ui-overlay focus-visible:outline-2 focus-visible:-outline-offset-2 md:grid-cols-[minmax(0,15rem)_minmax(0,1fr)_auto] md:items-start">
+                      <div className="min-w-0 text-[13px]">
+                        <p className="truncate font-ui-mono text-ui-ink">{i.orderId}</p>
                         <p className="text-ui-graphite">{i.symbol}</p>
                       </div>
                       <div className="min-w-0">
                         <p className="text-[15px] leading-snug text-ui-ink">{i.finding}</p>
-                        <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
-                          <span className="font-mono text-[13px] text-ui-ink"><PenCircle seed={n + 3}>{i.usd}</PenCircle></span>
-                          <span className="text-[13px] font-bold text-ui-pen-ink">Met: {i.ruleLabels.join('; ')}</span>
+                        <p className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px]">
+                          <span className="font-semibold tabular-nums text-ui-ink">{i.usd}</span>
+                          <span className="text-ui-graphite">Met: {i.ruleLabels.join('; ')}</span>
                         </p>
                       </div>
                       <div className="flex flex-wrap items-center gap-3 md:justify-end">
@@ -113,7 +113,7 @@ export default function RulesView({ query, readOnly, request }: Props) {
             </div>
           </div>
         )}
-      </Panel>
+      </Card>
 
       {selected && <OrderReplay open={open} onOpenChange={setOpen} orderId={selected.orderId} symbol={selected.symbol} query={query} request={request}
         demo={readOnly} evidenceHref={readOnly ? undefined : withParams('/app/reports', query, {})} />}

@@ -4,7 +4,26 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24, second: design v5 built in production (steps 1-9), local commits
 
-- **Next concrete action: step 5: pages (Home, Costs, Orders + receipt sheet with the public-trades chart, Fills, Flagged orders, Comparisons, AI review, Reports, Check an exchange export, Settings, Connect), words per PROPOSAL §1, not-computed per D8.**
+- **Next concrete action: step 6: marketing (top bar words, /demo cards, /how-it-works, /verify, /docs shell, footer) in Geist; then steps 7 to 9.**
+- **Step 5: done in part (the budget of this run did not allow all of it; see "Not done" below).** Built: `ui/blocks.tsx` (Tile, Card with an
+  info popover, CostBreakdown, GradeRange) and `ui/charts/AppCharts.tsx` (Recharts: TypeBars as one stacked bar per order type with the
+  negative parts named beside it and a $0 axis; PricePrintsChart for the receipt), `ui/charts/CompareBars.tsx` and `ticks.ts` (round
+  ticks, tested). Home: four KPI tiles (`tiles.ts`, hand-value tests), Costliest orders (served costs, a receipt opens from a row; replaces
+  the 245-bar chart because the server serves no per-order distribution), Where the cost came from, Ask. Costs: tiles, the cost parts, order
+  types, grade card with the locked v1 line, Against the cost estimate (designed state "Needs 20 market orders; this account has N",
+  `costsView.ts`), what it covers, the bps gloss once. Orders: Cost ($) and Cost (bps) are default columns, 13 px sentence-case headers, 44 px
+  rows, "modelled, not paid" under an unfilled cost, "No fills" for maker share, row cards on phones, the demo fee column reads
+  "Fees (published rate)". Receipt: 14 px lines (13 px on phones), nothing under 12 px, a Recharts chart of the stored public trades
+  with the fills diamonds and the placement time. Fills: one page (tabs and Patterns removed; no not-computed sentence for accounts
+  without v1 fields). Flagged orders and Comparisons rebuilt (bars with 90% whiskers and a zero line, "Too few orders to compare" with
+  counts, venue comparison only with two venues, a Connect line for real accounts). AI review: summary first, four sections named
+  Liquidity, Benchmark, Risk, Fees, each model text under its language-model heading, "Short review (1 AI call)" and "Full review (9 AI
+  calls)", "Start review". Check an exchange export (D13). Settings: About prints the versions that left the sidebar. Guards changed
+  deliberately, each with a reason in the file: contrast, theme names, ordersColumns, receipt copy (public trades), fillsView (class (a)),
+  agent labels, review mode words, the " · " ban (one exemption: the provenance banner's fixed words). Vitest 890 passed, tsc 0.
+  **Not done in step 5:** the Settings left-list shell (§3.4), the Connect page restyle, the Reports page restyle (still the v4 layout in the
+  new tokens), the onboarding checklist, a side-by-side receipt sheet (the chart is inside the receipt), D8 rows 5 to 16 only where listed
+  above (rows 6 to 9, 12 to 16 are not changed beyond the wording they already had).
 - **Step 4: done (D1, D13).** Routes: `/app/costs` (was overview), `/app/flagged` (rules), `/app/compare` (rankings), `/app/review` (council),
   `/app/reports` (evidence); Home, Orders, Fills, Check, Settings, Connect unchanged. `legacyRedirects.mjs`: the six `/dashboard?view=`
   rows and the five `/app/<old>` rows point straight at the final route (one hop, query kept); `/analytics` goes to `/app/fills` (no

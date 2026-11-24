@@ -23,9 +23,9 @@ describe('receipt sentences', () => {
   })
   it('expected cost, insufficient data: the stored reason verbatim, or says none was stored', () => {
     expect(expectedLine({ expectedBps: null, lowBps: null, highBps: null, level: 0.9, reason: 'limit order: no expected cost model' }))
-      .toBe('Expected cost: insufficient data (limit order: no expected cost model).')
+      .toBe('Cost estimate: insufficient data (limit order: no expected cost model).')   // design v5 words: "Against the cost estimate"
     expect(expectedLine({ expectedBps: null, lowBps: null, highBps: null, level: 0.9, reason: null }))
-      .toBe('Expected cost: insufficient data (no reason was stored).')
+      .toBe('Cost estimate: insufficient data (no reason was stored).')
   })
   it('the unfilled line note says the market moved away and that no money left the account (F2)', () => {
     const n = unfilledLineNote(3.3102)!
@@ -40,8 +40,9 @@ describe('receipt sentences', () => {
       expect(s).not.toMatch(/\b(?!SHA)[A-Z]{4,}\b/)   // no word in capitals (SHA-256 is a name)
     }
     expect(BARS_NOTE).toBe('SHA-256 of the order record. The bars draw it; they are not a scannable code.')
-    expect(CHART_NOTE).toBe('Fills only; the public prints are in the source file.')
-    expect(PRINTS_LEGEND).toMatch(/^A filled tick up is a buyer-initiated public print/)
+    // design v5 words (PROPOSAL §1): public trades, not prints or a tape
+    expect(CHART_NOTE).toBe('Fills only; the public trades are in the source file.')
+    expect(PRINTS_LEGEND).toMatch(/^The triangles are buyer-initiated public trades/)
     expect(PRINTS_LEGEND).not.toMatch(/\b(because|due to|caused|should|could save|route)\b/i)   // past-tense findings only
   })
 })

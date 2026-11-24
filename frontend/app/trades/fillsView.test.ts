@@ -31,9 +31,13 @@ describe('hiddenMeasures', () => {
 
 describe('notComputedLine', () => {
   const all = { slippage: true, score: true, grade: true }
-  it('names the measures and gives the reason the server code states (v1Computed false: audit.ts:139-142)', () => {
-    expect(notComputedLine(all, false)).toBe(
-      'Not computed for this data: slippage, score, grade and the average score. The per-fill v1 measures need an arrival price, and this data has none; none was invented.')
+  // design v5 (D8 class (a), PROPOSAL §4 row 1), changed deliberately: an account without v1 per-fill measures (v1Computed false,
+  // audit.ts:139-142) gets no sentence; the columns are not drawn. The intent, never a zero standing in for a missing value, is kept.
+  it('v1Computed false: no sentence at all (the columns are left out instead)', () => {
+    expect(notComputedLine(all, false)).toBeNull()
+  })
+  it('names the measures when the account does carry v1 fields but no loaded fill has a value', () => {
+    expect(notComputedLine(all, true)).toBe('Not computed for this data: slippage, score, grade and the average score. No loaded fill carries a value for them.')
   })
   it('a single hidden measure is named alone; the average score goes with the score only', () => {
     expect(notComputedLine({ slippage: false, score: false, grade: true }, true))

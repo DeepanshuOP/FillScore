@@ -108,9 +108,9 @@ function CitedValues({ card }: { card: AgentCard }) {
   if (c.lines.length === 0) return <p className="text-[12px]">No values cited.</p>;
   return (
     <div data-testid="council-cited">
-      <div className="flex items-center gap-1.5 text-[11px] leading-4 text-ui-graphite">
-        <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="border-b border-dashed border-ui-edge font-mono">
-          <span aria-hidden="true">{open ? "−" : "+"}</span> CITED FROM THE AUDIT ({c.lines.length})
+      <div className="flex items-center gap-1.5 text-[13px] leading-4 text-ui-graphite">
+        <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className="min-h-6 border-b border-dashed border-ui-edge pointer-coarse:min-h-11">
+          <span aria-hidden="true">{open ? "−" : "+"}</span> Figures cited from the audit ({c.lines.length})
         </button>
         <MarginNote label="the audit fields">
           <p>Each line was read from a stored audit field:</p>
@@ -350,34 +350,35 @@ export default function AgentCouncil({
 
   const runButton = (
     <Button onClick={() => runAnalysis()} loading={running}>
-      {running ? "Analysing" : userId ? "Run analysis" : mode === "quick" ? "Run quick audit" : "Run deep audit"}
+      {running ? "Reviewing" : "Start review"}
     </Button>
   );
 
+  // design v5 (PROPOSAL §5, layout only): the summary card comes first, then the four sections, then the debate. The model's
+  // text is unchanged and sits under its own language-model heading.
   return (
     <section id="agent-council" className="flex min-w-0 flex-col gap-5">
       <Panel
-        title="Council"
+        className="order-1"
+        title="Review"
         description={<>
           <strong data-testid="council-scope" className="font-semibold text-ui-ink">{councilScopeStatement(symbol, scope?.symbol === symbol ? scope : null)}.</strong>
           {" "}Execution audit of past trades. {COUNCIL_DISCLAIMER}
         </>}
         actions={<>
-          {!userId && <Segmented label="Audit mode" value={mode} onChange={setMode} disabled={running} options={[["quick", "Quick"], ["deep", "Deep"]]} />}
+          {!userId && <Segmented label="Review length" value={mode} onChange={setMode} disabled={running} options={[["quick", "Short review (1 AI call)"], ["deep", "Full review (9 AI calls)"]]} />}
           {runButton}
         </>}
       >
         <div className="flex flex-col gap-3">
-          <dl className="grid max-w-[68ch] grid-cols-[6ch_minmax(0,1fr)] gap-x-3 border-y border-dashed border-ui-edge py-2.5 font-mono text-[12px]">
-            <dt className="text-ui-graphite">TO</dt><dd className="text-ui-ink">The account holder</dd>
-            <dt className="text-ui-graphite">FROM</dt><dd className="text-ui-ink">The Council: four language-model specialists and a debate</dd>
-            <dt className="text-ui-graphite">RE</dt><dd className="text-ui-ink">Execution of past trades, {symbol}. Every number is the audit&apos;s, checked after the text was written.</dd>
-          </dl>
+          <p className="max-w-[68ch] text-[14px] leading-snug text-ui-graphite">
+            Written by language models about the execution of past trades, {symbol}. Every number is the audit&apos;s, checked after the text was written.
+          </p>
           {!userId && (
-            <p data-testid="audit-mode" className="max-w-[68ch] text-[13px] leading-5 text-ui-graphite">
+            <p data-testid="audit-mode" className="max-w-[68ch] text-[14px] leading-snug text-ui-graphite">
               {mode === "quick"
-                ? "Usually one model call (a second one only when a replay check needs it). The default."
-                : "The full Council: nine model calls, four specialists and a debate. It uses nine times the budget of a Quick audit."}
+                ? "A short review is usually one AI call (a second one only when a replay check needs it). It is the default."
+                : "A full review makes nine AI calls: four specialists and a debate. It uses nine times the budget of a short review."}
             </p>
           )}
 
@@ -417,7 +418,7 @@ export default function AgentCouncil({
 
       {/* The four specialists as printed notes at their natural height, in two balanced columns (design v3 fixes A7).
           A Quick audit has no specialists to show. */}
-      <div className={cn("gap-6 sm:columns-2", !showSpecialists && "hidden")} data-testid="council-notes">
+      <div className={cn("order-3 grid gap-4 sm:grid-cols-2", !showSpecialists && "hidden")} data-testid="council-notes">
         {AGENT_ORDER.map((agent, idx) => {
           const card = cards[agent];
           const isRunning = card?.status === "running" || activeAgent === agent;
@@ -427,14 +428,11 @@ export default function AgentCouncil({
           const status = isRunning ? "Streaming" : card?.status === "done" ? (card.failed ? "Unavailable" : "Done") : "Idle";
 
           return (
-            <article key={agent} aria-label={`Note ${idx + 1} of 4: ${agentLabel(agent)}`} className="mb-6 min-w-0 break-inside-avoid">
-            <div className="flex min-w-0 flex-col gap-3 bg-ui-raised px-5 pt-4 pb-5 font-mono text-[12.5px]">
-              <p className="flex items-center justify-between gap-3 border-b border-dashed border-ui-edge pb-2 text-[11px] text-ui-graphite">
-                <span>NOTE {idx + 1} OF 4</span>
-                <span className={isRunning ? "text-ui-ink" : undefined}>{status.toUpperCase()}</span>
-              </p>
-              <div className="flex items-center gap-2.5">
-                <p className="min-w-0 flex-1 font-ui text-[17px] font-bold text-ui-ink">{agentLabel(agent)}</p>
+            <article key={agent} aria-label={`Section ${idx + 1} of 4: ${agentLabel(agent)}`} className="min-w-0">
+            <div className="flex h-full min-w-0 flex-col gap-3 rounded-xl border border-ui-rule bg-ui-raised p-4 text-[14px] shadow-ui lg:p-5">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="min-w-0 flex-1 text-[16px] font-semibold text-ui-ink">{agentLabel(agent)}</h3>
+                <span className={cn("text-[13px]", isRunning ? "text-ui-ink" : "text-ui-graphite")}>{status}</span>
               </div>
 
               <AnimatePresence mode="wait" initial={false}>
@@ -463,7 +461,7 @@ export default function AgentCouncil({
                     {/* the recorded finding, verbatim (recorded output is never edited) */}
                     {!card.failed && (card.finding || (card.sentences?.length ?? 0) > 0) ? (
                       <div data-testid="council-finding" className="space-y-1.5 font-ui text-[14px] leading-[1.45] text-ui-ink [overflow-wrap:anywhere]">
-                        <p className="font-mono text-[11px] leading-4 text-ui-graphite">FINDING, AS RECORDED</p>
+                        <p className="text-[13px] font-medium leading-4 text-ui-graphite">Language model: its finding, as recorded</p>
                         {card.finding ? <p>{card.finding}</p> : null}
                         {card.sentences?.map((s) => <p key={s}>{s}</p>)}
                       </div>
@@ -484,7 +482,6 @@ export default function AgentCouncil({
                 ) : null}
               </AnimatePresence>
             </div>
-            <div aria-hidden="true" className="fs-torn-bottom" />
             </article>
           );
         })}
@@ -493,6 +490,7 @@ export default function AgentCouncil({
       {/* Debate */}
       {(debate || debateRunning) && (
         <Panel
+          className="order-4"
           as="h3"
           title="Debate between the specialists"
           description={debateRunning ? "Loading the debate." : debate ? `${debate.round_count} round${debate.round_count !== 1 ? "s" : ""}, ${debate.claim_count} claims` : undefined}
@@ -513,7 +511,7 @@ export default function AgentCouncil({
 
       {/* Assessment */}
       {synthesis && view && (
-        <Panel title={ASSESSMENT_HEADING} bodyClassName="space-y-4">
+        <Panel className="order-2" title={ASSESSMENT_HEADING} bodyClassName="space-y-4">
           {view.kind === "incomplete" ? (
             <Banner kind="info" title={view.title}>
               <p>Part of the Council could not finish, so this run has no grade.</p>
@@ -591,7 +589,7 @@ export default function AgentCouncil({
       )}
 
       {(verification || totalLatencyMs !== null || grounding) && (
-        <div className="flex flex-col gap-1 px-1 text-[13px] leading-5 text-ui-graphite">
+        <div className="order-5 flex flex-col gap-1 px-1 text-[13px] leading-5 text-ui-graphite">
           {/* Verification line */}
           {verification && !synthesis?.degraded && verificationLine(verification) && (
             <p>{verificationLine(verification)}</p>

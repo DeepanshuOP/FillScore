@@ -3,8 +3,8 @@
 import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { BookOpen, Download, Link2 } from 'lucide-react';
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Download } from 'lucide-react';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { AppPage } from '../components/appshell/shellContext';
 import { HeaderAction } from '../components/appshell/HeaderAction';
 import { viewHref, type View } from '../components/shell/nav';
@@ -29,9 +29,12 @@ import { skippedNotice, type SkippedTrades } from './skipped';
 import { type CurrentFigures } from './headerStats';
 import { describeHeadline, gradeView, scopeFacts } from './headline';
 import { DEMO_NOTE, type V2Response } from './scoreV2';
-import { Overview } from './Overview';
+import { CostsView } from './CostsView';
+import { CostliestOrders } from './CostliestOrders';
+import { KpiTiles } from './KpiTiles';
+import { describeStrip } from './costStrip';
+import { Card, CostBreakdown } from '../ui/blocks';
 import { AskHome } from './AskHome';
-import { HomeFigures } from './HomeFigures';
 import { scopeLine } from './askRecorded';
 import { orderCountsOf, type OrderRow } from './ordersTable';
 import SyncFreshness from './SyncFreshness';
@@ -77,14 +80,11 @@ function Loading() {
   );
 }
 
-/** The "Method" side sheet: the explanations the page keeps out of its way. */
-function MethodSheet({ isDemo }: { isDemo: boolean }) {
+/** The "How it's measured" side sheet (opened from the header's "⋯" menu): the explanations the page keeps out of its way. */
+function MethodSheet({ isDemo, open, onOpenChange }: { isDemo: boolean; open: boolean; onOpenChange: (o: boolean) => void }) {
   return (
-    <Sheet>
-      <SheetTrigger asChild>
-        <HeaderAction variant="quiet" label="Method" icon={<BookOpen aria-hidden="true" />} />
-      </SheetTrigger>
-      <SheetContent className="w-full overflow-y-auto bg-ui-raised sm:max-w-md">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent data-app className="w-full overflow-y-auto bg-ui-raised sm:max-w-md">
         <SheetHeader>
           <SheetTitle className="text-lg tracking-[-0.015em]">How this audit was measured</SheetTitle>
           <SheetDescription>Every figure comes from deterministic code over stored measurements.</SheetDescription>
@@ -92,8 +92,8 @@ function MethodSheet({ isDemo }: { isDemo: boolean }) {
         <div className="flex flex-col gap-4 px-4 pb-8 text-[13px] leading-5 text-ui-graphite">
           <p><span className="font-medium text-ui-ink">Each fill</span> was compared with the exchange&rsquo;s public prints in the seconds before it: the spread paid, the price impact and timing, the cost of the unfilled part of each order, and the fees against the account&rsquo;s own rates.</p>
           <p><span className="font-medium text-ui-ink">Measured, insufficient data, not computed.</span> A measured value carries a solid square. &ldquo;Insufficient data&rdquo; (a hollow diamond) means the sample was too small or market data was missing; no estimate is shown. &ldquo;Not computed for this data&rdquo; means the view does not exist for these records.</p>
-          <p><span className="font-medium text-ui-ink">Cost against expected</span> compares market orders with a fitted model of what an order of the same size cost in the hour before. The interval is a bootstrap over the account&rsquo;s orders.</p>
-          <p><span className="font-medium text-ui-ink">Rankings</span> rank a group only with at least 20 orders; groups whose intervals overlap share a rank.</p>
+          <p><span className="font-medium text-ui-ink">Against the cost estimate</span> compares market orders with a fitted model of what an order of the same size cost in the hour before. The interval is a bootstrap over the account&rsquo;s orders.</p>
+          <p><span className="font-medium text-ui-ink">Comparisons</span> rank a group only with at least 20 orders; groups whose intervals overlap share a rank.</p>
           {isDemo ? <p><span className="font-medium text-ui-ink">Demo accounts.</span> {DEMO_NOTE}</p> : null}
           <p>Explanations written by a language model never add a number: every number in them is checked against the audit first.</p>
           <Link href="/methodology" className="text-ui-ink">The full methodology</Link>
@@ -115,6 +115,7 @@ function DashboardContent({ view }: { view: View }) {
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [tapeReceipt, setTapeReceipt] = useState<{ row: OrderRow; origin: DOMRect | null; focus: HTMLElement | null } | null>(null);
   const [tapeOpen, setTapeOpen] = useState(false);
+  const [methodOpen, setMethodOpen] = useState(false);
 
   const { accessToken, isLoading: authLoading, refreshAccessToken } = useAuth();
   const searchParams = useSearchParams();
@@ -219,18 +220,35 @@ function DashboardContent({ view }: { view: View }) {
   const shellUser = dashboardMode === 'demo' ? resolvedUserId : (urlUserId ?? null);
   const query = dashboardMode ? buildQuery(dashboardMode, resolvedUserId) : '';
 
-  const actions = audit ? (
-    <>
-      <MethodSheet isDemo={isDemoData} />
-      {dashboardMode === 'demo' ? <HeaderAction variant="quiet" onClick={handleShare} label="Copy share link" icon={<Link2 aria-hidden="true" />} /> : null}
-      <HeaderAction variant="secondary" loading={downloading} onClick={handleDownloadReport} label="Download report" icon={<Download aria-hidden="true" />} />
-    </>
+  const openOrder = (row: OrderRow, origin: DOMRect | null) => {
+    if (!row.orderId) return
+    setTapeReceipt({ row, origin, focus: document.activeElement instanceof HTMLElement ? document.activeElement : null })
+    setTapeOpen(true)
+  };
+  // design v5 (PROPOSAL §3.2): one primary action, the rest behind "⋯"
+  const primary = audit ? (
+    <HeaderAction variant="primary" loading={downloading} onClick={handleDownloadReport} label="Download PDF" icon={<Download aria-hidden="true" />} />
   ) : null;
+  const more = audit ? [
+    { label: 'How it’s measured', onSelect: () => setMethodOpen(true) },
+    ...(dashboardMode === 'demo' ? [{ label: 'Share', onSelect: () => { void handleShare(); } }] : []),
+  ] : undefined;
+  const PAGE_COPY: Partial<Record<View, { title: string; description: string }>> = {
+    home: { title: 'Home', description: 'Your account at a glance.' },
+    orders: { title: 'Orders', description: 'Every order, what it cost, and its receipt.' },
+    flagged: { title: 'Flagged orders', description: 'Orders that met one of FillScore’s fixed rules.' },
+    compare: { title: 'Comparisons', description: 'Median execution cost per group, with a 90% interval.' },
+    review: { title: 'AI review', description: 'A language model explains the measured figures. It writes no number.' },
+    reports: { title: 'Reports', description: 'Signed reports you can verify without us.' },
+    costs: { title: 'Costs', description: audit ? `What the orders cost in ${monthLabel(audit.period.start, audit.period.end)}, and where the cost came from.` : 'What the orders cost, and where the cost came from.' },
+  };
 
   return (
-    <AppPage dataSource={audit ? (isDemoData ? 'synthetic-demo' : 'real-user') : null} ownHeading={view === 'home' && (!!audit || dashboardMode === 'real')}
+    <AppPage dataSource={audit ? (isDemoData ? 'synthetic-demo' : 'real-user') : null} title={PAGE_COPY[view]?.title ?? null} description={PAGE_COPY[view]?.description ?? null}
+      ownHeading={PAGE_COPY[view] === undefined}
       period={audit ? formatPeriodLabel(audit.period.start, audit.period.end) : null}
-      venue={audit ? VENUES[audit.exchange?.toLowerCase()] ?? audit.exchange : null} actions={actions}>
+      venue={audit ? VENUES[audit.exchange?.toLowerCase()] ?? audit.exchange : null} primary={primary} more={more}>
+      <MethodSheet isDemo={isDemoData} open={methodOpen} onOpenChange={setMethodOpen} />
 
       {loading && <Loading />}
 
@@ -268,45 +286,49 @@ function DashboardContent({ view }: { view: View }) {
               const periodLabel = monthLabel(audit.period.start, audit.period.end)
               // a missing order count is never printed as 0 (review): without a measured total the scope is the period alone
               const scope = headline ? scopeLine(periodLabel, headline.orders) : periodLabel
+              const homeStrip = describeStrip(ordersSummary, headline?.feesNotMeasured ?? false)
               return (
-                <div className="flex flex-col gap-16">
+                <div className="flex flex-col gap-4" data-testid="home-view">
+                  <KpiTiles headline={headline} ordersBody={ordersSummary} grade={grade} band={(v2Body as { result?: { band?: [number, number] | null } } | null)?.result?.band ?? null} />
+                  <p className="text-[14px] text-ui-graphite" data-testid="home-scope">{scope}.</p>
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    <CostliestOrders request={explainRequest} query={query} onOpenOrder={openOrder} />
+                    {homeStrip ? (
+                      <Card title="Where the cost came from" sentence="The three parts add up to the total." id="where" source="Your orders, measured against Binance public trades.">
+                        <CostBreakdown view={homeStrip} />
+                        <Link href={viewHref('costs', shellUser, !!accessToken)} className="text-[14px] text-ui-ink">See the costs in full</Link>
+                      </Card>
+                    ) : (
+                      <Card title="Where the cost came from" id="where"><EmptyState title="Not measured yet">The cost of each order appears after the orders are synced and measured.</EmptyState></Card>
+                    )}
+                  </div>
                   {dashboardMode === 'demo' && resolvedUserId
                     ? <AskHome mode="demo" demoId={resolvedUserId} signedIn={!!accessToken} scope={scope} />
                     : headline
                       ? <AskHome mode="live" mlBaseUrl={ML_URL} accessToken={accessToken} scope={scope} />
                       : <AskHome mode="blocked" />}
-                  <HomeFigures headline={headline} grade={grade} periodLabel={periodLabel} scope={scope}
-                    band={(v2Body as { result?: { band?: [number, number] | null } } | null)?.result?.band ?? null}
-                    overviewHref={viewHref('costs', shellUser, !!accessToken)} />
                 </div>
               )
             })()}
 
             {view === 'costs' && (
-              <Overview
+              <CostsView
                 grade={gradeView(scoreV2.status, scoreV2.body)}
                 headline={describeHeadline(ordersSummary, isDemoData)}
                 costVs={v2Body?.costVsExpected}
                 ordersBody={ordersSummary}
                 isDemo={isDemoData}
-                sampleNote={null /* IA v4: the provenance prints once, in the app page header (with the demo note behind a pen mark) */}
                 facts={scopeFacts(audit, audit.current, orderCountsOf(ordersSummary))}
-                v1={{ grade: audit.fillGrade, score: audit.avgFillScore, basis: isDemoData ? undefined : 'rule-based, scoring v1' }}
-                v1Note={v2Body?.demo ? 'Kept unchanged. The measured grade is the one that describes the orders shown now.' : null}
+                v1={{ grade: audit.fillGrade, score: audit.avgFillScore }}
                 freshness={dashboardMode === 'real' ? <SyncFreshness accessToken={accessToken} refreshAccessToken={refreshAccessToken} /> : undefined}
                 band={(v2Body as { result?: { band?: [number, number] | null } } | null)?.result?.band ?? null}
-                period={audit.period}
                 periodLabel={monthLabel(audit.period.start, audit.period.end)}
                 query={query}
                 request={explainRequest}
-                onOpenOrder={(row, origin) => {
-                  if (!row.orderId) return
-                  setTapeReceipt({ row, origin, focus: document.activeElement instanceof HTMLElement ? document.activeElement : null })
-                  setTapeOpen(true)
-                }}
+                onOpenOrder={openOrder}
               />
             )}
-            {view === 'costs' && tapeReceipt && dashboardMode !== null && (
+            {(view === 'costs' || view === 'home') && tapeReceipt && dashboardMode !== null && (
               <OrderReplay open={tapeOpen} onOpenChange={setTapeOpen} orderId={tapeReceipt.row.orderId} symbol={tapeReceipt.row.symbol}
                 query={query} request={explainRequest} row={tapeReceipt.row} origin={tapeReceipt.origin} demo={dashboardMode === 'demo'}
                 evidenceHref={dashboardMode === 'real' ? viewHref('reports', shellUser, !!accessToken) : undefined}

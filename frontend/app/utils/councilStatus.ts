@@ -31,8 +31,8 @@ const COUNCIL_ERROR_MESSAGES: Record<string, string> = {
 export function councilErrorMessage(code: string | undefined, quickAvailable?: boolean): string {
     const base = (code && COUNCIL_ERROR_MESSAGES[code]) || GENERIC_COUNCIL_ERROR;
     // A refused Deep audit says plainly whether the cheaper Quick audit is still allowed (M3 §4); the text is ours.
-    if (quickAvailable === true) return `${base} A Quick audit (one model call) is still available.`;
-    if (quickAvailable === false) return `${base} A Quick audit is not available either.`;
+    if (quickAvailable === true) return `${base} A short review (1 AI call) is still available.`;
+    if (quickAvailable === false) return `${base} A short review is not available either.`;
     return base;
 }
 
@@ -44,11 +44,11 @@ export function quickOffer(payload: { code?: string; quick_available?: boolean }
 /** "Quick audit · 1 model call" / "Deep audit · 9 model calls": the mode and the calls actually made. */
 export function auditModeLabel(result: { mode?: string; n_calls_ok?: number; cached?: boolean; degraded?: boolean } & Record<string, unknown>): string {
     const quick = result?.mode === 'quick';
-    const name = quick ? 'Quick audit' : 'Deep audit';
-    if (result?.degraded) return `${name} · incomplete`;
-    if (result?.cached) return `${name} · from an earlier identical audit, no new model call`;
+    const name = quick ? 'Short review' : 'Full review';
+    if (result?.degraded) return `${name}, incomplete`;
+    if (result?.cached) return `${name}, from an earlier identical review, no new AI call`;
     const n = Number(result?.n_calls_ok ?? 0);
-    return `${name} · ${n} model call${n === 1 ? '' : 's'}`;
+    return `${name}, ${n} AI call${n === 1 ? '' : 's'}`;
 }
 
 export function councilOfflineMessage(isDevelopment: boolean): string {
@@ -99,10 +99,11 @@ export function flagLabel(tag: string): string {
 
 // Display names only. The stored keys (alpha_architect, alpha, alphaRating) are unchanged.
 const AGENT_LABELS: Record<string, string> = {
-    liquidity_scout: 'Liquidity Scout',
-    alpha_architect: 'Benchmark Reviewer',
-    risk_auditor: 'Risk Auditor',
-    fee_optimizer: 'Fee Reviewer',   // display only (2026-11-22); recorded text that says "Fee Optimizer" is not edited
+    // design v5 (PROPOSAL §1): section headings, not character names; recorded text that names a role is not edited
+    liquidity_scout: 'Liquidity',
+    alpha_architect: 'Benchmark',
+    risk_auditor: 'Risk',
+    fee_optimizer: 'Fees',
 };
 
 export function agentLabel(agent: string): string {

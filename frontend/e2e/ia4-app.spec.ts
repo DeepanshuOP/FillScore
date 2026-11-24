@@ -68,7 +68,7 @@ test('⌘K opens without error, lists the nine sections with their glosses, goes
   await page.keyboard.press('Control+k')
   const palette = page.getByRole('dialog', { name: 'Jump to' })
   await expect(palette).toBeVisible()
-  for (const label of ['Home', 'Overview', 'Orders', 'Rules', 'Rankings', 'Council', 'Evidence', 'Fills', 'Check a broker file']) await expect(palette).toContainText(label)
+  for (const label of ['Home', 'Costs', 'Orders', 'Fills', 'Flagged orders', 'Comparisons', 'AI review', 'Reports', 'Check an exchange export']) await expect(palette).toContainText(label)
   await expect(palette).toContainText('A language-model review of the audit')
   await page.keyboard.type('Rankings')
   await page.keyboard.press('Enter')

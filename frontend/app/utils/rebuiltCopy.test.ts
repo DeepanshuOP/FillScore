@@ -30,7 +30,9 @@ describe('rebuilt screens', () => {
   });
   it('no "A · B · C" separator in a string or in text', () => {
     // One line is exempt because the order of 2026-11-23 (sixth, step 3) fixes its wording: askView.ts "Model calls: N · answer not used".
-    const scanned = code.filter((l) => !/Model calls: \$\{[^}]+\} · answer not used/.test(l.text));
+    // A second line is exempt by design v5 (PROPOSAL §3.6, invariant I5): the provenance banner's fixed words, "Demo account · synthetic
+    // trader, real Binance prices · read-only". The ban keeps its intent everywhere else: no decorative "A · B · C" in copy.
+    const scanned = code.filter((l) => !/Model calls: \$\{[^}]+\} · answer not used/.test(l.text) && !/Demo account<\/strong> · synthetic trader, real Binance prices · read-only/.test(l.text));
     expect(hits(/\S ·  ?\S|\S  · \S/, scanned)).toEqual([]);
     expect(hits(/['"`>][^'"`<>]* · [^'"`<>]*['"`<]/, scanned)).toEqual([]);
   });
