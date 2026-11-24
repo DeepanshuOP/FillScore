@@ -58,7 +58,9 @@
 .fs-hero-list { display: none; }
 
 @media (max-width: 767px) {
-  .fs-hero { grid-template-rows: 56px 1fr auto; min-height: 600px; }
+  /* design v5 D10: on a short phone (393x659, 375x667, 360x640) the stage (label, tape, amounts list: 340 px) plus the headline
+     block no longer fit in 100svh, so the box grows with its content instead of stacking the headline over the tape */
+  .fs-hero { grid-template-rows: 56px minmax(340px, 1fr) auto; height: auto; min-height: max(100svh, 600px); }
   .fs-hero-viewport { top: 132px; }
   .fs-hero-strip { height: 104px; }
   .fs-e { width: 104px; padding: 22px 9px 0; }

@@ -2,6 +2,14 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
+## Orders of 2026-11-24, second: design v5 built in production (steps 1-9), local commits
+
+- **Next concrete action: step 2: tokens, fonts, theme (D2, D3, D5), contrast tests for the new tokens, formatter test (never "-0.00").**
+- **Step 1: done (D10).** Landing hero on short phones: below 768 px the hero box now grows with its content
+  (`min-height: max(100svh, 600px)`, stage `minmax(340px, 1fr)`), so the headline block no longer sits over the tape, its label or the
+  amounts list. e2e `landing-short-phones.spec.ts` (393x659, 375x667, 360x640): red first (strip bottom 448 against copy top 336, 351
+  and 250), green after.
+
 ## Orders of 2026-11-24: design v5 (step 0 Binance 418 fix, audit, research, proposal, prototype), local commits
 
 - **Next concrete action: Design v5 proposal ready: Deepanshu chooses (docs/design/v5/).** Decisions D1-D13 in PROPOSAL §9.
