@@ -72,7 +72,7 @@ test('⌘K opens without error, lists the nine sections with their glosses, goes
   await expect(palette).toContainText('A language-model review of the audit')
   await page.keyboard.type('Rankings')
   await page.keyboard.press('Enter')
-  await expect.poll(() => new URL(page.url()).pathname).toBe('/app/rankings')
+  await expect.poll(() => new URL(page.url()).pathname).toBe('/app/compare')
   expect(new URL(page.url()).searchParams.get('userId')).toBe('demo-moderate')
   await page.keyboard.press('Control+k')
   await expect(palette).toBeVisible()

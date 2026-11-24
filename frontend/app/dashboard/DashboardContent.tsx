@@ -277,12 +277,12 @@ function DashboardContent({ view }: { view: View }) {
                       : <AskHome mode="blocked" />}
                   <HomeFigures headline={headline} grade={grade} periodLabel={periodLabel} scope={scope}
                     band={(v2Body as { result?: { band?: [number, number] | null } } | null)?.result?.band ?? null}
-                    overviewHref={viewHref('overview', shellUser, !!accessToken)} />
+                    overviewHref={viewHref('costs', shellUser, !!accessToken)} />
                 </div>
               )
             })()}
 
-            {view === 'overview' && (
+            {view === 'costs' && (
               <Overview
                 grade={gradeView(scoreV2.status, scoreV2.body)}
                 headline={describeHeadline(ordersSummary, isDemoData)}
@@ -306,30 +306,30 @@ function DashboardContent({ view }: { view: View }) {
                 }}
               />
             )}
-            {view === 'overview' && tapeReceipt && dashboardMode !== null && (
+            {view === 'costs' && tapeReceipt && dashboardMode !== null && (
               <OrderReplay open={tapeOpen} onOpenChange={setTapeOpen} orderId={tapeReceipt.row.orderId} symbol={tapeReceipt.row.symbol}
                 query={query} request={explainRequest} row={tapeReceipt.row} origin={tapeReceipt.origin} demo={dashboardMode === 'demo'}
-                evidenceHref={dashboardMode === 'real' ? viewHref('evidence', shellUser, !!accessToken) : undefined}
+                evidenceHref={dashboardMode === 'real' ? viewHref('reports', shellUser, !!accessToken) : undefined}
                 onCloseAutoFocus={(e) => { const el = tapeReceipt.focus; if (el?.isConnected) { e.preventDefault(); el.focus() } }} />
             )}
 
             {view === 'orders' && dashboardMode !== null && (
               <OrdersView key={query} query={query} mode={dashboardMode} auth={auth} request={explainRequest} openOrderId={searchParams.get('order')} />
             )}
-            {view === 'rules' && dashboardMode !== null && (
+            {view === 'flagged' && dashboardMode !== null && (
               <RulesView key={query} query={query} readOnly={dashboardMode !== 'real'} request={explainRequest} />
             )}
-            {view === 'rankings' && dashboardMode !== null && (
+            {view === 'compare' && dashboardMode !== null && (
               <RankingsView key={query} query={query} request={explainRequest} />
             )}
 
-            {view === 'council' && (
+            {view === 'review' && (
               <div className="flex flex-col gap-5">
                 <AgentCouncil userId={dashboardMode === 'real' ? undefined : audit.userId} accessToken={accessToken} symbol="BTCUSDT" mlBaseUrl={ML_URL} />
               </div>
             )}
 
-            {view === 'evidence' && (
+            {view === 'reports' && (
               <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
                 <div className="lg:col-span-7"><EvidencePanel mode={dashboardMode} auth={auth} /></div>
                 <div className="flex flex-col gap-5 lg:col-span-5">

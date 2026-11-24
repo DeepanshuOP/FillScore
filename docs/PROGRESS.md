@@ -4,7 +4,12 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24, second: design v5 built in production (steps 1-9), local commits
 
-- **Next concrete action: step 4: routes and redirects (D1): /app/costs, /flagged, /compare, /review, /reports; 308 from the old paths; legacyRedirects with no chains.**
+- **Next concrete action: step 5: pages (Home, Costs, Orders + receipt sheet with the public-trades chart, Fills, Flagged orders, Comparisons, AI review, Reports, Check an exchange export, Settings, Connect), words per PROPOSAL §1, not-computed per D8.**
+- **Step 4: done (D1, D13).** Routes: `/app/costs` (was overview), `/app/flagged` (rules), `/app/compare` (rankings), `/app/review` (council),
+  `/app/reports` (evidence); Home, Orders, Fills, Check, Settings, Connect unchanged. `legacyRedirects.mjs`: the six `/dashboard?view=`
+  rows and the five `/app/<old>` rows point straight at the final route (one hop, query kept); `/analytics` goes to `/app/fills` (no
+  Patterns tab). Unit tests added: no chains, every destination and every sidebar path has a `page.tsx`; e2e `legacy-redirects.spec.ts`
+  extended to 16 cases (16 passed against the production build). Vitest 878 passed, tsc 0.
 - **Step 3: done.** `AppFrame` rewritten: sidebar (248 px, 64 px rail from 1024 to 1279 px) with lucide icons in three groups (Home, Costs,
   Orders, Fills; Review: Flagged orders, Comparisons, AI review; Tools: Reports, Check an exchange export), Docs, Settings (signed in), the
   Light / Dark / System control and the account; the account switcher ends a long name in an ellipsis with the full name in a tooltip;

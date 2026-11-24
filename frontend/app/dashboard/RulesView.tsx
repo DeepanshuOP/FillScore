@@ -116,7 +116,7 @@ export default function RulesView({ query, readOnly, request }: Props) {
       </Panel>
 
       {selected && <OrderReplay open={open} onOpenChange={setOpen} orderId={selected.orderId} symbol={selected.symbol} query={query} request={request}
-        demo={readOnly} evidenceHref={readOnly ? undefined : withParams('/app/evidence', query, {})} />}
+        demo={readOnly} evidenceHref={readOnly ? undefined : withParams('/app/reports', query, {})} />}
     </div>
   );
 }

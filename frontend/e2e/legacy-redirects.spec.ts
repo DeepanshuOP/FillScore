@@ -7,14 +7,20 @@ import { test, expect } from '@playwright/test'
 const ORDER = 'ord-moderate-BTCUSDT-319184'
 const CASES: Array<{ old: string; path: string; keeps: string[] }> = [
   { old: '/dashboard?userId=demo-moderate', path: '/app', keeps: ['userId=demo-moderate'] },
-  { old: '/dashboard?view=overview&userId=demo-moderate', path: '/app/overview', keeps: ['userId=demo-moderate'] },
+  // design v5 (D1): every old address lands on the final route in ONE hop (a 308 to a page, never to another redirect)
+  { old: '/dashboard?view=overview&userId=demo-moderate', path: '/app/costs', keeps: ['userId=demo-moderate'] },
   { old: `/dashboard?view=orders&userId=demo-moderate&order=${ORDER}`, path: '/app/orders', keeps: ['userId=demo-moderate', `order=${ORDER}`] },
-  { old: '/dashboard?view=rules&userId=demo-moderate', path: '/app/rules', keeps: ['userId=demo-moderate'] },
-  { old: '/dashboard?view=rankings&userId=demo-moderate', path: '/app/rankings', keeps: ['userId=demo-moderate'] },
-  { old: '/dashboard?view=council&userId=demo-moderate', path: '/app/council', keeps: ['userId=demo-moderate'] },
-  { old: '/dashboard?view=evidence&userId=demo-moderate', path: '/app/evidence', keeps: ['userId=demo-moderate'] },
+  { old: '/dashboard?view=rules&userId=demo-moderate', path: '/app/flagged', keeps: ['userId=demo-moderate'] },
+  { old: '/dashboard?view=rankings&userId=demo-moderate', path: '/app/compare', keeps: ['userId=demo-moderate'] },
+  { old: '/dashboard?view=council&userId=demo-moderate', path: '/app/review', keeps: ['userId=demo-moderate'] },
+  { old: '/dashboard?view=evidence&userId=demo-moderate', path: '/app/reports', keeps: ['userId=demo-moderate'] },
+  { old: '/app/overview?userId=demo-moderate&sample=1', path: '/app/costs', keeps: ['userId=demo-moderate', 'sample=1'] },
+  { old: '/app/rules?userId=demo-moderate', path: '/app/flagged', keeps: ['userId=demo-moderate'] },
+  { old: '/app/rankings?userId=demo-moderate', path: '/app/compare', keeps: ['userId=demo-moderate'] },
+  { old: '/app/council?userId=demo-moderate', path: '/app/review', keeps: ['userId=demo-moderate'] },
+  { old: '/app/evidence?userId=demo-moderate', path: '/app/reports', keeps: ['userId=demo-moderate'] },
   { old: '/trades?userId=demo-moderate&symbol=BTCUSDT', path: '/app/fills', keeps: ['userId=demo-moderate', 'symbol=BTCUSDT'] },
-  { old: '/analytics?userId=demo-moderate', path: '/app/fills', keeps: ['userId=demo-moderate', 'tab=patterns'] },
+  { old: '/analytics?userId=demo-moderate', path: '/app/fills', keeps: ['userId=demo-moderate'] },
   { old: '/check', path: '/app/check', keeps: [] },
 ]
 

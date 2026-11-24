@@ -4,18 +4,18 @@ import { accountLabel, looksLikeOrderId, sectionOfPath, SECTIONS, viewHref } fro
 describe('viewHref', () => {
   it('a demo account carries its id; Home is /app, each section its own path', () => {
     expect(viewHref('home', 'demo-moderate', false)).toBe('/app?userId=demo-moderate')
-    expect(viewHref('overview', 'demo-moderate', false)).toBe('/app/overview?userId=demo-moderate')
+    expect(viewHref('costs', 'demo-moderate', false)).toBe('/app/costs?userId=demo-moderate')
     expect(viewHref('orders', 'demo-moderate', false)).toBe('/app/orders?userId=demo-moderate')
   })
   it('signed in, a demo needs sample=1; the own account carries no id', () => {
-    expect(viewHref('rules', 'demo-aggressive', true)).toBe('/app/rules?userId=demo-aggressive&sample=1')
-    expect(viewHref('rules', null, true)).toBe('/app/rules')
+    expect(viewHref('flagged', 'demo-aggressive', true)).toBe('/app/flagged?userId=demo-aggressive&sample=1')
+    expect(viewHref('flagged', null, true)).toBe('/app/flagged')
     expect(viewHref('home', null, true)).toBe('/app')
   })
   it('extra parameters (an order to open, the Fills tab)', () => {
     expect(viewHref('orders', 'demo-moderate', false, { order: 'ord-moderate-BTCUSDT-968874' }))
       .toBe('/app/orders?userId=demo-moderate&order=ord-moderate-BTCUSDT-968874')
-    expect(viewHref('fills', 'demo-moderate', false, { tab: 'patterns' })).toBe('/app/fills?userId=demo-moderate&tab=patterns')
+    expect(viewHref('fills', 'demo-moderate', false, { symbol: 'ETHUSDT' })).toBe('/app/fills?userId=demo-moderate&symbol=ETHUSDT')
   })
 })
 

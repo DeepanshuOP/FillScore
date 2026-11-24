@@ -4,12 +4,12 @@ import type { SectionId } from './nav'
 /** The lucide icon of each sidebar section (design v5, PROPOSAL §3.1). Kept apart from nav.ts, which stays pure data. */
 export const SECTION_ICON: Record<SectionId, LucideIcon> = {
   home: House,
-  overview: CircleDollarSign,
+  costs: CircleDollarSign,
   orders: ListOrdered,
   fills: ArrowLeftRight,
-  rules: Flag,
-  rankings: ChartColumn,
-  council: Sparkles,
-  evidence: ShieldCheck,
+  flagged: Flag,
+  compare: ChartColumn,
+  review: Sparkles,
+  reports: ShieldCheck,
   check: FileCheck2,
 }
