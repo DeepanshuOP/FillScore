@@ -137,7 +137,7 @@ export function TapeHero() {
             {' '}It never advises.
           </p>
           <div className="flex flex-wrap gap-2.5">
-            <Link href={DEMO_ENTRY} className={buttonClass('primary', 'lg', 'no-underline')}>Open the demo</Link>
+            <Link href={DEMO_ENTRY} className={buttonClass('primary', 'lg', 'no-underline')}>Try the demo</Link>
             <Link href="/how-it-works" className={buttonClass('secondary', 'lg', 'no-underline')}>How it works</Link>
           </div>
           {/* A3: the tape's own label above prints the provenance (DESIGN.md invariant 4); no repeat under the buttons */}

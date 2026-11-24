@@ -13,7 +13,7 @@ export default function DemoPage() {
       <main id="main" className="min-h-screen bg-ui-surface px-[var(--ui-gutter)] pt-28 pb-24">
         <h1 className="display-md text-ui-ink">Pick a trader to open.</h1>
         <p className="mt-3 max-w-[60ch] text-[16px] text-ui-graphite">
-          Three synthetic traders. Their trading behaviour is generated; every fill price comes from real public prints. Each slip opens that trader&rsquo;s audit.
+          Three synthetic traders. Their trading behaviour is generated; every fill price comes from real public trades. Each card opens that trader&rsquo;s audit.
         </p>
         <div className="mt-14"><DemoChoice /></div>
       </main>

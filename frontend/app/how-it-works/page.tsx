@@ -25,7 +25,7 @@ export default function HowItWorksPage() {
         <section aria-labelledby="hiw-next" className="border-t border-ui-ink px-[var(--ui-gutter)] py-20">
           <h2 id="hiw-next" className="display-md max-w-[22ch] text-ui-ink">See it on a finished audit.</h2>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/demo" className={buttonClass('primary', 'lg', 'no-underline')}>Open the demo</Link>
+            <Link href="/demo" className={buttonClass('primary', 'lg', 'no-underline')}>Try the demo</Link>
             <Link href="/methodology" className={buttonClass('secondary', 'lg', 'no-underline')}>Read the methodology</Link>
           </div>
         </section>

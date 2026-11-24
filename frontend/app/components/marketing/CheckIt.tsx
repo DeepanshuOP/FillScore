@@ -17,7 +17,7 @@ const ROWS = [
   { label: `Expected-cost calibration ${replay.expectedCost.source.version}`, hash: replay.expectedCost.source.calibrationSha256 },
 ]
 const LINKS = [
-  { href: '/verify', title: 'Verify a pack', text: 'Drop a pack in; each hash and the signature are checked in the browser.' },
+  { href: '/verify', title: 'Verify a report', text: 'Drop a signed report in; each hash and the signature are checked in the browser.' },
   { href: 'https://github.com/DeepanshuOP/FillScore/tree/main/packages/fillscore-metrics', title: 'fillscore-metrics', text: 'The open measurement package.' },
 ]
 

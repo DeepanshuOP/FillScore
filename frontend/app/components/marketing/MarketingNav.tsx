@@ -47,7 +47,7 @@ export function MarketingNav() {
           ) : (
             <>
               <Link href="/login" className="hidden rounded-md px-3 py-1.5 text-[14px] text-ui-graphite no-underline hover:text-ui-ink md:inline-block">Log in</Link>
-              <Link href={DEMO_ENTRY} className={buttonClass('primary', 'sm', 'no-underline max-sm:min-h-11')}>Open the demo</Link>
+              <Link href={DEMO_ENTRY} className={buttonClass('primary', 'sm', 'no-underline max-sm:min-h-11')}>Try the demo</Link>
             </>
           )}
           <button type="button" onClick={() => { setMenuEver(true); setMenuOpen(true) }} aria-haspopup="dialog"

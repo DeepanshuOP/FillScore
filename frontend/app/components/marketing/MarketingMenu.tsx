@@ -31,7 +31,7 @@ export default function MarketingMenu({ open, onOpenChange, signedIn }: { open: 
               <Link href="/app" onClick={() => onOpenChange(false)} className={buttonClass('primary', 'md', 'no-underline justify-center')}>Open the app</Link>
             ) : (
               <>
-                <Link href={DEMO_ENTRY} onClick={() => onOpenChange(false)} className={buttonClass('primary', 'md', 'no-underline justify-center')}>Open the demo</Link>
+                <Link href={DEMO_ENTRY} onClick={() => onOpenChange(false)} className={buttonClass('primary', 'md', 'no-underline justify-center')}>Try the demo</Link>
                 <Link href="/login" onClick={() => onOpenChange(false)} className={buttonClass('secondary', 'md', 'no-underline justify-center')}>Log in</Link>
                 <Link href="/signup" onClick={() => onOpenChange(false)} className="py-2 text-center text-[15px] text-ui-ink">Sign up</Link>
               </>
