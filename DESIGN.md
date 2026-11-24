@@ -1,258 +1,100 @@
-# FillScore design system: "Tape & Receipt" (design v3)
+# FillScore design system, design v5 (2026-11-24)
 
-Chosen by Deepanshu on 2026-11-20 from two working directions (`docs/design/v3-proposal/README.md`; research in
-`docs/design/REFERENCES.md`), with four fixes: a first viewport that holds the headline, the feeding tape and the call to
-action, with every pen note tied to its mark; the scroll story ending on the order's total as one giant figure; Carbon
-copy as a real, tested theme; and this file. It replaces design v2 "Instrument" (navy, Geist, cards, a gauge). Every UI
-file follows this file. Values live in `frontend/app/ui/tokens.css` (contrast-tested by `app/ui/contrast.test.ts`); the
-printed objects live in `app/ui/paper.css` and the landing page's in `app/ui/landing.css`.
+Approved by Deepanshu on 2026-11-24 from the proposal in `docs/design/v5/` (audit, references, features, proposal, prototype). It
+replaces the app chrome of design v3 "Tape & Receipt" and IA v4: the app is now a conventional product (a sidebar of nouns with
+icons, a page header with a title, one sentence, the period and one primary action, white cards on a neutral grey ground). The
+receipt, the grade stamp and the marketing site keep the paper-and-ink story. Values live in `frontend/app/ui/tokens.css` (contrast-
+tested by `app/ui/contrast.test.ts`, both themes); the printed objects in `app/ui/paper.css`; the landing page in `app/ui/landing.css`;
+the app frame in `app/ui/appshell.css`. Every UI file follows this file.
 
 ## 1. Thesis
 
-FillScore holds every fill against the market tape and writes down what it cost. The page is printed paper and ink, and
-one hot signal: the fill-orange pen of an auditor. The product's own objects are the design: the ticker tape of public
-prints, the thermal receipt of an order, the rubber stamp of a grade, the ledger of orders, the envelope of a signed
-pack. Each one explains the method while it decorates. It leaves the category on purpose: crypto is dark and neon; an
-audit is light, printed and calm. Carbon copy covers dark rooms.
+FillScore holds every fill against the public market and writes down what it cost. The app reads like work software: plain words,
+body text at 14 px, nothing under 12 px, charts with labelled axes. The paper, the receipt and the stamp stay as signature objects.
+The marketing site keeps its motion; the app's motion is fast and functional (150 to 200 ms).
 
 ## 2. Invariants (product rules, not style; never traded for looks)
 
-1. No number written by a language model. Every figure comes from deterministic code and the existing APIs; the landing
-   figures come from committed fixtures through `lib/landing/heroData.ts`, tested against the replay.
+1. No number written by a language model. Every figure comes from deterministic code and the existing APIs; the browser computes
+   no figure it shows (it formats, orders and selects served values; chart positions are layout). Recorded model output is shown verbatim.
 2. Past tense findings only. No advice, no prediction, no "could save", no "route flow to" (`adviceCopy.test.ts`).
-3. Measured, insufficient data and not computed stay distinct through the one `ValueState` component: measured is an ink
-   figure with a solid rule and a square; insufficient data is printed words with a dashed ochre rule and a diamond;
-   not computed is printed words in a dotted box with a dash. Shape, line and words carry it; colour only repeats it.
-4. Demo accounts are always labelled "synthetic trader, real prices" (top bar badge, receipts, demo receipts on the
-   landing page, share card, Open Graph image) and are read-only. A demo receipt says NOT SIGNED: demos have no pack.
+3. Measured, insufficient data and not computed stay distinct (`ValueState`). Shape and words carry it; colour only repeats it. A
+   missing figure reads "not computed" or "insufficient data", never a zero or a plausible number.
+4. Demo accounts are labelled on every app page by the provenance banner ("Demo account · synthetic trader, real Binance prices · read-only"),
+   on receipts ("synthetic trader, real prices", NOT SIGNED) and on the share card. Unknown provenance is never shown as the user's data.
 5. Read-only exchange keys only; a refused key comes back as a returned receipt with the corrections printed.
-6. Reduced motion and no JavaScript show the finished frame: the tape at rest on the order, strokes drawn, notes written,
-   the giant total written, stamps pressed. Nothing travels. (`html.fs-js`, set by an inline script before paint, is the
-   only thing that arms a first frame, and only under `prefers-reduced-motion: no-preference`.)
+6. Reduced motion and no JavaScript show the finished frame.
 7. Correlation, never causation: "coincided with", never "caused" or "due to".
-8. A value that cannot be measured reads "insufficient data", never a plausible number. A missing cost line on a receipt
-   prints NOT COMPUTED, never 0.
+8. Published grades never change silently: the locked v1 grade is printed beside the measured one on Costs.
 
-## 3. Colour: paper, ink and pen
+## 3. Colour and themes
 
-| Role | Paper (default) | Carbon copy | Use |
-|---|---|---|---|
-| surface | `#F3F2EE` | `#1C1B19` | the paper (cool printed stock, warm charcoal; never blue-black) |
-| raised | `#FBFBF8` | `#262522` | receipt white: receipts, sheets, envelopes, the tape strip |
-| overlay | `#EFEDE7` | `#2F2D2A` | menus, hover |
-| ink | `#121210` | `#EEECE6` | text and every data mark |
-| graphite | `#6B6A66` | `#A6A39B` | secondary text (>= 4.5:1 on all three grounds) |
-| rule | `#D8D6CF` | `#36342F` | separators only (< 3:1, never a control border) |
-| edge | `#8A8882` | `#7A776F` | control borders (>= 3:1) |
-| measured, action | = ink | = ink | data is printed, not coloured; primary buttons are ink pills |
-| pen | `#FF4F12` | `#FF5A1F` | strokes: circles, brackets, leaders, underlines, the wordmark's dot, focus on carbon |
-| pen-ink | `#C2380A` | `#FF7E4A` | orange text (>= 4.5:1): every value the pen marks, rule names, grade letters on chips |
-| stamp | `#DE3F0B` | `#FF6A2E` | the grade stamp's large letter and score (large text, >= 3:1) |
-| insufficient | `#8C6510` (text `#7A5608`) | `#D9A441` | the dashed rule and words of "insufficient data" |
-| danger | `#A3221A` | `#F2685E` | destructive actions, refusals, FAIL lines |
+- Themes are **Light, Dark and System** (default System; next-themes sets `data-theme="light" | "dark"`; key `fs-theme-v5`). The control is a
+  sun, moon or monitor button with its word (`components/shell/ThemeToggle.tsx`).
+- The root tokens are the paper tone (marketing, receipt, stamp). Inside the app (`data-app`, also set on `<body>` by `AppScope` so portals
+  wear it) the same role names carry the app palette: a neutral grey ground (`#F4F4F2` light, `#0E0E0D` dark) with white cards (`#FFFFFF`,
+  `#1A1A19`). A printed object inside the app (`.fs-paper`, `.fs-receipt`) takes the paper values back.
+- Chart series 1 to 3 (blue, orange, green), grid and axis lines, the banner and the accent tint are tokens (`--ui-series-*`, `--ui-grid`,
+  `--ui-axis`, `--ui-banner*`, `--ui-accent-soft`), validated in both themes. Money is never coloured good or bad. Light-theme green is
+  under 3:1 on white, so a green part always carries a direct text label.
 
-- **The pen rule.** On paper `#FF4F12` is 2.9:1, under the 3:1 a meaningful mark needs. So on paper an orange mark never
-  carries meaning alone: whatever the pen circles, brackets or underlines is also written in pen-ink text beside it, or
-  printed in ink nearby. Tested (`contrast.test.ts`, "the pen orange").
-- The pen marks what the audit found. It is not a brand colour for buttons, links or backgrounds.
-- **Grades are stamped in one ink** whatever the letter: the stamp is the auditor's mark, never a traffic light. Money is
-  never coloured good or bad.
-- One static paper grain over every page (multiply on paper, screen on carbon), never animated.
+## 4. Type (decision D2 b)
 
-## 4. Type
+- **Geist Sans** (OFL, variable file `app/fonts/geist-sans-variable.woff2`) for all UI, body, table, label and axis text.
+- **Cabinet Grotesk** only for page titles (`page-title`, 24 px), KPI figures (`kpi-figure`, 28 px), display headings and the marketing headline.
+- **Departure Mono** only in the receipt, the stamp, ids and hashes. Reason: Cabinet Grotesk broke letters at 12 to 14 px in the prototype.
+- Sizes: body 14 px; card titles 16 px; labels, captions, tick labels and table headers at least 12 px, sentence case; no letter-spaced
+  uppercase under 12 px anywhere (printed objects keep their uppercase at 13 px and up). Tabular figures everywhere; a true minus; never "-0.00".
 
-- **Cabinet Grotesk** (Indian Type Foundry, Fontshare; 400, 500, 700, 900) for display, headings, UI and figures.
-- **Departure Mono** (Helena Zhang, OFL) is the thermal printer: the tape, receipts, ledger figures, ids, hashes, printed
-  labels. Never a paragraph.
-- **Tabular figures, measured** in the browser (`/design-lab/v3/specimen`, each digit in its own span at 100 px,
-  `tnum` on): Cabinet Grotesk 66.00 px for all ten digits, Departure Mono 63.64 px; both set one width, so both may set
-  tables. Clash Grotesk did not (37.1 to 66.2 px) and was ruled out. Body sets `tnum` and `lnum`.
-- Scale by weight and size: the period total and the story's $0.25 at display scale in 900 with -0.055em tracking; display
-  steps `display-xl` (52 to 152 px), `display-lg` (40 to 76), `display-md` (30 to 44), all 900; section titles 20 to 28 px
-  in 700/900; body 16 px / 1.5; captions 13 to 15 px.
-- Cabinet Grotesk always tracks negative. **Uppercase and widened tracking belong only to the printer** (Departure Mono
-  labels such as `ORDER`, `TOTAL`, `NOTE 1 OF 4`); `rebuiltCopy.test.ts` enforces "font-mono on the same line".
-- Stepped decimals: `$52` in ink, `.08` in graphite (`SplitFigure`), the same split while NumberFlow rolls.
+## 5. Shell and pages
 
-## 5. The objects
+- **Sidebar** (248 px; a 64 px rail from 1024 to 1279 px): Home, Costs, Orders, Fills; Review: Flagged orders, Comparisons, AI review; Tools:
+  Reports, Check an exchange export; Docs, Settings, the theme control, the account. The account switcher ends a long name in an ellipsis and
+  shows it whole in a tooltip. Phones: a top bar (logo mark, page title, search, account), a bottom bar (Home, Costs, Orders, More with icons
+  and 12 px labels) and a More sheet. ⌘K (`CommandMenu`) loads on its first open.
+- **Banner and header**: the provenance banner, then the page header: 24 px title, one sentence, the period as a disabled label ("Period
+  choice comes next"), one primary action and a "⋯" menu (`AppPage` in `appshell/shellContext.tsx`).
+- **Cards** (`ui/blocks.tsx`): KPI tiles, cards with a 16 px title, one sentence, an info popover and a source line that names the data.
+- **Charts** (Recharts, loaded by the pages that draw them): stacked cost bar per order type, the receipt's public-trades scatter; hand-drawn
+  SVG for Comparisons (bars with 90% whiskers, zero line). Axis titles are HTML, ticks are round values (`ui/charts/ticks.ts`).
+- **Routes**: `/app` (Home), `/app/costs`, `/app/orders`, `/app/fills`, `/app/flagged`, `/app/compare`, `/app/review`, `/app/reports`, `/app/check`,
+  `/app/settings`, `/app/connect`. The old addresses answer one-hop 308 (`legacyRedirects.mjs`).
+- **Words**: Costs, Flagged orders, Comparisons, AI review, Reports, Short review (1 AI call), Full review (9 AI calls), public trades (not
+  prints or tape), Try the demo, Verify a report, Check an exchange export. Invariant words are kept: NOT SIGNED, "not independently measured",
+  "Unfilled orders (modelled)", "Fees (published rate)", the language-model heading.
 
-- **Receipt** (`.fs-receipt`, receipt white, Departure Mono 12.5 px): title in Cabinet Black, `AUDIT RECEIPT`, the
-  provenance line, a dashed rule, key/value lines (`ORDER`, `MARKET`, `PLACED`, `STATUS`), sections centred and spaced
-  (`FILLS`, `COSTS`), numbered cost lines with dotted leaders and right-aligned bps and USD, a punched perforation
-  (`.fs-perf`), the heavy total line (Cabinet Black, 40 px dollars), the expected-cost line or its insufficient-data
-  reason, notes, sources with SHA-256, the order record's SHA-256 drawn as bars and labelled "not a scannable code", the
-  SIGNED stamp (real accounts only) and a torn bottom edge. On a desktop it prints down out of a slot at the top of the
-  screen (Radix Dialog); on a phone it rises as a Vaul drawer with the torn edge on top.
-- **Stamp** (`GradeStamp`, `.fs-stamp`): "GRADED / letter score / PERIOD / SCORING version", double border, ink texture
-  mask, -7° tilt; it presses in once on first view (oversized and blurred, then flat, 420 ms). Small word stamps
-  (`.fs-word-stamp`): SIGNED, VALID, CONSISTENT (dashed, ink), INVALID and RETURNED (danger), NOT ISSUED, NOT ON FILE.
-- **Tape** (`.fs-strip` + `.fs-sprockets`): receipt white with sprocket holes punched along both edges. The landing hero's
-  tape carries the 38 real prints, the arrival quote and the two fills; the overview's month tape carries one tick per
-  order (height = the order's total cost in dollars from the server's ledger; a price improvement hangs below the line); the rankings sit on a tape.
-- **Pen** (`app/ui/pen.ts`, seeded, so server and client draw the same stroke): `circlePath`, `bracketPath`,
-  `underlinePath`, `leaderPath`; `PenCircle` and `PenBracket` wrap inline content. **A pen note never floats**: each
-  note sits beside its mark and is tied to it by a leader.
-- **Ledger**: tables open with one ink rule; headers are printed labels; rows are dashed rules; figures in mono. Sections
-  of the app are ledger blocks (`panel` = one ink rule above, no card, no radius, no shadow). `sheet` is for the few
-  objects that are paper on paper.
-- **Envelope** (`.fs-envelope`): a drawn flap, a stamp in the corner, contents in mono. Evidence packs, the drop target
-  of /verify, "check it yourself".
-- **Slip**: Sonner toasts are printed slips with a torn bottom edge; the ⌘K palette is a sheet of receipt paper.
+## 6. Receipt, stamp and the marketing site
 
-## 6. Layout
+The receipt (`app/dashboard/OrderReplay.tsx`) stays a printed object in the app: Departure Mono at 14 px (13 px on phones), NOT SIGNED for
+demos, NOT COMPUTED for a missing cost line, with a chart of the stored public trades around the order. The grade stamp stays. The marketing
+site (landing, `/demo`, `/how-it-works`, `/verify`, `/docs`) keeps the paper tone and its GSAP story, in Geist with Cabinet only for the headline.
 
-- Full-bleed with a gutter (`--ui-gutter`, 16 to 40 px); app content up to 1440 px. Square corners (4 to 8 px radius at
-  most); pill buttons; no shadows except paper lifting off paper.
-- **Two shells (IA v4, 2026-11-23).** The marketing site has a top bar: How it works, Demo, Verify, Docs, then Log in and
-  "Open the demo" (both demo entries lead to `/demo`, the choice of trader); a phone shows the wordmark, "Open the demo" and
-  Menu (a receipt sheet with the account actions pinned at the bottom). The footer has four columns: Product, Docs, Trust,
-  Legal. Docs are a third, quiet shell (a short list of documents beside the text).
-- **The app (`/app/*`) has a left sidebar**, 232 px, on the same paper with one ink rule beside it (no card, no shadow): the
-  wordmark and ⌘K, the account switcher (the only thing about the account it holds), nine nouns in a flat list with no group
-  labels (Home, Overview, Orders, Rules, Rankings, Council, Evidence, Fills, Check a broker file), and a bottom group:
-  Public score card (demo accounts), Methodology, Settings (only when signed in), Carbon copy, the scoring and measure
-  versions, Log in or Log out. The pen underline marks the current noun. From 1024 to 1279 px the sidebar is a 64 px rail of
-  two printed letters with a toggle. **Provenance, account and period print once, in the page header of every app page**
-  (never only in the sidebar). Below 1024 px: a printed bottom bar of four (Home, Overview, Orders, More), the account
-  switcher at the top of the page, and a More sheet (Vaul) with a one-line gloss for each noun. ⌘K lists the nine with the
-  same glosses. Settings has its own shell with "Back".
-- Landing hero: the headline anchored bottom-left at editorial scale, the tape full-bleed across the upper third, the
-  lede and call to action bottom-right; on a phone the tape on top, the fee circles centred, the costs printed under it.
+## 7. Numbers
 
-## 7. Motion
+One style per kind (`app/lib/format.ts`, tested): money `$52.08`, below a cent `<$0.01`; bps one decimal with the unit; counts with the noun;
+shares as whole percent (one decimal under 10%); grades as a letter with the score to one decimal "of 100" and its range. bps is glossed once per page.
 
-- UI: 150 to 300 ms, ease-out `cubic-bezier(0.23, 1, 0.32, 1)`; the receipt prints in 560 ms on the drawer curve
-  `cubic-bezier(0.32, 0.72, 0, 1)` and tears back in 220 ms. Transform, opacity and clip-path only.
-- Landing only: GSAP ScrollTrigger (pinned, scrubbed) with DrawSVG, Lenis owned by `LandingMotion`, all loaded by dynamic
-  import, all in `components/marketing` (`motion.test.ts`). The hero tape feeds right to left from frame 0 and eases to
-  rest on the order; the pen draws its marks, leaders and notes in order; the giant total is written left to right as
-  it scrolls in, then double-underlined.
-- **The number rule.** NumberFlow (`Figure`, `SplitFigure`) only after a user action (switching account, period or tab),
-  only when its Intl output equals the canonical string, never a count from zero, never a scramble.
-- Stamps press once; manifest lines tick once; nothing loops, pulses or shimmers.
-- **IA v4 interactions** (each with its reduced-motion and touch rule; none on tables, filters, folds, tabs, the palette or keys):
-  the receipt prints on the first open of a session (paper 420 ms on the drawer curve, lines 18 ms apart, at most 360 ms; later
-  opens 300 ms plain; tearing back 220 ms); the Ask slip on Home prints each answer the same way, paper and first line starting
-  in the same frame; the sidebar's pen underline moves in 180 ms (`cubic-bezier(0.23, 1, 0.32, 1)`); an app page fades in 160 ms
-  with an 8 px rise, no exit (a tab change keeps the page); a pen nib follows a fine pointer over the landing's hero tape and
-  leaves no mark. Reduced motion: the finished frame at once. Touch: no nib; the receipt rises as a drawer.
+## 8. Budgets and checks
 
-## 8. Data
+First Load JS (gzip, `scripts/first-load-js.mjs`): the budgets and the measured values are in `docs/milestones/M8.md` ("Design v5 built").
+`e2e-shots/audit5.ts` measures text under 12 px, caps runs, phone tap targets, contrast and errors on every page and viewport.
 
-- Single-hue ink scales (`hue.ts`: ink at 100 / 82 / 65% of the paper); never good/bad colours.
-- Cost against expected: one ruler of paid minus expected, the expected point at zero (a ring), the paid dot, the pen's
-  bracket for the 90% interval with the interval written in pen-ink, n printed; "insufficient data" otherwise.
-- Order outcomes as a printed tally, one stroke per order (unfilled strokes in pen, their count in pen-ink).
-- Rankings noise-aware: rank 1 first; overlapping intervals share a rank and read "not distinguishable from"; groups
-  under 20 orders follow as "too few to tell" with no mark. Every chart has a text or table form.
+## 9. Decisions log
 
-## 9. Copy
-
-- Past tense, plain words, short sentences. "The 245 orders paid $52.08 in total."
-- Printed labels in uppercase mono are the only uppercase. No arrow glyphs on links, no "A · B · C" strings, no
-  exclamation marks, no fake testimonials, logos or numbers.
-- The LLM block keeps its heading: "Explanation (language model; every number was checked against the audit)"; recorded
-  output is shown verbatim (the Council memo's notes and transcript reproduce it).
-
-## 10. Anti-generic list (checked at review)
-
-No navy or blue-black ground; no neon glow; no gradient washes or gradient text; no glassmorphism; no rounded cards with
-icon-in-a-square grids; no gauge; no hero-metric strip of four same-weight numbers; no coloured side stripes; no
-sparkline standing in for content; no emoji icons; no uppercase tracked eyebrows in the sans; no orange buttons; no
-floating annotations.
-
-## 11. Design v3.1 "Quiet audit" (2026-11-21)
-
-The objects, tokens, fonts and invariants above stay. v3.1 removes overload (plan and inventory:
-`docs/design/v31-plan.md`; research: `docs/design/REFERENCES-v31.md`). Measured with `frontend/e2e-shots/words.ts`.
-
-- **One idea per viewport.** A section has one visual, one sentence, at most ~25 visible words. Everything else is
-  behind disclosure. Overview chapters open with a printed rail label (`01 TOTAL` to `05 AGAINST EXPECTED`, mono,
-  left column on a desktop) instead of a heading; the accessible `h2` stays.
-- **Pen margin notes** (`app/ui/MarginNote.tsx`): a pen-ink ring-and-dot button right after the value it explains,
-  named "Note: <what>". Fine pointer: opens on hover after 250 ms (at once within 400 ms of another note), on keyboard
-  focus and on click; closes 150 ms after the pointer leaves, on blur, on an outside press and on Escape; enters in
-  160 ms, leaves in 110 ms. Touch: a Vaul sheet with Close. The popup code loads on first use or when idle.
-  **Never only in a note:** the synthetic line, ValueState words and reasons, NOT SIGNED, "not independently measured",
-  NOT COMPUTED totals, past-tense findings.
-- **Printed folds** (`Fold`, the receipt's `NOTES (n)`): a mono button with `aria-expanded`; content stays in the
-  document; no animation (used often).
-- **Type.** Mono only for figures and printed objects (tape, receipt, stamp, rail labels, the facts table); captions
-  in Cabinet Grotesk. Overview: display, 20 px sentence, 16 px body, 13 px label and note.
-- **Motion budget.** Rich motion only on the landing page and on an overview chapter's first entry, once per browser
-  session per account (`useFirstEntry`, `sessionStorage`): the stamp press with its border drawn (DrawSVG), the strip
-  feeding in (clip-path, 640 ms), the ruler's bracket and the tape's pen circle drawn (520 to 560 ms). None on tables,
-  tabs, filters, folds, the All/Market/Limit switch or ⌘K, and none on keyboard actions (a key opens the receipt
-  plainly). UI 150 to 300 ms; exits faster than entries. Reduced motion and no script: the finished frame.
-- **The month tape.** Wider than its box and dragged (GSAP Draggable + InertiaPlugin, loaded on demand) when bars
-  would be closer than 4 px; arrow keys, Home, End, Enter as before. A time loupe (3x) over the bars under the pointer
-  (off under reduced motion). The largest order circled by the pen with its server amount. A click opens the order
-  that is visibly picked.
-- **Where the money went.** A torn strip of two parts whose widths are the server's shares (`strip` on
-  `/audit/orders-summary`): measured against market prices (ink) and fees (ink 65%; at the published rate: hatched,
-  dashed outline, "not independently measured" printed). A negative part has no width and is named apart.
-- **The receipt's entry.** From a tape bar or a ledger row on a desktop the paper grows out of it (GSAP Flip, 300 ms;
-  lines appear as it lands); the first open of a session feeds out of the slot in steps (420 ms); later opens 300 ms;
-  tearing back 220 ms. Footnotes (prints, expected cost, notes, sources, the record's hash) fold into NOTES.
-- **Landing.** Hero and the $0.25 unchanged; the proof paragraph is a note; print sides are tape ticks (filled up:
-  buyer-initiated, hollow down: seller-initiated). A pinned horizontal row of three printed objects (tape, receipt,
-  stamp) with masked line titles and a "1 / 3" counter on a desktop with motion; stacked otherwise.
-
-- **Part B (2026-11-22): the other screens.** `Panel` takes a `note` ({ label, text }): the explanation that sat under a
-  panel title moves behind a pen margin note after the title; what remains visible is the state (counts, a finding, a
-  ValueState). A stored field is shown by a plain name (`plainFieldName`: `liquidity.clean_market_count` reads
-  "Liquidity: clean market count"); the path is the last line of the note beside the list, and the Council's cited
-  values sit in a closed printed fold ("CITED FROM THE AUDIT (n)", the lines stay in the document). The Orders ledger
-  opens with the columns a reader scans; the order id, fills, quantity and maker share are one menu away; mono only on
-  figures and times. Refusals (onboarding), legal text, the methodology document and the auth forms stay complete.
-- **Where the money went (F1).** Three parts that add up to the total, all from the server: fees, unfilled orders (the
-  market moved away from them; nobody paid it) and filled orders' execution (below the strip's line when it is an
-  improvement). The printed word "missed" is not used: `adviceCopy.test.ts` bans it as counterfactual wording.
-
-## 12. Numbers
-
-1. **One headline figure per view.** A page or card leads with one figure at display size; everything else is smaller or in a
-   fold. Never a strip of four same-weight figures (section 10).
-2. **Unit and period beside the figure, in words**: "$52.08 the 245 orders paid, Jan 1 to Jan 31, 2024". bps always carries
-   "bps"; a share carries "%"; a count names what it counts.
-3. **Comparisons are sentences**: "against 0.1 bps modelled", "4 of 245 orders". Shape and words carry better or worse; money
-   is never coloured good or bad (section 3). The sign is a true minus.
-4. **Precision follows meaning**: dollars to cents, bps to one decimal, scores to one decimal; the exact stored value is in
-   the title or the note. No running counters, no 8-decimal shares.
-5. **Partial and empty data say so** through ValueState (measured, insufficient data, not computed); a missing cost line
-   prints NOT COMPUTED, never 0; an empty page has one icon, one title, two lines and at most one action.
-6. **Provenance travels with the figure**: the synthetic line in the page header of every app page, NOT SIGNED on demo receipts,
-   "not independently measured" on published-rate fees, the scoring version at the sidebar's foot and on the stamp.
-7. **Model text never carries a figure of its own**: figures in Ask and Council answers are placed by code, and the block says
-   so. The language-model heading shows only over text the model wrote; a sentence code wrote because the model's answer did
-   not pass the checks says so in one line, and its meta line says the model's answer was not used.
-
-## 13. Decisions log
-
+- 2026-11-24 (design v5 built, from the proposal in `docs/design/v5/`; decisions D1 to D13): sidebar of nouns with icons (D1), Geist for UI text
+  (D2 b), Light / Dark / System (D3), Recharts (D4), neutral grey app with white cards and paper tone kept for the receipt and marketing (D5), AI
+  review restructured (D7), the not-computed policy applied in part (D8; the period picker, fill against public trades, onboarding, changelog,
+  usage and status are the next order), the landing hero fix for short phones (D10), "Check an exchange export" (D13). Deliberately changed
+  guards, each with its reason in its file: theme names, orders columns, receipt copy, fills not-computed sentence, agent labels, review mode
+  words, the " · " ban (one exemption, the provenance banner).
 - 2026-11-23 (IA v4 built; the sixth order, from the proposal in `docs/design/IA-v4/`): a marketing site and an app under `/app/*`;
-  Trades and Analytics merged into Fills (tabs Ledger and Patterns); Home is "Ask FillScore" with the key figures under it (demo
-  accounts play recorded answers, labelled; signed-in accounts ask live); `/how-it-works` is a page; the hero tape carries a
-  printed label with the order's own date. Every old address answers a permanent redirect with the query kept (`legacyRedirects.mjs`).
-- 2026-11-22 (design v3.1 Part B, F1 to F3): see section 11 "Part B" and "Where the money went". The hero holds its
-  content inside the first 700 px (gaps above and below the tape about 110 px at 1440 x 900; the box stays 100svh).
-
-- 2026-11-21 (design v3.1): "Quiet audit" rules (section 11). Visible words: landing 381 to 179, overview 378 to 122,
-  receipt 113 to 52 (1440). The small stamp (landing demo receipts) prints the period without the scoring line. The overview's demo banner became one slim always-visible line; the B2 term table and
-  switch moved into the "Lines" fold under the strip; the overview's tape opens the receipt in place instead of
-  switching to the Orders section.
-
-- 2026-11-20: direction 1 "Tape & Receipt" chosen over direction 2 "Grid & Highlighter"; replaces design v2
-  "Instrument". Fixes 1 to 4 applied. The v2 rules (navy surfaces, cyan measured, blue action, Geist, the aurora, the
-  gauge, the bento, "no uppercase anywhere") are deleted.
-- 2026-11-21 (design v3 fixes B1): the month tape's ticks are each order's total cost from GET /audit/orders-ledger,
-  on one dollar scale with improvements below the line; the next line is superseded.
-- (Superseded.) The overview's month tape sizes ticks by order value, not cost: the overview has no per-order cost without fetching
-  every replay. The prototype's All/Market/Limit switch is left out: the served summary has no per-type totals.
-- 2026-11-21 (design v3 fixes B2): the All / Market / Limit switch is back on the overview's cost receipt; it reads the
-  server's `byType` totals (GET /audit/orders-summary), which add up to the all-orders totals.
-- The receipt draws fills only: the replay payload carries the source file of the public prints, not the prints, and the
-  receipt says so.
-- 2026-11-21 (design v3 fixes B3): the receipt has no chart at all (a plot of the fills alone was near-empty); it lists
-  the fills and prints "Fills only; the public prints are in the source file." with the file's name and SHA-256. The
-  prints are not served: the server cannot read them without new storage or a download at request time (options in
-  docs/PROGRESS.md).
+  Trades and Analytics merged into Fills (tabs Ledger and Patterns, the tabs are gone in v5); Home is "Ask FillScore" with the key figures
+  under it; `/how-it-works` is a page; the hero tape carries a printed label with the order's own date. Every old address answers a permanent
+  redirect with the query kept (`legacyRedirects.mjs`).
+- 2026-11-22 (design v3.1 Part B, F1 to F3): the hero holds its content inside the first 700 px (gaps above and below the tape about 110 px at
+  1440 x 900; the box stays 100svh).
+- 2026-11-21 (design v3.1): "Quiet audit" rules. The small stamp prints the period without the scoring line.
+- 2026-11-20: direction 1 "Tape & Receipt" chosen over direction 2 "Grid & Highlighter"; replaces design v2 "Instrument".
+- 2026-11-21 (design v3 fixes B1 to B3): the month tape's ticks were each order's cost from `GET /audit/orders-ledger`; the All / Market / Limit
+  switch read `byType`; the receipt drew fills only. (v5: the month tape is replaced by "Costliest orders", the order types are one stacked bar
+  each, and the receipt draws the stored public trades; the ledger's per-order costs are the same server values.)

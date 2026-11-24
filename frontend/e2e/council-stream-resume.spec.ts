@@ -38,7 +38,7 @@ test('demo Council: a stream cut mid-run resumes from the last event id, with no
   })
 
   await page.goto('/dashboard?userId=demo-moderate&view=council')
-  await page.getByRole('button', { name: 'Run analysis' }).click()
+  await page.getByRole('button', { name: 'Start review' }).click()
   const heading = page.getByRole('heading', { name: 'Explanation (language model; every number was checked against the audit)' })
   await expect(heading).toBeVisible({ timeout: 45_000 })
 

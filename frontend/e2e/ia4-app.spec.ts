@@ -64,13 +64,13 @@ test('⌘K opens without error, lists the nine sections with their glosses, goes
   const errors: string[] = []
   page.on('pageerror', (e) => errors.push(String(e)))
   await page.goto('/app?userId=demo-moderate')
-  await expect(page.getByRole('heading', { name: 'Ask FillScore' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Home', level: 1 })).toBeVisible()
   await page.keyboard.press('Control+k')
   const palette = page.getByRole('dialog', { name: 'Jump to' })
   await expect(palette).toBeVisible()
   for (const label of ['Home', 'Costs', 'Orders', 'Fills', 'Flagged orders', 'Comparisons', 'AI review', 'Reports', 'Check an exchange export']) await expect(palette).toContainText(label)
-  await expect(palette).toContainText('A language-model review of the audit')
-  await page.keyboard.type('Rankings')
+  await expect(palette).toContainText('A language model explains the measured figures')
+  await page.keyboard.type('Comparisons')
   await page.keyboard.press('Enter')
   await expect.poll(() => new URL(page.url()).pathname).toBe('/app/compare')
   expect(new URL(page.url()).searchParams.get('userId')).toBe('demo-moderate')
@@ -81,10 +81,13 @@ test('⌘K opens without error, lists the nine sections with their glosses, goes
   expect(errors).toEqual([])
 })
 
-test('the provenance prints once, in the page header, and not in the sidebar', async ({ page }) => {
-  await page.goto('/app/overview?userId=demo-moderate')
+// design v5: the provenance is the full-width banner above the page header (invariant I5), and the sidebar does not repeat it
+test('the provenance prints once, in the banner above the page header, and not in the sidebar', async ({ page }) => {
+  await page.goto('/app/costs?userId=demo-moderate')
+  await expect(page.getByTestId('provenance-banner')).toContainText('synthetic trader, real Binance prices')
+  await expect(page.getByTestId('provenance-banner')).toContainText('read-only')
   const header = page.getByTestId('app-page-header')
-  await expect(header).toContainText('Synthetic trader, real prices')
   await expect(header.getByTestId('header-period')).toBeVisible()
+  await expect(header.getByTestId('header-period')).toHaveAttribute('aria-disabled', 'true')
   await expect(page.getByRole('complementary', { name: 'App' })).not.toContainText('Synthetic trader, real prices')
 })

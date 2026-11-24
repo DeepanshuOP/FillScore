@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { signUpFresh } from './session'
 
 const DEMO = 'demo-disciplined'
-const BUTTON = /download report/i
+const BUTTON = /download pdf/i   // design v5: the primary action of the page header
 
 async function expectPdfDownload(page: Page) {
   const button = page.getByRole('button', { name: BUTTON })

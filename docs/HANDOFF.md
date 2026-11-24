@@ -29,6 +29,12 @@ An open-source, independent execution auditor for crypto traders. It **grades pa
 - **Milestone state:** see `docs/PROGRESS.md`.
 
 ## Next
+**2026-11-24 (design v5 build): Design v5 built in part: ready for Deepanshu's review (local commits, not pushed).** New app shell, Geist,
+Light / Dark / System, routes `/app/costs|flagged|compare|review|reports` with one-hop 308s, Costs, Home, Orders with a receipt chart, Comparisons,
+Flagged orders, AI review, Fills (one page), landing hero fix. Full e2e 66 passed, 0 failed, 9 skipped. NOT done: bundle budgets (missed, table in
+`docs/milestones/M8.md`), Lighthouse, audit5 after-numbers, WebKit, built images, dead v4 code removal, Reports and Settings restyle, nine e2e specs
+rewritten (fixme), 4 ml-service tests that fail only in the full run. Older text follows.
+
 **2026-11-24 (design v5 order): Design v5 proposal ready: Deepanshu chooses (`docs/design/v5/`; local commits, not pushed).** Step 0
 moved Binance public market data (klines, exchangeInfo, aggTrades, the reachability probe) to data-api.binance.vision with its own
 governor; signed calls stay on api.binance.com; our traffic cannot explain the 418 (Render's outbound IPs are shared per region; LOG §AN).

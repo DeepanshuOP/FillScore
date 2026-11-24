@@ -391,8 +391,8 @@ export default function AgentCouncil({
           )}
 
           {waking && (
-            <Banner kind="info" title="The Council service is waking up">
-              The Council service was asleep and is waking up. This can take up to a minute the first time.
+            <Banner kind="info" title="The AI review service is waking up">
+              The AI review service was asleep and is waking up. This can take up to a minute the first time.
             </Banner>
           )}
 
@@ -549,7 +549,7 @@ export default function AgentCouncil({
                       <p className="text-ui-graphite">
                         <span className="font-medium text-ui-ink tabular-nums">{formatUsd(f.effect_usd)}</span>
                         {Number.isFinite(f.effect_bps) && <> ({formatSignedBps(f.effect_bps)})</>}
-                        <span className="ml-3 inline-block -rotate-3 rounded-[4px] border-[1.5px] border-ui-ink px-1.5 font-mono text-[11px] text-ui-ink">
+                        <span className="ml-3 inline-block -rotate-3 rounded-[4px] border-[1.5px] border-ui-ink px-1.5 font-mono text-[12px] text-ui-ink">
                           verified
                         </span>
                       </p>

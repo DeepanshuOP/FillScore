@@ -23,6 +23,10 @@ describe('niceTicks', () => {
     expect(t).toEqual([0, 2, 4])
     expect(t.some((v) => Object.is(v, -0))).toBe(false)
   })
+  it('small ranges carry no float noise (review fix): 0..0.8 gives 0, 0.2, 0.4, 0.6, 0.8', () => {
+    expect(niceTicks(0, 0.8)).toEqual([0, 0.2, 0.4, 0.6, 0.8])
+    expect(niceTicks(0, 0.3)).toEqual([0, 0.1, 0.2, 0.3])
+  })
   it('a flat or invalid domain returns the single value or nothing', () => {
     expect(niceTicks(2, 2)).toEqual([2])
     expect(niceTicks(NaN, 2)).toEqual([])

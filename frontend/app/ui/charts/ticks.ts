@@ -11,7 +11,8 @@ export function niceTicks(lo: number, hi: number, target = 4): number[] {
   const step = (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * pow
   const first = Math.ceil(lo / step - 1e-9) * step
   const out: number[] = []
-  for (let v = first; v <= hi + step * 1e-9; v += step) out.push(Math.round(v / step) * step + 0)   // "+ 0" turns -0 into 0
+  const decimals = Math.max(0, -Math.floor(Math.log10(step)))   // review fix: no float noise such as 0.6000000000000001
+  for (let k = Math.round(first / step); k * step <= hi + step * 1e-9; k++) out.push(+(k * step).toFixed(decimals) + 0)   // "+ 0" turns -0 into 0
   return out
 }
 

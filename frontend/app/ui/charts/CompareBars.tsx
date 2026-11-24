@@ -21,7 +21,7 @@ export function CompareBars({ rows, level }: { rows: RankRow[]; level: number })
         {rows.map((r) => (
           <li key={r.key} className="grid grid-cols-[minmax(64px,110px)_minmax(0,1fr)_auto] items-center gap-3 border-b border-ui-rule" style={{ height: ROW }}>
             <span className="truncate text-[14px] font-medium text-ui-ink" title={r.key}>{r.key}</span>
-            <svg width="100%" height={ROW} role="img" aria-label={`${r.key}: median ${bps(r.median)}, ${pct}% interval ${bps(r.low)} to ${bps(r.high)}${r.tie ? `, ${r.tie}` : ''}`}>
+            <svg width="100%" height={ROW} style={{ overflow: 'visible' }} role="img" aria-label={`${r.key}: median ${bps(r.median)}, ${pct}% interval ${bps(r.low)} to ${bps(r.high)}${r.tie ? `, ${r.tie}` : ''}`}>
               {ticks.map((t) => <line key={t} x1={pos(t, lo, hi)} x2={pos(t, lo, hi)} y1="0" y2={ROW} stroke="var(--ui-grid)" />)}
               <line x1={pos(0, lo, hi)} x2={pos(0, lo, hi)} y1="0" y2={ROW} stroke="var(--ui-axis)" strokeWidth="1.5" />
               <rect x={pos(Math.min(0, r.median), lo, hi)} width={`${((Math.abs(r.median) / (hi - lo)) * 100).toFixed(3)}%`} y="10" height="14" rx="2" fill="var(--ui-series-1)" />

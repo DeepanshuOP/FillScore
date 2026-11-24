@@ -164,7 +164,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
                 <PricePrintsChart arrivalMs={pw.arrivalMs} quote={quote}
                   trades={pw.prints.map((r) => ({ t: r[1], price: r[2], qty: r[3], side: r[4] === 0 ? 'buyer' as const : 'seller' as const }))}
                   fills={body.fills.map((f) => ({ t: new Date(f.time).getTime(), price: f.price, qty: f.quantity }))}
-                  source={`Source: Binance public trades${pw.files.length ? `, ${pw.files.map((f) => f.date).join(' and ')}` : ''}; SHA-256 in Notes.`} />
+                  source={`Source: Binance public trades${pw.files.length ? `, ${pw.files.map((f) => f.date).join(' and ')}` : ''}; SHA-256 in Notes.${pw.truncated ? ` The chart shows ${pw.prints.length} of ${pw.total} public trades, the ones nearest the fills.` : ''}`} />
               </div>
             );
           })()}

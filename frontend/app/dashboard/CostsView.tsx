@@ -73,13 +73,13 @@ export function CostsView(p: CostsProps) {
       )}
       <div className="grid gap-4 xl:grid-cols-2">
         <CostliestOrders request={p.request} query={p.query} onOpenOrder={p.onOpenOrder} />
-        <Card title="By order type" sentence="Market and limit orders, each in the same three parts." id="type" source="Your orders, measured against Binance public trades.">
+        <Card title="By order type" sentence="Market and limit orders, each in the same three parts." id="type" source={p.isDemo ? 'Your orders, measured against Binance public trades. Fees are at the published rate, not independently measured.' : 'Your orders, measured against Binance public trades.'}>
           {rows.length ? (
             <>
               <TypeBars rows={rows} />
               <table className="w-full border-collapse text-[13px] text-ui-ink">
                 <caption className="sr-only">The same values as the chart</caption>
-                <thead><tr className="text-left text-ui-graphite"><th className="py-1.5 pr-2 font-medium">Type</th><th className="py-1.5 pr-2 text-right font-medium">Orders</th><th className="py-1.5 pr-2 text-right font-medium">Fees</th><th className="py-1.5 pr-2 text-right font-medium">Unfilled (modelled)</th><th className="py-1.5 text-right font-medium">Execution</th></tr></thead>
+                <thead><tr className="text-left text-ui-graphite"><th className="py-1.5 pr-2 font-medium">Type</th><th className="py-1.5 pr-2 text-right font-medium">Orders</th><th className="py-1.5 pr-2 text-right font-medium">{p.isDemo ? 'Fees (published rate)' : 'Fees'}</th><th className="py-1.5 pr-2 text-right font-medium">Unfilled (modelled)</th><th className="py-1.5 text-right font-medium">Execution</th></tr></thead>
                 <tbody>{rows.map((r) => <tr key={r.type} className="border-t border-ui-rule"><td className="py-1.5 pr-2">{r.type}</td><td className="py-1.5 pr-2 text-right tabular-nums">{r.orders}</td><td className="py-1.5 pr-2 text-right tabular-nums">{money(r.fees)}</td><td className="py-1.5 pr-2 text-right tabular-nums">{money(r.unfilled)}</td><td className="py-1.5 text-right tabular-nums">{money(r.execution)}</td></tr>)}</tbody>
               </table>
             </>
@@ -118,7 +118,7 @@ export function CostsView(p: CostsProps) {
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-[14px] sm:grid-cols-4">
           {p.facts.map(([k, v]) => <div key={k}><dt className="text-[13px] text-ui-graphite">{k}</dt><dd className="text-ui-ink">{v}</dd></div>)}
         </dl>
-        {p.headline ? <p className="text-[14px] text-ui-graphite">{count(p.headline.orders, 'order')} in the total, {bps(p.headline.totalBps)} of their value.</p> : null}
+        {p.headline && bps(p.headline.totalBps) ? <p className="text-[14px] text-ui-graphite">{count(p.headline.orders, 'order')} in the total, {bps(p.headline.totalBps)} of their value.</p> : null}
         <p className="text-[14px] text-ui-graphite">{BPS_GLOSS}</p>
         {p.freshness}
       </Card>

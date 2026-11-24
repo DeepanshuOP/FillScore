@@ -13,7 +13,7 @@ test.beforeAll(async () => {
 // FILLSCORE_E2E_NO_LLM=1, so any attempted provider call raises: this test passing proves no LLM was used.
 test('sample dashboard Council: assessment without a letter, values cited, no advice or causal terms', async ({ page }) => {
   await page.goto('/dashboard?userId=demo-moderate&view=council')   // design v2: the Council is its own section
-  await page.getByRole('button', { name: 'Run analysis' }).click()
+  await page.getByRole('button', { name: 'Start review' }).click()
   const heading = page.getByRole('heading', { name: 'Explanation (language model; every number was checked against the audit)' })
   await expect(heading).toBeVisible({ timeout: 45_000 })
   const panel = page.locator('section#agent-council', { has: heading })
@@ -21,7 +21,7 @@ test('sample dashboard Council: assessment without a letter, values cited, no ad
   // 2026-11-22: the scope sits beside the title, from counts the server sends in its `scope` event (the symbol's fills, then
   // the account's); the fee specialist's display name is "Fee Reviewer"
   await expect(page.getByTestId('council-scope')).toHaveText(/^BTCUSDT only: [\d,]+ of the account's [\d,]+ fills\.$/)
-  await expect(panel).toContainText('Fee Reviewer')
+  await expect(panel).toContainText('Fees')   // design v5: the section headings are Liquidity, Benchmark, Risk, Fees
   await expect(panel).not.toContainText('Fee Optimizer')
 
   // no A-F letter badge on the assessment (the panel locator must really match, or the zero count proves nothing)
@@ -51,7 +51,7 @@ for (const id of ['demo-disciplined', 'demo-aggressive']) {
   test(`${id}: the re-recorded run is shown`, async ({ page }) => {
     await storeDemoRunForCurrentData(id)
     await page.goto(`/dashboard?userId=${id}&view=council`)   // design v2: the Council is its own section
-    await page.getByRole('button', { name: 'Run analysis' }).click()
+    await page.getByRole('button', { name: 'Start review' }).click()
     const heading = page.getByRole('heading', { name: 'Explanation (language model; every number was checked against the audit)' })
     await expect(heading).toBeVisible({ timeout: 45_000 })
     // the Council panel only: the page around it still carries older copy that the dashboard rebuild replaces
@@ -70,7 +70,7 @@ for (const [why, id, mutate] of REFUSED) {
   test(`${id}: a run with ${why} is not shown`, async ({ page }) => {
     await storeDemoRunForCurrentData(id, process.env.MONGODB_URI, mutate)
     await page.goto(`/dashboard?userId=${id}&view=council`)   // design v2: the Council is its own section
-    await page.getByRole('button', { name: 'Run analysis' }).click()
+    await page.getByRole('button', { name: 'Start review' }).click()
     await expect(page.getByText('Demo analysis not yet generated for the current demo data.')).toBeVisible({ timeout: 45_000 })
     await expect(page.getByRole('heading', { name: 'Explanation (language model; every number was checked against the audit)' })).toHaveCount(0)
   })

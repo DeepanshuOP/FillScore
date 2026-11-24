@@ -223,12 +223,17 @@ analytics card.
 
 | Route | Purpose |
 |---|---|
-Design system v3 "Tape & Receipt" (2026-11-20; rules in `DESIGN.md`; tokens in `app/ui/tokens.css`, themes `paper`
-(default) and `carbon` through next-themes, storage key `fs-theme`; fonts Cabinet Grotesk and Departure Mono in
-`app/fonts.ts`; printed objects in `app/ui/paper.css`, the landing hero in `app/ui/landing.css`). App screens render inside
-`app/components/appshell/AppFrame.tsx` (IA v4: the persistent frame in the layout of `app/app/(shell)/`: a left sidebar of
-nine nouns with the pen underline and a bottom group, a rail from 1024 to 1279 px, a bottom bar of four with a Vaul More
-sheet on phones, the page header that prints provenance, account and period on every app page, the ⌘K `CommandMenu`).
+Design v5 (2026-11-24; rules in `DESIGN.md`; tokens in `app/ui/tokens.css`: themes Light, Dark and System through next-themes,
+data-theme `light` | `dark`, storage key `fs-theme-v5`; the roots are the paper tone for marketing, the receipt and the stamp, and
+`[data-app]` (set by `app/app/layout.tsx` and, for portals, `AppScope` on `<body>`) gives the app its neutral grey ground and white cards;
+fonts in `app/fonts.ts`: Geist Sans for UI text, Cabinet Grotesk for titles, KPI figures and the headline, Departure Mono for the receipt, stamp
+and ids; printed objects in `app/ui/paper.css`, the landing hero in `app/ui/landing.css`, the frame in `app/ui/appshell.css`). App screens render
+inside `app/components/appshell/AppFrame.tsx` (the persistent frame in the layout of `app/app/(shell)/`: a left sidebar of nine nouns with lucide
+icons in three groups (Home, Costs, Orders, Fills; Review: Flagged orders, Comparisons, AI review; Tools: Reports, Check an exchange export), a rail
+from 1024 to 1279 px, a phone top bar, a bottom bar of four with a Vaul More sheet, the provenance banner (`ProvenanceBanner`), the page header with
+a title, one sentence, the disabled period label (`PeriodLabel`) and the page's actions, and the ⌘K `CommandMenu`, a dynamic import mounted on its
+first open). Page blocks (`app/ui/blocks.tsx`: Tile, Card, CostBreakdown, GradeRange); Recharts charts (`app/ui/charts/AppCharts.tsx`, loaded by the
+pages that draw them) and the hand-drawn `CompareBars`.
 Pages report their header with `AppPage` (`appshell/shellContext.tsx`) and own their data. Settings has its own shell
 (`SettingsShell`, "Back"). The marketing site and the docs use `components/marketing/MarketingNav` (four items, Log in, Open
 the demo; a Vaul Menu sheet on phones) and `SiteFooter` (Product, Docs, Trust, Legal). Old addresses answer 308 from
@@ -252,19 +257,19 @@ the server; GSAP (ScrollTrigger, DrawSVG, SplitText) and Lenis load on the landi
 | `/docs`, `/docs/mcp`, `/docs/package` | Docs hub; the MCP client runbook and the metrics package README, rendered from copies in `app/docs/content/` (drift-tested) |
 | `/signup`, `/login`, `/forgot-password`, `/reset-password`, `/verify-email` | Account flows |
 | `/app` | Home, "Ask FillScore": a demo account plays recorded answers of the Ask agent (labelled, no input); a signed-in account with measured orders asks live (2 budget units a question); without measured orders Ask is disabled. Key figures under it: the total and the small grade stamp |
-| `/app/overview` | The overview: the total, the grade stamp, where it went, the month tape, cost against expected and outcomes, the scope facts |
-| `/app/orders` | The orders ledger (columns by screen width) and the thermal receipt (a Radix dialog on a desktop, a Vaul drawer on a phone; prints on the first open of a session) |
-| `/app/rules`, `/app/rankings` | The exception queue with review states; the noise-aware rankings tape |
-| `/app/council` | Quick and Deep Council |
-| `/app/evidence` | Signed evidence packs, the record behind the grade, the rule-based (v1) details |
-| `/app/fills` | Tabs Ledger (the fills, filters, CSV export, notes) and Patterns (`?tab=patterns`: the deep dive) |
-| `/app/check` | The broker-file check; opens signed out and in demo mode, runs for a signed-in account |
+| `/app/costs` | Costs: four KPI tiles, where the cost came from, the costliest orders, the cost by order type, the grade card (with the locked v1 grade), against the cost estimate, what it covers |
+| `/app/orders` | The orders ledger (Cost ($) and Cost (bps) by default; row cards on phones) and the thermal receipt with a chart of the stored public trades (a Radix dialog on a desktop, a Vaul drawer on a phone) |
+| `/app/flagged`, `/app/compare` | Flagged orders (the exception queue with review states); Comparisons (median cost per group with 90% whiskers, "Too few orders to compare") |
+| `/app/review` | AI review: Short review (1 AI call) and Full review (9 AI calls), the summary first, four sections |
+| `/app/reports` | Signed reports, the record behind the grade, the rule-based (v1) details |
+| `/app/fills` | The fills (filters, CSV export, notes); one page, no Patterns tab |
+| `/app/check` | Check an exchange export; opens signed out and in demo mode, runs for a signed-in account |
 | `/app/settings` | Account, connected exchanges, download or delete your data, evidence packs, personal API keys (its own shell) |
 | `/app/connect` | Connect Binance, Bybit or OKX with a read-only key, then sync |
-| `/dashboard`, `/trades`, `/analytics`, `/check`, `/settings`, `/onboarding` | Permanent 308 redirects to the pages above, the rest of the query kept (`legacyRedirects.mjs`) |
+| `/dashboard`, `/trades`, `/analytics`, `/check`, `/settings`, `/onboarding`, `/app/overview`, `/app/rules`, `/app/rankings`, `/app/council`, `/app/evidence` | Permanent 308 redirects, one hop to the final page above, the rest of the query kept (`legacyRedirects.mjs`, no chains, tested) |
 | `/verify` | Check a signed evidence pack in the browser (WebCrypto Ed25519, `@noble/ed25519` fallback); nothing is uploaded |
 | `/methodology` | The method and the scoring version, generated from the code |
-| `/design-lab` | Development only (404 in production): the design v3 prototypes (Tape & Receipt, Grid & Highlighter); the IA v4 prototype was deleted when IA v4 was built |
+| `/design-lab` | Development only (404 in production): the design v3 prototypes and the design v5 prototype (`/design-lab/v5`, kept until the review; the guard spec lists its paths) |
 | `/share/[userId]` | Public score card for demo accounts, with Open Graph image |
 | `/terms`, `/privacy` | Legal pages |
 | `/api/preflight` | Server route that probes Binance, Bybit and OKX reachability from the frontend host |

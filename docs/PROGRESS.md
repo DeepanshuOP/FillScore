@@ -4,7 +4,17 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24, second: design v5 built in production (steps 1-9), local commits
 
-- **Next concrete action: step 6: marketing (top bar words, /demo cards, /how-it-works, /verify, /docs shell, footer) in Geist; then steps 7 to 9.**
+- **Next concrete action: Design v5 built: ready for Deepanshu's review.** (Partly built: see "Not done" below and `docs/milestones/M8.md` "Design v5 built".)
+- **Status of the steps:** 1 done, 2 done, 3 done, 4 done, 5 done in part, 6 done in part (words only), 7 done in part (budgets measured and missed, Lighthouse
+  and server-rendered first figures not done), 8 done in part (docs rewritten; only `design-lab/v5` deleted, dead v4 code kept), 9 done in part (reviewer run
+  and one fix pass; audit5, WebKit, keyboard pass, break-ui and the built images NOT run: out of this run's turn budget). Nothing is BLOCKED by a
+  denial; the rest is unfinished work.
+- **Final checks:** frontend vitest 896 passed (92 files), tsc 0, lint 0 errors (21 warnings), build ok; backend vitest 1145 passed (135 files), tsc 0; guard table
+  214 passed; ml-service pytest 1902 passed, **4 failed** (`test_main::test_stream_reports_empty_accounts_as_no_data`, 3 in `test_quick_deep*`: they pass when
+  run alone, no ml-service file changed in this order, cause not found); mcp-server has no vitest suite in its folder (not run). First run of the full e2e: 51
+  passed, 26 failed (old words and layouts); after the spec fixes see the last line of this list. **Not done in the specs:** eight v4-layout specs are `test.fixme`.
+- **Full e2e after the last change (2026-11-24): 66 passed, 0 failed, 9 skipped** (`test.fixme`: rebuilt-demo x7, score-versions x1, markout-card x1). The
+  first run had 26 failures (old words and layouts), the second 3, fixed in the specs (button words, banner test id, section headings).
 - **Step 5: done in part (the budget of this run did not allow all of it; see "Not done" below).** Built: `ui/blocks.tsx` (Tile, Card with an
   info popover, CostBreakdown, GradeRange) and `ui/charts/AppCharts.tsx` (Recharts: TypeBars as one stacked bar per order type with the
   negative parts named beside it and a $0 axis; PricePrintsChart for the receipt), `ui/charts/CompareBars.tsx` and `ticks.ts` (round

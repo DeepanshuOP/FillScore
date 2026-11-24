@@ -11,7 +11,7 @@ test('email sign-up, verification link, own empty state, no demo userId in nav, 
   await page.locator('#signup-password').fill(password)
   await page.locator('#signup-confirm').fill(password)
   await page.getByRole('button', { name: /create|sign up/i }).click()
-  await expect(page.getByRole('button', { name: 'LOG OUT' }).first()).toBeVisible()
+  await expect(page.getByRole('button', { name: /^log out$/i }).first()).toBeVisible()
 
   // verification, exactly as clicking the emailed link
   expect(await isEmailVerified(email)).toBe(false)
@@ -31,8 +31,9 @@ test('email sign-up, verification link, own empty state, no demo userId in nav, 
   expect(navHrefs.length).toBeGreaterThan(0)
   for (const h of navHrefs) expect(h, `nav link ${h}`).not.toContain('demo-')
 
-  await page.getByRole('button', { name: 'LOG OUT' }).first().click()
-  await expect(page.getByRole('link', { name: 'LOG IN' }).first()).toBeVisible()
+  await page.getByRole('button', { name: /^log out$/i }).first().click()
+  await expect(page.getByRole('link', { name: /^log in$/i }).first()).toBeVisible()
   await page.goto('/dashboard?userId=demo-disciplined')
-  await expect(page.getByTestId('app-page-header').getByText('Synthetic trader, real prices', { exact: false }).first()).toBeVisible()
+  // design v5: the demo marker is the provenance banner above the page header
+  await expect(page.getByTestId('provenance-banner')).toContainText('synthetic trader, real Binance prices')
 })
