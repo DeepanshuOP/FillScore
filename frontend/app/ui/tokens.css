@@ -19,7 +19,7 @@
  * Money is never coloured good or bad. Grades are stamped in pen-ink whatever the letter: the stamp is the auditor's
  * mark, not a traffic light.
  */
-:root, [data-theme="paper"] {
+:root, [data-theme="light"], [data-app] .fs-paper {
   color-scheme: light;
   --ui-surface: #F3F2EE;
   --ui-raised: #FBFBF8;
@@ -51,7 +51,7 @@
   --ui-grain-opacity: 0.32;
 }
 
-[data-theme="carbon"] {
+[data-theme="dark"], [data-theme="dark"] [data-app] .fs-paper {
   color-scheme: dark;
   --ui-surface: #1C1B19;
   --ui-raised: #262522;
@@ -83,9 +83,86 @@
   --ui-grain-opacity: 0.5;
 }
 
-/* Type: Cabinet Grotesk for text and figures, Departure Mono for the tape, receipts, ledger figures, ids and labels. */
+/*
+ * Design v5 (orders of 2026-11-24; decisions D3 and D5). The two themes are named Light and Dark; next-themes sets
+ * data-theme="light" | "dark" on <html> from the user's choice (Light, Dark or System, default System; app/providers.tsx).
+ * The roots above stay the paper tone: the marketing site, the receipt and the grade stamp wear them. Inside the app
+ * (`data-app`, set by app/app/layout.tsx and by every portal that opens from the app) the same role names are given the
+ * app palette: a neutral grey ground with white cards. A printed object inside the app (`.fs-paper`) takes the paper
+ * values back (the grouped selectors above). Text colours meet AA on their surfaces; the chart series are the dataviz
+ * reference palette, validated for light and dark (the prototype's run; aqua is under 3:1 on light, so a segment that
+ * wears it also carries a direct label). app/ui/contrast.test.ts parses every block below.
+ *   series-1..3  chart marks (blue, orange, green)    grid, axis  chart gridlines and the axis line (decoration, < 3:1)
+ *   banner       the provenance banner (text >= 4.5)  accent-soft the halo and the tint of a selected row
+ */
+[data-app] {
+  color-scheme: light;
+  --ui-surface: #F4F4F2;
+  --ui-raised: #FFFFFF;
+  --ui-overlay: #F0F0ED;
+  --ui-ink: #0B0B0B;
+  --ui-graphite: #5F5E59;
+  --ui-rule: #E2E1DC;
+  --ui-edge: #8A8882;
+  --ui-measured: #0B0B0B;
+  --ui-on-measured: #FFFFFF;
+  --ui-action: #111110;
+  --ui-on-action: #FFFFFF;
+  --ui-pen: #B93C12;
+  --ui-pen-ink: #B93C12;
+  --ui-stamp: #B93C12;
+  --ui-focus: #2A78D6;
+  --ui-series-1: #2A78D6;
+  --ui-series-2: #EB6834;
+  --ui-series-3: #1BAF7A;
+  --ui-grid: #E1E0D9;
+  --ui-axis: #C3C2B7;
+  --ui-banner: #FFF7E6;
+  --ui-banner-border: #F0D9A8;
+  --ui-banner-text: #5A4210;
+  --ui-accent-soft: #FBEEE8;
+  --ui-shadow: 0 1px 2px rgb(0 0 0 / 0.04), 0 1px 1px rgb(0 0 0 / 0.03);
+  --ui-shadow-float: 0 8px 24px -8px rgb(0 0 0 / 0.18), 0 1px 2px rgb(0 0 0 / 0.06);
+  background: var(--ui-surface);
+  color: var(--ui-ink);
+  font-size: 14px;
+}
+
+[data-theme="dark"] [data-app] {
+  color-scheme: dark;
+  --ui-surface: #0E0E0D;
+  --ui-raised: #1A1A19;
+  --ui-overlay: #212120;
+  --ui-ink: #F0EFEC;
+  --ui-graphite: #AAA9A0;
+  --ui-rule: #2E2E2B;
+  --ui-edge: #7A776F;
+  --ui-measured: #F0EFEC;
+  --ui-on-measured: #111110;
+  --ui-action: #F0EFEC;
+  --ui-on-action: #111110;
+  --ui-pen: #F6844F;
+  --ui-pen-ink: #F6844F;
+  --ui-stamp: #F6844F;
+  --ui-focus: #6DA7EC;
+  --ui-series-1: #3987E5;
+  --ui-series-2: #D95926;
+  --ui-series-3: #199E70;
+  --ui-grid: #2C2C2A;
+  --ui-axis: #44443F;
+  --ui-banner: #2A2312;
+  --ui-banner-border: #4A3D1C;
+  --ui-banner-text: #F3DFAE;
+  --ui-accent-soft: #2C1D16;
+  --ui-shadow: none;
+  --ui-shadow-float: 0 8px 24px -8px rgb(0 0 0 / 0.6), 0 1px 2px rgb(0 0 0 / 0.4);
+}
+
+/* Type (D2 b): Geist Sans for all UI, body, table, label and axis text; Cabinet Grotesk (--ui-display) only for page titles,
+   KPI figures and the marketing headline; Departure Mono only for the receipt, the stamp, ids and hashes. */
 :root {
-  --ui-font: var(--f-cabinet), ui-sans-serif, system-ui, sans-serif;
+  --ui-font: var(--f-geist), ui-sans-serif, system-ui, sans-serif;
+  --ui-display: var(--f-cabinet), ui-sans-serif, system-ui, sans-serif;
   --ui-mono: var(--f-departure), ui-monospace, monospace;
   --ui-radius-sm: 4px;
   --ui-radius: 6px;
@@ -155,6 +232,16 @@ input::placeholder, textarea::placeholder { color: var(--ui-graphite); opacity: 
   --color-ui-grade-d: var(--ui-grade-d);
   --color-ui-grade-f: var(--ui-grade-f);
   --font-ui: var(--ui-font);
+  --font-display: var(--ui-display);
+  --color-ui-series-1: var(--ui-series-1);
+  --color-ui-series-2: var(--ui-series-2);
+  --color-ui-series-3: var(--ui-series-3);
+  --color-ui-grid: var(--ui-grid);
+  --color-ui-axis: var(--ui-axis);
+  --color-ui-banner: var(--ui-banner);
+  --color-ui-banner-border: var(--ui-banner-border);
+  --color-ui-banner-text: var(--ui-banner-text);
+  --color-ui-accent-soft: var(--ui-accent-soft);
   --font-ui-mono: var(--ui-mono);
   --radius-ui-sm: 4px;
   --radius-ui: 6px;

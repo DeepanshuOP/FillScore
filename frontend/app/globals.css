@@ -6,9 +6,8 @@
 @import "./ui/paper.css";
 @import "./ui/landing.css";
 
-/* next-themes writes data-theme="paper" | "carbon" on <html>. `dark:` is Carbon copy, for the shadcn primitives. */
-@custom-variant dark (&:where([data-theme="carbon"], [data-theme="carbon"] *));
-@custom-variant carbon (&:where([data-theme="carbon"], [data-theme="carbon"] *));
+/* next-themes writes data-theme="light" | "dark" on <html> (design v5: Light, Dark, System). `dark:` is the Dark theme, for the shadcn primitives. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 /* shadcn/ui reads these names; they map onto the FillScore roles so a generated component wears the system. */
 :root {
@@ -102,8 +101,11 @@
 /* Printer type: Departure Mono at its pixel size (13 px and 11 px read cleanly; it never sets paragraphs). */
 @utility mono { font-family: var(--ui-mono); letter-spacing: 0; }
 
-/* Display type: Cabinet Grotesk, heavy, tight tracking that grows with size (DESIGN.md, "Type"). */
-@utility display-xl { font-size: clamp(3.25rem, 9.4vw, 9.5rem); line-height: 0.86; letter-spacing: -0.045em; font-weight: 900; }
-@utility display-lg { font-size: clamp(2.5rem, 5.4vw, 4.75rem); line-height: 0.92; letter-spacing: -0.04em; font-weight: 900; }
-@utility display-md { font-size: clamp(1.875rem, 3vw, 2.75rem); line-height: 1; letter-spacing: -0.03em; font-weight: 900; }
-@utility title { font-size: 1.375rem; line-height: 1.2; letter-spacing: -0.02em; font-weight: 700; }
+/* Display type: Cabinet Grotesk (D2 b: page titles, KPI figures, the marketing headline only), heavy, tight tracking that grows with size. */
+@utility display-xl { font-family: var(--ui-display); font-size: clamp(3.25rem, 9.4vw, 9.5rem); line-height: 0.86; letter-spacing: -0.045em; font-weight: 900; }
+@utility display-lg { font-family: var(--ui-display); font-size: clamp(2.5rem, 5.4vw, 4.75rem); line-height: 0.92; letter-spacing: -0.04em; font-weight: 900; }
+@utility display-md { font-family: var(--ui-display); font-size: clamp(1.875rem, 3vw, 2.75rem); line-height: 1; letter-spacing: -0.03em; font-weight: 900; }
+@utility title { font-family: var(--ui-display); font-size: 1.375rem; line-height: 1.2; letter-spacing: -0.02em; font-weight: 700; }
+/* design v5: the app's page title (24 px) and KPI figure (28 px) */
+@utility page-title { font-family: var(--ui-display); font-size: 1.5rem; line-height: 1.2; letter-spacing: -0.02em; font-weight: 700; }
+@utility kpi-figure { font-family: var(--ui-display); font-size: 1.75rem; line-height: 1.1; letter-spacing: -0.02em; font-weight: 700; font-variant-numeric: tabular-nums; }

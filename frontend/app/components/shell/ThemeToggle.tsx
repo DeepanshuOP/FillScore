@@ -2,25 +2,44 @@
 
 import { useEffect, useState } from 'react'
 import { useTheme } from 'next-themes'
+import { Monitor, Moon, Sun } from 'lucide-react'
 import { cn } from '../../../lib/utils'
-import { themeToggleView } from './themeToggleView'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { THEME_CHOICES, themeChoice, themeLabel, type ThemeChoice } from './themeToggleView'
+
+const ICON = { light: Sun, dark: Moon, system: Monitor } as const
 
 /**
- * Paper or Carbon copy (design v3). A worded toggle, underlined like a printed instruction; next-themes knows the theme
- * only after mount, so the label is held at a fixed width until then.
+ * Light, Dark or System (design v5, D3). A button with the current choice's icon and word; its menu lists the three.
+ * next-themes knows the choice only after mount, so until then the button holds its width and shows System, the default.
  */
-export function ThemeToggle({ className }: { className?: string }) {
-  const { resolvedTheme, setTheme } = useTheme()
+export function ThemeToggle({ className, iconOnly = false }: { className?: string; iconOnly?: boolean }) {
+  const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => { const id = requestAnimationFrame(() => setMounted(true)); return () => cancelAnimationFrame(id) }, [])
-  const carbon = resolvedTheme === 'carbon'
-  const v = themeToggleView(carbon)
-  // A4: a switch (two states) named by what it shows, "Theme: Paper"; aria-checked is true for the Carbon copy
+  const choice: ThemeChoice = mounted ? themeChoice(theme) : 'system'
+  const Icon = ICON[choice]
   return (
-    <button type="button" role="switch" aria-checked={mounted && v.checked} onClick={() => setTheme(carbon ? 'paper' : 'carbon')} disabled={!mounted}
-      title={mounted ? v.title : undefined}
-      className={cn('inline-flex h-9 min-w-[10.5rem] items-center justify-center whitespace-nowrap px-1 text-sm font-medium text-ui-graphite underline decoration-ui-edge underline-offset-[0.3em] transition-colors hover:text-ui-ink', className)}>
-      {mounted ? v.text : <span aria-hidden="true">&nbsp;</span>}
-    </button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button type="button" data-testid="theme-toggle" aria-label={`Theme: ${themeLabel(choice)}`}
+          className={cn('inline-flex min-h-9 items-center gap-2 rounded-lg px-2.5 text-sm font-medium text-ui-graphite transition-colors hover:bg-ui-overlay hover:text-ui-ink pointer-coarse:min-h-11', className)}>
+          <Icon aria-hidden="true" className="size-4" />
+          {iconOnly ? null : <span>{themeLabel(choice)}</span>}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" data-app className="min-w-36">
+        <DropdownMenuRadioGroup value={choice} onValueChange={(v) => setTheme(v)}>
+          {THEME_CHOICES.map((c) => {
+            const I = ICON[c.value]
+            return (
+              <DropdownMenuRadioItem key={c.value} value={c.value} className="min-h-9 text-sm pointer-coarse:min-h-11">
+                <I aria-hidden="true" className="size-4" /> {c.label}
+              </DropdownMenuRadioItem>
+            )
+          })}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }

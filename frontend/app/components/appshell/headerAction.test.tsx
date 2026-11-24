@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { BookOpen } from 'lucide-react'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { HeaderAction } from './HeaderAction'
-import { themeToggleView } from '../shell/themeToggleView'
+import { THEME_CHOICES, themeChoice, themeLabel } from '../shell/themeToggleView'
 
 describe('HeaderAction', () => {
   const html = renderToStaticMarkup(<TooltipProvider><HeaderAction label="Method" icon={<BookOpen />} /></TooltipProvider>)
@@ -26,9 +26,19 @@ describe('HeaderAction', () => {
   })
 })
 
+// Design v5 (D3), changed deliberately: "Paper" and "Carbon copy" are retired; the control names its current choice and offers
+// Light, Dark and System. The intent of the old test is kept: the control always says which theme is on.
 describe('theme control', () => {
-  it('reads Theme: Paper and Theme: Carbon copy, with the switch state matching', () => {
-    expect(themeToggleView(false)).toEqual({ text: 'Theme: Paper', checked: false, title: 'Switch to the Carbon copy theme: warm charcoal, the same orange' })
-    expect(themeToggleView(true)).toEqual({ text: 'Theme: Carbon copy', checked: true, title: 'Switch to the Paper theme' })
+  it('offers Light, Dark and System, and reads the current choice in words', () => {
+    expect(THEME_CHOICES.map((c) => c.label)).toEqual(['Light', 'Dark', 'System'])
+    expect(themeLabel('dark')).toBe('Dark')
+    expect(themeLabel('light')).toBe('Light')
+    expect(themeLabel('system')).toBe('System')
+  })
+  it('a retired or unknown stored value reads as System, the default', () => {
+    expect(themeChoice('paper')).toBe('system')
+    expect(themeChoice('carbon')).toBe('system')
+    expect(themeChoice(undefined)).toBe('system')
+    expect(themeChoice('dark')).toBe('dark')
   })
 })

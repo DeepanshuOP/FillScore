@@ -12,13 +12,13 @@ const ThemedToaster = dynamic(() => import('./ThemedToaster'), { ssr: false })
 const loadFeatures = () => import('./motionFeatures').then((m) => m.default)
 
 /**
- * App-wide providers (design v3). Paper is the default theme, Carbon copy the alternative; the choice is kept by
- * next-themes in localStorage (key "fs-theme", so a stored v2 "dark"/"light" does not leak in).
+ * App-wide providers (design v5, D3). Light, Dark or System, default System; the choice is kept by next-themes in
+ * localStorage (key "fs-theme-v5": the earlier "fs-theme" held "paper" or "carbon", names that no longer exist).
  * MotionConfig reducedMotion="user": with the OS setting on, Motion drops transform and layout animation.
  */
 export function Providers({ children }: { children: ReactNode }) {
   return (
-    <ThemeProvider attribute="data-theme" defaultTheme="paper" enableSystem={false} disableTransitionOnChange themes={['paper', 'carbon']} storageKey="fs-theme">
+    <ThemeProvider attribute="data-theme" defaultTheme="system" enableSystem disableTransitionOnChange themes={['light', 'dark']} storageKey="fs-theme-v5">
       {/* LazyMotion + the `m` components keep Motion's share of every page small (domAnimation: animate, exit, in-view). */}
       <LazyMotion features={loadFeatures}>
         <MotionConfig reducedMotion="user">

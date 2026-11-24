@@ -21,6 +21,20 @@ export const cabinet = localFont({
   fallback: ['ui-sans-serif', 'system-ui', 'sans-serif'],
 })
 
+/**
+ * Design v5 (decision D2 b, 2026-11-24): Geist Sans (Vercel, SIL OFL 1.1; the variable file of the `geist` 1.9.2 release,
+ * licence text in fonts/GEIST-OFL.txt) carries all UI, body, table, label and axis text. Cabinet Grotesk stays only for page
+ * titles, KPI figures and the marketing headline; Departure Mono only for the receipt, the stamp, ids and hashes. Reason: at 12
+ * to 14 px Cabinet Grotesk broke letters in the prototype's images ("Unfil led", "Stat us").
+ */
+export const geist = localFont({
+  src: './fonts/geist-sans-variable.woff2',
+  weight: '100 900',
+  variable: '--f-geist',
+  display: 'swap',
+  fallback: ['ui-sans-serif', 'system-ui', 'sans-serif'],
+})
+
 export const departure = localFont({
   src: './fonts/departure-mono.woff2',
   variable: '--f-departure',
@@ -28,4 +42,4 @@ export const departure = localFont({
   fallback: ['ui-monospace', 'monospace'],
 })
 
-export const fontVariables = `${cabinet.variable} ${departure.variable}`
+export const fontVariables = `${geist.variable} ${cabinet.variable} ${departure.variable}`

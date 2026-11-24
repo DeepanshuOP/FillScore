@@ -6,7 +6,7 @@ import { resolve } from 'node:path';
 import { getGradeColor } from './gradeColor';
 
 const css = readFileSync(resolve(__dirname, '../ui/tokens.css'), 'utf8');
-const paper = css.match(/\[data-theme="paper"\]\s*\{([^}]*)\}/)![1];
+const paper = css.match(/\[data-theme="light"\][^{]*\{([^}]*)\}/)![1];
 const token = (g: string) => paper.match(new RegExp(`--ui-grade-${g}:\\s*(#[0-9A-Fa-f]{6})`))![1];
 
 describe('getGradeColor', () => {

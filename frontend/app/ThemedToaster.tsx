@@ -8,7 +8,7 @@ export default function ThemedToaster() {
   const { resolvedTheme } = useTheme()
   return (
     <Toaster
-      theme={resolvedTheme === 'carbon' ? 'dark' : 'light'}
+      theme={resolvedTheme === 'dark' ? 'dark' : 'light'}
       position="bottom-right"
       gap={18}
       toastOptions={{

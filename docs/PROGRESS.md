@@ -4,7 +4,16 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24, second: design v5 built in production (steps 1-9), local commits
 
-- **Next concrete action: step 2: tokens, fonts, theme (D2, D3, D5), contrast tests for the new tokens, formatter test (never "-0.00").**
+- **Next concrete action: step 3: app shell (sidebar groups with lucide icons, provenance banner, page header with the disabled period label, phone bars, ⌘K lazy).**
+- **Step 2: done (D2 b, D3, D5).** Geist Sans variable (OFL, from the `geist` 1.9.2 tarball, `app/fonts/geist-sans-variable.woff2`, no new
+  dependency) is `--ui-font` for all UI text; Cabinet Grotesk is `--ui-display` (page titles, KPI figures, hero headline, receipt title and
+  total, stamps); Departure Mono unchanged. Themes are `light` / `dark` (next-themes, default System, key `fs-theme-v5`); the roots stay the
+  paper tone (marketing, receipt, stamp); `[data-app]` gives the same role names the neutral grey ground and white cards, and
+  `[data-app] .fs-paper` takes the paper values back for printed objects. New tokens: series 1-3, grid, axis, banner, accent-soft. Theme
+  control: sun / moon / monitor button with a Light, Dark, System menu. `contrast.test.ts` parses blocks by selector and covers the app
+  palette in both themes (hand value: banner text 8.87:1); `lib/format.ts` promoted from the lab with the "never -0.00 / -0.0" test.
+  `headerAction.test.tsx` theme case changed deliberately (the names Paper and Carbon copy are retired; the intent, that the control says
+  which theme is on, is kept). Vitest 863 passed (89 files), tsc 0. The e2e-shots scripts still set the old `fs-theme` key: updated in step 9.
 - **Step 1: done (D10).** Landing hero on short phones: below 768 px the hero box now grows with its content
   (`min-height: max(100svh, 600px)`, stage `minmax(340px, 1fr)`), so the headline block no longer sits over the tape, its label or the
   amounts list. e2e `landing-short-phones.spec.ts` (393x659, 375x667, 360x640): red first (strip bottom 448 against copy top 336, 351

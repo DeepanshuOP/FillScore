@@ -22,15 +22,26 @@ import { CHIP_TINT } from './GradeChip'
 
 const CSS = readFileSync(resolve(__dirname, 'tokens.css'), 'utf8')
 
-function theme(name: 'paper' | 'carbon'): Record<string, string> {
-  const block = CSS.match(new RegExp(`\\[data-theme="${name}"\\]\\s*\\{([^}]*)\\}`))
-  if (!block) throw new Error(`theme ${name} not found in tokens.css`)
-  const out: Record<string, string> = {}
-  for (const m of block[1].matchAll(/--ui-([a-z-]+):\s*(#[0-9A-Fa-f]{6})\s*;/g)) out[m[1]] = m[2]
-  return out
+/** The declarations of the rule whose selector list contains `selector` exactly (comments stripped first). */
+function block(selector: string): Record<string, string> {
+  const css = CSS.replace(/\/\*[\s\S]*?\*\//g, '')
+  for (const m of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+    if (!m[1].split(',').map((s) => s.trim()).includes(selector)) continue
+    const out: Record<string, string> = {}
+    for (const d of m[2].matchAll(/--ui-([a-z0-9-]+):\s*(#[0-9A-Fa-f]{6})\s*;/g)) out[d[1]] = d[2]
+    return out
+  }
+  throw new Error(`rule ${selector} not found in tokens.css`)
 }
 
-const THEMES = { paper: theme('paper'), carbon: theme('carbon') } as const
+// Design v5 (2026-11-24): the themes are "light" and "dark" (D3). `paper` and `carbon` below name the two PAPER-TONE palettes
+// (marketing, the receipt, the stamp), now keyed by [data-theme="light"] and [data-theme="dark"]; `app` and `appDark` are the app
+// palette (neutral grey ground, white cards, D5), which overrides the paper roles inside [data-app] and inherits the rest.
+const paper = block('[data-theme="light"]')
+const carbon = block('[data-theme="dark"]')
+const app = { ...paper, ...block('[data-app]') }
+const appDark = { ...carbon, ...block('[data-theme="dark"] [data-app]') }
+const THEMES = { paper, carbon } as const
 
 describe('contrastRatio', () => {
   it('matches the hand values', () => {
@@ -86,6 +97,60 @@ describe.each(['paper', 'carbon'] as const)('theme %s', (name) => {
     const fg = t[`grade-${g}`]
     const chip = mixHex(fg, t.raised, CHIP_TINT)
     expect(contrastRatio(fg, chip)).toBeGreaterThanOrEqual(4.5)
+  })
+})
+
+// Design v5: the app palette, both themes. Hand value (2026-11-24): banner text #5A4210 on #FFF7E6:
+//   #5A4210 -> linear 0.1022 0.0545 0.00518 -> L = 0.2126*0.1022 + 0.7152*0.0545 + 0.0722*0.00518 = 0.06108
+//   #FFF7E6 -> linear 1 0.9300 0.7914       -> L = 0.2126 + 0.6651 + 0.0571 = 0.9348
+//   (0.9348 + 0.05) / (0.06108 + 0.05) = 0.9848 / 0.11108 = 8.87
+describe.each([['app light', app, 'light'], ['app dark', appDark, 'dark']] as const)('v5 tokens, %s', (_name, t, mode) => {
+  const surfaces = [['surface', t.surface], ['raised', t.raised], ['overlay', t.overlay]] as const
+
+  it('declares every v5 token', () => {
+    for (const k of ['series-1', 'series-2', 'series-3', 'grid', 'axis', 'banner', 'banner-border', 'banner-text', 'accent-soft'])
+      expect(t[k], `--ui-${k}`).toMatch(/^#[0-9A-Fa-f]{6}$/)
+  })
+  it.each(['ink', 'graphite', 'pen-ink', 'insufficient-text', 'danger'])('text colour %s is >= 4.5 on the grey ground, the white card and the hover grey', (k) => {
+    for (const [sname, s] of surfaces) expect(contrastRatio(t[k], s), `${k} on ${sname}`).toBeGreaterThanOrEqual(4.5)
+  })
+  it('the banner text is >= 4.5 on the banner, and the banner is a different ground from the card', () => {
+    expect(contrastRatio(t['banner-text'], t.banner)).toBeGreaterThanOrEqual(4.5)
+    expect(t.banner.toLowerCase()).not.toBe(t.raised.toLowerCase())
+  })
+  it('text on the filled primary button is >= 4.5', () => {
+    expect(contrastRatio(t['on-action'], t.action)).toBeGreaterThanOrEqual(4.5)
+  })
+  it.each(['edge', 'focus'])('control part %s is >= 3 on every surface', (k) => {
+    for (const [sname, s] of surfaces) expect(contrastRatio(t[k], s), `${k} on ${sname}`).toBeGreaterThanOrEqual(3)
+  })
+  it('chart marks are >= 3:1 on the card, except light-theme series 3 (green), which always carries a direct label', () => {
+    expect(contrastRatio(t['series-1'], t.raised)).toBeGreaterThanOrEqual(3)
+    expect(contrastRatio(t['series-2'], t.raised)).toBeGreaterThanOrEqual(3)
+    if (mode === 'dark') expect(contrastRatio(t['series-3'], t.raised)).toBeGreaterThanOrEqual(3)
+    else expect(contrastRatio(t['series-3'], t.raised)).toBeGreaterThanOrEqual(2.5)
+  })
+  it('gridlines and the axis line are decoration: under 3:1 on the card', () => {
+    expect(contrastRatio(t.grid, t.raised)).toBeLessThan(3)
+  })
+  it('the receipt keeps the paper tone inside the app: .fs-paper takes the paper values back', () => {
+    const inner = mode === 'light' ? block('[data-app] .fs-paper') : block('[data-theme="dark"] [data-app] .fs-paper')
+    expect(inner.raised).toBe((mode === 'light' ? paper : carbon).raised)
+    expect(inner.ink).toBe((mode === 'light' ? paper : carbon).ink)
+  })
+})
+
+describe('v5 hand values', () => {
+  it('banner text on banner is 8.87', () => {
+    expect(contrastRatio('#5A4210', '#FFF7E6')).toBeCloseTo(8.87, 1)
+  })
+  it('the app ground is neutral (D5): red, green and blue within 3 of each other', () => {
+    for (const hex of [app.surface, appDark.surface, appDark.raised]) {
+      const n = parseInt(hex.slice(1), 16)
+      const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+      expect(Math.max(...ch) - Math.min(...ch), hex).toBeLessThanOrEqual(3)
+    }
+    expect(app.raised).toBe('#FFFFFF')
   })
 })
 

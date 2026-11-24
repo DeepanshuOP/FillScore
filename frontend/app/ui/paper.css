@@ -32,7 +32,7 @@
   font-size: 12.5px; line-height: 1.42; padding: 28px 26px 18px;
 }
 @media (max-width: 480px) { .fs-receipt { padding: 22px 16px 16px; } .fs-receipt .fs-perf { margin: 8px -16px; } }
-.fs-receipt .fs-r-title { font-family: var(--ui-font); font-weight: 900; font-size: 30px; letter-spacing: -0.04em; margin: 0 auto; width: fit-content; line-height: 1; text-align: center; }
+.fs-receipt .fs-r-title { font-family: var(--ui-display); font-weight: 900; font-size: 30px; letter-spacing: -0.04em; margin: 0 auto; width: fit-content; line-height: 1; text-align: center; }
 .fs-receipt .c { text-align: center; }
 .fs-receipt .g { color: var(--ui-graphite); }
 .fs-receipt .p { color: var(--ui-pen-ink); }
@@ -57,7 +57,7 @@
 @media (max-width: 400px) { .fs-lines .num.g { white-space: normal; } }
 .fs-fills { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 0 10px; }
 /* flex with wrap: when the dollars do not fit beside TOTAL and bps they move under them, right-aligned (step 0b) */
-.fs-totalline { display: flex; flex-wrap: wrap; column-gap: 12px; align-items: baseline; font-family: var(--ui-font); font-weight: 900; }
+.fs-totalline { display: flex; flex-wrap: wrap; column-gap: 12px; align-items: baseline; font-family: var(--ui-display); font-weight: 900; }
 .fs-totalline .k { flex: 1 0 auto; }
 .fs-totalline .u, .fs-totalline .nc { margin-left: auto; }
 .fs-totalline .k { font-size: 18px; letter-spacing: 0.02em; }
@@ -130,7 +130,7 @@
 /* the stamp's small lines are body-size text: pen-ink (>= 4.5:1); only the large letter and score wear the stamp ink */
 .fs-stamp .top, .fs-stamp .bot { font-family: var(--ui-mono); font-size: 13px; letter-spacing: 0.04em; line-height: 1.3; color: var(--ui-pen-ink); }
 /* the stamp keeps its own type and ink inside a receipt (whose .g class means graphite) */
-.fs-stamp { font-family: var(--ui-font); }
+.fs-stamp { font-family: var(--ui-display); }
 .fs-stamp .mid .g, .fs-stamp .mid .s { color: var(--ui-stamp); }
 .fs-stamp .mid { display: flex; align-items: baseline; justify-content: center; gap: 12px; line-height: 0.8; margin: 6px 0 4px; }
 .fs-stamp .g { font-weight: 900; font-size: 132px; letter-spacing: -0.06em; }
@@ -148,7 +148,7 @@
 /* the small word stamp: SIGNED, VERIFIED, RETURNED, NOT DISTINGUISHABLE */
 .fs-word-stamp {
   display: inline-block; color: var(--ui-stamp); border: 2.5px solid currentColor; border-radius: 8px; padding: 4px 12px 5px;
-  transform: rotate(-4deg); text-decoration: none; font-family: var(--ui-font); font-weight: 900; font-size: 20px;
+  transform: rotate(-4deg); text-decoration: none; font-family: var(--ui-display); font-weight: 900; font-size: 20px;
   letter-spacing: 0.06em; line-height: 1.1; text-align: center;
 }
 .fs-word-stamp small { display: block; font-family: var(--ui-mono); font-weight: 400; font-size: 10px; letter-spacing: 0.02em; color: var(--ui-pen-ink); }
