@@ -20,8 +20,9 @@ describe('viewHref', () => {
 })
 
 describe('sections, accountLabel, looksLikeOrderId', () => {
-  it('nine nouns, each with a gloss, in the order of the sidebar', () => {
-    expect(SECTIONS.map((s) => s.label)).toEqual(['Home', 'Overview', 'Orders', 'Rules', 'Rankings', 'Council', 'Evidence', 'Fills', 'Check a broker file'])
+  it('nine nouns, each with a gloss and a group, in the order of the sidebar (design v5, D1 and D13)', () => {
+    expect(SECTIONS.map((s) => s.label)).toEqual(['Home', 'Costs', 'Orders', 'Fills', 'Flagged orders', 'Comparisons', 'AI review', 'Reports', 'Check an exchange export'])
+    expect(SECTIONS.map((s) => s.group)).toEqual(['main', 'main', 'main', 'main', 'review', 'review', 'review', 'tools', 'tools'])
     for (const s of SECTIONS) expect(s.gloss.length).toBeGreaterThan(10)
   })
   it('a pathname maps to its section', () => {

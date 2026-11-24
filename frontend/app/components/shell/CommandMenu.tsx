@@ -1,32 +1,22 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
-import { Activity, BookOpen, FileCheck2, Hash, Home, LayoutGrid, ListOrdered, Settings, ShieldCheck, Sparkles, Table2, Trophy, User, Stamp, FileSearch } from 'lucide-react'
+import { BookOpen, FileCheck2, Hash, Settings, User, Stamp } from 'lucide-react'
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator, CommandShortcut } from '@/components/ui/command'
-import { DEMO_ACCOUNTS, looksLikeOrderId, SECTIONS, sectionOfPath, viewHref, type SectionId } from './nav'
-
-const ICON: Record<SectionId, typeof LayoutGrid> = {
-  home: Home, overview: LayoutGrid, orders: ListOrdered, rules: ShieldCheck, rankings: Trophy, council: Sparkles, evidence: FileCheck2, fills: Table2, check: FileSearch,
-}
+import { DEMO_ACCOUNTS, looksLikeOrderId, SECTIONS, sectionOfPath, viewHref } from './nav'
+import { SECTION_ICON as ICON } from './navIcons'
 
 /**
  * ⌘K / Ctrl K: jump to a section (the sidebar's nine, each with its one-line gloss), a demo account, a page, or an order id.
- * Opens plainly: no motion on the palette or its keys (DESIGN §11).
+ * Opens plainly: no motion on the palette or its keys (DESIGN §11). Design v5: this module (and cmdk with it) loads on the first
+ * open, not with the app frame; the key listener lives in AppFrame (`PaletteHost`).
  */
-export function CommandMenu({ open, onOpenChange, userId, signedIn }: { open: boolean; onOpenChange: (o: boolean) => void; userId: string | null; signedIn: boolean }) {
+export default function CommandMenu({ open, onOpenChange, userId, signedIn }: { open: boolean; onOpenChange: (o: boolean) => void; userId: string | null; signedIn: boolean }) {
   const router = useRouter()
   const pathname = usePathname()
   const here = sectionOfPath(pathname) ?? 'home'
   const [query, setQuery] = useState('')
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); onOpenChange(!open) }
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [open, onOpenChange])
 
   const go = (href: string) => { onOpenChange(false); setQuery(''); router.push(href) }
   const orderId = query.trim()
@@ -47,7 +37,7 @@ export function CommandMenu({ open, onOpenChange, userId, signedIn }: { open: bo
           {SECTIONS.map((s) => {
             const Icon = ICON[s.id]
             return (
-              <CommandItem key={s.id} value={`section ${s.label} ${s.gloss}`} onSelect={() => go(viewHref(s.id, userId, signedIn))}>
+              <CommandItem key={s.id} value={`section ${s.label} ${s.gloss}`} data-testid={`palette-${s.id}`} onSelect={() => go(viewHref(s.id, userId, signedIn))}>
                 <Icon aria-hidden="true" /> <span>{s.label}</span><CommandShortcut className="max-w-[60%] truncate tracking-normal normal-case">{s.gloss}</CommandShortcut>
               </CommandItem>
             )
@@ -64,10 +54,9 @@ export function CommandMenu({ open, onOpenChange, userId, signedIn }: { open: bo
         </CommandGroup>
         <CommandSeparator />
         <CommandGroup heading="Pages">
-          <CommandItem value="page fills patterns" onSelect={() => go(viewHref('fills', userId, signedIn, { tab: 'patterns' }))}><Activity aria-hidden="true" /> Fills: patterns</CommandItem>
           {userId ? <CommandItem value="page public score card" onSelect={() => go(`/share/${userId}`)}><Stamp aria-hidden="true" /> Public score card</CommandItem> : null}
           <CommandItem value="page methodology" onSelect={() => go('/methodology')}><BookOpen aria-hidden="true" /> Methodology</CommandItem>
-          <CommandItem value="page verify an evidence pack" onSelect={() => go('/verify')}><FileCheck2 aria-hidden="true" /> Verify an evidence pack</CommandItem>
+          <CommandItem value="page verify a signed report" onSelect={() => go('/verify')}><FileCheck2 aria-hidden="true" /> Verify a signed report</CommandItem>
           {signedIn ? <CommandItem value="page settings" onSelect={() => go('/app/settings')}><Settings aria-hidden="true" /> Settings</CommandItem> : null}
         </CommandGroup>
       </CommandList>

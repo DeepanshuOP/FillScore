@@ -19,7 +19,7 @@
  * Money is never coloured good or bad. Grades are stamped in pen-ink whatever the letter: the stamp is the auditor's
  * mark, not a traffic light.
  */
-:root, [data-theme="light"], [data-app] .fs-paper {
+:root, [data-theme="light"], [data-app] .fs-paper, [data-app] .fs-receipt {
   color-scheme: light;
   --ui-surface: #F3F2EE;
   --ui-raised: #FBFBF8;
@@ -51,7 +51,7 @@
   --ui-grain-opacity: 0.32;
 }
 
-[data-theme="dark"], [data-theme="dark"] [data-app] .fs-paper {
+[data-theme="dark"], [data-theme="dark"] [data-app] .fs-paper, [data-theme="dark"] [data-app] .fs-receipt {
   color-scheme: dark;
   --ui-surface: #1C1B19;
   --ui-raised: #262522;

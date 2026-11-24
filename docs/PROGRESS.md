@@ -4,7 +4,17 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-24, second: design v5 built in production (steps 1-9), local commits
 
-- **Next concrete action: step 3: app shell (sidebar groups with lucide icons, provenance banner, page header with the disabled period label, phone bars, ⌘K lazy).**
+- **Next concrete action: step 4: routes and redirects (D1): /app/costs, /flagged, /compare, /review, /reports; 308 from the old paths; legacyRedirects with no chains.**
+- **Step 3: done.** `AppFrame` rewritten: sidebar (248 px, 64 px rail from 1024 to 1279 px) with lucide icons in three groups (Home, Costs,
+  Orders, Fills; Review: Flagged orders, Comparisons, AI review; Tools: Reports, Check an exchange export), Docs, Settings (signed in), the
+  Light / Dark / System control and the account; the account switcher ends a long name in an ellipsis with the full name in a tooltip;
+  versions left the sidebar. Full-width 14 px provenance banner (`ProvenanceBanner`: demo sentence, or a page's own source text; none for
+  the user's own data, whose header shows the "Your exchange data" label). Page header: 24 px title, one sentence, the period as a
+  disabled label with the tooltip "Period choice comes next" (`PeriodLabel`), the page's actions in a slot (`AppPage` takes `primary` and
+  `more` for the one primary action and the "⋯" menu). Phone: top bar (logo mark, page title, search, account), bottom bar with icons and
+  12 px labels, More sheet. ⌘K: `CommandMenu` is a dynamic import mounted on the first open (key or button). `data-app` wraps every app
+  page, and `AppScope` marks `<body>` so portals wear the app tokens. Section ids and paths are unchanged until step 4. Tests:
+  `shell.test.tsx` (banner, period label, sidebar model), `nav.test.ts` (labels and groups). Vitest 871 passed (90 files), tsc 0.
 - **Step 2: done (D2 b, D3, D5).** Geist Sans variable (OFL, from the `geist` 1.9.2 tarball, `app/fonts/geist-sans-variable.woff2`, no new
   dependency) is `--ui-font` for all UI text; Cabinet Grotesk is `--ui-display` (page titles, KPI figures, hero headline, receipt title and
   total, stamps); Departure Mono unchanged. Themes are `light` / `dark` (next-themes, default System, key `fs-theme-v5`); the roots stay the
