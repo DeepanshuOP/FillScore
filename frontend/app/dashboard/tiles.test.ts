@@ -31,6 +31,12 @@ describe('kpiTiles', () => {
     const t = kpiTiles(headline, ordersBody, { kind: 'none', text: 'No letter grade: fewer than 20 fills (12 so far).' }, null)
     expect(t[3]).toEqual({ id: 'grade', label: 'Execution grade', value: 'not computed', sub: 'No letter grade: fewer than 20 fills (12 so far).' })
   })
+  // moved from the removed orders panel (ordersTotals.test.ts, "grammar: one unfilled order takes its, many take their"), design v5 step 6:
+  // the Unfilled tile counts with the right noun: 1 order that never filled, 2 orders that never filled
+  it('the unfilled tile uses the singular for one order and the plural for more', () => {
+    expect(kpiTiles({ ...headline, unfilledUsd: 3.5, unfilledOrders: 1 }, ordersBody, null, null)[2].sub).toBe('1 order that never filled')
+    expect(kpiTiles({ ...headline, unfilledUsd: 7, unfilledOrders: 2 }, ordersBody, null, null)[2].sub).toBe('2 orders that never filled')
+  })
   it('no unfilled dollars in the total sub-line when none were modelled; a measured fee shows its bps', () => {
     const t = kpiTiles({ ...headline, unfilledUsd: null, unfilledOrders: null, feesNotMeasured: false }, ordersBody, null, null)
     expect(t[0].sub).toBe('11.7 bps, 245 orders')

@@ -21,5 +21,26 @@ export function costEstimateView(c: CostVsExpected | undefined): CostEstimateVie
   return { kind: 'figures', paid: bps(c.paidBps) ?? '', estimate: bps(c.expectedBps) ?? '', difference: bps(c.excessBps) ?? '', interval, orders: count(c.n, 'market order') }
 }
 
+interface Term { usd: number }
+interface ByType { total?: { n?: number } | null; execution?: Term | null; opportunity?: Term | null; fees?: Term | null }
+export interface TypeRowView { type: string; execution: number; unfilled: number; fees: number; orders: number }
+
+/**
+ * The order-type totals the server serves (`byType.market`, `byType.limit`), copied: the browser adds nothing up. A type with no
+ * measured orders, or one of whose three parts the server did not send, is left out: a missing total is absent, never a zero.
+ * (Moved from CostsView, design v5 step 6, where the "totals the API did not send are absent, not zero" test of the removed
+ * orders panel now lives.)
+ */
+export function typeRows(ordersBody: unknown): TypeRowView[] {
+  const bt = (ordersBody as { byType?: Record<string, ByType | undefined> } | null)?.byType
+  if (!bt) return []
+  return (['market', 'limit'] as const).flatMap((k) => {
+    const t = bt[k]
+    const n = t?.total?.n ?? 0
+    if (!t || !n || !t.execution || !t.opportunity || !t.fees) return []
+    return [{ type: k === 'market' ? 'Market orders' : 'Limit orders', execution: t.execution.usd, unfilled: t.opportunity.usd, fees: t.fees.usd, orders: n }]
+  })
+}
+
 /** The one line a "Total cost" explanation needs: what bps means, once per page (PROPOSAL §1). */
 export const BPS_GLOSS = 'bps: basis points. One basis point is 0.01% of an order’s value, so 10 bps is 0.1%.'

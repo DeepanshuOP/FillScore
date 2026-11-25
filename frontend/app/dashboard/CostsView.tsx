@@ -12,27 +12,13 @@ import { describeStrip } from './costStrip'
 import { CostBreakdown } from '../ui/blocks'
 import { CostliestOrders } from './CostliestOrders'
 import { KpiTiles } from './KpiTiles'
-import { BPS_GLOSS, costEstimateView } from './costsView'
+import { BPS_GLOSS, costEstimateView, typeRows } from './costsView'
 import type { CostVsExpected } from './scoreV2'
 import type { OrderRow } from './ordersTable'
 
 const TypeBars = dynamic(() => import('../ui/charts/AppCharts').then((m) => m.TypeBars), { ssr: false, loading: () => <div className="h-[260px]" aria-hidden="true" /> })
 
 type Json = { status: number; body: unknown }
-interface Term { usd: number }
-interface ByType { total?: { n?: number } | null; execution?: Term | null; opportunity?: Term | null; fees?: Term | null }
-
-/** The order-type totals the server serves (`byType.market`, `byType.limit`); a type with no orders is left out. */
-function typeRows(ordersBody: unknown) {
-  const bt = (ordersBody as { byType?: Record<string, ByType | undefined> } | null)?.byType
-  if (!bt) return []
-  return (['market', 'limit'] as const).flatMap((k) => {
-    const t = bt[k]
-    const n = t?.total?.n ?? 0
-    if (!t || !n || !t.execution || !t.opportunity || !t.fees) return []
-    return [{ type: k === 'market' ? 'Market orders' : 'Limit orders', execution: t.execution.usd, unfilled: t.opportunity.usd, fees: t.fees.usd, orders: n }]
-  })
-}
 
 export interface CostsProps {
   headline: Headline | null

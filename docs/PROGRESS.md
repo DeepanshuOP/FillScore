@@ -4,8 +4,19 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-25: finish design v5 (steps 0-9 of the order), local commits
 
-- **Next concrete action: step 6 (cleanup: remove Overview, MonthTape, HomeFigures, Patterns, the whale UI, PrintsTape and anything only they import, with their component tests; move any invariant assertion they held to the v5 component that shows the fact).** Steps 0 to 5 done; 6 to 9 open. Design v5 is NOT finished.
-- **Status:** 0 done. 1 done. 2 done. 3 done. 4 done. 5 done. 6 open. 7 open. 8 open. 9 open.
+- **Next concrete action: step 7 (performance: the 10 largest modules of the shared first-load chunk with sizes; client providers out of the root layout; lazy toaster, Motion features, GSAP, Lenis, cmdk and Vaul; first figures on the server for demo accounts; budgets and Lighthouse).** Steps 0 to 6 done; 7 to 9 open. Design v5 is NOT finished.
+- **Status:** 0 done. 1 done. 2 done. 3 done. 4 done. 5 done. 6 done. 7 open. 8 open. 9 open.
+- **Step 6: done (cleanup).** Deleted: `Overview`, `MonthTape` (+ `monthTape.ts` and its test), `HomeFigures`, `PrintsTape`, `Patterns`, `WhaleCorrelation`, `MarkoutCard`,
+  `AnalyticsCharts`, `heatmapCopy` (+ test), and what only they imported: `dashboard/ordersView.ts` (+ `ordersTotals.test.ts`), `dashboard/chapter.tsx`, `ui/charts/CostRuler.tsx`,
+  `utils/makerAdvice.ts` and `utils/markoutCopy.ts` (+ their tests); `app/analytics/` is gone. The geometry and caption of `printsTape.ts` and their tests went with the
+  tape. Kept because something live uses it: `Fold` (AskHome) moved to `ui/Fold.tsx`; `ui/Figure.tsx` (the kept v3 design lab imports it, so it is not removed). Invariants
+  moved to the live code: the receipt chart's source line (which file, "60 of 140 trades, the ones nearest the fills", "no public trade fell in the window") is now
+  `chartSourceLine` with the old caption's tests; "a total the server did not send is absent, never a zero" is `typeRows` (`costsView.test.ts`); "1 order / 2 orders that never
+  filled" is in `tiles.test.ts`; the coach and advice label scan (`coachLabels.test.ts`) now scans Costs, the tiles, Costliest orders and Ask in place of Overview;
+  `adviceCopy`/`rebuiltCopy` scan `REBUILT_FILES`, updated (removed files out, new v5 files in). The e2e guard for the old Patterns address already asserts Fills (step 2).
+  Still in the tree and NOT removed (they pre-date this step and are not imported by the six): `components/NotComputed.tsx`, `ui/GradeBadge.tsx`, `ui/Tabs.tsx`, `lib/motion.ts`,
+  `lib/landing/heroOrder.ts`, `utils/trend.ts`, `lib/constants.ts` (test-only or unused). Vitest 893 passed (91 files), tsc 0, lint 0 errors (17 warnings), build ok;
+  e2e design-lab-guard, legacy-redirects, no-advice, ia4-app, v5-pages, markout-card: 49 passed. `chartSourceLine` was written with its tests in one step (not run red first).
 - **Step 5: done (reviewer items).** (a) Receipt chart: time ticks are multiples of a round step (`niceTimeTicks`, `timeStep`, `clockTick`; 864 ms over 5 ticks gives
   .200 .400 .600 .800; milliseconds only under a 1 s step) and price decimals are the decimals the stored public trades use (`priceDecimals`; the symbol's tick size is not
   stored, and trade prices are multiples of it, so the decimals they use are the tick's). Hand values in `ticks.test.ts` (red first, 8 failed). (b) The gloss (`BPS_GLOSS`:

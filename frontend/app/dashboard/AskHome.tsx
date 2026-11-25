@@ -7,7 +7,7 @@ import { Button } from '../ui/Button'
 import { Field } from '../ui/Field'
 import { describeAsk, type AskView } from './askView'
 import { recordedAnswers, type RecordedAnswer, type RecordedDoc } from './askRecorded'
-import { Fold } from './Overview'
+import { Fold } from '../ui/Fold'
 import { viewHref } from '../components/shell/nav'
 
 /**

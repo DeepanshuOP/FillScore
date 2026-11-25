@@ -1,6 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { BPS_GLOSS, costEstimateView } from './costsView'
+import { BPS_GLOSS, costEstimateView, typeRows } from './costsView'
 import { findAdviceTerms } from '../../../backend/src/constants/adviceTerms'
+
+// Moved here from ordersTotals.test.ts (the removed orders panel), design v5 step 6: the page copies the server's totals per order type,
+// and a total the server did not send is absent, never a zero. Hand values: the rows are the served usd figures, unchanged.
+describe('typeRows (By order type on Costs)', () => {
+  const t = (n: number, execution: number, opportunity: number, fees: number) => ({ total: { n }, execution: { usd: execution }, opportunity: { usd: opportunity }, fees: { usd: fees } })
+
+  it('copies the served totals of each type, market first', () => {
+    expect(typeRows({ byType: { limit: t(3, 10, 3.5, 30), market: t(2, -1.25, 0, 4) } })).toEqual([
+      { type: 'Market orders', execution: -1.25, unfilled: 0, fees: 4, orders: 2 },
+      { type: 'Limit orders', execution: 10, unfilled: 3.5, fees: 30, orders: 3 },
+    ])
+  })
+  it('a type with no measured order, or with one of its three parts missing, is left out (never a zero row)', () => {
+    expect(typeRows({ byType: { market: t(0, 0, 0, 0), limit: { total: { n: 3 }, execution: { usd: 10 }, opportunity: null, fees: { usd: 30 } } } })).toEqual([])
+  })
+  it('a body without byType, or no body, has no rows', () => {
+    expect(typeRows({})).toEqual([])
+    expect(typeRows(null)).toEqual([])
+  })
+})
 
 // Reviewer item (design v5 step 5): bps is glossed once at its first use on Home, Costs and Orders, with the "0.01%" a reader can check:
 // 1 bp = 0.01%, so 10 bps = 0.1% (10 x 0.01%).

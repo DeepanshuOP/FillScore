@@ -12,7 +12,7 @@ import { bars, barsWidth, canonicalJson, sha256Hex } from '../ui/hash';
 import { describeReplay, type ReplayApi } from './explainView';
 import dynamic from 'next/dynamic';
 const PricePrintsChart = dynamic(() => import('../ui/charts/AppCharts').then((m) => m.PricePrintsChart), { ssr: false, loading: () => <div className="h-[280px]" aria-hidden="true" /> });
-import { parsePrintsWindow } from './printsTape';
+import { chartSourceLine, parsePrintsWindow } from './printsTape';
 import { formatUtc, withParams, type OrderRow } from './ordersTable';
 
 type Json = { status: number; body: unknown };
@@ -164,7 +164,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
                 <PricePrintsChart arrivalMs={pw.arrivalMs} quote={quote}
                   trades={pw.prints.map((r) => ({ t: r[1], price: r[2], qty: r[3], side: r[4] === 0 ? 'buyer' as const : 'seller' as const }))}
                   fills={body.fills.map((f) => ({ t: new Date(f.time).getTime(), price: f.price, qty: f.quantity }))}
-                  source={`Source: Binance public trades${pw.files.length ? `, ${pw.files.map((f) => f.date).join(' and ')}` : ''}; SHA-256 in Notes.${pw.truncated ? ` The chart shows ${pw.prints.length} of ${pw.total} public trades, the ones nearest the fills.` : ''}`} />
+                  source={chartSourceLine(pw)} />
               </div>
             );
           })()}

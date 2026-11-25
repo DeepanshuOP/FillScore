@@ -10,11 +10,11 @@ export const REBUILT_FILES = [
   'app/ui/ValueState.tsx', 'app/ui/Panel.tsx', 'app/ui/Banner.tsx', 'app/ui/EmptyState.tsx', 'app/ui/Disclosure.tsx', 'app/ui/ProvenanceChip.tsx',
   'app/design-lab/page.tsx',
   // design v3 (2026-11-20): the new production pieces
-  'app/ui/GradeStamp.tsx', 'app/ui/charts/CostRuler.tsx', 'app/dashboard/MonthTape.tsx', 'app/dashboard/monthTape.ts',
+  'app/ui/GradeStamp.tsx',
   'app/dashboard/DashboardContent.tsx', 'app/dashboard/ScoreRecord.tsx',
-  'app/dashboard/OrdersView.tsx', 'app/dashboard/OrderReplay.tsx', 'app/dashboard/RulesView.tsx', 'app/dashboard/RankingsView.tsx', 'app/dashboard/Overview.tsx',
-  'app/dashboard/ordersTable.ts', 'app/dashboard/rankingsView.ts', 'app/dashboard/AskHome.tsx', 'app/dashboard/HomeFigures.tsx', 'app/dashboard/CsvCheckPanel.tsx', 'app/dashboard/SyncFreshness.tsx',
-  'app/dashboard/headline.ts', 'app/dashboard/explainView.ts', 'app/dashboard/askView.ts', 'app/dashboard/csvCheckView.ts', 'app/dashboard/ordersView.ts',
+  'app/dashboard/OrdersView.tsx', 'app/dashboard/OrderReplay.tsx', 'app/dashboard/RulesView.tsx', 'app/dashboard/RankingsView.tsx',
+  'app/dashboard/ordersTable.ts', 'app/dashboard/rankingsView.ts', 'app/dashboard/AskHome.tsx', 'app/dashboard/CsvCheckPanel.tsx', 'app/dashboard/SyncFreshness.tsx',
+  'app/dashboard/headline.ts', 'app/dashboard/explainView.ts', 'app/dashboard/askView.ts', 'app/dashboard/csvCheckView.ts',
   'app/components/AgentCouncil.tsx', 'app/components/EvidencePanel.tsx', 'app/components/ConnectPrompt.tsx',
   'app/components/SiteFooter.tsx', 'app/components/NotComputed.tsx', 'app/share/[userId]/measured.ts', 'app/components/AuthLayout.tsx', 'app/components/OAuthLinks.tsx',
   'app/settings/SettingsPage.tsx', 'app/login/page.tsx', 'app/signup/page.tsx', 'app/forgot-password/page.tsx', 'app/reset-password/page.tsx', 'app/verify-email/page.tsx',
@@ -22,7 +22,9 @@ export const REBUILT_FILES = [
   // design v5 (2026-11-24): the new shell, blocks, charts and pages
   'app/components/appshell/ProvenanceBanner.tsx', 'app/components/appshell/PeriodLabel.tsx', 'app/ui/blocks.tsx', 'app/ui/charts/AppCharts.tsx', 'app/ui/charts/CompareBars.tsx',
   'app/dashboard/CostsView.tsx', 'app/dashboard/CostliestOrders.tsx', 'app/dashboard/KpiTiles.tsx', 'app/dashboard/tiles.ts', 'app/dashboard/costsView.ts',
-  'app/trades/TradesLedger.tsx', 'app/analytics/Patterns.tsx', 'app/analytics/WhaleCorrelation.tsx', 'app/analytics/MarkoutCard.tsx', 'app/analytics/AnalyticsCharts.tsx',
+  'app/trades/TradesLedger.tsx',
+  // design v5 step 3 and 6 (2026-11-25): the pages and pieces built or moved in this run
+  'app/ui/Fold.tsx', 'app/ui/ConfirmDialog.tsx', 'app/docs/DocsNav.tsx', 'app/settings/usageView.ts', 'app/utils/rankConstants.ts',
   'app/methodology/page.tsx', 'app/methodology/Toc.tsx', 'app/verify/page.tsx', 'app/check/CheckFile.tsx', 'app/share/[userId]/page.tsx',
   'app/share/[userId]/ShareButtons.tsx', 'app/components/LegalDocument.tsx', 'app/not-found.tsx', 'app/error.tsx', 'app/onboarding/ConnectExchange.tsx', 'app/app/layout.tsx', 'app/ui/Field.tsx',
 ] as const;
