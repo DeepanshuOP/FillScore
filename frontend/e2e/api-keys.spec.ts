@@ -6,7 +6,8 @@ import { API } from './env'
 // refused on another route, revoke it, see it stop working.
 test('settings: a read-only API key is shown once, reads the account, cannot do more, and stops when revoked', async ({ page }) => {
   await signUpFresh(page)
-  await page.goto('/settings')
+  // design v5: Settings shows one section at a time (left list); the keys are the "API keys" section (?section=api-keys)
+  await page.goto('/app/settings?section=api-keys')
   await expect(page.getByRole('heading', { name: 'API keys for AI clients (read-only)' })).toBeVisible()   // design v2: sentence case
 
   await page.locator('#key-name').fill('e2e client')
@@ -33,8 +34,10 @@ test('settings: a read-only API key is shown once, reads the account, cannot do 
   await expect(page.getByText(`${key!.slice(0, 12)}…`)).toBeVisible()
   expect(await page.content()).not.toContain(key!.slice(13))
 
-  // 2026-11-20: Revoke is the destructive button with its confirm step: the first click arms it, the second acts
+  // 2026-11-20: Revoke is the destructive button with its confirm step; design v5: the confirm step is a dialog (the first click
+  // opens it, only its own "Revoke key" button acts)
   await page.getByRole('button', { name: 'Revoke', exact: true }).click()
+  await expect(page.getByRole('dialog')).toContainText('The key stops working at once')
   await page.getByRole('button', { name: 'Revoke key', exact: true }).click()
   await expect(page.getByText('Key revoked. It stopped working at once.')).toBeVisible()
   expect((await page.request.get(`${API}/api/audit/orders-summary`, { headers: bearer })).status()).toBe(401)

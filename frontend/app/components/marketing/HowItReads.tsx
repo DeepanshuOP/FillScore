@@ -75,8 +75,8 @@ export function HowItReads() {
         <article className="fs-reads-panel">
           <p className="fs-reads-num font-mono text-[13px] tracking-[0.04em] text-ui-graphite">01</p>
           <h3 data-panel-title className="display-md text-ui-ink">What we read.</h3>
-          <p className="max-w-[30ch] text-[18px] leading-snug text-ui-ink">Every print, to the second.</p>
-          <div className="fs-strip fs-sprockets fs-reads-tape" role="img" aria-label={`Seven public ${heroTape.symbol} prints from the order above, Binance, 28 January 2024`}>
+          <p className="max-w-[30ch] text-[18px] leading-snug text-ui-ink">Every public trade, to the second.</p>
+          <div className="fs-strip fs-sprockets fs-reads-tape" role="img" aria-label={`Seven public ${heroTape.symbol} trades from the order above, Binance, 28 January 2024`}>
             {PRINTS.map((e, i) => e.kind === 'print' ? (
               <div key={i} className="fs-e" aria-hidden="true"><div className="p">{formatPrice(e.price)}</div><div className="q">{formatQty(e.qty)}</div><div className="t">{utcTime(e.ts).slice(0, 8)}</div></div>
             ) : null)}

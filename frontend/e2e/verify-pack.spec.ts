@@ -13,7 +13,8 @@ test('verify page: a pack is checked in the browser, with no request that carrie
   const requests: { url: string; body: string }[] = []
   page.on('request', (r) => requests.push({ url: r.url(), body: r.postData() ?? '' }))
   await page.goto('/verify')
-  await expect(page.getByRole('heading', { name: 'Check an evidence pack' })).toBeVisible()
+  // design v5 (PROPOSAL §1): the page title says "report", not "evidence pack"; the check itself is unchanged
+  await expect(page.getByRole('heading', { name: 'Check a signed report' })).toBeVisible()
 
   await page.setInputFiles('#pack', PACK)
   const result = page.locator('main section[aria-live="polite"]')   // design v2: the toast region (Sonner) is a second live section, outside main

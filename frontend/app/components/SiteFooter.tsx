@@ -5,9 +5,9 @@ import { ThemeToggle } from './shell/ThemeToggle';
 
 /** The footer's four columns (IA v4): Product, Docs, Trust, Legal. Every link leads to a page that exists. */
 export const FOOTER_COLUMNS: ReadonlyArray<{ title: string; links: ReadonlyArray<readonly [string, string]> }> = [
-  { title: 'Product', links: [['/how-it-works', 'How it works'], ['/demo', 'Demo'], ['/app/check', 'Check a exchange export'], ['/login', 'Log in']] },
+  { title: 'Product', links: [['/how-it-works', 'How it works'], ['/demo', 'Demo'], ['/app/check', 'Check an exchange export'], ['/login', 'Log in']] },
   { title: 'Docs', links: [['/docs', 'Docs'], ['/methodology', 'Methodology'], ['/docs/mcp', 'MCP client'], ['/docs/package', 'Metrics package']] },
-  { title: 'Trust', links: [['/verify', 'Verify an evidence pack'], ['/share/demo-moderate', 'Public score card']] },
+  { title: 'Trust', links: [['/verify', 'Verify a report'], ['/share/demo-moderate', 'Public score card']] },
   { title: 'Legal', links: [['/terms', 'Terms'], ['/privacy', 'Privacy']] },
 ];
 

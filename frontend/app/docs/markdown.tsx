@@ -46,14 +46,14 @@ export function Markdown({ source }: { source: string }) {
       while (i < lines.length && !/^```\s*$/.test(lines[i])) code.push(lines[i++])
       i++ // the closing fence
       // tabIndex 0: a scrollable block must be reachable by keyboard (axe: scrollable-region-focusable)
-      blocks.push(<pre key={key} tabIndex={0} className="my-4 overflow-x-auto rounded-[4px] bg-ui-raised p-4 font-mono text-[13px] leading-5 text-ui-ink"><code>{code.join('\n')}</code></pre>)
+      blocks.push(<pre key={key} tabIndex={0} className="my-4 overflow-x-auto rounded-xl border border-ui-rule bg-ui-raised p-4 font-mono text-[14px] leading-6 text-ui-ink"><code>{code.join('\n')}</code></pre>)
       continue
     }
 
     const h = line.match(/^(#{1,3})\s+(.*)$/)
     if (h) {
       const level = h[1].length
-      const cls = level === 1 ? 'display-md text-ui-ink' : level === 2 ? 'mt-12 text-[1.5rem] leading-tight font-black tracking-[-0.02em] text-ui-ink' : 'mt-8 text-[1.125rem] font-bold text-ui-ink'
+      const cls = level === 1 ? 'page-title text-[2rem] text-ui-ink' : level === 2 ? 'mt-12 border-t border-ui-rule pt-6 text-[1.5rem] leading-tight font-semibold tracking-[-0.015em] text-ui-ink' : 'mt-8 text-[1.125rem] font-semibold text-ui-ink'
       const Tag = (`h${level}`) as 'h1' | 'h2' | 'h3'
       blocks.push(<Tag key={key} className={cls}>{inline(h[2], key)}</Tag>)
       i++
@@ -68,8 +68,8 @@ export function Markdown({ source }: { source: string }) {
       blocks.push(
         <div key={key} tabIndex={0} className="my-4 overflow-x-auto">
           <table className="w-full border-collapse text-left text-[14px]">
-            <thead><tr>{head.map((c, j) => <th key={j} className="border-b border-ui-ink px-3 py-2 font-mono text-[12px] font-normal tracking-[0.04em] text-ui-graphite uppercase">{inline(c, `${key}h${j}`)}</th>)}</tr></thead>
-            <tbody>{rows.map((r, ri) => <tr key={ri}>{r.map((c, j) => <td key={j} className="border-b border-dashed border-ui-rule px-3 py-2 align-top text-ui-ink [overflow-wrap:break-word]">{inline(c, `${key}r${ri}c${j}`)}</td>)}</tr>)}</tbody>
+            <thead><tr>{head.map((c, j) => <th key={j} className="border-b border-ui-edge px-3 py-2 text-[13px] font-medium text-ui-graphite">{inline(c, `${key}h${j}`)}</th>)}</tr></thead>
+            <tbody>{rows.map((r, ri) => <tr key={ri}>{r.map((c, j) => <td key={j} className="border-b border-ui-rule px-3 py-2 align-top text-ui-ink [overflow-wrap:break-word]">{inline(c, `${key}r${ri}c${j}`)}</td>)}</tr>)}</tbody>
           </table>
         </div>,
       )

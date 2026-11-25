@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '../ui/Button';
 import { Disclosure } from '../ui/Disclosure';
-import { Panel } from '../ui/Panel';
+import { Card } from '../ui/blocks';
 import { useToast } from '../ui/Toast';
 import { Copy } from 'lucide-react';
 import { describeV2, describeVerify, isScored, verifyBadge } from './scoreV2';
@@ -59,8 +59,9 @@ export default function ScoreRecord({ status, body, onVerify }: Props) {
 
   return (
     <div data-testid="score-v2">
-      <Panel id="score-record" title="The record behind the grade" note={{ label: 'what the record holds', text: 'What the measured grade was made of, and how to check that it was not changed.' }}
-        actions={<span data-testid="score-v2-badge" className="inline-flex h-6 items-center rounded-full bg-ui-overlay px-2.5 text-[12px] font-medium text-ui-ink ring-1 ring-inset ring-ui-rule">{badge.label}</span>}>
+      <Card id="score-record" title="The record behind the grade" sentence="What the measured grade was made of, and how to check that it was not changed."
+        info="The record lists the components, the scoring version and an integrity hash. Verifying recomputes the hash from the stored inputs.">
+        <span data-testid="score-v2-badge" className="inline-flex h-7 w-fit items-center rounded-full bg-ui-overlay px-3 text-[13px] font-medium text-ui-ink ring-1 ring-inset ring-ui-rule">{badge.label}</span>
         <Disclosure summary="Components, version and integrity hash">
           <div className="flex flex-col gap-4">
             {v.range ? <p className="text-sm text-ui-graphite">{v.range}</p> : null}
@@ -98,7 +99,7 @@ export default function ScoreRecord({ status, body, onVerify }: Props) {
             ) : null}
           </div>
         </Disclosure>
-      </Panel>
+      </Card>
     </div>
   );
 }

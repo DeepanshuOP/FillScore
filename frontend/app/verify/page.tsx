@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { MarketingNav } from '../components/marketing/MarketingNav';
 import SiteFooter from '../components/SiteFooter';
 import { buttonClass } from '../ui/buttonClass';
-import { MarginNote } from '../ui/MarginNote';
+import { Upload } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { verifyEvidencePack, type VerifyResult } from '../lib/evidenceVerify';
 
@@ -69,16 +69,13 @@ export default function VerifyPage() {
         <div className="px-[var(--ui-gutter)] pt-28">
           <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,520px)] lg:gap-16">
             <header className="max-w-[64ch]">
-              <h1 className="display-lg text-ui-ink">Check an evidence pack</h1>
+              <h1 className="display-lg text-ui-ink">Check a signed report</h1>
               <p className="mt-4 text-[17px] text-ui-ink">Checked in your browser. Nothing is uploaded.</p>
               <p className="mt-6 text-[16px] leading-7 text-ui-graphite">
-                Choose the pack file you downloaded. The signature and the SHA-256 of every file are recomputed here.
-                <MarginNote label="how the check runs">
-                  <p>The file is read on this device and is not sent to FillScore or to anyone else. The same check runs offline with <code className={MONO}>scripts/verify_evidence_pack.mjs</code> in the repository.</p>
-                </MarginNote>
+                Choose the report file you downloaded. The signature and the SHA-256 of every file are recomputed here. The file is read on this device and is not sent to FillScore or to anyone else. The same check runs offline with <code className={MONO}>scripts/verify_evidence_pack.mjs</code> in the repository.
               </p>
               <p className="mt-4 max-w-[64ch] text-[16px] leading-7 text-ui-graphite">
-                The pack lists measurements of past executions. It makes no statement about rules or regulation.{' '}
+                The report lists measurements of past executions. It makes no statement about rules or regulation.{' '}
                 <Link href="/methodology" className="text-ui-ink">How the numbers are made</Link>.
               </p>
             </header>
@@ -88,33 +85,32 @@ export default function VerifyPage() {
                 onDragOver={(e) => { e.preventDefault(); setOver(true); }}
                 onDragLeave={() => setOver(false)}
                 onDrop={(e) => { e.preventDefault(); setOver(false); void onFile(e.dataTransfer.files?.[0]); }}
-                className={cn('fs-envelope flex flex-col items-start gap-2 transition-shadow', over && 'outline-2 outline-dashed outline-offset-4 outline-ui-ink')}
+                className={cn('flex flex-col items-center gap-2 rounded-xl border-2 border-dashed border-ui-edge bg-ui-raised px-6 py-10 text-center transition-colors', over && 'border-ui-ink bg-ui-overlay')}
               >
-                <p className="text-[1.375rem] font-black tracking-[-0.02em] text-ui-ink">Drop a pack or choose a file</p>
-                {name ? <p className="text-sm text-ui-graphite"><span className={MONO}>{name}</span></p> : null}
+                <Upload aria-hidden="true" className="size-7 text-ui-graphite" />
+                <p className="text-[18px] font-semibold text-ui-ink">Drop a signed report here</p>
+                <p className="text-[14px] text-ui-graphite">or choose the file on your device</p>
+                {name ? <p className="text-[14px] text-ui-graphite"><span className={MONO}>{name}</span></p> : null}
                 {/* design v3 fixes A9: the real file input stays in the tab order (visually hidden), named by the label
                     drawn as a pill button; its focus ring shows on the button */}
-                <span className="relative mt-1 inline-flex">
+                <span className="relative mt-2 inline-flex">
                   <input id="pack" type="file" accept="application/json,.json" onChange={(e) => onFile(e.target.files?.[0])} className="peer sr-only" />
-                  <label htmlFor="pack" className={buttonClass('secondary', 'sm', 'cursor-pointer peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ui-ink')}>
-                    {name ? 'Choose another pack file' : 'Choose a pack file'}
+                  <label htmlFor="pack" className={buttonClass('secondary', 'md', 'cursor-pointer pointer-coarse:h-11 peer-focus-visible:outline-2 peer-focus-visible:outline-offset-2 peer-focus-visible:outline-ui-ink')}>
+                    {name ? 'Choose another report file' : 'Choose a report file'}
                   </label>
                 </span>
               </div>
 
-              <section aria-labelledby="trusted-t" className="panel pt-4">
-                <div className="flex items-center gap-1.5">
-                  <h2 id="trusted-t" className="text-[1.125rem] font-bold tracking-[-0.02em] text-ui-ink">Trusted key</h2>
-                  <MarginNote label="the trusted key">
-                    <p>A pack carries its own public key, so a pack made by anyone is consistent with its own key. To learn where a pack came from, compare its key with one you trust: a 16-character fingerprint, or a PEM public key (optional).</p>
-                    <p className="mt-1.5">FillScore&apos;s key fingerprint is <code className={MONO}>{PUBLISHED_FINGERPRINT}</code>. It is also written in the repository (<code className={MONO}>docs/research/LOG.md</code>, section T) and in the response of <code className={MONO}>/api/evidence/public-key</code>. A fingerprint read on this page comes from the same site as this page, so check it against the repository as well.</p>
-                  </MarginNote>
-                </div>
+              <section aria-labelledby="trusted-t" className="rounded-xl border border-ui-rule bg-ui-raised p-4 shadow-ui">
+                <h2 id="trusted-t" className="text-[16px] font-semibold text-ui-ink">Trusted key (optional)</h2>
+                <p className="mt-1 text-[14px] leading-snug text-ui-graphite">
+                  A report carries its own public key, so a report made by anyone is consistent with its own key. To learn where a report came from, compare its key with one you trust: a 16-character fingerprint, or a PEM public key. FillScore&apos;s fingerprint is <code className={MONO}>{PUBLISHED_FINGERPRINT}</code>. It is also written in the repository (<code className={MONO}>docs/research/LOG.md</code>, section T). A fingerprint read on this page comes from the same site as this page, so check it against the repository as well.
+                </p>
                 <label htmlFor="trusted" className="sr-only">Trusted key</label>
                 <textarea id="trusted" rows={3} value={trusted} onChange={(e) => setTrusted(e.target.value)} spellCheck={false}
                   placeholder={PUBLISHED_FINGERPRINT}
-                  className="mt-3 w-full rounded-[4px] border border-ui-edge bg-ui-raised px-3 py-2 font-mono text-[0.8125rem] text-ui-ink placeholder:text-ui-graphite" />
-                <button type="button" onClick={() => setTrusted(PUBLISHED_FINGERPRINT)} className={buttonClass('quiet', 'sm', 'mt-2')}>
+                  className="mt-3 w-full rounded-lg border border-ui-edge bg-ui-surface px-3 py-2 font-mono text-[13px] text-ui-ink placeholder:text-ui-graphite" />
+                <button type="button" onClick={() => setTrusted(PUBLISHED_FINGERPRINT)} className={buttonClass('quiet', 'sm', 'mt-2 pointer-coarse:min-h-11')}>
                   Use FillScore&apos;s published fingerprint
                 </button>
               </section>
@@ -134,7 +130,7 @@ export default function VerifyPage() {
                               <span className="fs-tick" data-ok={!bad} data-in="true" style={{ animationDelay: `${i * step}ms` }}>{bad ? 'FAIL' : 'OK'}</span>
                               <span className="min-w-0">
                                 <span className="block">{r.name}</span>
-                                <span className="g block break-all text-[11px] leading-4">{r.sha256}</span>
+                                <span className="g block break-all text-[12px] leading-4">{r.sha256}</span>
                               </span>
                             </li>
                           );
@@ -163,7 +159,7 @@ export default function VerifyPage() {
                       </ul>
                     )}
                     {result.engine && (
-                      <p className="g mt-3 text-[11px]">
+                      <p className="g mt-3 text-[12px]">
                         SIGNATURE CHECKED WITH {result.engine === 'webcrypto' ? 'THE BROWSER’S WEBCRYPTO (ED25519)' : '@NOBLE/ED25519 3.2.0 (THIS BROWSER HAS NO ED25519 IN WEBCRYPTO)'}
                       </p>
                     )}

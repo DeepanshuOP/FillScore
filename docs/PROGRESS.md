@@ -4,8 +4,20 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-25: finish design v5 (steps 0-9 of the order), local commits
 
-- **Next concrete action: step 3 (pages not yet built: Reports, Settings shell, Connect, /demo cards, /how-it-works, /verify, /docs shell).** Steps 0, 1, 2 done; 3 to 9 open. Design v5 is NOT finished.
-- **Status:** 0 done. 1 done. 2 done. 3 open. 4 open. 5 open. 6 open. 7 open. 8 open. 9 open.
+- **Next concrete action: step 4 (not-computed rows 4, 6, 7, 8, 9, 12, 14 part, 15; rows 7 and 12 get a designed empty state with "Connect an exchange").** Steps 0 to 3 done; 4 to 9 open. Design v5 is NOT finished.
+- **Status:** 0 done. 1 done. 2 done. 3 done. 4 open. 5 open. 6 open. 7 open. 8 open. 9 open.
+- **Step 3: done (pages).** Reports (`EvidencePanel`, `ScoreRecord` and the v1 details on `Card`): a demo gets one line and no NOT ISSUED stamp; a real account gets a
+  list of the two signed reports, each with Download and Verify; the record behind the grade is a card. Settings: own shell with the left list (Account, Exchanges,
+  API keys, Usage, Data and privacy, About; `?section=`), destructive actions at the bottom of their card behind `ConfirmDialog` (Radix dialog; Cancel closes it without
+  acting); Usage prints the AI review allowance from `GET /ml/agents/council/budget` through `usageView.ts` (red first, 6 hand-value tests; a limit that is off prints no
+  figure; an unreadable answer is "insufficient data"). Connect: exchange cards (3 columns), page title and the read-only sentence, key form and sheets on the v5 card,
+  the refusal banner kept. `/demo`: three cards (total cost in dollars and bps, orders, period, the synthetic line, Open). `/how-it-works`: visible title and the three
+  steps above the pinned story (landing motion untouched; "prints" became "public trades"). `/verify`: "Check a signed report", one drop zone, the trusted-key
+  explanation printed instead of a pen note, no text under 12 px. `/docs`: left list with the open document marked, bordered 14 px code blocks, 16 px body. Guards
+  rewritten with a reason: `api-keys.spec.ts` (goes to `?section=api-keys`; confirm is a dialog), `verify-pack.spec.ts` (title says "report"). New:
+  `e2e/v5-pages.spec.ts` (6 specs), `EvidencePanel.test.tsx` (4). Vitest 906 passed (94 files), tsc 0, lint 0 errors (21 warnings), 6 new e2e passed, plus api-keys,
+  verify-pack and ia4-app (14 passed earlier in the same run). A fresh signed-in account has no trades, so its Reports page shows "No trades yet" (existing behaviour);
+  the real-account list is asserted in the component test. The Evidence panel left Settings (Reports owns it).
 - **Step 2: done (9 specs, 0 fixme or skip left in `frontend/e2e`).** `rebuilt-demo.spec.ts` x7 on Costs, Reports, Orders, Flagged orders, Comparisons and Fills with the
   same hand values (total $15.00, 4.3 bps, 3 orders; fees $30.00; unfilled $3.50, 1 order; by type 3 limit orders, execution $10.00; Fills 3 in 3 orders, $1,260.00,
   maker 0%; the strip's execution is the remainder 15.00 - 30.00 - 3.50 = -18.50 because the fixture's total is not the sum of its parts). `score-versions.spec.ts`:

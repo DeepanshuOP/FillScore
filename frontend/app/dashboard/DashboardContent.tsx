@@ -22,7 +22,6 @@ import { Banner } from '../ui/Banner';
 import { Button } from '../ui/Button';
 import { Disclosure } from '../ui/Disclosure';
 import { EmptyState } from '../ui/EmptyState';
-import { Panel } from '../ui/Panel';
 import { useToast } from '../ui/Toast';
 import { buildComponentCards, type ComponentMeans } from './componentCards';
 import { skippedNotice, type SkippedTrades } from './skipped';
@@ -352,9 +351,9 @@ function DashboardContent({ view }: { view: View }) {
             )}
 
             {view === 'reports' && (
-              <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
-                <div className="lg:col-span-7"><EvidencePanel mode={dashboardMode} auth={auth} /></div>
-                <div className="flex flex-col gap-5 lg:col-span-5">
+              <div className="flex flex-col gap-4">
+                <EvidencePanel mode={dashboardMode} auth={auth} />
+                <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-2">
                   <ScoreRecord
                     key={`${dashboardMode}:${v2Body?.integrityHash ?? 'none'}`}   // a new hash resets "Verified"
                     status={scoreV2.status}
@@ -364,7 +363,7 @@ function DashboardContent({ view }: { view: View }) {
                       return { status: r.status, body: await r.json().catch(() => null) };
                     } : undefined}
                   />
-                  <Panel id="v1-details" title="Rule-based details (scoring v1)" description="The earlier, rule-based grade and its components.">
+                  <Card id="v1-details" title="Rule-based details (scoring v1)" sentence="The earlier, rule-based grade and its components.">
                     <Disclosure summary="Show the rule-based components">
                       {v1Computed ? (
                         <div className="flex flex-col gap-4">
@@ -385,7 +384,7 @@ function DashboardContent({ view }: { view: View }) {
                         </p>
                       )}
                     </Disclosure>
-                  </Panel>
+                  </Card>
                 </div>
               </div>
             )}

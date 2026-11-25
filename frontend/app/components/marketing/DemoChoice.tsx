@@ -4,20 +4,23 @@ import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { apiBase } from '../../lib/apiBase'
 import { ValueState } from '../../ui/ValueState'
+import { buttonClass } from '../../ui/buttonClass'
 import { describeHeadline, totalBpsLabel, type Headline } from '../../dashboard/headline'
 import { orderCountsOf, type OrderCounts } from '../../dashboard/ordersTable'
 import { DEMO_PROFILES } from '../../utils/demoProfiles'
 import { monthLabel } from '../../utils/periodLabel'
+import { money } from '../../lib/format'
 
-type Slip = { counts: OrderCounts | null; headline: Headline | null; period: string | null }
+type Card = { counts: OrderCounts | null; headline: Headline | null; period: string | null }
 
 /**
- * The demo entry (/demo): the three synthetic traders as printed slips, each one a link to its audit. A slip carries the trader's
- * name and one-line description, the orders, the fills, the period and the total cost in basis points, all read from the API (the
- * server's figures), and the synthetic line. A figure that did not load is shown as not computed, never as zero.
+ * The demo entry (/demo, design v5): the three synthetic traders as three cards. A card carries the trader's name and one-line
+ * description, the total cost (dollars and basis points of the value ordered), the orders, the period, the synthetic line and an Open
+ * button that leads to that trader's audit. Every figure is read from the API (the server's values); one that did not load reads
+ * "not computed", never zero. The synthetic line is on every card (invariant I5).
  */
 export function DemoChoice() {
-  const [data, setData] = useState<Record<string, Slip | 'error'>>({})
+  const [data, setData] = useState<Record<string, Card | 'error'>>({})
   useEffect(() => {
     let live = true
     for (const d of DEMO_PROFILES) {
@@ -33,39 +36,43 @@ export function DemoChoice() {
     return () => { live = false }
   }, [])
 
-  const int = new Intl.NumberFormat('en-US')
   return (
-    <ul className="grid gap-10 md:grid-cols-3 md:gap-8 lg:gap-12" data-testid="demo-choice">
+    <ul className="grid gap-4 md:grid-cols-3" data-testid="demo-choice">
       {DEMO_PROFILES.map((d) => {
         const v = data[d.id]
-        const rows: Array<[string, string | null]> = v && v !== 'error'
-          ? [['Orders', v.counts ? int.format(v.counts.orders) : null], ['Fills', v.counts ? int.format(v.counts.fills) : null], ['Period', v.period],
-            ['Total cost', v.headline ? `${totalBpsLabel(v.headline)} of the value ordered` : null]]
+        const loaded = v && v !== 'error' ? v : null
+        const total = loaded?.headline ? money(loaded.headline.totalUsd) : null
+        const rows: Array<[string, string | null]> = loaded
+          ? [['Orders', loaded.counts ? loaded.counts.orders.toLocaleString('en-US') : null], ['Period', loaded.period]]
           : []
         return (
-          <li key={d.id} className="relative">
-            <Link href={`/app?userId=${d.id}`} className="group block no-underline" data-testid={`demo-slip-${d.id}`}>
-              <div className="fs-receipt shadow-ui transition-transform duration-200 ease-out group-hover:-translate-y-1">
-                <p className="fs-r-title !text-[1.375rem]">{d.archetype}</p>
-                <p className="c g mt-1">SYNTHETIC TRADER, REAL PRICES</p>
-                <hr />
-                <p className="text-[15px] leading-snug text-ui-ink">{d.tagline}</p>
-                {v === 'error' ? <div className="mt-3"><ValueState state="not-computed" label="This trader's figures" reason="The demo audit could not be loaded." size="cell" /></div>
-                  : v ? (
-                    <dl className="mt-3 flex flex-col">
+          <li key={d.id}>
+            <article className="flex h-full flex-col gap-4 rounded-xl border border-ui-rule bg-ui-raised p-5 shadow-ui">
+              <div>
+                <h2 className="text-[20px] font-semibold leading-tight text-ui-ink">{d.archetype}</h2>
+                <p className="mt-1 text-[14px] leading-snug text-ui-graphite">{d.tagline}</p>
+              </div>
+              {v === 'error' ? <ValueState state="not-computed" label="This trader's figures" reason="The demo audit could not be loaded." size="cell" />
+                : loaded ? (
+                  <>
+                    <div>
+                      <p className="text-[13px] font-medium text-ui-graphite">Total cost</p>
+                      <p className="kpi-figure text-[28px] text-ui-ink">{total ?? 'not computed'}</p>
+                      <p className="text-[14px] text-ui-graphite" data-testid="demo-total-bps">{loaded.headline ? `${totalBpsLabel(loaded.headline)} of the value ordered` : 'not computed'}</p>
+                    </div>
+                    <dl className="flex flex-col">
                       {rows.map(([k, val]) => (
-                        <div key={k} className="flex items-baseline justify-between gap-4 border-b border-dashed border-ui-rule py-1.5">
-                          <dt className="font-mono text-[12px] tracking-[0.06em] text-ui-graphite uppercase">{k}</dt>
-                          <dd className="text-right font-mono text-[13px] text-ui-ink" data-testid={k === 'Total cost' ? 'demo-total-bps' : undefined}>{val ?? 'not computed'}</dd>
+                        <div key={k} className="flex items-baseline justify-between gap-4 border-t border-ui-rule py-2 text-[14px]">
+                          <dt className="text-ui-graphite">{k}</dt>
+                          <dd className="text-right text-ui-ink">{val ?? 'not computed'}</dd>
                         </div>
                       ))}
                     </dl>
-                  ) : <p className="g mt-3">PRINTING</p>}
-                <div className="fs-perf mt-3" aria-hidden="true" />
-                <p className="text-center font-mono text-[12px] tracking-[0.06em] text-ui-ink uppercase">Open this audit</p>
-              </div>
-              <div aria-hidden="true" className="fs-torn-bottom" />
-            </Link>
+                  </>
+                ) : <p className="text-[14px] text-ui-graphite" role="status">Loading the figures.</p>}
+              <p className="mt-auto text-[13px] text-ui-graphite">Synthetic trader, real Binance prices. Read-only.</p>
+              <Link href={`/app?userId=${d.id}`} className={buttonClass('primary', 'md', 'w-full no-underline pointer-coarse:h-11')} data-testid={`demo-slip-${d.id}`}>Open</Link>
+            </article>
           </li>
         )
       })}

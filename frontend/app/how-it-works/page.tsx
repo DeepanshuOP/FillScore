@@ -20,7 +20,20 @@ export default function HowItWorksPage() {
       <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('fs-js')" }} />
       <MarketingNav />
       <main id="main" className="pt-16">
-        <h1 className="sr-only">How it works</h1>
+        <section aria-labelledby="hiw-title" className="px-[var(--ui-gutter)] pt-16 pb-10">
+          <h1 id="hiw-title" className="display-md max-w-[18ch] text-ui-ink">How it works</h1>
+          <ol className="mt-8 grid max-w-[1100px] gap-6 sm:grid-cols-3">
+            {[['Connect read-only', 'You give FillScore a key that can only read. A key that can trade or withdraw is refused.'],
+              ['We measure each fill', 'Each fill is compared with the public trades on Binance at that second.'],
+              ['You get a receipt and a grade', 'Each order gets a receipt with its cost, and the account gets one grade.']].map(([t, s], i) => (
+              <li key={t} className="flex flex-col gap-1">
+                <span className="text-[14px] font-medium text-ui-graphite">Step {i + 1}</span>
+                <span className="text-[18px] font-semibold text-ui-ink">{t}</span>
+                <span className="text-[16px] leading-snug text-ui-graphite">{s}</span>
+              </li>
+            ))}
+          </ol>
+        </section>
         <HowItReads />
         <section aria-labelledby="hiw-next" className="border-t border-ui-ink px-[var(--ui-gutter)] py-20">
           <h2 id="hiw-next" className="display-md max-w-[22ch] text-ui-ink">See it on a finished audit.</h2>

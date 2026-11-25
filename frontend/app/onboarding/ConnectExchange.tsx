@@ -21,6 +21,8 @@ import { Logo } from '../components/shell/Logo';
 import Link from 'next/link';
 
 const STEPS = ['Connect exchange', 'Paste read-only key', 'Sync'] as const;
+/** The card of the Connect page's sheets (design v5): the same white card, border and shadow as every app card. */
+const CARD = 'flex flex-col rounded-xl border border-ui-rule bg-ui-raised p-5 shadow-ui sm:p-6';
 
 type RefusalCode = 'key_not_read_only' | 'invalid_key' | 'network_error';
 interface Refusal { code: RefusalCode; disable?: string[]; enable?: string[] }
@@ -325,15 +327,15 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-ui-surface px-5 py-8 sm:px-8">
       <Link href="/" aria-label="FillScore home" className="inline-flex no-underline"><Logo /></Link>
-      <main className="mx-auto w-full max-w-[520px] py-10">
+      <main className={cn('mx-auto w-full py-10', selectedExchange || isSuccess || noTrades || syncResult ? 'max-w-[560px]' : 'max-w-[760px]')}>
         <StepIndicator current={step} />
 
         {errorMsg && refusal ? <RefusalBanner refusal={refusal} exchange={exchangeName} message={errorMsg} /> : null}
         {errorMsg && !refusal ? <Banner kind="refused" title="Something did not work" className="mb-6">{errorMsg}</Banner> : null}
 
         {noTrades ? (
-          <section className="sheet flex flex-col gap-4 p-5 sm:p-6">
-            <h1 className="display-md">No trades yet</h1>
+          <section className={CARD + ' gap-4'}>
+            <h1 className="page-title text-ui-ink">No trades yet</h1>
             <p className="text-[13px] leading-5 text-ui-graphite">
               We connected successfully, but found no spot trades in {lookbackLabel(usedLookback)}. Assets you hold are searched automatically; an asset you fully sold is only found if you list it. Use “Sync a longer period” or add symbols below.
             </p>
@@ -346,7 +348,7 @@ export default function OnboardingPage() {
             </div>
           </section>
         ) : syncResult ? (
-          <section className="sheet flex flex-col gap-6 p-5 text-center sm:p-6">
+          <section className={CARD + ' gap-6 text-center'}>
             <div className="flex flex-col items-center gap-3">
               <p className="text-[13px] text-ui-graphite">Your FillScore</p>
               <p className="text-[4rem] font-semibold leading-none tracking-[-0.02em] text-ui-ink">{syncResult.fillScore.toFixed(1)}</p>
@@ -366,9 +368,9 @@ export default function OnboardingPage() {
             <Button onClick={() => router.push('/app')}>Open my audit</Button>
           </section>
         ) : isSuccess ? (
-          <section className="sheet flex flex-col gap-5 p-5 sm:p-6">
+          <section className={CARD + ' gap-5'}>
             <div>
-              <h1 className="display-md">Connected</h1>
+              <h1 className="page-title text-ui-ink">Connected</h1>
               <p className="mt-2 text-[13px] leading-5 text-ui-graphite">Your read-only key has been verified and securely stored.</p>
             </div>
             {syncing ? (
@@ -398,16 +400,20 @@ export default function OnboardingPage() {
           </section>
         ) : !selectedExchange ? (
           <section className="flex flex-col gap-5">
-            <h1 className="display-md">Select your exchange</h1>
-            <div className="flex flex-col gap-3">
+            <div>
+              <h1 className="page-title text-ui-ink">Connect an exchange</h1>
+              <p className="mt-1 text-[14px] text-ui-graphite">Read-only keys only. We refuse keys that can trade or withdraw.</p>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
               {EXCHANGES.map((ex) => (
                 <button key={ex.id} type="button" onClick={() => { if (ex.enabled) setSelectedExchange(ex.id); }} disabled={!ex.enabled}
-                  className="sheet flex w-full flex-col gap-1 p-4 text-left transition-shadow duration-150 hover:ring-1 hover:ring-ui-edge focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-60">
-                  <span className="flex items-center justify-between">
-                    <span className="text-[15px] font-semibold tracking-[-0.01em] text-ui-ink">{ex.name}</span>
-                    {!ex.enabled && <span className="border border-dashed border-ui-edge px-2 py-0.5 font-mono text-[11px] text-ui-graphite">COMING SOON</span>}
+                  className="flex min-h-11 w-full flex-col items-start gap-2 rounded-xl border border-ui-rule bg-ui-raised p-4 text-left shadow-ui transition-colors duration-150 hover:border-ui-edge hover:bg-ui-overlay focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-60">
+                  <span aria-hidden="true" className="grid size-10 place-items-center rounded-lg bg-ui-overlay text-[16px] font-semibold text-ui-ink ring-1 ring-inset ring-ui-rule">{ex.name.slice(0, 1)}</span>
+                  <span className="flex w-full items-center justify-between gap-2">
+                    <span className="text-[16px] font-semibold text-ui-ink">{ex.name}</span>
+                    {!ex.enabled && <span className="rounded-full border border-dashed border-ui-edge px-2 py-0.5 text-[12px] text-ui-graphite">Coming soon</span>}
                   </span>
-                  <span className="text-[13px] text-ui-graphite">{ex.desc}</span>
+                  <span className="text-[14px] leading-snug text-ui-graphite">{ex.desc}</span>
                 </button>
               ))}
             </div>
@@ -418,7 +424,8 @@ export default function OnboardingPage() {
               <Button variant="quiet" size="sm" className="-ml-3" onClick={() => { setSelectedExchange(null); clearError(); }}>
                 <ChevronLeft aria-hidden="true" />Back
               </Button>
-              <h1 className="display-md mt-2">Connect {selected?.name}</h1>
+              <h1 className="page-title mt-2 text-ui-ink">Connect {selected?.name}</h1>
+              <p className="mt-1 text-[14px] text-ui-graphite">Paste a read-only key. It is checked before it is stored, and a key that can trade or withdraw is refused.</p>
             </div>
 
             <SecretField id="onb-api-key" label="API key" placeholder="Paste your API key" value={apiKey} onChange={setApiKey}
