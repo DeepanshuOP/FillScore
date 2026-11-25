@@ -39,6 +39,8 @@ import { AskHome } from './AskHome';
 import { scopeLine } from './askRecorded';
 import { orderCountsOf, type OrderRow } from './ordersTable';
 import SyncFreshness from './SyncFreshness';
+import ScoreRecord from './ScoreRecord';
+import { EvidencePanel } from '../components/EvidencePanel';
 import type { DemoInitial } from './demoInitial';
 
 // Design v2: only the overview ships with the page; each other section (and its table, chart or drawer code) loads when opened.
@@ -49,8 +51,8 @@ const OrderReplay = dynamic(() => import('./OrderReplay').then((m) => m.OrderRep
 const RulesView = dynamic(() => import('./RulesView'), { loading: section });
 const RankingsView = dynamic(() => import('./RankingsView'), { loading: section });
 const AgentCouncil = dynamic(() => import('../components/AgentCouncil'), { loading: section });
-const ScoreRecord = dynamic(() => import('./ScoreRecord'), { loading: section });
-const EvidencePanel = dynamic(() => import('../components/EvidencePanel').then((m) => m.EvidencePanel), { loading: section });
+// ScoreRecord and EvidencePanel are small and are the whole of the Reports page, so they ship with the page: a placeholder of another
+// height shifted the cards below it when they loaded (layout shift found in the design v5 audit, step 8).
 
 interface AuditSummary {
   userId: string;
@@ -308,7 +310,7 @@ function DashboardContent({ view, initial }: { view: View; initial?: DemoInitial
                     {homeStrip ? (
                       <Card title="Where the cost came from" sentence="The three parts add up to the total." id="where" source="Your orders, measured against Binance public trades.">
                         <CostBreakdown view={homeStrip} />
-                        <Link href={viewHref('costs', shellUser, !!accessToken)} className="text-[14px] text-ui-ink">See the costs in full</Link>
+                        <Link href={viewHref('costs', shellUser, !!accessToken)} className="inline-flex items-center text-[14px] text-ui-ink pointer-coarse:min-h-11">See the costs in full</Link>
                       </Card>
                     ) : (
                       <Card title="Where the cost came from" id="where"><EmptyState title="Not measured yet" action={dashboardMode === 'real' ? <ConnectAction /> : undefined}>The cost of each order appears after the orders are synced and measured.</EmptyState></Card>

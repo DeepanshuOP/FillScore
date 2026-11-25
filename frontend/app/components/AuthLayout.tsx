@@ -16,7 +16,7 @@ export default function AuthLayout({ title, intro, children, footer }: {
   return (
     <div className="min-h-screen bg-ui-surface lg:grid lg:grid-cols-2">
       <main className="flex min-h-screen flex-col px-5 py-8 sm:px-8">
-        <Link href="/" aria-label="FillScore home" className="inline-flex w-fit no-underline"><Logo /></Link>
+        <Link href="/" aria-label="FillScore home" className="inline-flex w-fit items-center no-underline pointer-coarse:min-h-11"><Logo /></Link>
         <div className="mx-auto flex w-full max-w-sm flex-1 flex-col justify-center py-10">
           <h1 className="display-lg text-balance text-ui-ink">{title}</h1>
           {intro ? <p className="mt-3 text-[15px] leading-6 text-ui-graphite">{intro}</p> : null}

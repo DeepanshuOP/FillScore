@@ -78,7 +78,7 @@ function SideMark({ side }: { side: string }) {
 
 function OrderTypeBadge({ isMaker }: { isMaker: boolean }) {
   return (
-    <span className={cn('inline-flex h-5 items-center rounded-[6px] px-1.5 text-[11px] font-medium ring-1 ring-inset',
+    <span className={cn('inline-flex h-5 items-center rounded-[6px] px-1.5 text-[12px] font-medium ring-1 ring-inset',
       isMaker ? 'bg-ui-overlay text-ui-ink ring-ui-edge' : 'text-ui-graphite ring-ui-rule')}>
       {isMaker ? 'MAKER' : 'TAKER'}
     </span>
@@ -88,8 +88,8 @@ function OrderTypeBadge({ isMaker }: { isMaker: boolean }) {
 function StatCell({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="panel flex min-w-0 flex-col gap-1 pt-3">
-      <span className="font-mono text-[11px] tracking-[0.06em] text-ui-graphite uppercase">{label}</span>
-      <span className="text-[1.5rem] leading-8 font-black tracking-[-0.03em] text-ui-ink">{children}</span>
+      <span className="text-[13px] font-medium text-ui-graphite">{label}</span>
+      <span className="text-[1.5rem] leading-8 font-bold tracking-[-0.02em] text-ui-ink">{children}</span>
     </div>
   )
 }
@@ -350,7 +350,7 @@ function TradesContent() {
     <label className="flex items-center gap-2 text-[13px] text-ui-graphite">
       {label}
       <select value={value} onChange={e => onChange(e.target.value)}
-        className="h-9 rounded-[10px] bg-ui-raised px-2.5 text-sm text-ui-ink ring-1 ring-inset ring-ui-edge outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]">
+        className="h-9 pointer-coarse:h-11 rounded-[10px] bg-ui-raised px-2.5 text-sm text-ui-ink ring-1 ring-inset ring-ui-edge outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)]">
         {options.map(o => <option key={o} value={o}>{o === 'ALL' ? 'All' : o}</option>)}
       </select>
     </label>
@@ -358,16 +358,16 @@ function TradesContent() {
 
   const sortHead = (col: string, label: string, numeric = false) => (
     <th scope="col" aria-sort={sortBy === col ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
-      className={cn('sticky top-0 z-10 bg-ui-raised px-3 py-2 font-mono text-[11px] font-normal tracking-[0.06em] whitespace-nowrap text-ui-graphite uppercase shadow-[inset_0_-1px_0_var(--ui-rule)]', numeric ? 'text-right' : 'text-left')}>
+      className={cn('sticky top-0 z-10 bg-ui-raised px-3 py-2 text-[12px] font-medium whitespace-nowrap text-ui-graphite shadow-[inset_0_-1px_0_var(--ui-rule)]', numeric ? 'text-right' : 'text-left')}>
       <button type="button" onClick={() => handleSort(col)}
-        className={cn('inline-flex items-center gap-1 rounded-[6px] hover:text-ui-ink focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)]', sortBy === col && 'text-ui-ink')}>
+        className={cn('inline-flex items-center gap-1 rounded-[6px] hover:text-ui-ink focus-visible:outline-2 focus-visible:outline-[var(--ui-focus)] pointer-coarse:min-h-11 pointer-coarse:min-w-11 pointer-coarse:justify-center', sortBy === col && 'text-ui-ink')}>
         {label}
         {sortBy === col ? (sortDir === 'desc' ? <ArrowDown aria-hidden="true" className="size-3" /> : <ArrowUp aria-hidden="true" className="size-3" />) : null}
       </button>
     </th>
   )
   const plainHead = (label: string, numeric = false) => (
-    <th scope="col" className={cn('sticky top-0 z-10 bg-ui-raised px-3 py-2 font-mono text-[11px] font-normal tracking-[0.06em] whitespace-nowrap text-ui-graphite uppercase shadow-[inset_0_-1px_0_var(--ui-rule)]', numeric ? 'text-right' : 'text-left')}>{label}</th>
+    <th scope="col" className={cn('sticky top-0 z-10 bg-ui-raised px-3 py-2 text-[12px] font-medium whitespace-nowrap text-ui-graphite shadow-[inset_0_-1px_0_var(--ui-rule)]', numeric ? 'text-right' : 'text-left')}>{label}</th>
   )
 
   const actions = showCsvExport(dashboardMode) ? (
@@ -499,7 +499,7 @@ function TradesContent() {
                 <button key={item} type="button" onClick={() => setPage(item)}
                   aria-label={`Page ${item}`}
                   aria-current={page === item ? 'page' : undefined}
-                  className={cn('grid h-8 min-w-8 place-items-center rounded-[8px] px-2 text-[13px] tabular-nums ring-1 ring-inset',
+                  className={cn('grid h-8 min-w-8 place-items-center rounded-[8px] px-2 text-[13px] tabular-nums ring-1 ring-inset pointer-coarse:h-11 pointer-coarse:min-w-11',
                     page === item ? 'bg-ui-overlay text-ui-ink ring-ui-edge' : 'text-ui-graphite ring-ui-rule hover:text-ui-ink')}>{item}</button>
               ))}
             </nav>

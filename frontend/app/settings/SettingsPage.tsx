@@ -262,7 +262,7 @@ export default function SettingsPage({ versions }: { versions?: { scoring: strin
               <div>
                 <Button variant="secondary" disabled={busy} onClick={onExport}>Download my data</Button>
               </div>
-              <p className="text-[13px] text-ui-graphite">How data is stored and who can see it: <Link href="/privacy" className="text-ui-ink underline underline-offset-4">privacy notice</Link>.</p>
+              <p className="text-[13px] text-ui-graphite">How data is stored and who can see it: <Link href="/privacy" className="inline-flex items-center text-ui-ink underline underline-offset-4 pointer-coarse:min-h-11">privacy notice</Link>.</p>
             </Card>
             <Card id="settings-delete" title="Delete account" sentence="Permanently removes your account, exchange connections, trades, audits and history. This cannot be undone.">
               <DangerZone>
@@ -290,8 +290,8 @@ export default function SettingsPage({ versions }: { versions?: { scoring: strin
               </dl>
             ) : null}
             <p className="flex flex-wrap gap-x-5 gap-y-1 text-[14px] text-ui-graphite">
-              <Link href="/methodology" className="text-ui-ink underline underline-offset-4">How the score is computed</Link>
-              <Link href="/docs" className="text-ui-ink underline underline-offset-4">Docs</Link>
+              <Link href="/methodology" className="inline-flex items-center text-ui-ink underline underline-offset-4 pointer-coarse:min-h-11">How the score is computed</Link>
+              <Link href="/docs" className="inline-flex items-center text-ui-ink underline underline-offset-4 pointer-coarse:min-h-11 pointer-coarse:min-w-11 pointer-coarse:justify-center">Docs</Link>
             </p>
           </Card>
         )}

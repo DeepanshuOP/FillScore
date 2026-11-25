@@ -27,7 +27,7 @@ export default function Toc({ items }: { items: TocItem[] }) {
         {items.map((i) => (
           <li key={i.id}>
             <a href={`#${i.id}`} aria-current={current === i.id ? 'location' : undefined}
-              className={cn('-ml-px block border-l py-1.5 pl-4 text-[13.5px] no-underline transition-colors',
+              className={cn('-ml-px block border-l py-1.5 pl-4 text-[13.5px] no-underline transition-colors pointer-coarse:flex pointer-coarse:min-h-11 pointer-coarse:items-center',
                 current === i.id ? 'border-ui-measured text-ui-ink' : 'border-transparent text-ui-graphite hover:text-ui-ink')}>
               {i.label}
             </a>

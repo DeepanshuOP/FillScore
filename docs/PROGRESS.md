@@ -4,8 +4,21 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-25: finish design v5 (steps 0-9 of the order), local commits
 
-- **Next concrete action: step 8 (QA and review: audit5 on every page at all viewports including real WebKit, light and dark; keyboard pass; break-ui on Home, Costs, Orders, Fills, Check, Settings; reduced motion; one reviewer; at most 16 images in `docs/design/v5/built/` with a README).** Steps 0 to 7 done; 8 and 9 open. Design v5 is NOT finished.
-- **Status:** 0 done. 1 done. 2 done. 3 done. 4 done. 5 done. 6 done. 7 done. 8 open. 9 open.
+- **Next concrete action: Waiting for Deepanshu.** Reason: this run reached the order's limit of 200 turns before five items of step 8 were done, so design v5 is **not** finished. Decide whether to give another order for them: the keyboard pass, the break-ui pass (Home, Costs, Orders, Fills, Check, Settings), the reduced-motion pass, the one read-only reviewer pass with its fix pass, and the images in `docs/design/v5/built/` (at most 16, with a README). The audit itself is done and clean (below).
+- **Status:** 0 done. 1 done. 2 done. 3 done. 4 done. 5 done. 6 done. 7 done. **8 partly done, five items BLOCKED (turn limit, not a denial).** 9 done (checks and docs).
+- **Step 8: audit done, five items BLOCKED.** `e2e-shots/audit5.ts` updated to the v5 routes (23 pages: landing, how it works, demo, verify, docs, methodology, login, Home, Costs, Orders, receipt, Flagged, Comparisons, AI review,
+  Reports, Fills, Check, Settings by section x5, Connect), the v5 theme key, layout-shift capture, and a caps count that leaves out printed objects. **Final run: 230 states** (5 viewports incl. **real WebKit
+  iPhone 15, 46 states, engine webkit on every row**, 3 desktop and tablet widths and Pixel 8 in Chromium, each light and dark; 0 page errors): smallest text 12 px, **text under 12 px 0**, **caps runs under 12 px 0**
+  (outside printed objects 0), **axe contrast 0**, **axe serious or critical 0**, **phone taps under 44 px 0**, **CLS max 0.03 (under 0.05 everywhere)**. Before (docs/design/v5/AUDIT.md, 200 states of the v4 app): smallest text 10 px,
+  3,670 nodes under 12 px, 280 caps runs under 12 px, 588 phone taps under 44 px, contrast 0. The first run of this order found 620 text nodes under 12 px (all on Fills), 374 taps under 44 px, one axe rule (`definition-list`
+  on Costs) and 14 states with CLS of 0.05 or more; fixed: Fills ledger headers, tiles and badge (12 px, sentence case, no letter-spaced caps), 44 px buttons, fields, selects, logo links, sort buttons, pagination and
+  note marks on touch screens (`pointer-coarse`), the cost-estimate card's `dl`, heading anchors hidden on touch, Reports cards no longer lazy (a placeholder of another height shifted them), and Fills and Check render
+  per request so the demo banner is in the server's HTML. **BLOCKED (turn limit): keyboard pass; break-ui (the skill was loaded, no worst-case data was run, so nothing is claimed about long names, huge numbers or empty
+  lists on these six pages); reduced-motion pass (only the CSS entrances honour it by rule, not tested); the reviewer pass and its fixes (so the reviewer's questions on unclear words, unreadable charts, lost invariant guards
+  and advice wording are unanswered by an independent reader); the images and README in `docs/design/v5/built/`.** Not verified: any page not in the 23.
+- **Step 9: checks after the last change (2026-11-25).** Frontend vitest 902 passed (93 files), tsc 0, lint 0 errors (18 warnings), build ok; **full e2e 83 passed, 0 failed, 0 skipped**; backend vitest 1145 passed (135 files),
+  tsc 0; **ml-service pytest 1909 passed, 0 failed** (50 s); mcp-server `node --test` 26 passed; guard table 214 passed, 0 failed. First Load JS (gzip kB) `/` 251.0, `/app` and `/app/costs`, `/app/orders` 287.4, `/login` 236.1 (budgets 300, 340, 360, 300: all met).
+  Docs: `docs/milestones/M8.md`, `ARCHITECTURE.md` §4 and README (test numbers; Node 26 as `.nvmrc` pins it).
 - **Step 7: done (performance).** *Largest first-load modules before the work* (Turbopack analyzer, `next experimental-analyze`, compressed size of each module, summed per module; these
   add to 491 kB where the real chunk gzip is 325.5 kB, because each module is compressed alone; the order is what matters), `/docs` (the shared base):
   1 react-dom-client 87.1, 2 react-server-dom-turbopack-client 9.7, 3 tailwind-merge 9.6, 4 next router.js 8.7, 5 next segment-cache/cache.js 8.3, 6 next render-tree 5.2, 7 @radix-ui/react-menu 5.1,

@@ -2,7 +2,7 @@
 
 ![CI](https://github.com/DeepanshuOP/FillScore/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/Python-3.11+-blue)
-![Node.js](https://img.shields.io/badge/Node.js-20+-blue)
+![Node.js](https://img.shields.io/badge/Node.js-26-blue)
 ![License](https://img.shields.io/badge/License-MIT-yellow)
 
 FillScore is an independent, open-source **execution auditor** for crypto traders. It does not ask whether you were right about the market. It asks how well your orders were executed, and it answers from real public market data. You connect a **read-only** exchange key, FillScore reads your own past trades, and it measures what each order cost: the spread you paid, how far the price moved with you, what unfilled orders cost, and your fees against the rates your account qualifies for. **It audits the past. It never predicts, signals or advises.** Every number shown to a user comes from deterministic, tested code; language models may explain a finding, and they never produce a number.
@@ -71,7 +71,7 @@ How to read it, plainly:
   Read: this is one account, one model and one run per question, so it shows the mechanism works, not how often. "As the model wrote them" means the code changed nothing in the old path, and for the new path that the claims passed every check (the words are code's). The new path can be partial: it has no claim for an order count (the answer to "how many orders were measured and what did they cost" gave the cost only) and caps a set at three claims. The runs were made under claim rules 1.0.0; a review then tightened the rules (1.1.0: each slot names its exact value, and one interval sentence was corrected) and all twelve claim sets pass the stricter rules offline, so the counts stand; the four Home answers were recorded again under 1.1.0 (56 of the 60 live calls in all). Details: `docs/research/LOG.md` §AM.
 - Source files: `ml-service/evals/ablation_results_v3.md`, `ml-service/evals/ablation_notes_v3.md`.
 
-Tests, run on 2026-11-22 (after the fourth order): ml-service pytest 1852 passed (9 deselected); backend vitest 1102 passed (131 files), tsc clean; frontend vitest 752 passed (78 files), tsc clean, lint 0 errors, build ok; end-to-end 40 passed; MCP server 26 passed. The route table in `ARCHITECTURE.md` is checked against the code by a test.
+Tests, run on 2026-11-25 (after the design v5 orders): ml-service pytest 1909 passed (9 deselected); backend vitest 1145 passed (135 files), tsc clean; frontend vitest 902 passed (93 files), tsc clean, lint 0 errors, build ok; end-to-end 83 passed, 0 skipped; MCP server 26 passed; guard table 214 passed. The route table in `ARCHITECTURE.md` is checked against the code by a test.
 
 ## Three pillars
 
@@ -106,13 +106,13 @@ Tests, run on 2026-11-22 (after the fourth order): ml-service pytest 1852 passed
 | Layer | Technology | Port |
 | :--- | :--- | :--- |
 | Frontend | Next.js 16, React 19, TypeScript | 3000 |
-| Backend | Node.js 20, Express, Mongoose, MongoDB Atlas | 3001 |
+| Backend | Node.js 26 (pinned in `.nvmrc`), Express, Mongoose, MongoDB Atlas | 3001 |
 | ML service | Python 3.11, FastAPI, numpy | 8000 |
-| MCP server | Node.js 20, MCP SDK | stdio |
+| MCP server | Node.js 26 (pinned in `.nvmrc`), MCP SDK | stdio |
 
 ## Quick start
 
-**Prerequisites:** Node.js 20+, Python 3.11+, a MongoDB Atlas free-tier database. A Groq key (free) is needed only for the Council and Ask features.
+**Prerequisites:** Node.js 26 (the version in `.nvmrc`), Python 3.11+, a MongoDB Atlas free-tier database. A Groq key (free) is needed only for the Council and Ask features.
 
 ```bash
 git clone https://github.com/DeepanshuOP/FillScore.git

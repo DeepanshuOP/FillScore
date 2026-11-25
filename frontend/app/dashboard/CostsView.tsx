@@ -93,11 +93,14 @@ export function CostsView(p: CostsProps) {
           sentence="Market orders, paid against the model's estimate."
           source="Your market orders, measured against Binance public trades.">
           {est.kind === 'state' ? <p className="text-[14px] text-ui-ink" data-testid="cost-estimate-state">{est.text}</p> : (
-            <dl className="grid grid-cols-2 gap-3">
-              <div><dt className="text-[13px] text-ui-graphite">Paid</dt><dd className="kpi-figure text-[22px]">{est.paid}</dd></div>
-              <div><dt className="text-[13px] text-ui-graphite">Cost estimate</dt><dd className="kpi-figure text-[22px]">{est.estimate}</dd></div>
-              <div className="col-span-2 text-[14px] text-ui-graphite">Difference {est.difference}, {est.interval}, {est.orders}.</div>
-            </dl>
+            <>
+              <dl className="grid grid-cols-2 gap-3">
+                <div><dt className="text-[13px] text-ui-graphite">Paid</dt><dd className="kpi-figure text-[22px]">{est.paid}</dd></div>
+                <div><dt className="text-[13px] text-ui-graphite">Cost estimate</dt><dd className="kpi-figure text-[22px]">{est.estimate}</dd></div>
+              </dl>
+              {/* outside the list: a definition list holds only terms and definitions (axe definition-list) */}
+              <p className="text-[14px] text-ui-graphite">Difference {est.difference}, {est.interval}, {est.orders}.</p>
+            </>
           )}
         </Card>
       </div>

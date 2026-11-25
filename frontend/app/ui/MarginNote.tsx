@@ -72,7 +72,7 @@ export function MarginNote({ label, children, className }: { label: string; chil
   return (
     <span className="whitespace-nowrap">{' '}<span className="relative inline-flex align-baseline">
       <button ref={btn} type="button" aria-label={`Note: ${label}`} data-margin-note="" aria-expanded={open} aria-haspopup="dialog" aria-controls={open ? id : undefined}
-        className={cn('fs-note-mark inline-flex size-6 shrink-0 translate-y-[3px] items-center justify-center rounded-full text-ui-pen-ink', className)}
+        className={cn('fs-note-mark inline-flex size-6 shrink-0 translate-y-[3px] items-center justify-center rounded-full text-ui-pen-ink pointer-coarse:-m-2.5 pointer-coarse:size-11', className)}
         onPointerEnter={(e) => { if (e.pointerType === 'mouse' && fine) hoverIn() }}
         onPointerLeave={(e) => { if (e.pointerType === 'mouse' && fine) hoverOut() }}
         // focus opens the note only for keyboard focus (a click toggles it). Focus never leaves the mark while a note

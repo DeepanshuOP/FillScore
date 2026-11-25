@@ -326,7 +326,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen bg-ui-surface px-5 py-8 sm:px-8">
-      <Link href="/" aria-label="FillScore home" className="inline-flex no-underline"><Logo /></Link>
+      <Link href="/" aria-label="FillScore home" className="inline-flex items-center no-underline pointer-coarse:min-h-11"><Logo /></Link>
       <main className={cn('mx-auto w-full py-10', selectedExchange || isSuccess || noTrades || syncResult ? 'max-w-[560px]' : 'max-w-[760px]')}>
         <StepIndicator current={step} />
 

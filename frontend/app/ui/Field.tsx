@@ -20,7 +20,7 @@ export function Field(props: InputProps | AreaProps) {
   const control = cn(
     'w-full rounded-[4px] bg-ui-raised px-3 text-[15px] text-ui-ink ring-1 ring-inset placeholder:text-ui-graphite outline-none transition-shadow duration-150 focus-visible:ring-2 focus-visible:ring-[var(--ui-focus)] disabled:cursor-not-allowed disabled:opacity-60',
     error ? 'ring-ui-danger' : 'ring-ui-edge',
-    multiline ? 'min-h-24 py-2' : 'h-10',
+    multiline ? 'min-h-24 py-2' : 'h-10 pointer-coarse:h-11',
   )
   return (
     <div className={cn('flex flex-col gap-1', className)}>

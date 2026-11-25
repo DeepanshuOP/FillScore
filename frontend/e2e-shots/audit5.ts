@@ -37,23 +37,28 @@ export const PAGES: AuditPage[] = [
   { name: 'methodology', path: '/methodology', ready: settle },
   { name: 'login', path: '/login', ready: settle },
   { name: 'app-home', path: `/app${D}`, ready: testid('home-total', 1000) },
-  { name: 'app-overview', path: `/app/overview${D}`, ready: async (p) => { await p.getByText('Where the').first().waitFor({ timeout: 30000 }); await p.waitForTimeout(1500) } },
-  { name: 'app-orders', path: `/app/orders${D}`, ready: testid('orders-row') },
+  // design v5 routes (step 8 of the 2026-11-25 orders): Costs, Flagged orders, Comparisons, AI review, Reports; Settings by section
+  { name: 'app-costs', path: `/app/costs${D}`, ready: testid('costs-view', 1500) },
+  // a table row on desktop and tablet, a card on phones: the visible one
+  { name: 'app-orders', path: `/app/orders${D}`, ready: async (p) => { await p.locator('[data-testid=orders-row]:visible, [data-testid=orders-card]:visible').first().waitFor({ timeout: 30000 }); await p.waitForTimeout(800) } },
   { name: 'app-orders-receipt', path: `/app/orders${D}`, ready: async (p) => {
-    await p.locator('[data-testid=orders-row]').nth(2).click()
+    await p.locator('[data-testid=orders-row]:visible, [data-testid=orders-card]:visible').nth(2).click()
     await p.getByTestId('explain-replay').getByText('COSTS').waitFor({ timeout: 15000 }); await p.waitForTimeout(1200)
   } },
-  { name: 'app-rules', path: `/app/rules${D}`, ready: settle },
-  { name: 'app-rankings', path: `/app/rankings${D}`, ready: testid('explain-rankings') },
-  { name: 'app-council', path: `/app/council${D}`, ready: async (p) => {
-    await p.getByRole('button', { name: 'Run analysis' }).click()
+  { name: 'app-flagged', path: `/app/flagged${D}`, ready: testid('explain-panel') },
+  { name: 'app-compare', path: `/app/compare${D}`, ready: testid('explain-rankings') },
+  { name: 'app-review', path: `/app/review${D}`, ready: async (p) => {
+    await p.getByRole('button', { name: 'Start review' }).click()
     await p.getByRole('heading', { name: /^Explanation/ }).waitFor({ timeout: 30000 }); await p.waitForTimeout(1000)
   } },
-  { name: 'app-evidence', path: `/app/evidence${D}`, ready: settle },
-  { name: 'app-fills', path: `/app/fills${D}`, ready: testid('fills-tabs', 1200) },
-  { name: 'app-fills-patterns', path: `/app/fills${D}&tab=patterns`, ready: async (p) => { await p.waitForLoadState('networkidle'); await p.waitForTimeout(1500) } },
+  { name: 'app-reports', path: `/app/reports${D}`, ready: testid('reports-card', 1000) },
+  { name: 'app-fills', path: `/app/fills${D}`, ready: async (p) => { await p.getByText('TAKER').first().waitFor({ timeout: 30000 }); await p.waitForTimeout(1200) } },
   { name: 'app-check', path: `/app/check${D}`, ready: settle },
   { name: 'app-settings', path: '/app/settings', signedIn: true, ready: settle },
+  { name: 'app-settings-keys', path: '/app/settings?section=api-keys', signedIn: true, ready: settle },
+  { name: 'app-settings-usage', path: '/app/settings?section=usage', signedIn: true, ready: settle },
+  { name: 'app-settings-data', path: '/app/settings?section=data', signedIn: true, ready: settle },
+  { name: 'app-settings-about', path: '/app/settings?section=about', signedIn: true, ready: settle },
   { name: 'app-connect', path: '/app/connect', signedIn: true, ready: settle },
 ]
 
@@ -70,7 +75,7 @@ export const VIEWPORTS: Vp[] = [
 /** In-page measurements. Kept free of named inner functions (tsx would inject a helper page.evaluate cannot see). */
 export async function measure(page: Page, phone: boolean) {
   return page.evaluate((isPhone) => {
-    const out = { minFontPx: 999, under12: 0, under12Samples: [] as string[], capsRuns: 0, capsUnder12: 0, capsSamples: [] as string[],
+    const out = { minFontPx: 999, under12: 0, under12Samples: [] as string[], capsRuns: 0, capsUnder12: 0, capsUnder12Outside: 0, capsSamples: [] as string[],
       notComputed: 0, insufficient: 0, dashes: 0, smallTargets: 0, targetSamples: [] as string[], textNodes: 0 }
     const seenCaps = new Set<Element>()
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
@@ -97,7 +102,8 @@ export async function measure(page: Page, phone: boolean) {
       const caps = cs.textTransform === 'uppercase' ? /[a-z]{2,}/i.test(text) : (/[A-Z]{3,}/.test(text) && !/[a-z]/.test(text))
       if (caps && ls > 0.5 && !seenCaps.has(el)) {
         seenCaps.add(el); out.capsRuns++
-        if (px < 12) out.capsUnder12++
+        // a printed object (receipt, stamp, envelope, slip, tape strip) may keep its caps; the rule is about the rest of the page
+        if (px < 12) { out.capsUnder12++; if (!el.closest('.fs-receipt,.fs-stamp,.fs-word-stamp,.fs-paper,.fs-envelope,.fs-slip,.fs-strip,[data-printed]')) out.capsUnder12Outside++ }
         if (out.capsSamples.length < 6) out.capsSamples.push(`${px}px ls ${Math.round(ls * 10) / 10}px "${text.slice(0, 24)}"`)
       }
       if (/not computed/i.test(text)) out.notComputed++
@@ -107,7 +113,11 @@ export async function measure(page: Page, phone: boolean) {
     if (isPhone) {
       const sel = 'button, a[href], input:not([type=hidden]), select, textarea, summary, [role=button], [role=tab], [role=switch], [role=menuitem], [role=checkbox], [role=link]'
       for (const el of document.querySelectorAll<HTMLElement>(sel)) {
-        const r = el.getBoundingClientRect()
+        // a visually hidden control (the skip link, a file input behind its label button) is not a target; its visible label is measured
+        if (el.classList.contains('sr-only') || el.closest('.sr-only')) continue
+        // a checkbox or radio is tapped through its label: the label is the target
+        const lab = el instanceof HTMLInputElement && (el.type === 'checkbox' || el.type === 'radio') ? el.closest('label') : null
+        const r = (lab ?? el).getBoundingClientRect()
         if (r.width === 0 || r.height === 0) continue
         const cs = getComputedStyle(el)
         if (cs.visibility === 'hidden' || el.closest('[aria-hidden="true"],[inert]')) continue
@@ -115,7 +125,7 @@ export async function measure(page: Page, phone: boolean) {
         if (el.tagName === 'A' && cs.display === 'inline' && el.parentElement && /^(P|LI|SPAN|TD|DD)$/.test(el.parentElement.tagName)) continue
         if (r.width < 44 || r.height < 44) {
           out.smallTargets++
-          if (out.targetSamples.length < 6) out.targetSamples.push(`${Math.round(r.width)}x${Math.round(r.height)} ${el.tagName.toLowerCase()} "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 20)}"`)
+          if (out.targetSamples.length < 60) out.targetSamples.push(`${Math.round(r.width)}x${Math.round(r.height)} ${el.tagName.toLowerCase()}${el.id ? '#' + el.id : ''} "${(el.getAttribute('aria-label') ?? el.textContent ?? '').trim().slice(0, 24)}" .${String(el.className).split(/\s+/).slice(0, 3).join('.')}`)
         }
       }
     }
@@ -154,8 +164,14 @@ async function main() {
       if (only && !only.includes(pg.name)) continue
       const ctx = await b.newContext({ ...vp.ctx, colorScheme: theme === 'dark' ? 'dark' : 'light' })
       const page = await ctx.newPage()
-      if (theme === 'dark') await page.addInitScript(() => localStorage.setItem('fs-theme', 'carbon'))
-      else await page.addInitScript(() => localStorage.setItem('fs-theme', 'paper'))
+      // design v5: next-themes key "fs-theme-v5" holds "light" or "dark" (the old "fs-theme" held paper or carbon)
+      await page.addInitScript((t) => localStorage.setItem('fs-theme-v5', t), theme)
+      // layout shift of the page's own life (shifts right after a user input do not count), read after the measures below
+      await page.addInitScript(() => {
+        const w = window as unknown as { __cls: number }
+        w.__cls = 0
+        new PerformanceObserver((list) => { for (const e of list.getEntries() as unknown as Array<{ value: number; hadRecentInput: boolean }>) if (!e.hadRecentInput) w.__cls += e.value }).observe({ type: 'layout-shift', buffered: true })
+      })
       await mock(page, !!pg.signedIn)
       const row: Record<string, unknown> = { page: pg.name, viewport: vp.name, theme, engine }
       try {
@@ -165,6 +181,7 @@ async function main() {
         const file = `${pg.name}-${vp.name}-${theme}.jpg`
         await page.screenshot({ path: resolve(OUT, file), type: 'jpeg', quality: 55 })
         Object.assign(row, { image: file }, await measure(page, vp.phone), await axeCounts(page))
+        row.cls = Math.round((await page.evaluate(() => (window as unknown as { __cls: number }).__cls)) * 1000) / 1000
       } catch (e) {
         row.error = String(e).slice(0, 200)
       }

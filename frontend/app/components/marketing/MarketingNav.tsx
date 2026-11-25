@@ -34,7 +34,7 @@ export function MarketingNav() {
     <header className={cn('fixed inset-x-0 top-0 z-40 transition-[background-color,border-color] duration-300',
       scrolled ? 'border-b border-ui-ink bg-ui-surface' : 'border-b border-transparent')} data-testid="site-bar">
       <div className="flex h-16 items-center gap-6 px-[var(--ui-gutter)] max-sm:h-14 max-sm:gap-3">
-        <Link href="/" className="no-underline" aria-label="FillScore home"><Logo /></Link>
+        <Link href="/" className="inline-flex items-center no-underline pointer-coarse:min-h-11" aria-label="FillScore home"><Logo /></Link>
         <nav aria-label="Site" className="hidden items-center gap-1 md:flex">
           {SITE_ITEMS.map(([href, label]) => (
             <Link key={href} href={href} aria-current={pathname === href || pathname.startsWith(`${href}/`) ? 'page' : undefined}

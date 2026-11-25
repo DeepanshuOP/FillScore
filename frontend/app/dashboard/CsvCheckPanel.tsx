@@ -19,7 +19,7 @@ const FIELDS: Array<[keyof MappingInputs, string, boolean]> = [
   ['fee_currency', 'Fee currency column (optional)', false], ['id', 'Trade id column (optional)', false],
 ];
 
-const SELECT = 'min-h-10 w-full rounded-ui border border-ui-edge bg-ui-raised px-3 py-2 text-ui-ink disabled:cursor-not-allowed disabled:opacity-60';
+const SELECT = 'min-h-10 pointer-coarse:min-h-11 w-full rounded-ui border border-ui-edge bg-ui-raised px-3 py-2 text-ui-ink disabled:cursor-not-allowed disabled:opacity-60';
 
 const COLUMNS: Column<CsvRow>[] = [
   { key: 'time', header: 'Time', sortValue: r => r.time, cell: r => r.time },
@@ -101,7 +101,7 @@ export default function CsvCheckPanel({ mlBaseUrl, accessToken, refreshAccessTok
             <div className="flex flex-col gap-1">
               <label htmlFor="csv-file" className="text-sm font-medium text-ui-ink">Trade history file</label>
               <input id="csv-file" type="file" accept=".csv,text/csv" onChange={e => onFile(e.target.files?.[0])} disabled={busy}
-                className="min-h-10 w-full rounded-ui border border-ui-edge bg-ui-raised px-3 py-2 text-sm text-ui-ink" />
+                className="min-h-10 pointer-coarse:min-h-11 w-full rounded-ui border border-ui-edge bg-ui-raised px-3 py-2 text-sm text-ui-ink" />
             </div>
           </div>
           {format === 'mapped' && (

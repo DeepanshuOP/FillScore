@@ -161,7 +161,7 @@ function PhoneTopBar({ onOpenPalette }: { onOpenPalette: () => void }) {
   const title = header.title ?? (section ? SECTIONS.find((s) => s.id === section)!.label : 'FillScore')
   return (
     <div className="fa-top" data-testid="phone-top-bar">
-      <Link href="/" aria-label="FillScore home" className="inline-flex min-h-11 shrink-0 items-center no-underline"><Logo compact /></Link>
+      <Link href="/" aria-label="FillScore home" className="inline-flex min-h-11 min-w-11 shrink-0 items-center justify-center no-underline"><Logo compact /></Link>
       <p className="min-w-0 flex-1 truncate text-[16px] font-semibold text-ui-ink">{title}</p>
       <button type="button" onClick={onOpenPalette} aria-label="Search and jump to" className="inline-flex size-11 items-center justify-center rounded-lg text-ui-graphite hover:bg-ui-overlay"><Search aria-hidden="true" className="size-5" /></button>
       <AccountSwitcher account={account} section={section} compact />

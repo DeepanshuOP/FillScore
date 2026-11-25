@@ -63,7 +63,7 @@ export default function SignupPage() {
     <AuthLayout
       title="Create an account"
       intro="Create an account to see the audit of your own orders."
-      footer={<>Already have an account? <Link href="/login" className="text-ui-ink">Log in</Link>.</>}
+      footer={<>Already have an account? <Link href="/login" className="inline-flex items-center text-ui-ink pointer-coarse:min-h-11">Log in</Link>.</>}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <Field id="signup-email" label="Email" type="email" autoComplete="email" placeholder="name@example.com"

@@ -52,7 +52,7 @@ export default function LoginPage() {
     <AuthLayout
       title="Log in"
       intro="Log in to see the audit of your own orders."
-      footer={<>No account yet? <Link href="/signup" className="text-ui-ink">Sign up</Link>.</>}
+      footer={<>No account yet? <Link href="/signup" className="inline-flex items-center text-ui-ink pointer-coarse:min-h-11">Sign up</Link>.</>}
     >
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <Field id="login-email" label="Email" type="email" autoComplete="email" placeholder="name@example.com"
@@ -60,7 +60,7 @@ export default function LoginPage() {
         <div className="flex flex-col gap-1">
           <Field id="login-password" label="Password" type="password" autoComplete="current-password"
             value={password} onChange={(e) => setPassword(e.target.value)} />
-          <Link href="/forgot-password" className="inline-block self-end py-2 text-sm text-ui-ink">Forgot your password?</Link>
+          <Link href="/forgot-password" className="inline-block self-end py-2 text-sm text-ui-ink pointer-coarse:py-3">Forgot your password?</Link>
         </div>
 
         {error && <Banner kind="refused" title="Log in did not work">{error}</Banner>}

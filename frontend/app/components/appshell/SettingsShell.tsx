@@ -16,7 +16,7 @@ export function SettingsShell({ title, nav, active, children }: { title: string;
       <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-ui-raised focus:px-3 focus:py-2">Skip to content</a>
       <header className="flex items-center gap-4 border-b border-ui-rule px-[var(--ui-gutter)] py-3">
         <Link href="/app" className="inline-flex min-h-11 items-center gap-1 pr-2 text-[15px] font-semibold text-ui-ink no-underline"><ChevronLeft aria-hidden="true" className="size-4" />Back</Link>
-        <Link href="/" aria-label="FillScore home" className="ml-auto no-underline"><Logo /></Link>
+        <Link href="/" aria-label="FillScore home" className="ml-auto inline-flex items-center no-underline pointer-coarse:min-h-11"><Logo /></Link>
       </header>
       <main id="main" className="w-full max-w-[1440px] flex-1 px-[var(--ui-gutter)] pt-8 pb-16">
         <h1 className="page-title mb-1 text-ui-ink">{title}</h1>

@@ -238,22 +238,25 @@ Pages report their header with `AppPage` (`appshell/shellContext.tsx`) and own t
 (`SettingsShell`, "Back"). The marketing site and the docs use `components/marketing/MarketingNav` (four items, Log in, Open
 the demo; a Vaul Menu sheet on phones) and `SiteFooter` (Product, Docs, Trust, Legal). Old addresses answer 308 from
 `frontend/legacyRedirects.mjs` (imported by `next.config.mjs`, tested). The feature code stays in its folders:
-`app/dashboard/` (Home's `AskHome` and `HomeFigures`, Overview, Orders, Rules, Rankings, Evidence), `app/trades/` (Fills
-Ledger), `app/analytics/` (Fills Patterns), `app/check/`, `app/settings/`, `app/onboarding/` (Connect). Primitives in `app/ui/` (ValueState, GradeChip as a small stamp, GradeStamp, Figure and SplitFigure with
-NumberFlow, Button, Panel as a ledger block, PenMarks and the seeded strokes of `pen.ts`, `hash.ts`, charts in
-`app/ui/charts/`: CostRuler, RankPlot); shadcn/ui components in `components/ui/`. The order receipt is
-`app/dashboard/OrderReplay.tsx` (Radix Dialog on a desktop, Vaul on a phone); the overview's month tape is
-`app/dashboard/MonthTape.tsx` (model `monthTape.ts`). The landing hero (`components/marketing/TapeHero.tsx`, geometry in
+`app/dashboard/` (`DashboardContent` and the server half `DashboardRoute`/`demoInitial.ts`, Home's `AskHome` and tiles, `CostsView`, `OrdersView`, `RulesView` (Flagged
+orders), `RankingsView` (Comparisons), `ScoreRecord`), `app/trades/` (the Fills ledger), `app/check/`, `app/settings/` (Settings with its left list of six sections,
+`ConfirmDialog` for destructive actions, `usageView.ts`), `app/onboarding/` (Connect). Primitives in `app/ui/` (ValueState, GradeChip as a small stamp, GradeStamp, Button,
+Panel and Card, EmptyState, Fold, ConfirmDialog, PenMarks and the seeded strokes of `pen.ts`, `hash.ts`, charts in `app/ui/charts/`: AppCharts (Recharts), CompareBars,
+RankPlot, `ticks.ts` for round axis ticks); shadcn/ui components in `components/ui/`. The v4 overview, month tape, home figures, Patterns, whale and markout views were
+removed (design v5 step 6). The order receipt is `app/dashboard/OrderReplay.tsx` (Radix Dialog on a desktop, Vaul on a phone). Performance (design v5 step 7): only the
+theme and sign-in providers are in the root layout; the tooltip provider and the toast mount are in `app/app/layout.tsx`; Sonner loads on the first toast; Sentry loads after the
+page is complete and idle (`lib/sentryLazy.ts`, early errors queued); the phone More sheet (Vaul) loads on first press; for a demo account the first figures are fetched on the
+server (`dashboard/demoInitial.ts`, `no-store`). The landing hero (`components/marketing/TapeHero.tsx`, geometry in
 `heroGeometry.ts`, data in `app/lib/landing/heroData.ts` over `app/lib/landing/fixtures/`) renders its finished frame on
 the server; GSAP (ScrollTrigger, DrawSVG, SplitText) and Lenis load on the landing page only, by dynamic import
-(`components/marketing/v3/pinnedStory.ts`, `LandingMotion.tsx`). Motion's features (`app/motionFeatures.ts`, through
-`LazyMotion`) and the Sonner toaster (`app/ThemedToaster.tsx`, `next/dynamic`) load after first paint. Visual QA:
-`e2e-shots/qa3.ts` (36 states of the marketing site and the app, apps also at 320, Carbon copy, axe, overlap, landing CLS), `e2e-shots/look.ts` (one screen, break-ui cases), `e2e-shots/keys.ts`
-(keyboard-only pass); the v2 scripts `qa.ts` and `break.ts` are kept for reference.
+(`components/marketing/v3/pinnedStory.ts`, `LandingMotion.tsx`). Motion is used only by the AI review (`MotionConfig` inside it); the Sonner toaster
+(`app/ThemedToaster.tsx`) mounts on the first toast. Visual QA: `e2e-shots/audit5.ts` (23 pages by 5 viewports by light and dark: text size, caps runs, axe, phone tap targets, CLS;
+iPhone 15 in real WebKit), `e2e-shots/lighthouse5.mjs` (Lighthouse mobile, medians of 3), `e2e-shots/mock-server.ts` (the offline fixtures as an HTTP server), `scripts/first-load-js.mjs`
+(First Load JS per route); older scripts (`qa3.ts`, `look.ts`, `keys.ts`) are kept for reference.
 
 | `/` | Landing page: the tape hero of one real demo order (a printed label with the order's date, pen nib on a fine pointer, pinned story, pen annotations), the giant total, demo receipts, check it yourself, close |
 | `/how-it-works` | The three printed objects (the tape, the receipt, the stamp), the landing's former pinned section |
-| `/demo` | The choice of trader: three slips (name, line, orders, fills, period, total bps from the API, the synthetic line) |
+| `/demo` | The choice of trader: three cards (name, line, total cost, orders, period, the synthetic line, an Open button) |
 | `/docs`, `/docs/mcp`, `/docs/package` | Docs hub; the MCP client runbook and the metrics package README, rendered from copies in `app/docs/content/` (drift-tested) |
 | `/signup`, `/login`, `/forgot-password`, `/reset-password`, `/verify-email` | Account flows |
 | `/app` | Home, "Ask FillScore": a demo account plays recorded answers of the Ask agent (labelled, no input); a signed-in account with measured orders asks live (2 budget units a question); without measured orders Ask is disabled. Key figures under it: the total and the small grade stamp |
@@ -261,15 +264,15 @@ the server; GSAP (ScrollTrigger, DrawSVG, SplitText) and Lenis load on the landi
 | `/app/orders` | The orders ledger (Cost ($) and Cost (bps) by default; row cards on phones) and the thermal receipt with a chart of the stored public trades (a Radix dialog on a desktop, a Vaul drawer on a phone) |
 | `/app/flagged`, `/app/compare` | Flagged orders (the exception queue with review states); Comparisons (median cost per group with 90% whiskers, "Too few orders to compare") |
 | `/app/review` | AI review: Short review (1 AI call) and Full review (9 AI calls), the summary first, four sections |
-| `/app/reports` | Signed reports, the record behind the grade, the rule-based (v1) details |
+| `/app/reports` | Signed reports (a demo account gets one line and no stamp; a real account a list with Download and Verify), the record behind the grade, the rule-based (v1) details |
 | `/app/fills` | The fills (filters, CSV export, notes); one page, no Patterns tab |
 | `/app/check` | Check an exchange export; opens signed out and in demo mode, runs for a signed-in account |
-| `/app/settings` | Account, connected exchanges, download or delete your data, evidence packs, personal API keys (its own shell) |
+| `/app/settings` | Settings with its own shell and a left list (`?section=`: Account, Exchanges, API keys, Usage, Data and privacy, About); a destructive action is confirmed in a dialog; Usage prints the AI review allowance |
 | `/app/connect` | Connect Binance, Bybit or OKX with a read-only key, then sync |
 | `/dashboard`, `/trades`, `/analytics`, `/check`, `/settings`, `/onboarding`, `/app/overview`, `/app/rules`, `/app/rankings`, `/app/council`, `/app/evidence` | Permanent 308 redirects, one hop to the final page above, the rest of the query kept (`legacyRedirects.mjs`, no chains, tested) |
-| `/verify` | Check a signed evidence pack in the browser (WebCrypto Ed25519, `@noble/ed25519` fallback); nothing is uploaded |
+| `/verify` | Check a signed report (evidence pack) in the browser, one drop zone (WebCrypto Ed25519, `@noble/ed25519` fallback); nothing is uploaded |
 | `/methodology` | The method and the scoring version, generated from the code |
-| `/design-lab` | Development only (404 in production): the design v3 prototypes and the design v5 prototype (`/design-lab/v5`, kept until the review; the guard spec lists its paths) |
+| `/design-lab` | Development only (404 in production): the design v3 prototypes (its fonts are plain `@font-face` in its own CSS, so no production page loads them); the v5 prototype was removed and the guard spec still lists its paths |
 | `/share/[userId]` | Public score card for demo accounts, with Open Graph image |
 | `/terms`, `/privacy` | Legal pages |
 | `/api/preflight` | Server route that probes Binance, Bybit and OKX reachability from the frontend host |

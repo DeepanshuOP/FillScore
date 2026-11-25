@@ -29,7 +29,7 @@ function Anchor({ id, level, children, label }: { id: string; level: 2 | 3; chil
     <H id={id} className={`group scroll-mt-24 text-ui-ink ${size}`}>
       {children}
       <a href={`#${id}`} aria-label={`Link to ${label}`}
-        className="ml-2 inline-flex align-middle text-ui-graphite opacity-0 transition-opacity hover:text-ui-ink focus-visible:opacity-100 group-hover:opacity-100">
+        className="ml-2 inline-flex align-middle text-ui-graphite opacity-0 transition-opacity hover:text-ui-ink focus-visible:opacity-100 group-hover:opacity-100 pointer-coarse:hidden">
         <LinkIcon aria-hidden="true" className="size-4" />
       </a>
     </H>
