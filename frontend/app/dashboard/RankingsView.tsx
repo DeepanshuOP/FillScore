@@ -9,6 +9,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { RankTable } from '../ui/charts/RankPlot';
 import { CompareBars } from '../ui/charts/CompareBars';
 import { describeRankPlot } from './rankingsView';
+import { RANK_LEVEL, RANK_MIN_ORDERS } from '../utils/rankConstants';
 import { describeRankings, type RankingsApi, type VenueApi } from './explainView';
 
 type Json = { status: number; body: unknown };
@@ -66,8 +67,8 @@ export default function RankingsView({ query, request }: Props) {
     <div data-testid="explain-panel" className="flex flex-col gap-4">
       <div data-testid="explain-rankings">
         <Card title={`Median execution cost by ${by === 'symbol' ? 'symbol' : 'hour of the day'}`} id="compare"
-          sentence="Each bar is a group's median. The whisker is its 90% interval; groups whose intervals overlap share a rank."
-          info="Rank 1 paid the least. A group needs at least 20 measured orders to be compared; the others are listed below the chart with their counts."
+          sentence={`Each bar is a group's median. The whisker is its ${Math.round((view?.level ?? RANK_LEVEL) * 100)}% interval; groups whose intervals overlap share a rank.`}
+          info={`Rank 1 paid the least. A group needs at least ${view?.minOrders ?? RANK_MIN_ORDERS} measured orders to be compared; the others are listed below the chart with their counts.`}
           source="Your orders, measured against Binance public trades.">
           <Segmented label="Group by" value={by} onChange={setBy} options={[['symbol', 'Symbol'], ['hour', 'Hour']]} />
           {!current ? <p className="text-[14px] text-ui-graphite">Loading the comparisons.</p>
@@ -104,7 +105,7 @@ export default function RankingsView({ query, request }: Props) {
             <div className="flex flex-col gap-1.5">
               {venueBuckets.map((b) => (
                 <p key={`${b.symbol}:${b.bucket}`} className="text-[14px] text-ui-graphite">
-                  <span className="text-ui-ink">{b.symbol} {b.bucket}</span>: {b.note ?? describeRankings({ by: 'venue', level: 0.9, minOrders: 20, groups: b.venues }).rows.join(' ')}
+                  <span className="text-ui-ink">{b.symbol} {b.bucket}</span>: {b.note ?? describeRankings({ by: 'venue', level: RANK_LEVEL, minOrders: RANK_MIN_ORDERS, groups: b.venues }).rows.join(' ')}
                 </p>
               ))}
             </div>

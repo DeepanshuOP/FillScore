@@ -2,6 +2,7 @@
 
 import { Bar, BarChart, CartesianGrid, Cell, ReferenceLine, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts'
 import { money } from '../../lib/format'
+import { clockTick, niceTimeTicks, priceDecimals, timeStep } from './ticks'
 
 /**
  * Design v5 charts (PROPOSAL §6), Recharts, loaded only by the pages that draw them (`next/dynamic`). Every value drawn is a served
@@ -64,7 +65,7 @@ export function TypeBars({ rows }: { rows: TypeRow[] }) {
 export interface TradePoint { t: number; price: number; side: 'buyer' | 'seller'; qty: number }
 export interface FillPoint { t: number; price: number; qty: number }
 const clockMs = (t: number) => new Date(t).toISOString().slice(11, 23)
-const px = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 2 })
+const pxWith = (d: number) => (v: number) => v.toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d })
 
 /**
  * Public trades around one order: time (UTC, milliseconds) by price, buyer- and seller-initiated in two shapes, the order's fills as
@@ -73,6 +74,12 @@ const px = (v: number) => v.toLocaleString('en-US', { maximumFractionDigits: 2 }
  */
 export function PricePrintsChart({ trades, fills, quote, arrivalMs, source }: { trades: TradePoint[]; fills: FillPoint[]; quote: string; arrivalMs: number; source?: string }) {
   const buyer = trades.filter((t) => t.side === 'buyer'), seller = trades.filter((t) => t.side === 'seller')
+  // round time ticks and the price decimals of the stored trades (the symbol's tick size): reviewer items of design v5 step 5
+  const times = [...trades.map((t) => t.t), ...fills.map((f) => f.t), arrivalMs]
+  const lo = Math.min(...times), hi = Math.max(...times)
+  const step = timeStep(lo, hi, 3)
+  const ticks = niceTimeTicks(lo, hi, 3)
+  const px = pxWith(priceDecimals([...trades.map((t) => t.price), ...fills.map((f) => f.price)]))
   return (
     <figure className="m-0 flex flex-col gap-1" aria-label={`Public trades around the order: ${trades.length} trades and ${fills.length} fills`} data-testid="receipt-price-chart">
       <p className="text-[12px] text-ui-graphite">Price ({quote})</p>
@@ -80,8 +87,8 @@ export function PricePrintsChart({ trades, fills, quote, arrivalMs, source }: { 
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart margin={{ top: 8, right: 12, bottom: 4, left: 4 }}>
             <CartesianGrid stroke="var(--ui-grid)" />
-            <XAxis type="number" dataKey="t" tick={tick} stroke="var(--ui-axis)" tickFormatter={clockMs} tickCount={3}
-              domain={[(lo: number) => Math.min(lo, arrivalMs), (hi: number) => Math.max(hi, arrivalMs)]} />
+            <XAxis type="number" dataKey="t" tick={tick} stroke="var(--ui-axis)" tickFormatter={(t: number) => clockTick(t, step)} ticks={ticks}
+              domain={[lo, hi]} allowDataOverflow />
             <YAxis type="number" dataKey="price" tick={tick} stroke="var(--ui-axis)" domain={['auto', 'auto']} width={74} tickFormatter={px} />
             <ZAxis range={[40, 40]} />
             <ReferenceLine x={arrivalMs} stroke="var(--ui-graphite)" strokeDasharray="4 3" />

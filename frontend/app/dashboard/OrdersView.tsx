@@ -8,6 +8,7 @@ import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMe
 import { Card } from '../ui/blocks';
 import { Banner } from '../ui/Banner';
 import { EmptyState } from '../ui/EmptyState';
+import { BPS_GLOSS } from './costsView';
 import { Button, buttonClass } from '../ui/Button';
 import { OrderReplay } from './OrderReplay';
 import { countsLine, defaultOrderColumns, FEE_PENDING, feesCell, feesTitle, formatUtc, isUnfilled, ledgerRows, notionalCell, orderCountsOf, statusLabel, withParams, type OrderCounts, type OrderRow } from './ordersTable';
@@ -193,6 +194,7 @@ export default function OrdersView({ query, mode, request, openOrderId }: Props)
                   </DropdownMenu>
                 </div>
 
+                <p className="text-[14px] text-ui-graphite" data-testid="bps-gloss">{BPS_GLOSS}</p>
                 {sortedRows.length === 0 ? <EmptyState title="No order matches the filter" /> : (
                   <>
                     <ul className="sm:hidden" aria-label="Orders">{visible.map((row) => <OrderCard key={row.id} r={row.original} onPick={pick} />)}</ul>

@@ -21,12 +21,12 @@ describe('auditModeLabel', () => {
 describe('a refused Deep audit offers the Quick audit, or says it cannot', () => {
     it('adds the offer to the message', () => {
         expect(councilErrorMessage('RATE_LIMIT_EXHAUSTED', true))
-            .toBe('The Council is at capacity right now. Please try again in a few minutes. A short review (1 AI call) is still available.');
+            .toBe('The AI review is at capacity right now. Please try again in a few minutes. A short review (1 AI call) is still available.');
         expect(councilErrorMessage('DAILY_BUDGET_EXHAUSTED', false))
             .toBe('The daily AI budget has been reached. Please try again tomorrow. A short review is not available either.');
     });
     it('adds nothing when the server did not say', () => {
-        expect(councilErrorMessage('RATE_LIMIT_EXHAUSTED')).toBe('The Council is at capacity right now. Please try again in a few minutes.');
+        expect(councilErrorMessage('RATE_LIMIT_EXHAUSTED')).toBe('The AI review is at capacity right now. Please try again in a few minutes.');
     });
     it('quickOffer is true only when the server said so', () => {
         expect(quickOffer({ code: 'RATE_LIMIT_EXHAUSTED', quick_available: true })).toBe(true);

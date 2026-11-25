@@ -52,7 +52,7 @@ describe('describeAsk', () => {
   });
   it('errors use the shared messages; nothing from the server body is shown', () => {
     expect(describeAsk(429, { detail: { code: 'RATE_LIMIT_EXHAUSTED', message: 'x' } }).error)
-      .toBe('The Council is at capacity right now. Please try again in a few minutes.');
+      .toBe('The AI review is at capacity right now. Please try again in a few minutes.');
     expect(describeAsk(500, { detail: 'stack trace here' }).error).toBe('The question could not be answered. Please try again.');
     expect(describeAsk(401, null).error).toBe('Sign in to ask a question about your own executions.');
   });

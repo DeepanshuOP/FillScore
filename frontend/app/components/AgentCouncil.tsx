@@ -399,7 +399,7 @@ export default function AgentCouncil({
           {error && (
             <Banner
               kind="refused"
-              title="The Council result is not shown"
+              title="The AI review result is not shown"
               action={offerQuick && !running ? (
                 <Button
                   variant="secondary"
@@ -514,7 +514,7 @@ export default function AgentCouncil({
         <Panel className="order-2" title={ASSESSMENT_HEADING} bodyClassName="space-y-4">
           {view.kind === "incomplete" ? (
             <Banner kind="info" title={view.title}>
-              <p>Part of the Council could not finish, so this run has no grade.</p>
+              <p>Part of the AI review could not finish, so this run has no grade.</p>
               {view.reasons.length > 0 && (
                 <ul className="mt-2 list-disc space-y-1 pl-5">
                   {view.reasons.map((r, i) => (

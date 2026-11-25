@@ -12,7 +12,9 @@ import { quantile } from './orderSummary';
 export const MIN_GROUP_N = 20;
 const RESAMPLES = 2000;
 const SEED = 20240101;
-const LEVEL = 0.9;
+/** The level of the bootstrap interval (a 90% interval). The rankings route serves it, and the page words it from the same value. */
+export const RANK_LEVEL = 0.9;
+const LEVEL = RANK_LEVEL;
 
 /** mulberry32: a small seeded generator (the same one the demo build uses). */
 function mulberry32(a: number): () => number {

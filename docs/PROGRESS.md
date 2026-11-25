@@ -4,8 +4,20 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-25: finish design v5 (steps 0-9 of the order), local commits
 
-- **Next concrete action: step 5 (reviewer items: receipt chart round time ticks and price decimals from the tick size; "(0.01%)" gloss at first use on Home and Orders; remaining "Council" words in UI chrome; copy constants 90% and 20 orders read from the code constants; the Reports line for demos).** Steps 0 to 4 done; 5 to 9 open. Design v5 is NOT finished.
-- **Status:** 0 done. 1 done. 2 done. 3 done. 4 done. 5 open (the Reports line for demos was done in step 3). 6 open. 7 open. 8 open. 9 open.
+- **Next concrete action: step 6 (cleanup: remove Overview, MonthTape, HomeFigures, Patterns, the whale UI, PrintsTape and anything only they import, with their component tests; move any invariant assertion they held to the v5 component that shows the fact).** Steps 0 to 5 done; 6 to 9 open. Design v5 is NOT finished.
+- **Status:** 0 done. 1 done. 2 done. 3 done. 4 done. 5 done. 6 open. 7 open. 8 open. 9 open.
+- **Step 5: done (reviewer items).** (a) Receipt chart: time ticks are multiples of a round step (`niceTimeTicks`, `timeStep`, `clockTick`; 864 ms over 5 ticks gives
+  .200 .400 .600 .800; milliseconds only under a 1 s step) and price decimals are the decimals the stored public trades use (`priceDecimals`; the symbol's tick size is not
+  stored, and trade prices are multiples of it, so the decimals they use are the tick's). Hand values in `ticks.test.ts` (red first, 8 failed). (b) The gloss (`BPS_GLOSS`:
+  "One basis point is 0.01% of an order's value, so 10 bps is 0.1%.") is printed once on Home, Costs and Orders (e2e in `v5-pages.spec.ts`). (c) "Council" is gone from every
+  sentence in `councilStatus.ts` and `AgentCouncil.tsx` ("AI review"; "language model" for the model); a guard test scans their quoted strings and JSX text; red first (8
+  failed). Left as they are: identifiers, comments, recorded model text, and the legal pages (`app/legal/content.ts` says "Agent Council" 3 times; it is legal copy: Deepanshu's call,
+  recorded under "Waiting for Deepanshu" below). (d) 90% and 20 orders: the backend exports `RANK_LEVEL` and `MIN_GROUP_N` and the rankings route serves those constants instead
+  of literals (no behaviour change; backend services and routes tests 698 passed, tsc 0); the Comparisons copy prints the served `level` and `minOrders`, and copy written before
+  any body exists reads `app/utils/rankConstants.ts`, which `rankConstants.test.ts` pins to the backend values and scans the copy for literals (red first). (e) The Reports line for
+  demos was done in step 3. Guards changed with the word change: `councilStatus.test.ts`, `askView.test.ts`, `auditMode.test.ts` (same sentences, "AI review"). Vitest 928 passed
+  (96 files), tsc 0, lint 0 errors; e2e `v5-pages` and `rebuilt-demo`: 14 passed.
+- **Waiting for Deepanshu (new):** the legal pages (`app/legal/content.ts`) still say "Agent Council" in three sentences; changing legal copy is yours to approve.
 - **Step 4: done (not-computed rows).** Row 4: no whale or markout view in the app (Patterns gone in the last run) and Methodology says so (step 2); the dead whale UI code is deleted in step 6.
   Row 6: the v1 fold says the per-component details were not stored and that the grade itself stays as published, on Costs. Rows 7 and 12: `EmptyState` has an icon and
   14 px text; `ConnectPrompt` (a signed-in account with nothing scored) and the "Not measured yet" and "No grade yet" cards of a real account carry one primary action,

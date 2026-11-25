@@ -22,4 +22,4 @@ export function costEstimateView(c: CostVsExpected | undefined): CostEstimateVie
 }
 
 /** The one line a "Total cost" explanation needs: what bps means, once per page (PROPOSAL §1). */
-export const BPS_GLOSS = 'bps: basis points, hundredths of a percent of an order’s value (10 bps is 0.1%).'
+export const BPS_GLOSS = 'bps: basis points. One basis point is 0.01% of an order’s value, so 10 bps is 0.1%.'

@@ -15,7 +15,7 @@ import { demoPrintsFor } from '../services/demoPrints';
 import { ExceptionReview, REVIEW_STATES } from '../models/ExceptionReview';
 import { buildExceptionQueue, ExceptionOrder } from '../services/exceptionQueue';
 import { buildOrderReplay } from '../services/orderReplay';
-import { rankWithNoise } from '../services/rankWithNoise';
+import { MIN_GROUP_N, RANK_LEVEL, rankWithNoise } from '../services/rankWithNoise';
 import { matchedVenueComparison } from '../services/venueComparison';
 
 export const explainRouter = Router();
@@ -128,7 +128,7 @@ explainRouter.get('/rankings', resolveAccount, async (req: Request, res: Respons
             groups.set(key, arr);
         }
         const ranked = rankWithNoise([...groups.entries()].sort(([a], [b]) => (a < b ? -1 : 1)).map(([key, values]) => ({ key, values })));
-        return res.status(200).json({ by: q.by, metric: 'execution cost, bps of intended notional, over measured orders', level: 0.9, minOrders: 20, groups: ranked });
+        return res.status(200).json({ by: q.by, metric: 'execution cost, bps of intended notional, over measured orders', level: RANK_LEVEL, minOrders: MIN_GROUP_N, groups: ranked });
     } catch (err) {
         return fail(res, err, 'GET /rankings');
     }

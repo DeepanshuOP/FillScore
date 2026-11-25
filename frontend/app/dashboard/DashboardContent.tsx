@@ -10,6 +10,8 @@ import { HeaderAction } from '../components/appshell/HeaderAction';
 import { viewHref, type View } from '../components/shell/nav';
 import dynamic from 'next/dynamic';
 import ConnectPrompt, { ConnectAction } from '../components/ConnectPrompt';
+import { BPS_GLOSS } from './costsView';
+import { RANK_LEVEL_PERCENT, RANK_MIN_ORDERS } from '../utils/rankConstants';
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/authFetch';
 import { apiBase } from '../lib/apiBase';
@@ -92,7 +94,7 @@ function MethodSheet({ isDemo, open, onOpenChange }: { isDemo: boolean; open: bo
           <p><span className="font-medium text-ui-ink">Each fill</span> was compared with the exchange&rsquo;s public prints in the seconds before it: the spread paid, the price impact and timing, the cost of the unfilled part of each order, and the fees against the account&rsquo;s own rates.</p>
           <p><span className="font-medium text-ui-ink">Measured, insufficient data, not computed.</span> A measured value carries a solid square. &ldquo;Insufficient data&rdquo; (a hollow diamond) means the sample was too small or market data was missing; no estimate is shown. &ldquo;Not computed for this data&rdquo; means the view does not exist for these records.</p>
           <p><span className="font-medium text-ui-ink">Against the cost estimate</span> compares market orders with a fitted model of what an order of the same size cost in the hour before. The interval is a bootstrap over the account&rsquo;s orders.</p>
-          <p><span className="font-medium text-ui-ink">Comparisons</span> rank a group only with at least 20 orders; groups whose intervals overlap share a rank.</p>
+          <p><span className="font-medium text-ui-ink">Comparisons</span> rank a group only with at least {RANK_MIN_ORDERS} orders; groups whose intervals overlap share a rank.</p>
           {isDemo ? <p><span className="font-medium text-ui-ink">Demo accounts.</span> {DEMO_NOTE}</p> : null}
           <p>Explanations written by a language model never add a number: every number in them is checked against the audit first.</p>
           <Link href="/methodology" className="text-ui-ink">The full methodology</Link>
@@ -236,7 +238,7 @@ function DashboardContent({ view }: { view: View }) {
     home: { title: 'Home', description: 'Your account at a glance.' },
     orders: { title: 'Orders', description: 'Every order, what it cost, and its receipt.' },
     flagged: { title: 'Flagged orders', description: 'Orders that met one of FillScore’s fixed rules.' },
-    compare: { title: 'Comparisons', description: 'Median execution cost per group, with a 90% interval.' },
+    compare: { title: 'Comparisons', description: `Median execution cost per group, with a ${RANK_LEVEL_PERCENT} interval.` },
     review: { title: 'AI review', description: 'A language model explains the measured figures. It writes no number.' },
     reports: { title: 'Reports', description: 'Signed reports you can verify without us.' },
     costs: { title: 'Costs', description: audit ? `What the orders cost in ${monthLabel(audit.period.start, audit.period.end)}, and where the cost came from.` : 'What the orders cost, and where the cost came from.' },
@@ -290,6 +292,7 @@ function DashboardContent({ view }: { view: View }) {
                 <div className="flex flex-col gap-4" data-testid="home-view">
                   <KpiTiles headline={headline} ordersBody={ordersSummary} grade={grade} band={(v2Body as { result?: { band?: [number, number] | null } } | null)?.result?.band ?? null} />
                   <p className="text-[14px] text-ui-graphite" data-testid="home-scope">{scope}.</p>
+                  <p className="-mt-2 text-[14px] text-ui-graphite" data-testid="bps-gloss">{BPS_GLOSS}</p>
                   <div className="grid gap-4 xl:grid-cols-2">
                     <CostliestOrders request={explainRequest} query={query} onOpenOrder={openOrder} />
                     {homeStrip ? (

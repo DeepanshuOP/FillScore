@@ -66,6 +66,15 @@ test('/demo shows three cards, each with the synthetic line, a total cost and an
   await expect(aggressive).toContainText(/Orders\s*5(?!\d)/)                          // the 5 stored orders (the total covers the 3 measured ones)
 })
 
+test('Home, Costs and Orders explain bps once, with the 0.01%', async ({ page }) => {
+  await reshapeDemoAsRebuilt('demo-aggressive')
+  for (const [path, ready] of [['/app', 'home-view'], ['/app/costs', 'costs-view'], ['/app/orders', 'orders-view']] as const) {
+    await page.goto(`${path}?userId=demo-aggressive`)
+    await expect(page.getByTestId(ready)).toBeVisible({ timeout: 30_000 })
+    await expect(page.getByText('bps: basis points. One basis point is 0.01% of an order’s value, so 10 bps is 0.1%.')).toHaveCount(1)
+  }
+})
+
 test('/docs has a left list with the open document marked, and 16 px body text', async ({ page }) => {
   await page.goto('/docs/mcp')
   const nav = page.getByRole('navigation', { name: 'Docs' })

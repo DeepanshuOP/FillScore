@@ -10,19 +10,19 @@ describe('councilMaintenanceMessage', () => {
 
     it('returns a fallback when status is 503 and body is null', () => {
         expect(councilMaintenanceMessage(503, null)).toBe(
-            'Agent Council is temporarily unavailable. Please try again shortly.'
+            'The AI review is temporarily unavailable. Please try again shortly.'
         );
     });
 
     it('returns a fallback when status is 503 and detail is whitespace-only', () => {
         expect(councilMaintenanceMessage(503, { detail: '   ' })).toBe(
-            'Agent Council is temporarily unavailable. Please try again shortly.'
+            'The AI review is temporarily unavailable. Please try again shortly.'
         );
     });
 
     it('returns a fallback when status is 503 and body has no detail field', () => {
         expect(councilMaintenanceMessage(503, {})).toBe(
-            'Agent Council is temporarily unavailable. Please try again shortly.'
+            'The AI review is temporarily unavailable. Please try again shortly.'
         );
     });
 
@@ -35,13 +35,13 @@ describe('councilMaintenanceMessage', () => {
 describe('councilErrorMessage', () => {
     it('maps a rate-limit code to a capacity message, not an error string', () => {
         expect(councilErrorMessage('RATE_LIMIT_EXHAUSTED')).toBe(
-            'The Council is at capacity right now. Please try again in a few minutes.'
+            'The AI review is at capacity right now. Please try again in a few minutes.'
         );
     });
 
     it('maps a database outage to a neutral message', () => {
         expect(councilErrorMessage('DB_UNAVAILABLE')).toBe(
-            "The Council can't reach its data right now. Please try again shortly."
+            "The AI review can't reach its data right now. Please try again shortly."
         );
     });
 
@@ -53,12 +53,12 @@ describe('councilErrorMessage', () => {
 
     it('maps a retired or missing AI model to a message that blames the configuration, not the user', () => {
         expect(councilErrorMessage('MODEL_UNAVAILABLE')).toBe(
-            "The Council's AI model is unavailable right now. This is a configuration problem on our side, not yours."
+            "The AI review's language model is unavailable right now. This is a configuration problem on our side, not yours."
         );
     });
 
     it('falls back to a generic message for unknown or missing codes', () => {
-        const generic = 'The Council hit an unexpected problem. Please try again.';
+        const generic = 'The AI review hit an unexpected problem. Please try again.';
         expect(councilErrorMessage('SOMETHING_NEW')).toBe(generic);
         expect(councilErrorMessage(undefined)).toBe(generic);
     });
@@ -248,6 +248,14 @@ describe('AgentCouncil panel source', () => {
         expect(src).not.toContain('Council assessment');
         expect(src).not.toContain('Council Verdict');
         expect(src).not.toMatch(/Confidence|evidence keys/);
+    });
+    it('prints the word "Council" in no sentence a reader sees (design v5, PROPOSAL §1: it is the "AI review"); identifiers and comments may keep it', () => {
+        for (const file of ['../components/AgentCouncil.tsx', './councilStatus.ts']) {
+            const src = readFileSync(`${__dirname}/${file}`, 'utf8');
+            const strings = [...src.matchAll(/(['"`])((?:(?!\1)[^\\\n]|\\.)*)\1|>([^<>{}\n]+)</g)].map((m) => m[2] ?? m[3] ?? '');
+            const shown = strings.filter((s) => /\bCouncil\b/.test(s) && /\s/.test(s) && !/^\s*(import|from|\/\/)/.test(s));
+            expect(shown, file).toEqual([]);
+        }
     });
     it('uses no slate classes, hex colours, uppercase or animation of its own', () => {
         const src = readFileSync(`${__dirname}/../components/AgentCouncil.tsx`, 'utf8');
