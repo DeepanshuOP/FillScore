@@ -34,6 +34,17 @@ export function costLineLabel(d: { key?: string; label: string }): string {
 
 export const NO_FILLS = 'No fills: the order did not trade.'
 export const NO_COST_TERMS = 'Insufficient data: no cost terms were stored.'
+
+/**
+ * What the COSTS section says when there are no cost lines (PROPOSAL §4 row 9). The replay route's notes tell the two cases apart:
+ * "no stored measurement" is pending (the next sync measures the order), and "Not measured: <reason>." carries the pipeline's own
+ * plain sentence. Wording only; the total line keeps NOT COMPUTED.
+ */
+export function costTermsState(notes: readonly string[]): string {
+  if (notes.some((n) => n.startsWith('Insufficient data: this order has no stored measurement'))) return 'Not measured yet: the next sync measures this order.'
+  const reason = notes.find((n) => n.startsWith('Not measured: '))
+  return reason ?? NO_COST_TERMS
+}
 // Design v5 words (PROPOSAL §1): "prints" and "tape" are trade slang; the reader sees "public trades".
 export const CHART_NOTE = 'Fills only; the public trades are in the source file.'
 // Demo orders (the public trades are drawn): what the marks are. Past tense, no advice, no cause.

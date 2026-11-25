@@ -132,7 +132,9 @@ export function alphaModelLabelNote(rating: string): string {
  */
 export function parseBenchmarkLine(raw: unknown): string | null {
     const b = (raw as { benchmark?: { state?: unknown; statement?: unknown } | null } | null | undefined)?.benchmark;
-    if (!b || (b.state !== 'measured' && b.state !== 'insufficient')) return null;
+    // design v5 (PROPOSAL §4 row 14, class a): only a measured comparison is printed. An account whose fills carry no 5-minute VWAP gets
+    // no line; the method note (`alphaBenchmarkNote`) says in one sentence why.
+    if (!b || b.state !== 'measured') return null;
     return typeof b.statement === 'string' && b.statement.trim() ? b.statement : null;
 }
 
@@ -141,7 +143,9 @@ export function parseBenchmarkLine(raw: unknown): string | null {
  * for market orders (ml-service/agents/metrics/alpha_packet.py). Shown only when the run did not flag its absence.
  */
 export function alphaBenchmarkNote(flags: string[]): string {
-    if (flags.includes('no_vwap_benchmark_available')) return '';
+    if (flags.includes('no_vwap_benchmark_available')) {
+        return 'No comparison with the 5-minute average price is shown: it needs five minutes of public trades around each market order, which this account’s data does not hold.';
+    }
     return 'Benchmark: the 5-minute volume-weighted average price (VWAP) at the time of each market order';
 }
 

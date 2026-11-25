@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { describeCsvCheck, describeSampleCheck, SAMPLE_LABEL, buildCsvRequest, fileIsTooLarge, CSV_COPY, type CsvCheckApi } from './csvCheckView';
+import { describeCsvCheck, describeSampleCheck, plainReason, SAMPLE_LABEL, buildCsvRequest, fileIsTooLarge, CSV_COPY, type CsvCheckApi } from './csvCheckView';
 import { findAdviceTerms } from '../../../backend/src/constants/adviceTerms';
 
 /**
@@ -48,8 +48,16 @@ describe('describeCsvCheck', () => {
     const v = describeCsvCheck(200, b);
     expect(v.headline).toBe('1 of 2 fills were compared with the public price at their second.');
     expect(v.rows[1].cost).toBe('insufficient data');
-    expect(v.rows[1].note).toBe('no fresh print within 5000 ms before the fill');
-    expect(v.unmeasured).toEqual(['1 fill: no fresh print within 5000 ms before the fill']);
+    // design v5 (PROPOSAL §4 row 15): the service's reason ("... 5000 ms ...") is worded for a reader: 5000 ms is 5 s, "print" is "public trade"
+    expect(v.rows[1].note).toBe('no public trade within 5 s before this fill');
+    expect(v.unmeasured).toEqual(['1 fill: no public trade within 5 s before this fill']);
+  });
+
+  it('plainReason words the two reasons the service writes and leaves any other reason as sent', () => {
+    expect(plainReason('no fresh print within 5000 ms before the fill')).toBe('no public trade within 5 s before this fill');
+    expect(plainReason('no fresh print within 2500 ms before the fill')).toBe('no public trade within 2.5 s before this fill');
+    expect(plainReason('market data could not be fetched')).toBe('public trades could not be fetched for this fill');
+    expect(plainReason('something new')).toBe('something new');
   });
 
   it('says "insufficient data" when no fill could be compared', () => {
@@ -58,7 +66,7 @@ describe('describeCsvCheck', () => {
     const v = describeCsvCheck(200, b);
     expect(v.headline).toBe('Insufficient data: no fill could be compared with the public price.');
     expect(v.lines).toEqual([]);
-    expect(v.unmeasured).toEqual(['2 fills: market data could not be fetched']);
+    expect(v.unmeasured).toEqual(['2 fills: public trades could not be fetched for this fill']);   // design v5 wording of the same reason
   });
 
   it('a file without a fee column says fees were not part of the check, and shows no fee', () => {

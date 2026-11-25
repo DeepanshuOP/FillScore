@@ -1,5 +1,22 @@
 import { describe, expect, it } from 'vitest'
-import { BARS_NOTE, CHART_NOTE, FEE_LINE, NO_COST_TERMS, NO_FILLS, PRINTS_LEGEND, costLineLabel, expectedLine, unfilledLineNote } from './receiptCopy'
+import { BARS_NOTE, CHART_NOTE, FEE_LINE, NO_COST_TERMS, NO_FILLS, PRINTS_LEGEND, costLineLabel, costTermsState, expectedLine, unfilledLineNote } from './receiptCopy'
+
+// Design v5, PROPOSAL §4 row 9: a receipt with no cost terms says which of two things it is. An order with no stored measurement is
+// measured after the next sync; an order that was measured and could not be costed says the stored reason, already a plain sentence.
+// The receipt keeps NOT COMPUTED on its total line either way (DESIGN §2.8).
+describe('costTermsState', () => {
+  it('no stored measurement: "measured after the next sync"', () => {
+    expect(costTermsState(['Insufficient data: this order has no stored measurement.'])).toBe('Not measured yet: the next sync measures this order.')
+  })
+  it('a stored reason: the reason, as stored', () => {
+    expect(costTermsState(["Not measured: no fresh print before the order's arrival time."])).toBe("Not measured: no fresh print before the order's arrival time.")
+    expect(costTermsState(['Not measured: no reason was stored.'])).toBe('Not measured: no reason was stored.')
+  })
+  it('anything else keeps the generic line', () => {
+    expect(costTermsState([])).toBe(NO_COST_TERMS)
+    expect(costTermsState(['Delay cost: 1.2 bps.'])).toBe(NO_COST_TERMS)
+  })
+})
 
 // Deepanshu's decision 2026-11-23: a fee line says on the line that the rate is the published one; the unfilled line says modelled.
 describe('receipt cost line labels', () => {

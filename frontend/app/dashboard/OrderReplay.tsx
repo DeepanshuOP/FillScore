@@ -7,7 +7,7 @@ import { track } from '../lib/track';
 import { useToast } from '../ui/Toast';
 import { exactTitle, formatSignedBps, formatUsd } from '../ui/format';
 import { Fig } from '../ui/Fig';
-import { BARS_NOTE, CHART_NOTE, NO_COST_TERMS, NO_FILLS, PRINTS_LEGEND, costLineLabel, expectedLine, unfilledLineNote } from './receiptCopy';
+import { BARS_NOTE, CHART_NOTE, costTermsState, NO_FILLS, PRINTS_LEGEND, costLineLabel, expectedLine, unfilledLineNote } from './receiptCopy';
 import { bars, barsWidth, canonicalJson, sha256Hex } from '../ui/hash';
 import { describeReplay, type ReplayApi } from './explainView';
 import dynamic from 'next/dynamic';
@@ -180,7 +180,7 @@ function ReceiptBody({ orderId, symbol, query, request, row, demo, evidenceHref,
                 </div>
               ))}
             </div>
-          ) : <p className="g">{NO_COST_TERMS}</p>}
+          ) : <p className="g" data-testid="receipt-no-cost">{costTermsState(view.notes)}</p>}
           <div className="fs-perf" aria-hidden="true" />
           {typeof total?.usd !== 'number' || !Number.isFinite(total.usd) ? (
             <div className="fs-totalline"><span className="k">TOTAL</span><span className="nc">NOT COMPUTED</span></div>

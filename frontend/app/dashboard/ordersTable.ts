@@ -101,7 +101,13 @@ export function notionalCell(r: Pick<OrderRow, 'status' | 'fills' | 'notionalUsd
   return isUnfilled(r) && r.feesUsd === 0 ? `${formatUsd(r.notionalUsd)} executed` : formatUsd(r.notionalUsd);
 }
 
-/** The Fees cell's text: the served fee, or null when the server sent none (the page then says "not computed"). */
+/**
+ * A fee the server did not send (the price lookup of the fee's asset failed at ingest and is retried at the next sync, PROPOSAL §4
+ * row 8). The cell is a dashed box with these words, never a zero: a missing fee is not a free order.
+ */
+export const FEE_PENDING = { text: 'pending', title: 'Fee pending: the price lookup is retried at the next sync' } as const;
+
+/** The Fees cell's text: the served fee, or null when the server sent none (the page then shows FEE_PENDING). */
 export function feesCell(r: Pick<OrderRow, 'feesUsd'>): string | null {
   return r.feesUsd === null ? null : formatUsd(r.feesUsd);
 }

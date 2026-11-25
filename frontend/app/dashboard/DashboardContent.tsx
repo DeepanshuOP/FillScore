@@ -9,7 +9,7 @@ import { AppPage } from '../components/appshell/shellContext';
 import { HeaderAction } from '../components/appshell/HeaderAction';
 import { viewHref, type View } from '../components/shell/nav';
 import dynamic from 'next/dynamic';
-import ConnectPrompt from '../components/ConnectPrompt';
+import ConnectPrompt, { ConnectAction } from '../components/ConnectPrompt';
 import { useAuth } from '../context/AuthContext';
 import { authFetch } from '../lib/authFetch';
 import { apiBase } from '../lib/apiBase';
@@ -298,7 +298,7 @@ function DashboardContent({ view }: { view: View }) {
                         <Link href={viewHref('costs', shellUser, !!accessToken)} className="text-[14px] text-ui-ink">See the costs in full</Link>
                       </Card>
                     ) : (
-                      <Card title="Where the cost came from" id="where"><EmptyState title="Not measured yet">The cost of each order appears after the orders are synced and measured.</EmptyState></Card>
+                      <Card title="Where the cost came from" id="where"><EmptyState title="Not measured yet" action={dashboardMode === 'real' ? <ConnectAction /> : undefined}>The cost of each order appears after the orders are synced and measured.</EmptyState></Card>
                     )}
                   </div>
                   {dashboardMode === 'demo' && resolvedUserId
@@ -380,7 +380,7 @@ function DashboardContent({ view }: { view: View }) {
                         </div>
                       ) : (
                         <p data-testid="not-computed" className="max-w-[68ch] text-ui-graphite">
-                          Not computed for this data. The rule-based components need per-trade fields that the rebuilt trades do not have. The measured components are in the record behind the grade.
+                          Not computed for this data. The per-component details of the earlier rule-based grade were not stored for the rebuilt trades. The grade itself stays as it was published, on Costs, and the measured components are in the record behind the grade.
                         </p>
                       )}
                     </Disclosure>

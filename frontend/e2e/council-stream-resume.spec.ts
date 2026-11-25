@@ -54,7 +54,11 @@ test('demo Council: a stream cut mid-run resumes from the last event id, with no
   for (let i = 0; i < 4; i++) {
     await expect(notes.nth(i).locator('[data-testid=council-finding]')).toHaveCount(1)
   }
-  await expect(page.getByTestId('council-benchmark-line')).toHaveCount(1)
-  await expect(page.getByTestId('council-benchmark-line')).toHaveText(/^(Benchmark comparison: insufficient data|Market-order fills: median)/)
+  // design v5 (PROPOSAL §4 row 14): the benchmark line is printed only when it was measured; for an account without a 5-minute VWAP the
+  // line is absent (never an "insufficient data" line) and one method-note sentence says why. Either way the page is the same on resume.
+  await expect(page.getByText(/Benchmark comparison: insufficient data/)).toHaveCount(0)
+  const measured = await page.getByTestId('council-benchmark-line').count()
+  if (measured) await expect(page.getByTestId('council-benchmark-line')).toHaveText(/^Market-order fills: median/)
+  else await expect(page.getByText('No comparison with the 5-minute average price is shown')).toHaveCount(1)
   await expect(page.getByTestId('council-model-label')).toHaveText(/^Model's label, as recorded: /)
 })

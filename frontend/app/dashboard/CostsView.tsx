@@ -5,6 +5,7 @@ import type { ReactNode } from 'react'
 import { Card, GradeRange } from '../ui/blocks'
 import { GradeStamp } from '../ui/GradeStamp'
 import { EmptyState } from '../ui/EmptyState'
+import { ConnectAction } from '../components/ConnectPrompt'
 import { bps, count, money } from '../lib/format'
 import type { GradeView, Headline } from './headline'
 import { describeStrip } from './costStrip'
@@ -69,7 +70,7 @@ export function CostsView(p: CostsProps) {
           <CostBreakdown view={strip} />
         </Card>
       ) : (
-        <Card title="Where the cost came from" id="where"><EmptyState title="Not measured yet">The cost of each order appears after the orders are synced and measured against public trades.</EmptyState></Card>
+        <Card title="Where the cost came from" id="where"><EmptyState title="Not measured yet" action={p.isDemo ? undefined : <ConnectAction />}>The cost of each order appears after the orders are synced and measured against public trades.</EmptyState></Card>
       )}
       <div className="grid gap-4 xl:grid-cols-2">
         <CostliestOrders request={p.request} query={p.query} onOpenOrder={p.onOpenOrder} />
@@ -99,7 +100,7 @@ export function CostsView(p: CostsProps) {
                   ? <p className="mt-2 text-[14px] text-ui-graphite" data-testid="v1-grade">Earlier rule-based grade (scoring v1, published and locked): {p.v1.grade}, {p.v1.score.toFixed(1)} of 100. The two scores measure different things; neither replaces the other.</p> : null}
               </div>
             </div>
-          ) : <EmptyState title="No grade yet">The measured grade is computed after the orders are synced and measured.</EmptyState>}
+          ) : <EmptyState title="No grade yet" action={p.isDemo ? undefined : <ConnectAction />}>The measured grade is computed after the orders are synced and measured.</EmptyState>}
         </Card>
         <Card title="Against the cost estimate" id="estimate" testid="cost-estimate"
           info="The estimate is what market orders of that size usually cost in the same hour, from a square-root model fitted to public trades. It is an estimate, not a promise."

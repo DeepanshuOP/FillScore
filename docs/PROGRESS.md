@@ -4,8 +4,19 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-25: finish design v5 (steps 0-9 of the order), local commits
 
-- **Next concrete action: step 4 (not-computed rows 4, 6, 7, 8, 9, 12, 14 part, 15; rows 7 and 12 get a designed empty state with "Connect an exchange").** Steps 0 to 3 done; 4 to 9 open. Design v5 is NOT finished.
-- **Status:** 0 done. 1 done. 2 done. 3 done. 4 open. 5 open. 6 open. 7 open. 8 open. 9 open.
+- **Next concrete action: step 5 (reviewer items: receipt chart round time ticks and price decimals from the tick size; "(0.01%)" gloss at first use on Home and Orders; remaining "Council" words in UI chrome; copy constants 90% and 20 orders read from the code constants; the Reports line for demos).** Steps 0 to 4 done; 5 to 9 open. Design v5 is NOT finished.
+- **Status:** 0 done. 1 done. 2 done. 3 done. 4 done. 5 open (the Reports line for demos was done in step 3). 6 open. 7 open. 8 open. 9 open.
+- **Step 4: done (not-computed rows).** Row 4: no whale or markout view in the app (Patterns gone in the last run) and Methodology says so (step 2); the dead whale UI code is deleted in step 6.
+  Row 6: the v1 fold says the per-component details were not stored and that the grade itself stays as published, on Costs. Rows 7 and 12: `EmptyState` has an icon and
+  14 px text; `ConnectPrompt` (a signed-in account with nothing scored) and the "Not measured yet" and "No grade yet" cards of a real account carry one primary action,
+  "Connect an exchange" (`ConnectAction`); demos get no action (nothing to connect); the onboarding checklist stays the next order. Row 8: a missing fee is a dashed
+  "pending" cell with its reason (`FEE_PENDING`), never a zero. Row 9: the receipt's empty cost section says "Not measured yet: the next sync measures this order." or
+  the stored reason (`costTermsState`; the total line keeps NOT COMPUTED). Row 14 (part, class a): the AI review prints the benchmark line only when measured; for an
+  account without a 5-minute average price there is no "insufficient data" line and one sentence says why (the computation from daily files stays later work). Row 15:
+  broker-file rows say "no public trade within 5 s before this fill" (`plainReason`), and the Reason column is always visible. Guards changed deliberately, each with the
+  reason in the file: `councilStatus.test.ts` (2), `csvCheckView.test.ts` (3 wording), `council-stream-resume.spec.ts` (the line is absent or measured). Red first for
+  `costTermsState`, `plainReason`, `parseBenchmarkLine` and `alphaBenchmarkNote`; the empty-state tests (`emptyStates.test.tsx`) and `FEE_PENDING` were written after
+  the code (not red first). Vitest 915 passed (95 files), tsc 0, lint 0 errors; e2e auth, council x2, csv x2, rebuilt-demo, no-advice: 23 passed.
 - **Step 3: done (pages).** Reports (`EvidencePanel`, `ScoreRecord` and the v1 details on `Card`): a demo gets one line and no NOT ISSUED stamp; a real account gets a
   list of the two signed reports, each with Download and Verify; the record behind the grade is a card. Settings: own shell with the left list (Account, Exchanges,
   API keys, Usage, Data and privacy, About; `?section=`), destructive actions at the bottom of their card behind `ConfirmDialog` (Radix dialog; Cancel closes it without

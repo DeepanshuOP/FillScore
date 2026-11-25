@@ -288,9 +288,9 @@ describe('parseBenchmarkLine', () => {
     it('prints the served sentence unchanged', () => {
         expect(parseBenchmarkLine({ benchmark: { state: 'measured', statement } })).toBe(statement);
     });
-    it('prints the served insufficient-data sentence', () => {
+    it('prints no line for an account without a 5-minute VWAP (design v5, PROPOSAL §4 row 14, class a): the method note says why', () => {
         const s = 'Benchmark comparison: insufficient data (no market-order fill had a 5-minute VWAP)';
-        expect(parseBenchmarkLine({ benchmark: { state: 'insufficient', statement: s } })).toBe(s);
+        expect(parseBenchmarkLine({ benchmark: { state: 'insufficient', statement: s } })).toBeNull();
     });
     it('is null when missing, null, of an unknown state or without a sentence', () => {
         expect(parseBenchmarkLine(null)).toBeNull();
@@ -307,8 +307,9 @@ describe('alphaBenchmarkNote', () => {
     it('names the benchmark when there is one', () => {
         expect(alphaBenchmarkNote([])).toBe('Benchmark: the 5-minute volume-weighted average price (VWAP) at the time of each market order');
     });
-    it('shows nothing when the run flagged that no VWAP benchmark was available', () => {
-        expect(alphaBenchmarkNote(['no_vwap_benchmark_available'])).toBe('');
+    it('says in one sentence why there is no comparison when the run flagged that no VWAP benchmark was available (design v5, row 14)', () => {
+        expect(alphaBenchmarkNote(['no_vwap_benchmark_available']))
+            .toBe('No comparison with the 5-minute average price is shown: it needs five minutes of public trades around each market order, which this account’s data does not hold.');
     });
 });
 

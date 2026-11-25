@@ -31,7 +31,7 @@ const COLUMNS: Column<CsvRow>[] = [
     ? <ValueState state="insufficient" label="Cost vs mid" size="cell" reason={r.note || undefined} />
     : <ValueState state="measured" label="Cost vs mid" value={r.cost} size="cell" /> },
   { key: 'fee', header: 'Fee', numeric: true, priority: 'low', cell: r => r.fee },
-  { key: 'note', header: 'Note', priority: 'low', cell: r => r.note || '' },
+  { key: 'note', header: 'Reason', cell: r => r.note || '' },   // design v5, PROPOSAL §4 row 15: the reason a fill was not compared stays in view
 ];
 
 /** Check a broker file (M6 §1): each fill against the public price at its second. Signed-in accounts only. The file is read in this tab,

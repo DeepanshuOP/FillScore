@@ -22,7 +22,7 @@ const body = {
   ],
 };
 
-import { feesCell, feesTitle, notionalCell } from './ordersTable';
+import { FEE_PENDING, feesCell, feesTitle, notionalCell } from './ordersTable';
 describe('the Notional and Fees cells of a cancelled order with no fills (orders of 2026-11-22)', () => {
   const rows = ledgerRows(body)!;
   it('fees read $0.00 with the reason, not "not computed"; notional says it is the executed amount', () => {
@@ -35,7 +35,12 @@ describe('the Notional and Fees cells of a cancelled order with no fills (orders
     expect(feesTitle(rows[0])).toBeUndefined();
     expect(notionalCell(rows[0])).toBe('$101.00');
   });
-  it('an unknown fee stays "not computed" (null): a fill group without a stored order', () => {
+  it('an unknown fee is null, and the cell says "pending" with the reason: never a zero (design v5, PROPOSAL §4 row 8)', () => {
+    expect(FEE_PENDING.text).toBe('pending');
+    expect(FEE_PENDING.title).toBe('Fee pending: the price lookup is retried at the next sync');
+    expect(FEE_PENDING.text).not.toMatch(/\$?0/);
+  });
+  it('an unknown fee stays null: a fill group without a stored order', () => {
     expect(feesCell(rows[2])).toBeNull();
     expect(feesTitle(rows[2])).toBeUndefined();
     expect(notionalCell(rows[2])).toBe('$20.00');

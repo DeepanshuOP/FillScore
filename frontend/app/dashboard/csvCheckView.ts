@@ -73,10 +73,10 @@ export function describeCsvCheck(status: number, body: unknown): CsvCheckView {
     price: num(f.price), quantity: num(f.qty),
     cost: f.eff_half_bps === null ? 'insufficient data' : formatBps(f.eff_half_bps),
     fee: !b.fee_known || f.fee_bps === null ? 'not in the file' : formatBps(f.fee_bps),
-    note: f.unmeasured_reason ?? '',
+    note: f.unmeasured_reason ? plainReason(f.unmeasured_reason) : '',
   }));
 
-  const unmeasured = Object.entries(s.unmeasured_reasons).map(([why, n]) => `${plural(n, 'fill', 'fills')}: ${why}`);
+  const unmeasured = Object.entries(s.unmeasured_reasons).map(([why, n]) => `${plural(n, 'fill', 'fills')}: ${plainReason(why)}`);
   const groups = new Map<string, number[]>();
   for (const k of b.skipped) groups.set(k.reason, [...(groups.get(k.reason) ?? []), k.row]);
   const skipped = [...groups].map(([why, r]) => `${plural(r.length, 'row', 'rows')} skipped: ${why} (${r.length === 1 ? 'row' : 'rows'} ${r.join(', ')})`);
@@ -85,6 +85,17 @@ export function describeCsvCheck(status: number, body: unknown): CsvCheckView {
     ? `${s.measured} of ${s.fills} ${s.fills === 1 ? 'fill was' : 'fills were'} compared with the public price at their second.`
     : 'Insufficient data: no fill could be compared with the public price.';
   return { error: null, headline, lines, rows, unmeasured, skipped, provenance: b.provenance, assumptions: b.assumptions, sampleLabel: null };
+}
+
+/**
+ * The service's reason for a fill it could not compare, worded for a reader (PROPOSAL §4 row 15): milliseconds as seconds ("5000 ms"
+ * is "5 s") and "print" as "public trade". A reason this function does not know is shown exactly as the service sent it. Wording only.
+ */
+export function plainReason(reason: string): string {
+  const age = /^no fresh print within (\d+) ms before the fill$/.exec(reason);
+  if (age) return `no public trade within ${Number(age[1]) / 1000} s before this fill`;
+  if (reason === 'market data could not be fetched') return 'public trades could not be fetched for this fill';
+  return reason;
 }
 
 export const SAMPLE_HINT = 'The sample file has 24 synthetic fills at real BTCUSDT prices from 2 to 5 September 2026. It needs no account and nothing of yours is sent. '

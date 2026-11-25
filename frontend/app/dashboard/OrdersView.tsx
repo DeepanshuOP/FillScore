@@ -10,7 +10,7 @@ import { Banner } from '../ui/Banner';
 import { EmptyState } from '../ui/EmptyState';
 import { Button, buttonClass } from '../ui/Button';
 import { OrderReplay } from './OrderReplay';
-import { countsLine, defaultOrderColumns, feesCell, feesTitle, formatUtc, isUnfilled, ledgerRows, notionalCell, orderCountsOf, statusLabel, withParams, type OrderCounts, type OrderRow } from './ordersTable';
+import { countsLine, defaultOrderColumns, FEE_PENDING, feesCell, feesTitle, formatUtc, isUnfilled, ledgerRows, notionalCell, orderCountsOf, statusLabel, withParams, type OrderCounts, type OrderRow } from './ordersTable';
 import { bps as fmtBps, money } from '../lib/format';
 import { FEE_LINE } from './receiptCopy';
 
@@ -59,7 +59,7 @@ function makeColumns(demo: boolean) {
     col.accessor('quantity', { header: 'Quantity', meta: { label: 'Quantity', numeric: true }, cell: (c) => fmtQty(c.getValue()) }),
     col.accessor('notionalUsd', { header: 'Notional', meta: { label: 'Notional', numeric: true }, cell: (c) => notionalCell(c.row.original) }),
     col.accessor((r) => r.feesUsd ?? undefined, { id: 'feesUsd', header: demo ? FEE_LINE : 'Fees', sortUndefined: 'last', meta: { label: demo ? FEE_LINE : 'Fees', numeric: true },
-      cell: (c) => { const t = feesCell(c.row.original); return t === null ? <span className="text-ui-graphite" title="Fee pending: the price lookup is retried at the next sync">pending</span> : <span title={feesTitle(c.row.original)}>{t}</span> } }),
+      cell: (c) => { const t = feesCell(c.row.original); return t === null ? <span className="rounded-md border border-dashed border-ui-edge px-1.5 py-0.5 text-ui-graphite" title={FEE_PENDING.title} data-testid="fee-pending">{FEE_PENDING.text}</span> : <span title={feesTitle(c.row.original)}>{t}</span> } }),
     col.accessor((r) => r.makerShare ?? undefined, { id: 'makerShare', header: 'Maker share', sortUndefined: 'last', meta: { label: 'Maker share', numeric: true },
       cell: (c) => (c.row.original.makerShare === null ? muted(c.row.original.fills === 0 ? 'No fills' : 'insufficient data') : `${Math.round(c.row.original.makerShare * 100)}%`) }),
   ];
