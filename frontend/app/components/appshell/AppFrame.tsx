@@ -4,8 +4,7 @@ import Link from 'next/link'
 import dynamic from 'next/dynamic'
 import { usePathname, useRouter } from 'next/navigation'
 import { Suspense, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
-import { BookOpen, ChevronDown, ChevronsLeft, ChevronsRight, Ellipsis, LogIn, LogOut, Search, Settings, User, X } from 'lucide-react'
-import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerTitle, DrawerTrigger } from '@/components/ui/drawer'
+import { BookOpen, ChevronDown, ChevronsLeft, ChevronsRight, Ellipsis, LogIn, LogOut, Search, Settings, User } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { cn } from '../../../lib/utils'
@@ -23,6 +22,7 @@ import { useAccount, type Account } from './useAccount'
 
 // Design v5 (⌘K on first open): the palette and cmdk load when it is first opened, not with the frame (PROPOSAL §8).
 const CommandMenu = dynamic(() => import('../shell/CommandMenu'), { ssr: false })
+const PhoneMoreSheet = dynamic(() => import('./PhoneMoreSheet'), { ssr: false })   // Vaul loads when More is first pressed (design v5 step 7)
 
 const MQ_NARROW = '(max-width: 1279px)'
 const subscribeNarrow = (cb: () => void) => { const m = window.matchMedia(MQ_NARROW); m.addEventListener('change', cb); return () => m.removeEventListener('change', cb) }
@@ -174,6 +174,7 @@ function PhoneBar() {
   const account = useAccount()
   const active = sectionOfPath(usePathname())
   const [open, setOpen] = useState(false)
+  const [requested, setRequested] = useState(false)   // the sheet's code (Vaul) loads when More is first pressed
   const moreActive = active !== null && !PHONE_BAR.includes(active)
   const tab = 'flex min-h-14 flex-col items-center justify-center gap-0.5 text-[12px] font-medium no-underline text-ui-graphite aria-[current=page]:text-ui-ink'
   return (
@@ -183,31 +184,22 @@ function PhoneBar() {
         const Icon = SECTION_ICON[id]
         return <Link key={id} href={viewHref(id, account.demoId, account.signedIn)} aria-current={id === active ? 'page' : undefined} className={tab}><Icon aria-hidden="true" className="size-5" />{s.label}</Link>
       })}
-      <Drawer open={open} onOpenChange={setOpen}>
-        <DrawerTrigger asChild>
-          <button type="button" aria-haspopup="dialog" aria-current={moreActive ? 'page' : undefined} data-testid="phone-more" className={cn(tab, 'bg-transparent')}><Ellipsis aria-hidden="true" className="size-5" />More</button>
-        </DrawerTrigger>
-        <DrawerContent data-app className="bg-ui-surface text-ui-ink">
-          <DrawerTitle className="sr-only">More</DrawerTitle>
-          <DrawerDescription className="sr-only">The other sections of the app, the theme and the account</DrawerDescription>
-          <div className="max-h-[80dvh] overflow-y-auto px-4 pt-3 pb-[calc(24px+env(safe-area-inset-bottom))]">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-[16px] font-semibold">More</p>
-              <DrawerClose asChild><button type="button" aria-label="Close" className="inline-flex size-11 items-center justify-center rounded-lg hover:bg-ui-overlay"><X aria-hidden="true" className="size-5" /></button></DrawerClose>
-            </div>
-            <div className="mb-4"><AccountSwitcher account={account} section={active} className="w-full" /></div>
-            <div className="flex flex-col gap-4">
-              {GROUPS.map((g) => (
-                <div key={g} className="flex flex-col gap-0.5">
-                  {GROUP_TITLE[g] ? <p className="px-2.5 pb-1 text-[12px] font-medium text-ui-graphite">{GROUP_TITLE[g]}</p> : null}
-                  {SECTIONS.filter((s) => s.group === g && !PHONE_BAR.includes(s.id)).map((s) => <NavItem key={s.id} id={s.id} account={account} active={s.id === active} onNavigate={() => setOpen(false)} />)}
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 border-t border-ui-rule pt-3"><FootGroup account={account} onNavigate={() => setOpen(false)} /></div>
+      <button type="button" aria-haspopup="dialog" aria-current={moreActive ? 'page' : undefined} data-testid="phone-more" className={cn(tab, 'bg-transparent')}
+        onClick={() => { setRequested(true); setOpen(true) }}><Ellipsis aria-hidden="true" className="size-5" />More</button>
+      {requested ? (
+        <PhoneMoreSheet open={open} onOpenChange={setOpen}>
+          <div className="mb-4"><AccountSwitcher account={account} section={active} className="w-full" /></div>
+          <div className="flex flex-col gap-4">
+            {GROUPS.map((g) => (
+              <div key={g} className="flex flex-col gap-0.5">
+                {GROUP_TITLE[g] ? <p className="px-2.5 pb-1 text-[12px] font-medium text-ui-graphite">{GROUP_TITLE[g]}</p> : null}
+                {SECTIONS.filter((s) => s.group === g && !PHONE_BAR.includes(s.id)).map((s) => <NavItem key={s.id} id={s.id} account={account} active={s.id === active} onNavigate={() => setOpen(false)} />)}
+              </div>
+            ))}
           </div>
-        </DrawerContent>
-      </Drawer>
+          <div className="mt-4 border-t border-ui-rule pt-3"><FootGroup account={account} onNavigate={() => setOpen(false)} /></div>
+        </PhoneMoreSheet>
+      ) : null}
     </nav>
   )
 }

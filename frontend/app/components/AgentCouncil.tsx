@@ -1,6 +1,6 @@
 "use client";
 import { useState, useCallback, useEffect, useRef } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { cn } from "../../lib/utils";
 import { waitForHealthy } from "../utils/serviceWarmup";
 import { track } from "../lib/track";
@@ -357,6 +357,7 @@ export default function AgentCouncil({
   // design v5 (PROPOSAL §5, layout only): the summary card comes first, then the four sections, then the debate. The model's
   // text is unchanged and sits under its own language-model heading.
   return (
+    <MotionConfig reducedMotion="user">{/* with the OS setting on, Motion drops transform and layout animation (moved here from the root providers, step 7) */}
     <section id="agent-council" className="flex min-w-0 flex-col gap-5">
       <Panel
         className="order-1"
@@ -611,5 +612,6 @@ export default function AgentCouncil({
         </div>
       )}
     </section>
+    </MotionConfig>
   );
 }

@@ -39,6 +39,7 @@ import { AskHome } from './AskHome';
 import { scopeLine } from './askRecorded';
 import { orderCountsOf, type OrderRow } from './ordersTable';
 import SyncFreshness from './SyncFreshness';
+import type { DemoInitial } from './demoInitial';
 
 // Design v2: only the overview ships with the page; each other section (and its table, chart or drawer code) loads when opened.
 const section = () => <div className="panel h-64 opacity-60" aria-hidden="true" />;
@@ -104,14 +105,16 @@ function MethodSheet({ isDemo, open, onOpenChange }: { isDemo: boolean; open: bo
   );
 }
 
-function DashboardContent({ view }: { view: View }) {
-  const [audit, setAudit] = useState<AuditSummary | null>(null);
-  const [ordersSummary, setOrdersSummary] = useState<unknown>(null);
-  const [scoreV2, setScoreV2] = useState<{ status: number | null; body: unknown }>({ status: null, body: null });
-  const [loading, setLoading] = useState(true);
+function DashboardContent({ view, initial }: { view: View; initial?: DemoInitial | null }) {
+  // `initial` (design v5 step 7): a demo account's first figures, fetched on the server, so the first paint has them. The effect below
+  // keeps it only when the browser's own identity is that same demo account; any other identity discards it and loads as before.
+  const [audit, setAudit] = useState<AuditSummary | null>((initial?.audit as AuditSummary | undefined) ?? null);
+  const [ordersSummary, setOrdersSummary] = useState<unknown>(initial?.orders ?? null);
+  const [scoreV2, setScoreV2] = useState<{ status: number | null; body: unknown }>(initial?.v2 ?? { status: null, body: null });
+  const [loading, setLoading] = useState(!initial);
   const [error, setError] = useState<string | null>(null);
-  const [resolvedUserId, setResolvedUserId] = useState<string | null>(null);
-  const [dashboardMode, setDashboardMode] = useState<'demo' | 'real' | null>(null);
+  const [resolvedUserId, setResolvedUserId] = useState<string | null>(initial?.userId ?? null);
+  const [dashboardMode, setDashboardMode] = useState<'demo' | 'real' | null>(initial ? 'demo' : null);
   const [downloading, setDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [tapeReceipt, setTapeReceipt] = useState<{ row: OrderRow; origin: DOMRect | null; focus: HTMLElement | null } | null>(null);
@@ -175,6 +178,13 @@ function DashboardContent({ view }: { view: View }) {
     if (identity.shouldSetStorage && identity.effectiveUserId) localStorage.setItem('userId', identity.effectiveUserId);
 
     const mode = identity.mode;
+    if (initial && mode === 'demo' && identity.effectiveUserId === initial.userId) {
+      track('dashboard_view'); // the server already sent this account's figures; nothing to fetch
+      return;
+    }
+    if (initial) { // the server sent a demo account that this browser is not showing (for example a signed-in account): start over
+      setAudit(null); setOrdersSummary(null); setScoreV2({ status: null, body: null }); setDashboardMode(null); setResolvedUserId(null); setLoading(true);
+    }
     let live = true;
 
     const load = async () => {
@@ -213,7 +223,7 @@ function DashboardContent({ view }: { view: View }) {
     };
     void load();
     return () => { live = false; };
-  }, [authLoading, accessToken, refreshAccessToken, urlUserId, sample, router]);
+  }, [authLoading, accessToken, refreshAccessToken, urlUserId, sample, router, initial]);
 
   const v2Body = scoreV2.body as (V2Response & { demo?: unknown }) | null;
   const isDemoData = dashboardMode === 'demo' || !!v2Body?.demo;
@@ -399,10 +409,10 @@ function DashboardContent({ view }: { view: View }) {
 }
 
 /** One section of the audit; the route files under app/app/ pick the section. */
-export function DashboardSection({ view }: { view: View }) {
+export function DashboardSection({ view, initial }: { view: View; initial?: DemoInitial | null }) {
   return (
     <Suspense fallback={<div className="min-h-dvh bg-ui-surface" />}>
-      <DashboardContent view={view} />
+      <DashboardContent view={view} initial={initial} />
     </Suspense>
   );
 }

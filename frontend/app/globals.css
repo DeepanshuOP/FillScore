@@ -109,3 +109,10 @@
 /* design v5: the app's page title (24 px) and KPI figure (28 px) */
 @utility page-title { font-family: var(--ui-display); font-size: 1.5rem; line-height: 1.2; letter-spacing: -0.02em; font-weight: 700; }
 @utility kpi-figure { font-family: var(--ui-display); font-size: 1.75rem; line-height: 1.1; letter-spacing: -0.02em; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+/* design v5 step 7: small entrances with CSS, so no animation library is in a page for them. 200 ms ease-out; none with reduced motion. */
+@keyframes fs-disclose-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes fs-slide-in { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+@utility fs-disclose { animation: fs-disclose-in 200ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@utility fs-slide-in { animation: fs-slide-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both; }
+@media (prefers-reduced-motion: reduce) { .fs-disclose, .fs-slide-in { animation: none; } }

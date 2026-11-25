@@ -2,8 +2,6 @@
 
 import { useRef, useState, type ButtonHTMLAttributes } from 'react'
 import { Loader2 } from 'lucide-react'
-import { AnimatePresence } from 'motion/react'
-import * as m from 'motion/react-m'
 import { cn } from '../../lib/utils'
 
 import { BASE, buttonClass, SIZE, VARIANT, type Size, type Variant } from './buttonClass'
@@ -45,14 +43,11 @@ export function Button({ variant = 'primary', size = 'md', loading = false, conf
         {loading ? <Loader2 aria-hidden="true" className="animate-spin motion-reduce:animate-none" /> : null}
         {armed ? confirm!.label : children}
       </button>
-      <AnimatePresence initial={false}>
-        {armed ? (
-          <m.button key="cancel" type="button" onClick={() => setArmed(false)} className={buttonClass('secondary', size)}
-            initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -6 }} transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}>
-            {confirm!.cancelLabel ?? 'Cancel'}
-          </m.button>
-        ) : null}
-      </AnimatePresence>
+      {armed ? (
+        <button key="cancel" type="button" onClick={() => setArmed(false)} className={buttonClass('secondary', size, 'fs-slide-in')}>
+          {confirm!.cancelLabel ?? 'Cancel'}
+        </button>
+      ) : null}
       <span role="status" className="sr-only">{armed ? `Press again to confirm: ${confirm!.label}` : ''}</span>
     </span>
   )

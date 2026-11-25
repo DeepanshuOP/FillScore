@@ -4,8 +4,30 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-25: finish design v5 (steps 0-9 of the order), local commits
 
-- **Next concrete action: step 7 (performance: the 10 largest modules of the shared first-load chunk with sizes; client providers out of the root layout; lazy toaster, Motion features, GSAP, Lenis, cmdk and Vaul; first figures on the server for demo accounts; budgets and Lighthouse).** Steps 0 to 6 done; 7 to 9 open. Design v5 is NOT finished.
-- **Status:** 0 done. 1 done. 2 done. 3 done. 4 done. 5 done. 6 done. 7 open. 8 open. 9 open.
+- **Next concrete action: step 8 (QA and review: audit5 on every page at all viewports including real WebKit, light and dark; keyboard pass; break-ui on Home, Costs, Orders, Fills, Check, Settings; reduced motion; one reviewer; at most 16 images in `docs/design/v5/built/` with a README).** Steps 0 to 7 done; 8 and 9 open. Design v5 is NOT finished.
+- **Status:** 0 done. 1 done. 2 done. 3 done. 4 done. 5 done. 6 done. 7 done. 8 open. 9 open.
+- **Step 7: done (performance).** *Largest first-load modules before the work* (Turbopack analyzer, `next experimental-analyze`, compressed size of each module, summed per module; these
+  add to 491 kB where the real chunk gzip is 325.5 kB, because each module is compressed alone; the order is what matters), `/docs` (the shared base):
+  1 react-dom-client 87.1, 2 react-server-dom-turbopack-client 9.7, 3 tailwind-merge 9.6, 4 next router.js 8.7, 5 next segment-cache/cache.js 8.3, 6 next render-tree 5.2, 7 @radix-ui/react-menu 5.1,
+  8 next segment-cache/scheduler 5.1, 9 @sentry/core client.js 4.9, 10 @floating-ui/dom 3.9. By package: next 255, **Sentry 104** (core 59.5, browser 17.2, browser-utils 15.0, nextjs 8.4, conventions 4.2),
+  motion 35 (motion-dom 23.4, framer-motion 11.9), lucide 6.3. *Changes:* (1) Sentry loads after the page is complete and idle (`lib/sentryLazy.ts`, red first in `sentryLazy.test.ts`, 4 cases): uncaught
+  errors and rejections before it are queued (last 20) and sent after `initSentry`, through the same scrubber; checked with a real build and a dummy DSN in Chromium: an error at 1.5 s and one at 9 s both
+  reached the ingest, and 9 more chunks loaded after `load`. (2) Providers: the root layout keeps only the theme and the sign-in state (`AuthProvider` stays: the marketing bar, the app and the auth
+  pages all read it); the tooltip provider and the toast mount moved to `app/app/layout.tsx`; Toast loads Sonner and mounts its Toaster on the first toast (`ui/Toast.tsx`); `LazyMotion` and
+  `motionFeatures.ts` are gone (nothing uses Motion's `m` now): `Disclosure` and `Button`'s confirm step use CSS (`fs-disclose`, `fs-slide-in`), and `MotionConfig reducedMotion="user"` moved into the AI review,
+  the one component that still uses Motion, which loads only on its page. (3) cmdk was already lazy; GSAP and Lenis were already dynamic (not in `/`); Vaul: the phone More sheet is its own file loaded on
+  first press (`PhoneMoreSheet`). (4) The lab's fonts: the v3 design lab declared Clash, Archivo, Fragment and Martian with `next/font`, which Next puts in the shared stylesheet, so **every production page
+  preloaded eight font files it never uses**; they are plain `@font-face` in the lab's own CSS now (13 preloaded fonts became 6). (5) First figures on the server for demo accounts: `DashboardRoute` and
+  `loadDemoInitial` fetch score, v2 and orders on the server for the three visible demo ids only (`no-store`; red-first cases in `demoInitial.test.ts`), the page hydrates from them and skips its own fetch only when the
+  browser's identity is that demo; a signed-in account keeps the browser path (cookies are not forwarded; not tested). *First Load JS (gzip kB, `scripts/first-load-js.mjs`, before the work / now / budget):*
+  `/` 338.6 / **250.9** / 300 met; `/app` 394.4 / **285.0** / 340 met; `/app/costs` and `/app/orders` 394.4 / **285.0** / 360 met; `/login` 327.5 / **236.0** / 300 met (also `/demo` 241.3, `/docs` 236.9,
+  `/how-it-works` 243.9, `/verify` 235.1, Settings 261.7). *Lighthouse mobile (`lighthouse5.mjs`, medians of 3, mock API; before the v5 work 59 / 66 / 50 / 49 with LCP 4.3 / 4.2 / 8.1 / 8.1 s):* after the changes but
+  with the lab fonts still preloaded 72 / 79 / 71 / 70, LCP 5.2 / 5.2 / 5.2 / 5.6 s; **final 85 / 88 / 76 / 75** on `/`, `/demo`, `/app`, `/app/orders` with LCP **3.5 / 3.8 / 4.4 / 3.9 s**, TBT 313 / 119 / 369 / 417 ms,
+  CLS 0 / 0.003 / 0 / 0.011. Scores meet the targets (marketing 85, app 75); **LCP misses its targets** (2.5 s marketing, 3.0 s app) and TBT is over by 13 ms (landing, target 300) and 17 ms (orders, target 400). Reason
+  for the LCP: not investigated beyond the fonts; what remains is the simulated slow 4G (1.6 Mbit/s, 150 ms) delivering 236 to 285 kB of script plus six font files before the largest text paints. Candidates not
+  done: Cabinet's 400 and 500 files are preloaded but the proposal uses only 700 and 900 for titles (cannot be removed without checking every use), and the app's data fetch for a signed-in account.
+  Checks: vitest 901 passed (93 files), tsc 0, lint 0 errors (18 warnings), build ok, **full e2e 83 passed, 0 failed, 0 skipped** (the first run of it found my own bug: the server-side demo fetch was cached for 120 s and showed old
+  figures after a data change; it is `no-store` now, with a test). Servers stopped, temp folders deleted.
 - **Step 6: done (cleanup).** Deleted: `Overview`, `MonthTape` (+ `monthTape.ts` and its test), `HomeFigures`, `PrintsTape`, `Patterns`, `WhaleCorrelation`, `MarkoutCard`,
   `AnalyticsCharts`, `heatmapCopy` (+ test), and what only they imported: `dashboard/ordersView.ts` (+ `ordersTotals.test.ts`), `dashboard/chapter.tsx`, `ui/charts/CostRuler.tsx`,
   `utils/makerAdvice.ts` and `utils/markoutCopy.ts` (+ their tests); `app/analytics/` is gone. The geometry and caption of `printsTape.ts` and their tests went with the

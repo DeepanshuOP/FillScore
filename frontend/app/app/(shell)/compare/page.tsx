@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { DashboardSection } from '@/app/dashboard/DashboardContent'
+import { DashboardRoute } from '@/app/dashboard/DashboardRoute'
 
 export const metadata: Metadata = { title: 'Comparisons' }
-export default function Page() { return <DashboardSection view="compare" /> }
+export default function Page({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) { return <DashboardRoute view="compare" searchParams={searchParams} /> }

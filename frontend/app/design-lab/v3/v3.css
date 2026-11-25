@@ -1,5 +1,15 @@
 /* Design v3 lab (2026-11-20). Prototype styles only, scoped under [data-v3]; production stays on app/ui/tokens.css. */
 
+/* The lab-only fonts (design v5 step 7: plain @font-face in this file, loaded by the lab's layout only, so no production page preloads them). */
+@font-face { font-family: 'Clash Grotesk'; font-weight: 400; font-display: swap; src: url('./fonts/clash-grotesk-400.woff2') format('woff2'); }
+@font-face { font-family: 'Clash Grotesk'; font-weight: 500; font-display: swap; src: url('./fonts/clash-grotesk-500.woff2') format('woff2'); }
+@font-face { font-family: 'Clash Grotesk'; font-weight: 600; font-display: swap; src: url('./fonts/clash-grotesk-600.woff2') format('woff2'); }
+@font-face { font-family: 'Clash Grotesk'; font-weight: 700; font-display: swap; src: url('./fonts/clash-grotesk-700.woff2') format('woff2'); }
+@font-face { font-family: 'Martian Mono'; font-weight: 100 800; font-display: swap; src: url('./fonts/martian-mono-var.woff2') format('woff2'); }
+@font-face { font-family: 'Fragment Mono'; font-weight: 400; font-display: swap; src: url('./fonts/fragment-mono-400.woff2') format('woff2'); }
+@font-face { font-family: 'Archivo'; font-weight: 100 900; font-stretch: 62% 125%; font-display: swap; src: url('./fonts/archivo-var.woff2') format('woff2'); }
+.fs-v3-fonts { --f-clash: 'Clash Grotesk'; --f-martian: 'Martian Mono'; --f-fragment: 'Fragment Mono'; --f-archivo: 'Archivo'; }
+
 [data-v3] {
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);

@@ -75,6 +75,24 @@ test('Home, Costs and Orders explain bps once, with the 0.01%', async ({ page })
   }
 })
 
+test('a demo account\'s first figures are in the HTML the server sends, and the page hydrates without an error', async ({ page, request }) => {
+  await reshapeDemoAsRebuilt('demo-aggressive')
+  // design v5 step 7: no JavaScript runs for this request, so the figures can only have come from the server
+  for (const path of ['/app', '/app/costs']) {
+    const html = await (await request.get(`${path}?userId=demo-aggressive`)).text()
+    expect(html, path).toContain('$15.00')                  // hand value of reshapeDemoAsRebuilt: total cost
+    expect(html, path).toContain('4.3 bps, 3 orders')
+    expect(html, path).toContain('Total cost')
+  }
+  const errors: string[] = []
+  page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()) })
+  page.on('pageerror', (e) => errors.push(String(e)))
+  await page.goto('/app/costs?userId=demo-aggressive')
+  await expect(page.getByTestId('home-total')).toContainText('$15.00')
+  await page.waitForTimeout(1500)
+  expect(errors.filter((e) => /hydrat|did not match|server rendered/i.test(e))).toEqual([])
+})
+
 test('/docs has a left list with the open document marked, and 16 px body text', async ({ page }) => {
   await page.goto('/docs/mcp')
   const nav = page.getByRole('navigation', { name: 'Docs' })

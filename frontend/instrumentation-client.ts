@@ -1,3 +1,3 @@
-import { initSentry } from './lib/sentryInit'
+import { startSentryLazily } from './lib/sentryLazy'
 
-initSentry() // no-op unless NEXT_PUBLIC_SENTRY_DSN is set
+startSentryLazily() // no-op unless NEXT_PUBLIC_SENTRY_DSN is set; Sentry loads after the page is complete and idle (design v5 step 7)
