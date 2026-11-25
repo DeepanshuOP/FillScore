@@ -2,9 +2,15 @@
 
 This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A new session reads the brief, then this file, then `docs/HANDOFF.md`, and continues from "Next concrete action".
 
-## Orders of 2026-11-24, second: design v5 built in production (steps 1-9), local commits
+## Orders of 2026-11-25: finish design v5 (steps 0-9 of the order), local commits
 
-- **Next concrete action: Design v5 built: ready for Deepanshu's review.** (Partly built: see "Not done" below and `docs/milestones/M8.md` "Design v5 built".)
+- **Next concrete action: step 1 (ml-service: 4 tests fail in the full run, pass alone).** Step 0 done; 1 to 9 open. Design v5 is NOT finished.
+- **Status:** 0 done (this line). 1 open. 2 open. 3 open. 4 open. 5 open. 6 open. 7 open. 8 open. 9 open.
+- The earlier line "Design v5 built" overstated the work: the previous run built steps 1-4 and part of 5 of its own plan, then ran out of turns.
+
+## Orders of 2026-11-24, second: design v5 partly built (its steps 1-4 done, 5 partial, 6-9 open), local commits
+
+- **Next concrete action (superseded by the orders of 2026-11-25 above).** The old line said "Design v5 built"; that was wrong. See `docs/milestones/M8.md` "Design v5 built" for the honest list.
 - **Status of the steps:** 1 done, 2 done, 3 done, 4 done, 5 done in part, 6 done in part (words only), 7 done in part (budgets measured and missed, Lighthouse
   and server-rendered first figures not done), 8 done in part (docs rewritten; only `design-lab/v5` deleted, dead v4 code kept), 9 done in part (reviewer run
   and one fix pass; audit5, WebKit, keyboard pass, break-ui and the built images NOT run: out of this run's turn budget). Nothing is BLOCKED by a
