@@ -45,6 +45,7 @@ export default function MethodologyPage() {
     { id: 'benchmarks', label: 'Benchmarks from public prints' },
     { id: 'metrics', label: 'Metrics' },
     { id: 'measured-score', label: `The measured score (${s.version})` },
+    { id: 'research-views', label: 'What the audit does not include' },
     { id: 'verifying', label: 'Verifying a score' },
   ];
   return (
@@ -125,6 +126,12 @@ export default function MethodologyPage() {
                 trades ({s.calibrationWindow.days.length} days, {s.calibrationWindow.start} to {s.calibrationWindow.end}; rule:{' '}
                 {s.calibrationWindow.rule}). An hour&apos;s timing value needs samples on at least {s.minProfileDays} of those
                 days. A symbol outside this set reads &quot;insufficient data&quot; for spread, slippage and timing.
+              </p>
+
+              <Anchor id="research-views" level={2} label="research views that are not part of the audit">What the audit does not include</Anchor>
+              <p className={P} data-testid="research-views">
+                Post-trade markouts and the correlation of fills with large trades are research views. They are not part of the audit and the app does not
+                show them. The demo data carries no post-trade prices and no large-trade enrichment, and a value that was not measured is never shown.
               </p>
 
               <Anchor id="verifying" level={2} label="verifying a score">Verifying a score</Anchor>

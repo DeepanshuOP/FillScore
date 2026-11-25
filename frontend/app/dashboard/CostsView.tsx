@@ -114,7 +114,7 @@ export function CostsView(p: CostsProps) {
           )}
         </Card>
       </div>
-      <Card title="What this covers" id="scope">
+      <Card title="What this covers" id="scope" testid="scope-facts">
         <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-[14px] sm:grid-cols-4">
           {p.facts.map(([k, v]) => <div key={k}><dt className="text-[13px] text-ui-graphite">{k}</dt><dd className="text-ui-ink">{v}</dd></div>)}
         </dl>

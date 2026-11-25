@@ -4,8 +4,16 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-25: finish design v5 (steps 0-9 of the order), local commits
 
-- **Next concrete action: step 2 (the 9 e2e `test.fixme` specs asserted again on the v5 layout).** Steps 0 and 1 done; 2 to 9 open. Design v5 is NOT finished.
-- **Status:** 0 done. 1 done. 2 open. 3 open. 4 open. 5 open. 6 open. 7 open. 8 open. 9 open.
+- **Next concrete action: step 3 (pages not yet built: Reports, Settings shell, Connect, /demo cards, /how-it-works, /verify, /docs shell).** Steps 0, 1, 2 done; 3 to 9 open. Design v5 is NOT finished.
+- **Status:** 0 done. 1 done. 2 done. 3 open. 4 open. 5 open. 6 open. 7 open. 8 open. 9 open.
+- **Step 2: done (9 specs, 0 fixme or skip left in `frontend/e2e`).** `rebuilt-demo.spec.ts` x7 on Costs, Reports, Orders, Flagged orders, Comparisons and Fills with the
+  same hand values (total $15.00, 4.3 bps, 3 orders; fees $30.00; unfilled $3.50, 1 order; by type 3 limit orders, execution $10.00; Fills 3 in 3 orders, $1,260.00,
+  maker 0%; the strip's execution is the remainder 15.00 - 30.00 - 3.50 = -18.50 because the fixture's total is not the sum of its parts). `score-versions.spec.ts`:
+  the locked v1 line beside the measured grade (A, 94.3 from the offline build's 94.34969957374337) and the no-grade state for an account without orders; the v1
+  number in the e2e database is the locally seeded audit's (D 59.6), so the pattern is asserted and the published values stay pinned by `gradeInvariance.test.ts`.
+  `markout-card.spec.ts`: the card is absent (old address opens Fills) and the class (a) line is printed: new sentence in Methodology "What the audit does not
+  include" (PROPOSAL §4 row 4; `data-testid="research-views"`). Added `data-testid="scope-facts"` on Costs. Three specs run: 9 passed. Not changed: any assertion
+  that v5 no longer shows (resting-time medians, margin notes) is not asserted as present. Vitest dashboard and methodology 193 passed, tsc 0.
 - **Step 1: done (ml-service flaky failures).** Cause: `council_flow` sends a `scope` event first from `loader.scope_counts`, which opens a real
   Mongo client from `MONGODB_URI`. Four tests assert the exact event list and did not patch it (`test_main::test_stream_reports_empty_accounts_as_no_data`,
   two in `test_quick_deep.py`, one in `test_quick_deep_http.py`). With a Mongo that answers, the list gains a `scope` event and the four fail (reproduced
