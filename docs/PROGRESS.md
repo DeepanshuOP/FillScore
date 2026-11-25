@@ -4,8 +4,15 @@ This file is the resume point for the work in `docs/agent/MASTER_BRIEF.md`. A ne
 
 ## Orders of 2026-11-25: finish design v5 (steps 0-9 of the order), local commits
 
-- **Next concrete action: step 1 (ml-service: 4 tests fail in the full run, pass alone).** Step 0 done; 1 to 9 open. Design v5 is NOT finished.
-- **Status:** 0 done (this line). 1 open. 2 open. 3 open. 4 open. 5 open. 6 open. 7 open. 8 open. 9 open.
+- **Next concrete action: step 2 (the 9 e2e `test.fixme` specs asserted again on the v5 layout).** Steps 0 and 1 done; 2 to 9 open. Design v5 is NOT finished.
+- **Status:** 0 done. 1 done. 2 open. 3 open. 4 open. 5 open. 6 open. 7 open. 8 open. 9 open.
+- **Step 1: done (ml-service flaky failures).** Cause: `council_flow` sends a `scope` event first from `loader.scope_counts`, which opens a real
+  Mongo client from `MONGODB_URI`. Four tests assert the exact event list and did not patch it (`test_main::test_stream_reports_empty_accounts_as_no_data`,
+  two in `test_quick_deep.py`, one in `test_quick_deep_http.py`). With a Mongo that answers, the list gains a `scope` event and the four fail (reproduced
+  with a throwaway local mongod: the same 4); with one that does not answer, every flow waits for server selection (~30 s) before `asyncio.run` closes
+  (full run 8 min). Production code is correct (a count that cannot be read sends no event). Fix: `tests/conftest.py` autouse fixture makes the loader's
+  default client raise at once; a test that wants counts patches it (as `test_council_scope.py` does). Red first: `tests/test_hermetic_database.py`
+  (2 of 3 failed). Full suite, 1909 passed, twice (reachable mongod, then the dead URI): 42 s and 43 s. mongod stopped, temp dir deleted.
 - The earlier line "Design v5 built" overstated the work: the previous run built steps 1-4 and part of 5 of its own plan, then ran out of turns.
 
 ## Orders of 2026-11-24, second: design v5 partly built (its steps 1-4 done, 5 partial, 6-9 open), local commits

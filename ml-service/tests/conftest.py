@@ -6,3 +6,17 @@ import os
 
 os.environ["FILLSCORE_TRACING"] = "0"
 os.environ.pop("SENTRY_DSN", None)
+
+import pytest  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def _no_database_unless_the_test_provides_one(monkeypatch):
+    """The loader's default Mongo client raises at once, so a test never depends on a database that happens to answer
+    on this machine (see tests/test_hermetic_database.py). A test that needs one patches `_get_mongo_client` itself."""
+    from agents.metrics import loader
+
+    def _none():
+        raise RuntimeError("no database in tests: patch agents.metrics.loader._get_mongo_client")
+
+    monkeypatch.setattr(loader, "_get_mongo_client", _none)
